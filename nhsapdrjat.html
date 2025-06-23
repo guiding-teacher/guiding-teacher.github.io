@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حساب المعدل 👑</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #1a1a1a;
+            --dark-card-bg: #2b2b2b;
+            --text-light: #e0e0e0;
+            --gold-accent: #FFD700;
+            --gold-dark: #B8860B;
+            --button-start-bg: #007a4a;
+            --button-start-hover: #00643b;
+            --button-stop-bg: #B00000;
+            --button-stop-hover: #8b0000;
+            --button-manual-bg: #00507a;
+            --button-manual-hover: #003a5a;
+            --button-clear-bg: #555555;
+            --button-clear-hover: #444444;
+            --shadow-dark: rgba(0, 0, 0, 0.6);
+            --border-gold-subtle: rgba(255,215,0,0.3);
+            --border-gold-strong: rgba(255,215,0,0.6);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            text-align: center;
+            direction: rtl;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--dark-card-bg);
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px var(--shadow-dark);
+            width: 100%;
+            max-width: 850px;
+            border: 1px solid var(--border-gold-subtle);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        h1 {
+            color: var(--gold-accent);
+            margin-bottom: 30px;
+            font-size: 2.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.4);
+        }
+
+        .section-title {
+            color: var(--gold-dark);
+            font-size: 1.6em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--gold-dark);
+            padding-bottom: 8px;
+            display: inline-block;
+            text-shadow: 0 0 5px rgba(255,215,0,0.2);
+        }
+
+        .button-group, .manual-input-group {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        button, .manual-input-group input {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px var(--shadow-dark);
+            font-family: 'Cairo', sans-serif;
+            text-align: center;
+            min-width: 160px;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        button:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.8);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px var(--shadow-dark);
+        }
+
+        button:disabled {
+            background-color: #444 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            color: #777;
+        }
+
+        #startButton {
+            background-color: var(--button-start-bg);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--button-start-bg);
+        }
+
+        #startButton:hover {
+            background-color: var(--button-start-hover);
+            border-color: var(--button-start-hover);
+        }
+
+        #startButton.listening::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: var(--gold-accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 1.5s infinite ease-out;
+            box-shadow: 0 0 0 0 var(--gold-accent);
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; box-shadow: 0 0 0 0 var(--gold-accent); }
+            70% { transform: translate(-50%, -50%) scale(2); opacity: 0; box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
+        #stopButton {
+            background-color: var(--button-stop-bg);
+            border: 1px solid var(--button-stop-bg);
+        }
+
+        #stopButton:hover {
+            background-color: var(--button-stop-hover);
+            border-color: var(--button-stop-hover);
+        }
+
+        #clearButton {
+            background-color: var(--button-clear-bg);
+            border: 1px solid var(--button-clear-bg);
+            margin-top: 1px;
+            width: fit-content;
+        }
+
+        #clearButton:hover {
+            background-color: var(--button-clear-hover);
+            border-color: var(--button-clear-hover);
+        }
+
+        #calculateManualBtn {
+            background-color: var(--button-manual-bg);
+            border: 1px solid var(--button-manual-bg);
+            margin-top: 10px;
+        }
+
+        #calculateManualBtn:hover {
+            background-color: var(--button-manual-hover);
+            border-color: var(--button-manual-hover);
+        }
+
+        .manual-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .manual-input-group div {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .manual-input-group input[type="text"] {
+            background-color: #3a3a3a;
+            color: var(--text-light);
+            border: 1px solid #555;
+            width: calc(100% - 30px);
+            max-width: 500px;
+            font-size: 1.2em;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .manual-input-group input::placeholder {
+            color: #888;
+            opacity: 1;
+        }
+
+        .manual-input-group input:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.3);
+        }
+
+        .manual-input-group label {
+            margin-top: 15px;
+            color: var(--gold-dark);
+            font-size: 1em;
+            display: block;
+            margin-bottom: 8px;
+            width: 100%;
+            text-shadow: 0 0 3px rgba(255,215,0,0.1);
+        }
+
+        .result-area {
+            background-color: #3a3a3a;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 40px;
+            border: 1px solid var(--border-gold-strong);
+            box-shadow: 0 8px 25px var(--shadow-dark);
+        }
+
+        .result-area p {
+            font-size: 1.4em;
+            margin: 12px 0;
+            font-weight: 700;
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-area span {
+            font-weight: bold;
+            color: var(--gold-accent);
+            background-color: #4a4a4a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,215,0,0.5);
+            min-width: 100px;
+            display: inline-block;
+            text-align: center;
+            box-shadow: inset 0 0 8px rgba(255,215,0,0.1);
+        }
+
+        #status {
+            font-size: 1.1em;
+            color: #aaaaaa;
+            margin-top: -15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .small-text {
+            font-size: 0.9em;
+            color: #777777;
+            margin-top: 40px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 15px;
+                border-radius: 15px;
+            }
+            h1 {
+                font-size: 2.2em;
+                margin-bottom: 20px;
+            }
+            .section-title {
+                font-size: 1.4em;
+                margin-top: 25px;
+                margin-bottom: 15px;
+            }
+            .button-group, .manual-input-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+            button, .manual-input-group input {
+                width: 100%;
+                min-width: unset;
+                padding: 12px 25px;
+                font-size: 1.1em;
+            }
+            .manual-input-group input[type="text"] {
+                width: 100%;
+                max-width: unset;
+                padding: 10px;
+            }
+            .result-area {
+                padding: 18px;
+                border-radius: 12px;
+            }
+            .result-area p {
+                font-size: 1.2em;
+            }
+            .result-area span {
+                padding: 8px 12px;
+            }
+            #status {
+                font-size: 0.95em;
+                margin-bottom: 15px;
+            }
+            .small-text {
+                font-size: 0.8em;
+                margin-top: 30px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="container">
+        <h1><span role="img" aria-label="Crown">👑</span> حساب المعدل<span role="img" aria-label="Sparkles">✨</span></h1>
+
+        <p style="font-size: 1.0em; line-height: 1.5; margin-bottom: 30px; color: var(--gold-dark);"> 
+            <br><strong>قاعدة الحساب هنا فريدة:</strong> إذا كانت آخر عملية (القسمة أو الضرب)، يتم حساب ما قبلها أولاً، ثم تطبيق تلك العملية على المجموع وعلى الرقم الأخير. وإلا، فالحساب من اليسار لليمين.
+            <br>مثال: "50 + 50 + 50 ÷ 3" الناتج سيكون 50. (يعني (50+50+50) ثم القسمة على 3)
+              
+        </p>
+        
+        <div class="button-group">
+            <button id="startButton">بدء الاستماع 🎤</button>
+            <button id="stopButton" disabled>إيقاف الاستماع 🛑</button>
+        </div>
+
+        <p id="status">الحالة: جاهز للاستماع ✅</p>
+
+        <div class="result-area">
+            <p>النص المُتعرف عليه: <span id="recognizedText">لا يوجد</span></p>
+            <p>النتيجة: <span id="result">لا يوجد</span></p>
+        </div>
+
+        <h2 class="section-title">أو قم بالحساب يدوياً 👇</h2>
+        <div class="manual-input-group">
+            <div>
+                <label for="manualExpressionInput">أدخل العملية (مثال: 50 + 50 * 3):</label>
+                <input type="text" id="manualExpressionInput" placeholder="اكتب هنا: 10 + 5 * 2" dir="ltr">
+            </div>
+            <button id="calculateManualBtn">احسب يدوياً 💡</button>
+        </div>
+
+        <button id="clearButton">مسح الكل 🗑️</button>
+
+        <p class="small-text">
+            هذا التطبيق يستخدم تقنيات متقدمة للتعرف على الكلام (Web Speech API) ومنطق حساب مخصص.
+            تم تطويره خصيصاً لمساعدتك على ايداء مهامك بسهولة!
+        </p>
+    </div>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert('عذراً! متصفحك لا يدعم Web Speech API. يرجى استخدام متصفح حديث مثل Chrome أو Edge أو Firefox لتجربة كاملة.');
+            document.querySelector('.container').innerHTML = `
+                <h1 style="color: #D32F2F;">عذراً، متصفحك لا يدعم هذه الميزة! 😢</h1>
+                <p style="font-size: 1.2em; line-height: 1.6;">
+                    يرجى استخدام متصفح ويب حديث مثل
+                    <a href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>،
+                    <a href="https://www.microsoft.com/edge" target="_blank">Microsoft Edge</a>، أو
+                    <a href="https://www.mozilla.org/firefox/" target="_blank">Mozilla Firefox</a>
+                    للوصول إلى وظائف التعرف على الصوت.
+                </p>
+            `;
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ar-SA'; // يمكن تجربة 'ar-EG' أو لهجات أخرى إذا لزم الأمر
+            recognition.interimResults = false;
+            recognition.continuous = false;
+
+            const startBtn = document.getElementById('startButton');
+            const stopBtn = document.getElementById('stopButton');
+            const clearBtn = document.getElementById('clearButton');
+            const statusSpan = document.getElementById('status');
+            const recognizedTextSpan = document.getElementById('recognizedText');
+            const resultSpan = document.getElementById('result');
+            const manualExpressionInput = document.getElementById('manualExpressionInput');
+            const calculateManualBtn = document.getElementById('calculateManualBtn');
+
+            const arabicNumberWords = {
+                'صفر': 0, 'واحدة': 1, 'واحد': 1, 'اثنين': 2, 'اثنان': 2, 'ثلاثة': 3, 'اربعة': 4, 'أربعة': 4,
+                'خمسة': 5, 'ستة': 6, 'سبعة': 7, 'ثمانية': 8, 'تسعة': 9, 'عشرة': 10,
+                'أحد عشر': 11, 'احدعشر': 11, 'اثنا عشر': 12, 'اثناعشر': 12, 'ثلاثة عشر': 13, 'أربعة عشر': 14, 'خمسة عشر': 15,
+                'ستة عشر': 16, 'سبعة عشر': 17, 'ثمانية عشر': 18, 'تسعة عشر': 19, 'عشرون': 20,
+                'ثلاثون': 30, 'أربعون': 40, 'خمسون': 50, 'ستون': 60, 'سبعون': 70, 'ثمانون': 80,
+                'تسعون': 90, 'مئة': 100, 'مائة': 100, 'ألف': 1000, 'الف': 1000
+            };
+
+            const arabicOperatorWordsMap = [
+                // الترتيب مهم هنا، ضع الأنماط الأكثر تحديدًا أولاً
+                { pattern: /مقسوم على|مقسومة على/g, replacement: '/' },
+                { pattern: /مضروب في|مضروب ب|ضرب في|ضرب ب/g, replacement: '*' },
+                { pattern: /مقسوم|مقسومة|يقسم|قسمة|تقسيم|على/g, replacement: '/' },
+                { pattern: /ضرب|مضروب|مضروبة|في|بمضروب|مرات/g, replacement: '*' }, // "في" قد تكون غامضة، اختبرها جيدًا
+                { pattern: /زائد|إضافة|أضف|مع|و|جمع|إلى/g, replacement: '+' }, 
+                { pattern: /ناقص من/g, replacement: '-' }, // يجب أن يكون "ناقص من" قبل "ناقص" و "من" إذا كانت "من" تستخدم للطرح
+                { pattern: /ناقص|طرح|اطرح|من/g, replacement: '-' }
+            ];
+
+            const isOperator = (token) => ['+', '-', '*', '/'].includes(token);
+
+            function normalizeArabicNumerals(str) {
+                if (typeof str !== 'string') return str;
+                return str.replace(/[٠١٢٣٤٥٦٧٨٩]/g, d => d.charCodeAt(0) - '٠'.charCodeAt(0))
+                          .replace(/[۰۱۲۳۴۵۶۷۸۹]/g, d => d.charCodeAt(0) - '۰'.charCodeAt(0));
+            }
+            
+            function tokenizeVoiceTranscript(transcript) {
+                let tempTranscript = transcript.trim();
+                console.log("Original transcript:", tempTranscript);
+
+                tempTranscript = normalizeArabicNumerals(tempTranscript);
+                console.log("After numeral normalization:", tempTranscript);
+
+                tempTranscript = tempTranscript.replace(/×/g, '*'); 
+                tempTranscript = tempTranscript.replace(/÷/g, '/'); 
+                console.log("After explicit symbol replacement (×, ÷):", tempTranscript);
+
+                // استبدال كلمات العمليات
+                arabicOperatorWordsMap.forEach(({pattern, replacement}) => {
+                    tempTranscript = tempTranscript.replace(pattern, replacement);
+                });
+                console.log("After operator word replacement:", tempTranscript);
+
+                // استبدال كلمات الأرقام (الأطول أولاً)
+                const sortedNumberWords = Object.entries(arabicNumberWords)
+                    .sort((a, b) => b[0].length - a[0].length); 
+
+                sortedNumberWords.forEach(([word, num]) => {
+                    // استخدام new RegExp لتجنب مشاكل مع كلمات قد تكون جزء من كلمات أخرى (غير مرجح هنا ولكنها ممارسة جيدة)
+                    // نستخدم 'g' للاستبدال العالمي
+                    tempTranscript = tempTranscript.replace(new RegExp(word, 'g'), num.toString());
+                });
+                console.log("After number word replacement:", tempTranscript);
+                
+                // تنظيف نهائي: إزالة أي شيء ليس رقمًا، أو نقطة عشرية، أو عامل، أو مسافة
+                // ثم إضافة مسافات حول العوامل وتوحيد المسافات
+                let cleanedTranscript = tempTranscript.replace(/[^\d.\s+\-*/%^()]/g, ''); // أضفت %^() احتياطًا ولكن قد لا تحتاجها
+                cleanedTranscript = cleanedTranscript.replace(/([+\-*/%^()])/g, ' $1 ').trim(); 
+                cleanedTranscript = cleanedTranscript.replace(/\s+/g, ' '); 
+                
+                console.log("Processed transcript for tokenization:", cleanedTranscript);
+
+                const parts = cleanedTranscript.split(' ').filter(p => p.trim() !== '');
+                const tokens = [];
+                let lastTokenType = null;
+
+                if (parts.length === 0) {
+                     console.warn("التعبير فارغ بعد التنظيف الكامل.");
+                     return null;
+                }
+
+                for (const item of parts) {
+                    const number = parseFloat(item); 
+
+                    if (!isNaN(number)) {
+                        if (lastTokenType === 'number') {
+                            console.warn("رقمان متتاليان بدون عملية:", tokens.length > 0 ? tokens[tokens.length-1] : "N/A", "و", item);
+                            return null; // خطأ: رقمان متتاليان
+                        }
+                        tokens.push(number);
+                        lastTokenType = 'number';
+                    } else if (isOperator(item)) {
+                        if (lastTokenType === 'operator' || tokens.length === 0) {
+                            console.warn("عملية غير صالحة في هذا الموضع:", item, "(الرموز حتى الآن:", tokens.join(' '), ")");
+                            return null; // خطأ: عاملان متتاليان أو عامل في البداية
+                        }
+                        tokens.push(item);
+                        lastTokenType = 'operator';
+                    } else {
+                        // إذا وصل الأمر إلى هنا، فهذا يعني أن التنظيف لم يزله وهو ليس رقمًا ولا عاملًا معروفًا
+                        console.warn("رمز غير متوقع بعد التنظيف الكامل:", item);
+                        // يمكنك اختيار إرجاع null أو تجاهل الرمز حسب الحاجة
+                        return null; 
+                    }
+                }
+
+                // التحقق من صحة التعبير النهائي
+                if (tokens.length === 0) {
+                    console.warn("لم يتم العثور على رموز صالحة في التعبير.");
+                    return null;
+                }
+                // يجب أن يكون التعبير N O N O N ... (رقم عامل رقم ...)
+                // أي أنه يجب أن يكون عدد الرموز فرديًا، ويبدأ وينتهي برقم
+                if (tokens.length % 2 === 0 || typeof tokens[0] !== 'number' || typeof tokens[tokens.length - 1] !== 'number') {
+                     if (tokens.length === 1 && typeof tokens[0] === 'number') {
+                         // هذا صالح إذا كنا نسمح بإدخال رقم واحد فقط (لا يتم حسابه ولكن يعرض)
+                         // لمنطق الحساب الحالي، نعتبره غير صالح كـ "تعبير حسابي"
+                         console.warn("تم التعرف على رقم واحد فقط. لا توجد عملية حسابية.");
+                         return null; 
+                     }
+                    console.warn("هيكل التعبير غير صالح (طول زوجي، أو لا يبدأ/ينتهي برقم). Tokens:", tokens.join(' '));
+                    return null;
+                }
+                
+                console.log("Final tokens for calculation:", tokens);
+                return tokens;
+            }
+
+            function tokenizeManualExpression(expression) {
+                let normalizedExpression = normalizeArabicNumerals(expression.trim());
+                normalizedExpression = normalizedExpression.replace(/×/g, '*'); 
+                normalizedExpression = normalizedExpression.replace(/÷/g, '/'); 
+                
+                // النمط للبحث عن الأرقام (بما في ذلك العشرية) والعوامل
+                const pattern = /(\d+(\.\d+)?)|([+\-*/%^()])/g; // أضفت %^() هنا أيضاً
+                const matches = normalizedExpression.match(pattern);
+                
+                if (!matches) {
+                    console.warn("الإدخال اليدوي لا يحتوي على أجزاء صالحة:", normalizedExpression);
+                    return null;
+                }
+
+                const tokens = [];
+                let lastTokenType = null;
+
+                for (const match of matches) {
+                    if (isOperator(match) || ['(', ')', '%', '^'].includes(match)) { // تم توسيع isOperator ليشمل الأقواس وما إلى ذلك إذا أردت
+                        // تحقق من صحة وضع العامل (لا عاملان متتاليان، لا عامل في البداية إلا إذا كان سالبًا)
+                        if (isOperator(match) && (lastTokenType === 'operator' && match !== '(' && tokens[tokens.length-1] !== ')') || (tokens.length === 0 && match !== '(' && match !== '-')) { // تعديل بسيط للسماح بـ - في البداية
+                             console.warn("خطأ في موضع العامل اليدوي:", match);
+                             return null;
+                        }
+                        tokens.push(match);
+                        lastTokenType = isOperator(match) ? 'operator' : match; // تحديث lastTokenType
+                    } else if (!isNaN(parseFloat(match))) {
+                        if (lastTokenType === 'number') {
+                            console.warn("رقمان متتاليان في الإدخال اليدوي:", tokens[tokens.length-1], "و", match);
+                            return null;
+                        }
+                        tokens.push(parseFloat(match));
+                        lastTokenType = 'number';
+                    } else {
+                        console.warn("جزء غير معروف في الإدخال اليدوي:", match);
+                        return null; 
+                    }
+                }
+                
+                // التحقق من الصحة النهائية مشابه لدالة الصوت
+                if (tokens.length === 0) return null;
+                if (tokens.length % 2 === 0 || typeof tokens[0] !== 'number' || typeof tokens[tokens.length - 1] !== 'number') {
+                    if (tokens.length === 1 && typeof tokens[0] === 'number') return null; // كما هو مذكور أعلاه
+                    console.warn("هيكل التعبير اليدوي غير صالح:", tokens.join(' '));
+                    return null;
+                }
+                console.log("Final manual tokens:", tokens);
+                return tokens;
+            }
+
+            function performSimpleCalculation(n1, n2, op) {
+                try {
+                    switch (op) {
+                        case '+': return n1 + n2;
+                        case '-': return n1 - n2;
+                        case '*': return n1 * n2;
+                        case '/': 
+                            if (n2 === 0) throw new Error("لا يمكن القسمة على صفر!");
+                            return n1 / n2;
+                        default: throw new Error(`عملية غير مدعومة: ${op}`);
+                    }
+                } catch (e) {
+                    console.error("Error in performSimpleCalculation:", e);
+                    return `خطأ: ${e.message}`;
+                }
+            }
+
+            function calculateSequential(tokens) {
+                if (!tokens || tokens.length === 0) return "خطأ: لا توجد رموز للحساب";
+                if (tokens.length === 1 && typeof tokens[0] === 'number') return tokens[0];
+                if (tokens.length < 3 || tokens.length % 2 === 0) return "خطأ: تعبير غير صالح للحساب التسلسلي";
+
+
+                let result = tokens[0];
+                for (let i = 1; i < tokens.length; i += 2) {
+                    const operator = tokens[i];
+                    const nextNumber = tokens[i+1];
+                    if (typeof nextNumber === 'undefined' || !isOperator(operator)) {
+                        return "خطأ: تنسيق غير صالح في الحساب التسلسلي";
+                    }
+                    result = performSimpleCalculation(result, nextNumber, operator);
+                    if (typeof result === 'string' && result.startsWith("خطأ:")) return result;
+                }
+                return result;
+            }
+
+            function calculateWithCustomLogic(tokens) {
+                if (!tokens || tokens.length === 0) return "خطأ: لا توجد رموز للحساب";
+                if (tokens.length === 1 && typeof tokens[0] === 'number') return tokens[0]; 
+                if (tokens.length < 3) return "خطأ: تعبير غير صالح (أقصر من اللازم)";
+
+                const lastOperator = tokens[tokens.length - 2];
+                const lastNumber = tokens[tokens.length - 1];
+
+                // التأكد أن lastOperator هو فعلاً عامل وأن lastNumber هو رقم
+                if (!isOperator(lastOperator) || typeof lastNumber !== 'number') {
+                    console.error("خطأ في بنية الرموز قبل الحساب النهائي:", tokens);
+                    return "خطأ: بنية داخلية غير صحيحة";
+                }
+
+
+                if (lastOperator === '*' || lastOperator === '/') {
+                    const leftPartTokens = tokens.slice(0, tokens.length - 2);
+                    if (leftPartTokens.length === 0) { 
+                        return "خطأ: تعبير غير صالح للعملية الأخيرة (لا يوجد جزء أيسر)";
+                    }
+                    
+                    // الجزء الأيسر يجب أن يكون تعبيرًا صالحًا أو رقمًا واحدًا
+                    if (leftPartTokens.length > 0 && (leftPartTokens.length % 2 === 0 && leftPartTokens.length !==1 ) ) { // إذا كان أكثر من رقم، يجب أن يكون الطول فرديًا
+                        if (!(leftPartTokens.length === 1 && typeof leftPartTokens[0] === 'number')) {
+                             console.error("الجزء الأيسر قبل العملية الأخيرة غير صالح:", leftPartTokens);
+                             return "خطأ: الجزء الأيسر غير صالح";
+                        }
+                    }
+
+
+                    const leftResult = calculateSequential(leftPartTokens);
+                    if (typeof leftResult === 'string' && leftResult.startsWith("خطأ:")) return leftResult;
+
+                    return performSimpleCalculation(leftResult, lastNumber, lastOperator);
+                } else { // إذا كانت العملية الأخيرة + أو -
+                    return calculateSequential(tokens);
+                }
+            }
+
+            recognition.onstart = () => {
+                statusSpan.textContent = "الحالة: جاري الاستماع... 🎧";
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                startBtn.classList.add('listening');
+                recognizedTextSpan.textContent = "جاري التعرف...";
+                resultSpan.textContent = "جاري الحساب...";
+            };
+
+            recognition.onend = () => {
+                // هذا يتم استدعاؤه حتى عند حدوث خطأ أو إيقاف يدوي
+                // لذا، تحقق مما إذا كان يجب تغيير الحالة حقًا
+                // (إذا كان startBtn ممكّنًا بالفعل و stopBtn معطل، فهذا يعني أن خطأ أو إيقاف قد عالج هذا بالفعل)
+                if (startBtn.disabled || !stopBtn.disabled) {
+                    statusSpan.textContent = "الحالة: جاهز للاستماع ✅";
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    startBtn.classList.remove('listening');
+                }
+            };
+
+            recognition.onerror = (event) => {
+                let errorMsg = `خطأ في التعرف: ${event.error}`;
+                if (event.error === 'no-speech') errorMsg = "لم يتم الكشف عن صوت. حاول مجدداً";
+                else if (event.error === 'not-allowed') errorMsg = "يجب السماح باستخدام الميكروفون";
+                else if (event.error === 'audio-capture') errorMsg = "مشكلة في التقاط الصوت";
+                
+                console.error("Speech recognition error:", event);
+                statusSpan.textContent = errorMsg;
+                recognizedTextSpan.textContent = "حدث خطأ في التعرف";
+                resultSpan.textContent = "لا يمكن الحساب";
+                
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                recognizedTextSpan.textContent = transcript;
+                statusSpan.textContent = "الحالة: جاري معالجة النص...";
+                
+                const tokens = tokenizeVoiceTranscript(transcript);
+
+                if (tokens && tokens.length > 0) {
+                    const result = calculateWithCustomLogic(tokens);
+                    resultSpan.textContent = (typeof result === 'number') ? 
+                        (Number.isInteger(result) ? result : parseFloat(result.toFixed(4))) : 
+                        result;
+                    statusSpan.textContent = resultSpan.textContent.toString().startsWith("خطأ:") ? "الحالة: خطأ في الحساب" : "الحالة: تم الحساب بنجاح! 🎉";
+                } else {
+                    resultSpan.textContent = "تعبير صوتي غير صالح";
+                    statusSpan.textContent = "الحالة: يرجى قول تعبير حسابي صحيح";
+                }
+                 // recognition.stop(); // قد ترغب في إيقاف التعرف بعد نتيجة واحدة
+                 // onend سيقوم بتحديث الأزرار والحالة
+            };
+
+            startBtn.onclick = () => {
+              try {
+                if (recognition.start) { // تحقق من وجود الدالة قبل استدعائها
+                    recognition.start();
+                } else {
+                    throw new Error("recognition.start is not a function");
+                }
+              } catch (e) {
+                console.error("Error starting recognition:", e);
+                statusSpan.textContent = "خطأ عند بدء التعرف الصوتي: " + e.message;
+                  startBtn.disabled = false;
+                  stopBtn.disabled = true;
+                  startBtn.classList.remove('listening'); // تأكد من إزالة الفئة
+              }
+            };
+            stopBtn.onclick = () => {
+              try {
+                if (recognition.stop) { // تحقق من وجود الدالة
+                    recognition.stop(); // onend سيتولى الباقي
+                } else {
+                    throw new Error("recognition.stop is not a function");
+                }
+              } catch (e) {
+                console.error("Error stopping recognition:", e);
+                // إعادة تعيين الحالة يدويًا كإجراء احتياطي إذا لم يتم تشغيل onend بشكل صحيح
+                statusSpan.textContent = "الحالة: خطأ عند الإيقاف.";
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+              }
+            };
+
+            calculateManualBtn.onclick = () => {
+                const input = manualExpressionInput.value; // لا حاجة لـ .trim() هنا، دالة tokenize تهتم به
+                if (!input.trim()) { // تحقق من الإدخال الفارغ بعد إزالة المسافات
+                    resultSpan.textContent = "خطأ: يرجى إدخال تعبير";
+                    recognizedTextSpan.textContent = "لا يوجد (إدخال يدوي فارغ)";
+                    statusSpan.textContent = "الحالة: الإدخال اليدوي فارغ";
+                    return;
+                }
+                
+                console.log("Manual input:", input);
+                const tokens = tokenizeManualExpression(input);
+                console.log("Manual Tokens from function:", tokens);
+
+                if (tokens && tokens.length > 0) {
+                    const result = calculateWithCustomLogic(tokens);
+                    recognizedTextSpan.textContent = input + " (إدخال يدوي)";
+                    resultSpan.textContent = (typeof result === 'number') ? 
+                        (Number.isInteger(result) ? result : parseFloat(result.toFixed(4))) : 
+                        result;
+                    statusSpan.textContent = resultSpan.textContent.toString().startsWith("خطأ:") ? "الحالة: خطأ في الحساب اليدوي" : "الحالة: تم الحساب يدوياً بنجاح! 👍";
+                } else {
+                    recognizedTextSpan.textContent = input + " (إدخال يدوي)";
+                    resultSpan.textContent = "تعبير يدوي غير صالح";
+                    statusSpan.textContent = "الحالة: صيغة يدوية غير صحيحة";
+                }
+            };
+
+            clearBtn.onclick = () => {
+                recognizedTextSpan.textContent = "لا يوجد";
+                resultSpan.textContent = "لا يوجد";
+                statusSpan.textContent = "الحالة: جاهز للاستماع ✅";
+                manualExpressionInput.value = '';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+                if (recognition && recognition.abort) { // إذا كان التعرف نشطًا، قم بإلغائه
+                    try { recognition.abort(); } catch(e) { console.warn("Error aborting recognition on clear:", e); }
+                }
+            };
+
+            manualExpressionInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // منع السلوك الافتراضي للـ Enter (مثل إرسال نموذج)
+                    calculateManualBtn.click();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

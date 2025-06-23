@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة استخراج النصوص من PDF مع OCR</title>
+    <!-- Load pdf.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        } else {
+            console.error("pdf.js library is not loaded!");
+        }
+    </script>
+    <!-- Load Tesseract.js Library -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #17a2b8;
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --ocr-progress-color: #fd7e14; /* Orange for OCR progress */
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #3a3a3a;
+            --progress-bg: #555;
+            --progress-value-bg: var(--primary-color);
+            --footer-bg: #222;
+            --footer-text: #aaa;
+            --text-output-header-bg: #4a4a4a;
+            --gold-start: #DAA520;
+            --gold-end: #EEE8AA;
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+        }
+
+        .tool-container {
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 850px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tool-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--gold-start), var(--gold-end));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+         .info-box {
+            background-color: var(--ocr-progress-color); color: #fff; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .info-box strong { font-weight: 700;}
+
+
+        #pdfInput { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #0069d9, #138496); box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfoDisplay {
+            display: block; margin-top: 10px; margin-bottom: 20px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--primary-color), #0062cc); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin: 15px 0;
+            box-shadow: 0 6px 18px rgba(0, 123, 255, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(0, 123, 255, 0.4);
+            background: linear-gradient(135deg, #0069d9, #005cbf);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar.ocr-progress::-webkit-progress-value { background-color: var(--ocr-progress-color); }
+        #progressBar.ocr-progress::-moz-progress-bar { background-color: var(--ocr-progress-color); }
+
+
+        #statusDiv { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #textActionsContainer {
+            margin-top: 25px; display: none; flex-wrap: wrap; justify-content: center; gap: 10px;
+        }
+        .action-button {
+            background-color: var(--primary-color); color: var(--button-text-color); padding: 10px 20px; text-decoration: none; border-radius: 8px;
+            font-size: 0.95rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); min-width: 150px; text-align: center;
+        }
+        .action-button:hover { background-color: #0069d9; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(0, 123, 255, 0.5); }
+        .action-button.clear-btn { background-color: var(--warning-color); color: #333; }
+        .action-button.clear-btn:hover { background-color: #e0a800; }
+        .action-button.sort-btn { background-color: var(--secondary-color); }
+        .action-button.sort-btn:hover { background-color: #138496; }
+
+
+        #textOutputContainer {
+            margin-top: 20px; border: 1px solid var(--preview-border); border-radius: var(--border-radius);
+            background-color: var(--preview-bg); padding: 15px; text-align: right;
+            font-size: 0.9rem; color: var(--text-color); max-height: 400px; overflow-y: auto;
+            line-height: 1.7; display: none;
+        }
+        #textOutputContainer .page-content {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--preview-border);
+        }
+        #textOutputContainer .page-content:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .page-header-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--text-output-header-bg);
+            padding: 8px 12px;
+            margin: -15px -15px 15px -15px;
+            border-top-left-radius: var(--border-radius);
+            border-top-right-radius: var(--border-radius);
+        }
+        .page-header-wrapper .page-title-text {
+            font-size: 1.1em;
+            color: var(--secondary-color);
+            margin: 0;
+            font-weight: 700;
+        }
+        .copy-page-btn {
+            background-color: var(--primary-color);
+            color: var(--button-text-color);
+            padding: 5px 10px;
+            font-size: 0.8em;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            margin-left: 10px;
+        }
+        .copy-page-btn:hover {
+            background-color: #0069d9;
+            transform: scale(1.05);
+        }
+
+         #textOutputContainer h3.sorted-header {
+            background-color: var(--text-output-header-bg);
+            color: var(--secondary-color);
+            padding: 8px 12px;
+            margin: 0 0 15px 0;
+            border-radius: calc(var(--border-radius) - 5px);
+            font-size: 1.1em;
+            text-align: center;
+        }
+        #textOutputContainer pre {
+            white-space: pre-wrap;
+            white-space: -moz-pre-wrap;
+            white-space: -pre-wrap;
+            white-space: -o-pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Cairo', 'Consolas', 'Monaco', monospace;
+            margin-top: 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: var(--footer-bg);
+            color: var(--footer-text); font-size: 0.85em; margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .tool-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfoDisplay { font-size: 0.95em; }
+            #textOutputContainer { font-size: 1em; max-height: 500px; padding: 20px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #statusDiv { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            .action-button { padding: 12px 25px; font-size: 1rem; }
+            .copy-page-btn { padding: 6px 12px; font-size: 0.85em; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            footer { font-size: 0.9em; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="tool-container">
+        <h1>  استخراج النصوص من PDF <small>(  OCR  )</small></h1>
+
+         <div class="info-box">
+            <strong>ملاحظة:</strong> إذا لم يتمكن الاستخراج القياسي من العثور على نص، ستحاول الأداة استخدام تقنية OCR (التعرف الضوئي على الحروف). هذه العملية قد تكون <strong>بطيئة</strong> وتحتاج الى وقت، خاصة للملفات الكبيرة. الرجاء التحلي بالصبر.
+        </div>
+
+
+        <label for="pdfInput" class="file-label">اختر ملف PDF (ملف واحد فقط)</label>
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <span id="fileInfoDisplay">لم يتم اختيار أي ملف.</span>
+
+        <button id="processBtn" disabled>بدء الاستخراج</button>
+
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+        <div id="statusDiv"></div>
+
+        <div id="textActionsContainer">
+            <button id="copyTextBtn" class="action-button">نسخ النص بالكامل</button>
+            <button id="sortTextBtn" class="action-button sort-btn">ترتيب أبجدي (أ-ي)</button>
+            <button id="clearTextBtn" class="action-button clear-btn">مسح النص المعروض</button>
+        </div>
+
+        <div id="textOutputContainer">
+            <!-- Extracted text will be displayed here -->
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+
+    <script>
+        console.log("Text Extractor Script with OCR Fallback start.");
+
+        if (typeof pdfjsLib === 'undefined' || !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            // ... (same error handling as before)
+        } else if (typeof Tesseract === 'undefined') {
+            console.error("Tesseract.js library is not loaded!");
+            alert("خطأ: لم يتم تحميل مكتبة OCR اللازمة (Tesseract.js). قد لا يعمل الاستخراج من الصور.");
+            // Optionally disable OCR related functionality or the entire tool
+        }
+         else {
+            console.log("pdf.js, worker, and Tesseract.js configured successfully.");
+
+            const pdfInputEl = document.getElementById('pdfInput');
+            const fileInfoDisplay = document.getElementById('fileInfoDisplay');
+            const processBtn = document.getElementById('processBtn');
+            const progressBarContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusDiv = document.getElementById('statusDiv');
+            const textActionsContainer = document.getElementById('textActionsContainer');
+            const textOutputContainer = document.getElementById('textOutputContainer');
+            const copyTextBtn = document.getElementById('copyTextBtn');
+            const clearTextBtn = document.getElementById('clearTextBtn');
+            const sortTextBtn = document.getElementById('sortTextBtn');
+
+            let currentFile = null;
+            let currentFileBuffer = null;
+            let extractedPagesText = [];
+            let isProcessing = false;
+            let isSortedView = false;
+            let tesseractWorker = null; // To hold the Tesseract worker instance
+
+            function formatBytes(bytes, decimals = 2) { /* ... */ }
+            // ... (resetUIForNewFile, updateUIState, renderExtractedText - are the same as your previous version)
+            // Make sure renderExtractedText correctly handles empty extractedPagesText if OCR also fails.
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 بايت';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            function resetUIForNewFile() {
+                currentFile = null;
+                currentFileBuffer = null;
+                extractedPagesText = [];
+                isSortedView = false;
+                sortTextBtn.textContent = "ترتيب أبجدي (أ-ي)";
+                textOutputContainer.innerHTML = '';
+                textOutputContainer.style.display = 'none';
+                textActionsContainer.style.display = 'none';
+                fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
+                fileInfoDisplay.style.color = 'var(--text-color)';
+                statusDiv.textContent = '';
+                processBtn.disabled = true;
+                progressBarContainer.style.display = 'none';
+                progressBar.value = 0;
+                progressBar.classList.remove('ocr-progress');
+            }
+
+            function updateUIState(processing = isProcessing) {
+                processBtn.disabled = !currentFile || processing;
+                pdfInputEl.disabled = processing;
+
+                if (processing) {
+                    statusDiv.innerHTML = statusDiv.innerHTML || 'جاري المعالجة... <div class="spinner"></div>'; // Preserve current status if already set
+                    progressBarContainer.style.display = 'block';
+                    textActionsContainer.style.display = 'none';
+                } else {
+                    const spinner = statusDiv.querySelector('.spinner');
+                    if (spinner) spinner.remove();
+                }
+                 if (extractedPagesText.length > 0 && !processing) {
+                    textActionsContainer.style.display = 'flex';
+                    textOutputContainer.style.display = 'block';
+                } else if (!processing && !isSortedView) {
+                    textActionsContainer.style.display = 'none';
+                }
+            }
+            
+            pdfInputEl.addEventListener("change", async (e) => {
+                const inputElement = e.target;
+                if (isProcessing) { if (inputElement) inputElement.value = null; return; }
+                resetUIForNewFile();
+                const file = inputElement.files[0];
+                if (!file) { if (inputElement) inputElement.value = null; return; }
+                if (file.type !== 'application/pdf') {
+                    fileInfoDisplay.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF.`;
+                    fileInfoDisplay.style.color = 'var(--danger-color)';
+                    if (inputElement) inputElement.value = null; return;
+                }
+                statusDiv.innerHTML = 'جاري قراءة الملف... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                try {
+                    const buffer = await file.arrayBuffer();
+                    currentFile = file; currentFileBuffer = buffer;
+                    fileInfoDisplay.textContent = `الملف المختار: ${currentFile.name} (${formatBytes(currentFile.size)})`;
+                    fileInfoDisplay.style.color = 'var(--success-color)';
+                    statusDiv.textContent = 'الملف جاهز للاستخراج.';
+                    updateUIState(false);
+                } catch (error) {
+                    console.error("Error reading file:", error);
+                    fileInfoDisplay.textContent = `خطأ في قراءة الملف: ${error.message || 'فشل تحميل الملف.'}`;
+                    fileInfoDisplay.style.color = 'var(--danger-color)';
+                    statusDiv.textContent = `خطأ في قراءة الملف.`; statusDiv.style.color = 'var(--danger-color)';
+                    updateUIState(false);
+                } finally { if (inputElement) inputElement.value = null; }
+            });
+
+            function renderExtractedText(showSorted = false, sortedTextArray = null) {
+                textOutputContainer.innerHTML = '';
+                isSortedView = showSorted;
+                if (showSorted && sortedTextArray) {
+                    const header = document.createElement('h3');
+                    header.classList.add('sorted-header');
+                    header.textContent = 'النص مرتب أبجديًا (الكلمات الفريدة):';
+                    textOutputContainer.appendChild(header);
+                    const pre = document.createElement('pre');
+                    pre.textContent = sortedTextArray.join('\n');
+                    textOutputContainer.appendChild(pre);
+                } else if (extractedPagesText.length > 0 && extractedPagesText.some(t => t && t.trim() !== "")) { // Check if any page has actual text
+                    extractedPagesText.forEach((pageText, index) => {
+                        const pageDiv = document.createElement('div');
+                        pageDiv.classList.add('page-content');
+                        const pageHeaderWrapper = document.createElement('div');
+                        pageHeaderWrapper.classList.add('page-header-wrapper');
+                        const pageTitleText = document.createElement('h3');
+                        pageTitleText.classList.add('page-title-text');
+                        pageTitleText.textContent = `صفحة ${index + 1}`;
+                        pageHeaderWrapper.appendChild(pageTitleText);
+                        const copyPageButton = document.createElement('button');
+                        copyPageButton.classList.add('copy-page-btn');
+                        copyPageButton.textContent = 'نسخ نص الصفحة';
+                        copyPageButton.dataset.pageIndex = index;
+                        copyPageButton.addEventListener('click', async (event) => {
+                            const btn = event.currentTarget;
+                            const pageIdx = parseInt(btn.dataset.pageIndex, 10);
+                            const textToCopyForPage = extractedPagesText[pageIdx];
+                            if (textToCopyForPage && textToCopyForPage.trim()) {
+                                try {
+                                    await navigator.clipboard.writeText(textToCopyForPage.trim());
+                                    statusDiv.textContent = `تم نسخ نص الصفحة ${pageIdx + 1} إلى الحافظة!`;
+                                    statusDiv.style.color = 'var(--success-color)';
+                                } catch (err) {
+                                    statusDiv.textContent = `فشل نسخ نص الصفحة ${pageIdx + 1}.`; statusDiv.style.color = 'var(--danger-color)';
+                                }
+                            } else {
+                                statusDiv.textContent = `لا يوجد نص فعلي في الصفحة ${pageIdx + 1} لنسخه.`; statusDiv.style.color = 'var(--warning-color)';
+                            }
+                        });
+                        pageHeaderWrapper.appendChild(copyPageButton);
+                        pageDiv.appendChild(pageHeaderWrapper);
+                        const pre = document.createElement('pre');
+                        pre.textContent = pageText.trim() || "[لم يتم العثور على نص في هذه الصفحة]";
+                        pageDiv.appendChild(pre);
+                        textOutputContainer.appendChild(pageDiv);
+                    });
+                } else if (!showSorted) {
+                    textOutputContainer.textContent = "لم يتم استخراج أي نص أو أن الملف فارغ. قد يكون النص في الملف عبارة عن صورة غير قابلة للاستخراج بالطرق الحالية.";
+                }
+                textOutputContainer.style.display = 'block';
+                textActionsContainer.style.display = 'flex';
+                textOutputContainer.scrollTop = 0;
+            }
+
+            async function initializeTesseractWorker() {
+                if (tesseractWorker) {
+                    await tesseractWorker.terminate(); // Terminate existing worker if any
+                }
+                statusDiv.innerHTML = 'تهيئة محرك OCR (Tesseract.js)... <div class="spinner"></div>';
+                tesseractWorker = await Tesseract.createWorker('ara', 1, { // 'ara' for Arabic, 1 for OEM_LSTM_ONLY
+                    logger: m => {
+                        console.log(m);
+                        if (m.status === 'recognizing text') {
+                            const progressPercent = Math.round(m.progress * 100);
+                            statusDiv.innerHTML = `المرحلة 2 (OCR): جاري التعرف (${progressPercent}%)... <div class="spinner"></div>`;
+                            progressBar.value = 50 + (m.progress * 45); // OCR progress contributes to the latter half
+                        } else if (m.status === 'loading language model') {
+                             statusDiv.innerHTML = `المرحلة 2 (OCR): تحميل نموذج اللغة العربية (${Math.round(m.progress * 100)}%)... <div class="spinner"></div>`;
+                        }
+                         else {
+                            // statusDiv.innerHTML = `المرحلة 2 (OCR): ${m.status}... <div class="spinner"></div>`;
+                        }
+                    },
+                    // Optional: Specify workerPath and corePath if not using CDN or if self-hosting
+                    // workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@v5.0.0/dist/worker.min.js',
+                    // langPath: 'https://tessdata.projectnaptha.com/4.0.0_best', // For language data
+                    // corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@v5.0.0/tesseract-core.wasm.js',
+                });
+                // No need for loadLanguage and initialize separately in Tesseract.js v4+ when specified in createWorker
+                // await tesseractWorker.loadLanguage('ara');
+                // await tesseractWorker.initialize('ara');
+                statusDiv.innerHTML = 'محرك OCR جاهز. <div class="spinner"></div>';
+                return tesseractWorker;
+            }
+
+
+            processBtn.addEventListener('click', async function() {
+                if (!currentFileBuffer || !currentFile || isProcessing) {
+                    statusDiv.textContent = 'الرجاء اختيار ملف PDF صالح أولاً.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+
+                isProcessing = true;
+                extractedPagesText = [];
+                isSortedView = false;
+                sortTextBtn.textContent = "ترتيب أبجدي (أ-ي)";
+                updateUIState();
+                progressBar.value = 0;
+                progressBar.classList.remove('ocr-progress');
+
+
+                statusDiv.innerHTML = 'جاري تحليل ملف PDF... <div class="spinner"></div>';
+                console.log(`[Extractor] Processing file: ${currentFile.name}`);
+
+                try {
+                    const loadingTask = pdfjsLib.getDocument({ data: currentFileBuffer });
+                    const pdfDoc = await loadingTask.promise;
+                    const numPages = pdfDoc.numPages;
+                    let textFoundUsingPdfJs = false;
+
+                    // --- STAGE 1: Try standard pdf.js text extraction ---
+                    statusDiv.innerHTML = `المرحلة 1: محاولة استخراج النص القياسي (${numPages} صفحات)... <div class="spinner"></div>`;
+                    for (let i = 1; i <= numPages; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const textContent = await page.getTextContent({normalizeWhitespace: true, disableCombineTextItems: false});
+                        let pageText = textContent.items.map(item => item.str).join(' ').trim();
+                        
+                        console.log(`[Extractor] Page ${i} (pdf.js): Found ${textContent.items.length} items. Text length: ${pageText.length}`);
+
+                        if (pageText.length > 2) { // Consider text found if more than a couple of chars
+                            textFoundUsingPdfJs = true;
+                        }
+                        extractedPagesText.push(pageText);
+                        progressBar.value = 10 + Math.round(((i / numPages) * 40));
+                        statusDiv.innerHTML = `المرحلة 1: استخراج نص قياسي من صفحة ${i}/${numPages}... <div class="spinner"></div>`;
+                        await new Promise(resolve => setTimeout(resolve, 5));
+                    }
+
+                    // --- STAGE 2: If no significant text found with pdf.js, try OCR ---
+                    if (!textFoundUsingPdfJs && typeof Tesseract !== 'undefined') {
+                        progressBar.classList.add('ocr-progress');
+                        statusDiv.innerHTML = `المرحلة 2: لم يتم العثور على نص قياسي كافٍ. محاولة OCR (قد يستغرق وقتًا طويلاً)... <div class="spinner"></div>`;
+                        console.log("[Extractor] Standard extraction found little/no text. Attempting OCR.");
+                        extractedPagesText = []; // Reset for OCR results
+
+                        if (!tesseractWorker) {
+                            tesseractWorker = await initializeTesseractWorker();
+                        } else { // Ensure it's ready
+                            try {
+                                await tesseractWorker.getPDF('حصاد الأرواح'); // Quick check if worker is alive
+                            } catch(e) { // If check fails, reinitialize
+                                console.warn("Tesseract worker was not responsive, reinitializing.");
+                                tesseractWorker = await initializeTesseractWorker();
+                            }
+                        }
+
+
+                        for (let i = 1; i <= numPages; i++) {
+                            statusDiv.innerHTML = `المرحلة 2 (OCR): تجهيز الصفحة ${i}/${numPages} للتعرف الضوئي... <div class="spinner"></div>`;
+                            const page = await pdfDoc.getPage(i);
+                            const viewport = page.getViewport({ scale: 2.0 }); // Higher scale might improve OCR
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+
+                            await page.render({ canvasContext: context, viewport: viewport }).promise;
+                            
+                            statusDiv.innerHTML = `المرحلة 2 (OCR): جاري التعرف على نص الصفحة ${i}/${numPages}... <div class="spinner"></div>`;
+                            // The logger in createWorker will update progress from here
+                            const { data: { text } } = await tesseractWorker.recognize(canvas);
+                            console.log(`[Extractor] Page ${i} (OCR): Text length: ${text.length}`);
+                            extractedPagesText.push(text.trim());
+                            // Progress bar updated by tesseract logger, but we ensure base progress for page completion
+                            progressBar.value = 50 + Math.round(((i / numPages) * 45));
+                        }
+                         statusDiv.innerHTML = `اكتملت محاولة OCR لجميع الصفحات! <div class="spinner"></div>`;
+                    } else if (!textFoundUsingPdfJs && typeof Tesseract === 'undefined') {
+                        statusDiv.textContent = "لم يتم العثور على نص قياسي، ومكتبة OCR (Tesseract.js) غير متاحة.";
+                        statusDiv.style.color = 'var(--warning-color)';
+                    }
+
+
+                    progressBar.value = 100;
+                    if (extractedPagesText.some(text => text && text.trim().length > 0)) {
+                        statusDiv.textContent = `اكتمل استخراج النص بنجاح من ${numPages} صفحات!`;
+                        statusDiv.style.color = 'var(--success-color)';
+                    } else {
+                        statusDiv.textContent = `تمت معالجة الملف، ولكن لم يتم العثور على نص قابل للاستخراج في ${numPages} صفحات حتى مع OCR.`;
+                        statusDiv.style.color = 'var(--warning-color)';
+                    }
+                    renderExtractedText();
+
+                } catch (error) {
+                    console.error("[Extractor] Error during PDF processing:", error);
+                    statusDiv.textContent = `حدث خطأ أثناء استخراج النص: ${error.message || 'فشل غير متوقع.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    if (error.name === 'PasswordException') {
+                         statusDiv.textContent += ' الملف محمي بكلمة مرور وغير مدعوم حاليًا.';
+                    }
+                    textOutputContainer.style.display = 'none';
+                } finally {
+                    isProcessing = false;
+                    updateUIState();
+                    // Terminate worker if it was created and no longer processing
+                    // if (tesseractWorker && !isProcessing) {
+                    //    await tesseractWorker.terminate();
+                    //    tesseractWorker = null;
+                    //    console.log("Tesseract worker terminated.");
+                    // }
+                    setTimeout(() => {
+                        if (progressBar.value === 100 && !statusDiv.textContent.includes('خطأ')) {
+                            progressBarContainer.style.display = 'none';
+                        }
+                    }, 1500);
+                }
+            });
+
+            // --- Action Button Handlers (Copy, Clear, Sort) ---
+            // These should be the same as your previous version.
+            copyTextBtn.addEventListener('click', async () => { /* ... */ });
+            clearTextBtn.addEventListener('click', () => { /* ... */ });
+            sortTextBtn.addEventListener('click', () => { /* ... */ });
+
+            // --- Initial UI Setup ---
+            resetUIForNewFile();
+            updateUIState();
+            console.log("Text Extractor with OCR script initialization complete.");
+        }
+    </script>
+
+</body>
+</html>​

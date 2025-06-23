@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>قائمة القاعات الامتحانية</title>
+    <meta name="description" content="خدمة مجانية لعمل خرائط توزيع للتلاميذ وحسب عدد القاعات المحددة قم بتوزيع التلاميذ بسهولة ودقة عالية في الخرائط الامتحانية الوزارية.">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            font-size: 14px;
+            font-family: 'Tajawal', sans-serif;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: #e9e9e9;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .controls button:hover {
+            background-color: #d0d0d0;
+        }
+
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm 15mm;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            box-sizing: border-box;
+            border: 1px solid #333;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .header-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin: 0 0 2px 0;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            font-weight: 500;
+            margin: 0 0 5px 0; 
+            line-height: 1.6;
+        }
+
+        .title-and-stats-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px; 
+            margin-bottom: 25px;
+            min-height: 40px;
+        }
+
+        .stats-inline-group {
+            display: flex;
+            flex-direction: column;
+            font-size: 11.5px;
+            line-height: 1.5;
+            padding: 0 5px;
+            flex-shrink: 0;
+        }
+        
+        .stats-group-males-females {
+            align-items: flex-end;
+        }
+        .stats-group-yarmouk-yaqout {
+            align-items: flex-start;
+        }
+
+        /* Placeholder styles for contenteditable */
+        [contenteditable="true"]:empty::before {
+            content: attr(data-placeholder);
+            color: #aaa; /* Placeholder text color */
+            pointer-events: none; /* Make placeholder unselectable */
+            display: block; /* Ensure it takes up space */
+        }
+
+        [contenteditable="true"] {
+            padding: 1px 0; /* Default padding, adjust as needed */
+            border: 1px dashed transparent;
+            min-height: 1.2em; /* Ensure clickable */
+        }
+        
+        .stats-inline-group span[contenteditable="true"],
+        .student-box [contenteditable="true"],
+        .header [contenteditable="true"],
+        .main-title-container-inline h1[contenteditable="true"],
+        .sector-title[contenteditable="true"],
+        .page-number-container div[contenteditable="true"] {
+             /* No specific padding here, controlled by parent or general [contenteditable] */
+        }
+
+
+        [contenteditable="true"]:focus {
+            border-color: #007bff;
+            background-color: #f0f8ff;
+            outline: none;
+        }
+        
+        /* Ensure placeholder is hidden when focused and empty if desired, */
+        /* or let it show until first char is typed. */
+        /* Current CSS :empty::before handles this well. */
+
+
+        .main-title-container-inline {
+            text-align: center;
+            flex-grow: 0;
+            flex-shrink: 1;
+            padding: 0 5px;
+        }
+        
+        .main-title-container-inline h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 0;
+            border-bottom: 3px solid black;
+            display: inline-block;
+            padding-bottom: 4px;
+            letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+        
+        .sector {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .sector-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin: 20px 0 15px 0;
+            border-bottom: 2px dashed black;
+            display: inline-block;
+            padding-bottom: 3px;
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px 12px;
+        }
+
+        .student-box {
+            border: 1px solid black;
+            padding: 8px 5px;
+            text-align: center;
+            font-size: 12px;
+            min-height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        
+        .student-name {
+            font-weight: 700;
+            font-size: 13.5px;
+            margin-bottom: 2px;
+        }
+        
+        .student-school {
+             font-size: 11.5px;
+             margin-bottom: 2px;
+        }
+        
+        .student-id {
+            font-size: 12.5px;
+            font-weight: 500;
+            letter-spacing: 0.5px; 
+        }
+        
+        .page-number-container {
+            text-align: left;
+            margin-top: 15px;
+            padding-left: 5mm;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .a4-page {
+                width: 98%;
+                min-height: 0;
+                padding: 10mm 8mm;
+                margin-top: 10px;
+            }
+            .title-and-stats-line {
+                flex-direction: column;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+            .stats-inline-group {
+                align-items: center;
+                margin-bottom: 5px;
+                font-size: 12px;
+            }
+            .stats-group-males-females, .stats-group-yarmouk-yaqout {
+                 align-items: center;
+            }
+            .stats-inline-group span[contenteditable="true"] {
+                text-align: center;
+            }
+            .main-title-container-inline h1 {
+                font-size: 28px;
+            }
+            .student-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .sector-title {
+                font-size: 22px;
+            }
+            .header-title { font-size: 15px; }
+            .header-subtitle { font-size: 12px; }
+        }
+
+        @media (max-width: 480px) {
+             .controls button {
+                font-size: 12px;
+                padding: 7px 9px;
+            }
+            .main-title-container-inline h1 {
+                font-size: 22px; 
+                letter-spacing: 1px;
+            }
+            .student-grid {
+                grid-template-columns: 1fr;
+            }
+            .student-box {
+                font-size: 11px;
+                min-height: 70px;
+                padding: 6px 4px;
+            }
+            .student-name { font-size: 12.5px; }
+            .student-school { font-size: 10.5px; }
+            .student-id { font-size: 11.5px; }
+            .sector-title { font-size: 18px; }
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .controls {
+                display: none !important;
+            }
+            .a4-page {
+                width: 100% !important;
+                height: 100% !important; 
+                min-height: initial !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important; 
+            }
+            @page {
+                size: A4;
+                margin: 12mm 15mm;
+            }
+            [contenteditable="true"]:empty::before { /* Ensure placeholders don't print if empty */
+                content: ""; 
+            }
+            .student-box [contenteditable="true"],
+            .stats-inline-group span[contenteditable="true"],
+            .a4-page [contenteditable="true"]:focus {
+                border-color: transparent !important; 
+                background-color: transparent !important;
+            }
+            .title-and-stats-line {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                flex-direction: row !important; 
+            }
+        }
+         h2 {
+            text-align: center;
+            margin-top: 0;
+         
+            color: #0056b3;
+            font-weight: 700;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    
+     <h2>خرائط توزيع التلاميذ</h2>
+        <p>خدمة مجانية لعمل خرائط توزيع للتلاميذ وحسب عدد القاعات المحددة قم بتوزيع التلاميذ بسهولة ودقة عالية في الخرائط الامتحانية الوزارية</p>
+    
+    <div class="controls">
+        <button id="downloadPdfButton">تحميل PDF</button>
+        <button id="printButton">طباعة</button>
+        <button id="downloadImageButton">تحميل بصيغة صورة</button>
+        <button id="clearPageButton">إفراغ الصفحة</button>
+    </div>
+
+    <div class="a4-page" id="a4PageContent">
+        <div class="header">
+            <!-- إضافة data-placeholder -->
+            <div contenteditable="true" class="header-title" id="header-title1" data-placeholder="إدارة المركز الامتحاني رقم (...)">إدارة المركز الامتحاني رقم (۳۲۹)</div>
+            <div contenteditable="true" class="header-subtitle" id="header-subtitle1" data-placeholder="القاعات الامتحانية للامتحانات العامة/ الفرع (...) للعام الدراسي (... / ...)">القاعات الامتحانية للامتحانات العامة/ الفرع الابتدائي 
+            <br>( السادس ) للعام الدراسي ٢٠٢٣ / ٢٠٢٤</div>
+        </div>
+
+        <div class="title-and-stats-line" id="titleAndStatsLine">
+            <div class="stats-inline-group stats-group-males-females">
+                <span contenteditable="true" id="stats-males" data-placeholder="الذكور = ...">الذكور = ٢١</span>
+                <span contenteditable="true" id="stats-females" data-placeholder="الاناث = ...">الاناث = .</span>
+            </div>
+            
+            <div class="main-title-container-inline">
+                <h1 contenteditable="true" id="main-title" data-placeholder="قاعة رقم (...)">قاعـــة رقـــم ( ١ )</h1>
+            </div>
+
+            <div class="stats-inline-group stats-group-yarmouk-yaqout">
+                <span contenteditable="true" id="stats-yarmouk" data-placeholder="اليرموك = ...">اليرموك = ٧</span>
+                <span contenteditable="true" id="stats-yaqout" data-placeholder="الياقوت = ...">الياقوت = ١٤</span>
+            </div>
+        </div>
+
+
+        <div class="sector">
+            <div contenteditable="true" class="sector-title" id="sector-a-title" data-placeholder="قطاع (...)">قطاع ( أ )</div>
+            <div class="student-grid">
+                <!-- تم إضافة data-placeholder لكل حقل طالب -->
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s1-name" data-placeholder="اسم الطالب">احمد منصور شاكر علي</div>
+                    <div contenteditable="true" class="student-school" id="s1-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s1-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٣</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s2-name" data-placeholder="اسم الطالب">احمد لؤي مصطفى هاشم</div>
+                    <div contenteditable="true" class="student-school" id="s2-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s2-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٢</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s3-name" data-placeholder="اسم الطالب">اباذر جلال كامل</div>
+                    <div contenteditable="true" class="student-school" id="s3-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s3-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠١</div>
+                </div>
+                 <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s4-name" data-placeholder="اسم الطالب">حسن إسماعيل عبدالرضا نعيم</div>
+                    <div contenteditable="true" class="student-school" id="s4-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s4-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠٣</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s5-name" data-placeholder="اسم الطالب">بركات مسلم جواد هاشم</div>
+                    <div contenteditable="true" class="student-school" id="s5-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s5-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠٢</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s6-name" data-placeholder="اسم الطالب">باقر احمد فاضل صادق</div>
+                    <div contenteditable="true" class="student-school" id="s6-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s6-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠١</div>
+                </div>
+                 <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s7-name" data-placeholder="اسم الطالب">حامد مسلم طاهر ناصر</div>
+                    <div contenteditable="true" class="student-school" id="s7-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s7-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٦</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s8-name" data-placeholder="اسم الطالب">جعفر صادق محمد عطية</div>
+                    <div contenteditable="true" class="student-school" id="s8-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s8-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٥</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s9-name" data-placeholder="اسم الطالب">جعفر صادق قادر جاسم</div>
+                    <div contenteditable="true" class="student-school" id="s9-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s9-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٤</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sector">
+            <div contenteditable="true" class="sector-title" id="sector-b-title" data-placeholder="قطاع (...)">قطاع ( ب )</div>
+            <div class="student-grid">
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s10-name" data-placeholder="اسم الطالب">حسن جهاد محمد عبدالنبي</div>
+                    <div contenteditable="true" class="student-school" id="s10-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s10-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٩</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s11-name" data-placeholder="اسم الطالب">حسن اياد غريب محمد</div>
+                    <div contenteditable="true" class="student-school" id="s11-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s11-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٨</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s12-name" data-placeholder="اسم الطالب">حسن احمد كاظم رجب</div>
+                    <div contenteditable="true" class="student-school" id="s12-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s12-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠٠٧</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s13-name" data-placeholder="اسم الطالب">حسن علاء نعمة لفتة</div>
+                    <div contenteditable="true" class="student-school" id="s13-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s13-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠٦</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s14-name" data-placeholder="اسم الطالب">حسن طالب شاكر حبيب</div>
+                    <div contenteditable="true" class="student-school" id="s14-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s14-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠٥</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s15-name" data-placeholder="اسم الطالب">حسن حسين علي حسين</div>
+                    <div contenteditable="true" class="student-school" id="s15-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s15-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠٤</div>
+                </div>
+                 <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s16-name" data-placeholder="اسم الطالب">حسن نوفل عبد الرضا حاتم</div>
+                    <div contenteditable="true" class="student-school" id="s16-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s16-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠١٢</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s17-name" data-placeholder="اسم الطالب">حسن نبيل عبدالواحد</div>
+                    <div contenteditable="true" class="student-school" id="s17-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s17-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠١١</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s18-name" data-placeholder="اسم الطالب">حسن عبدالله عباس جبار</div>
+                    <div contenteditable="true" class="student-school" id="s18-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s18-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠١٠</div>
+                </div>
+                 <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s19-name" data-placeholder="اسم الطالب">حسن ماهر عبدالامير موسى</div>
+                    <div contenteditable="true" class="student-school" id="s19-school" data-placeholder="المدرسة">اليرموك الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s19-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٨٠٠٠٧</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s20-name" data-placeholder="اسم الطالب">حيدر جبار قاسم مهدي</div>
+                    <div contenteditable="true" class="student-school" id="s20-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s20-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠١٤</div>
+                </div>
+                <div class="student-box">
+                    <div contenteditable="true" class="student-name" id="s21-name" data-placeholder="اسم الطالب">حسين عقيل عبدالسلام منصور</div>
+                    <div contenteditable="true" class="student-school" id="s21-school" data-placeholder="المدرسة">الياقوت الابتدائية للبنين</div>
+                    <div contenteditable="true" class="student-id" id="s21-id" data-placeholder="الرقم الامتحاني">٢٤١١٢٩٩٠٠١٣</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-number-container">
+            <div contenteditable="true" id="page-number" data-placeholder="مدير المركز:">مدير المركز:</div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const editableElements = document.querySelectorAll('[contenteditable="true"]');
+            const a4Page = document.getElementById('a4PageContent');
+            // لا حاجة لـ defaultPlaceholders الآن، سنستخدم data-placeholder
+
+            editableElements.forEach(el => {
+                const savedValue = localStorage.getItem(el.id);
+                if (savedValue !== null && savedValue.trim() !== "") { // إذا كان هناك قيمة محفوظة وليست فارغة
+                    el.innerHTML = savedValue;
+                } else {
+                    el.innerHTML = ""; // اجعله فارغًا ليظهر الـ placeholder
+                }
+
+                // الحفظ عند الإدخال
+                el.addEventListener('input', () => {
+                    localStorage.setItem(el.id, el.innerHTML);
+                });
+            });
+
+            document.getElementById('printButton').addEventListener('click', () => {
+                window.print();
+            });
+
+            document.getElementById('downloadPdfButton').addEventListener('click', () => {
+                const { jsPDF } = window.jspdf;
+                const contentToCapture = document.getElementById('a4PageContent');
+                
+                const activeElement = document.activeElement;
+                if (activeElement && typeof activeElement.blur === 'function') {
+                    activeElement.blur(); 
+                }
+                // عند إنشاء PDF، لا نريد أن تظهر الـ placeholders
+                // لذا سنقوم بإزالة السمة data-placeholder مؤقتًا من العناصر الفارغة
+                const emptyElementsWithPlaceholder = [];
+                document.querySelectorAll('.a4-page [contenteditable="true"]:empty').forEach(el => {
+                    if (el.dataset.placeholder) {
+                        emptyElementsWithPlaceholder.push({element: el, placeholder: el.dataset.placeholder});
+                        el.removeAttribute('data-placeholder'); 
+                    }
+                });
+                // إزالة حدود التركيز
+                document.querySelectorAll('.a4-page [contenteditable="true"]').forEach(el => {
+                    el.style.borderColor = 'transparent';
+                    el.style.backgroundColor = '';
+                });
+
+
+                html2canvas(contentToCapture, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: true,
+                    onclone: (clonedDoc) => {
+                        const clonedA4Page = clonedDoc.getElementById('a4PageContent');
+                        if (clonedA4Page) {
+                            clonedA4Page.style.boxShadow = 'none';
+                            clonedA4Page.style.border = 'none';
+                        }
+                        clonedDoc.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                            el.style.borderColor = 'transparent';
+                            el.style.backgroundColor = '';
+                            // تأكد من أن الـ placeholder لا يظهر في الـ canvas
+                            if (el.innerHTML.trim() === "" && el.hasAttribute('data-placeholder')) {
+                                // يمكن تركه كما هو لأن CSS :empty::before لن يعمل في النسخة المستنسخة غالبًا
+                                // أو محاولة إزالة الـ ::before إذا أمكن (معقد)
+                            }
+                        });
+                         // إزالة data-placeholder من العناصر المستنسخة الفارغة أيضًا
+                        clonedDoc.querySelectorAll('.a4-page [contenteditable="true"]:empty').forEach(el => {
+                            if (el.hasAttribute('data-placeholder')) {
+                                el.removeAttribute('data-placeholder');
+                            }
+                        });
+                    }
+                }).then(canvas => {
+                    // إعادة data-placeholder للعناصر الأصلية
+                    emptyElementsWithPlaceholder.forEach(item => {
+                        item.element.setAttribute('data-placeholder', item.placeholder);
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    let imageWidthInPdf = pdf.internal.pageSize.getWidth() - 20;
+                    let imageHeightInPdf = (canvas.height * imageWidthInPdf) / canvas.width;
+
+                    if (imageHeightInPdf > pdf.internal.pageSize.getHeight() - 20) {
+                        imageHeightInPdf = pdf.internal.pageSize.getHeight() - 20;
+                        imageWidthInPdf = (canvas.width * imageHeightInPdf) / canvas.height;
+                    }
+                    
+                    const x = (pdf.internal.pageSize.getWidth() - imageWidthInPdf) / 2;
+                    const y = 10;
+
+                    pdf.addImage(imgData, 'PNG', x, y, imageWidthInPdf, imageHeightInPdf);
+                    pdf.save('قائمة_القاعات.pdf');
+                }).catch(err => {
+                    console.error("Error generating PDF: ", err);
+                     // إعادة data-placeholder في حالة الخطأ أيضًا
+                    emptyElementsWithPlaceholder.forEach(item => {
+                        item.element.setAttribute('data-placeholder', item.placeholder);
+                    });
+                });
+            });
+
+
+            document.getElementById('downloadImageButton').addEventListener('click', () => {
+                const activeElement = document.activeElement;
+                if (activeElement && typeof activeElement.blur === 'function') {
+                    activeElement.blur(); 
+                }
+                // نفس منطق إزالة data-placeholder قبل التقاط الصورة
+                const emptyElementsWithPlaceholderImg = [];
+                document.querySelectorAll('.a4-page [contenteditable="true"]:empty').forEach(el => {
+                     if (el.dataset.placeholder) {
+                        emptyElementsWithPlaceholderImg.push({element: el, placeholder: el.dataset.placeholder});
+                        el.removeAttribute('data-placeholder');
+                     }
+                });
+                editableElements.forEach(el => el.style.borderColor = 'transparent');
+
+                setTimeout(() => { 
+                    html2canvas(a4Page, {
+                        scale: 2.5, 
+                        useCORS: true,
+                        logging: true,
+                        onclone: (clonedDoc) => {
+                            const clonedA4Page = clonedDoc.getElementById('a4PageContent');
+                            if (clonedA4Page) {
+                                clonedA4Page.style.boxShadow = 'none'; 
+                            }
+                            clonedDoc.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                                el.style.borderColor = 'transparent';
+                                el.style.backgroundColor = ''; 
+                            });
+                            clonedDoc.querySelectorAll('.a4-page [contenteditable="true"]:empty').forEach(el => {
+                                if (el.hasAttribute('data-placeholder')) {
+                                    el.removeAttribute('data-placeholder');
+                                }
+                            });
+                        }
+                    }).then(canvas => {
+                        emptyElementsWithPlaceholderImg.forEach(item => {
+                           item.element.setAttribute('data-placeholder', item.placeholder);
+                        });
+
+                        const image = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        link.href = image;
+                        link.download = 'قائمة_القاعات.png';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }).catch(err => {
+                        console.error("Error generating image: ", err);
+                        emptyElementsWithPlaceholderImg.forEach(item => {
+                           item.element.setAttribute('data-placeholder', item.placeholder);
+                        });
+                    });
+                }, 100);
+            });
+
+            document.getElementById('clearPageButton').addEventListener('click', () => {
+                if (confirm('هل أنت متأكد أنك تريد إفراغ جميع الحقول؟ سيتم حذف البيانات المحفوظة أيضًا.')) {
+                    editableElements.forEach(el => {
+                        el.innerHTML = ''; // إفراغ المحتوى ليظهر الـ placeholder
+                        localStorage.removeItem(el.id);
+                    });
+                    alert('تم إفراغ الصفحة. التسميات التوضيحية أصبحت ظاهرة.');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

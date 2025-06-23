@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة X-O التصاعدية مع Howler.js</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.4/howler.min.js"></script>
+    <style>
+        :root {
+            --board-bg: #dfefff;
+            --cell-border: #6c757d;
+            --player-x-bg: #fff3cd;
+            --player-o-bg: #d1ecf1;
+            --text-color: #212529;
+            --button-bg: #007bff;
+            --button-hover-bg: #0056b3;
+            --button-text: white;
+            --background-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            --score-bg: rgba(255, 255, 255, 0.7);
+            --font-family: 'Cairo', sans-serif;
+            --border-radius: 10px;
+            --shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+            --grid-size: 3;
+            --cell-size: clamp(30px, calc(80vw / var(--grid-size, 3)), px);
+            --win-line-color: #d9534f;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; }
+        body { font-family: var(--font-family); background: var(--background-gradient); background-attachment: fixed; color: var(--text-color); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 15px; }
+        .game-container { background-color: rgba(255, 255, 255, 0.9); padding: clamp(15px, 3vw, 30px); border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; max-width: 100%; width: fit-content; min-width: 300px; backdrop-filter: blur(3px); position: relative; z-index: 1;}
+        h1 { margin-bottom: 15px; color: #bf5700; font-size: clamp(1.5rem, 5vw, 2rem); }
+        .game-info { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; padding: 10px; background-color: rgba(248, 249, 250, 0.8); border-radius: var(--border-radius); }
+        #level-display { font-size: clamp(1rem, 3vw, 1.2rem); font-weight: bold; color: #0056b3; }
+        .control-group button { padding: 8px 12px; border: none; border-radius: var(--border-radius); font-family: var(--font-family); font-size: 0.9rem; cursor: pointer; background-color: #6c757d; color: white; transition: background-color 0.3s ease; }
+        .control-group button:hover { background-color: #5a6268; }
+        .control-group button.active { background-color: var(--button-bg); }
+        .scoreboard { display: flex; justify-content: center; gap: clamp(10px, 3vw, 20px); margin-bottom: 15px; padding: 10px; background-color: var(--score-bg); border-radius: var(--border-radius); font-size: clamp(0.9rem, 2.5vw, 1.1rem); flex-wrap: wrap; }
+        .scoreboard div { padding: 6px 12px; border-radius: var(--border-radius); font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .scoreboard .score-x { background-color: var(--player-x-bg); color: #856404;}
+        .scoreboard .score-o { background-color: var(--player-o-bg); color: #0c5460;}
+        .scoreboard .score-draws { background-color: #d6d8db; color: #383d41;}
+        .board-area { position: relative; margin-bottom: 15px; display: inline-block; max-width: 100%; }
+        .board { display: grid; grid-template-columns: repeat(var(--grid-size, 3), var(--cell-size)); grid-template-rows: repeat(var(--grid-size, 3), var(--cell-size)); gap: 3px; background-color: var(--cell-border); border: 3px solid var(--cell-border); width: fit-content; margin: 10px auto; position: relative; box-shadow: var(--shadow); border-radius: 5px; overflow: hidden; max-width: 100%; }
+        .cell { background-color: var(--board-bg); display: flex; justify-content: center; align-items: center; font-size: clamp(1rem, calc(var(--cell-size) * 0.5), 2.5rem); font-weight: bold; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; border-radius: 3px; color: var(--text-color); user-select: none; position: relative; overflow: hidden; aspect-ratio: 1 / 1; }
+        .cell span { display: inline-block; transform: scale(0); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .cell.filled span { transform: scale(1); }
+        .cell:hover:not(.filled) { background-color: #bde0fe; transform: scale(1.03); }
+        .cell.x { background-color: var(--player-x-bg); }
+        .cell.o { background-color: var(--player-o-bg); }
+        .cell.filled { cursor: not-allowed; }
+        .cell.winning { animation: pulseWin 0.8s infinite alternate; }
+        @keyframes pulseWin { from { transform: scale(1); box-shadow: 0 0 5px rgba(40, 167, 69, 0.5); } to { transform: scale(1.05); box-shadow: 0 0 15px rgba(40, 167, 69, 0.9); } }
+        .win-line { position: absolute; background-color: var(--win-line-color); height: max(3px, calc(var(--cell-size) * 0.07)); border-radius: calc(max(3px, calc(var(--cell-size) * 0.07)) / 2); transform-origin: left center; transition: transform 0.5s ease-out, width 0.5s ease-out; z-index: 10; box-shadow: 0 0 6px var(--win-line-color); display: none; }
+        .status { margin: 15px 0; font-size: clamp(1.1rem, 3.5vw, 1.4rem); font-weight: bold; min-height: 1.5em; color: var(--button-bg); transition: color 0.3s ease, transform 0.3s ease; }
+        .status.win { color: #28a745; transform: scale(1.05); }
+        .status.draw { color: #fd7e14; }
+        .status.level-up { color: #6f42c1; }
+        .status.game-over { color: #d9534f; font-size: clamp(1.2rem, 4vw, 1.6rem);}
+        .action-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+        .action-button { padding: 10px 18px; font-size: clamp(0.9rem, 2.8vw, 1rem); font-family: var(--font-family); background-color: var(--button-bg); color: var(--button-text); border: none; border-radius: var(--border-radius); cursor: pointer; transition: background-color 0.3s ease, box-shadow 0.3s ease; box-shadow: var(--shadow); }
+        .action-button.reset-game { background-color: #d9534f; }
+        .action-button:hover { background-color: var(--button-hover-bg); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18); }
+        .action-button.reset-game:hover { background-color: #c9302c; }
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; pointer-events: none; }
+        #audio-warning { display: none; background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; text-align: center; }
+        #audio-warning button { padding: 8px 16px; background: #ffc107; border: none; border-radius: 5px; margin-top: 5px; font-family: var(--font-family); cursor: pointer; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 90%;
+            width: 350px;
+            animation: fadeInScale 0.4s ease-out;
+        }
+        .modal-content h2 {
+            color: var(--button-bg);
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+        }
+        #final-score-display {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+        #final-score-display span {
+            font-weight: bold;
+        }
+        #play-again-button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: var(--font-family);
+        }
+        #play-again-button:hover {
+            background-color: #218838;
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* تحسينات للهواتف */
+        @media (max-width: 768px) {
+            :root {
+                --cell-size: clamp(20px, calc(90vw / var(--grid-size, 3)), 45px);
+            }
+            .cell {
+                font-size: clamp(0.8rem, calc(var(--cell-size) * 0.4), 1.5rem);
+            }
+            .board {
+                gap: 2px;
+                border: 2px solid var(--cell-border);
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --cell-size: clamp(15px, calc(92vw / var(--grid-size, 3)), 35px);
+            }
+            .cell {
+                font-size: clamp(0.7rem, calc(var(--cell-size) * 0.35), 1.2rem);
+            }
+            .board {
+                gap: 1px;
+                border: 1px solid var(--cell-border);
+            }
+            .scoreboard {
+                gap: 5px;
+                padding: 5px;
+                font-size: 0.8rem;
+            }
+            .status {
+                font-size: 1rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="game-container">
+        <h1>لعبة X-O التصاعدية</h1>
+
+        <div class="game-info">
+             <div id="level-display">المستوى: 1</div>
+             <div class="control-group">
+                 <button id="sound-toggle-button" class="active">🔊 الصوت</button>
+             </div>
+        </div>
+
+        <div id="audio-warning"></div>
+
+        <div class="scoreboard">
+            <div class="score-x">X: <span id="score-x">0</span></div>
+            <div class="score-o">O: <span id="score-o">0</span></div>
+            <div class="score-draws">تعادل: <span id="score-draws">0</span></div>
+        </div>
+
+        <div class="board-area">
+            <div id="board" class="board"></div>
+            <div id="win-line" class="win-line"></div>
+        </div>
+
+        <div id="status" class="status">دور اللاعب X</div>
+
+        <div class="action-buttons">
+            <button id="reset-round-button" class="action-button">إعادة المستوى</button>
+            <button id="reset-game-button" class="action-button reset-game">لعبة جديدة</button>
+        </div>
+    </div>
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- نافذة النتائج النهائية -->
+    <div id="final-results-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>🎉 تهانينا! 🎉</h2>
+            <div id="final-score-display">
+                لقد أكملت جميع المستويات بنجاح!<br>
+                النتيجة النهائية:<br>
+                <span>X: 0</span> - <span>O: 0</span> - <span>تعادل: 0</span>
+            </div>
+            <button id="play-again-button">اللعب مرة أخرى</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // عناصر الواجهة
+            const boardElement = document.getElementById('board');
+            const statusElement = document.getElementById('status');
+            const resetRoundButton = document.getElementById('reset-round-button');
+            const resetGameButton = document.getElementById('reset-game-button');
+            const levelDisplayElement = document.getElementById('level-display');
+            const scoreXElement = document.getElementById('score-x');
+            const scoreOElement = document.getElementById('score-o');
+            const scoreDrawsElement = document.getElementById('score-draws');
+            const soundToggleButton = document.getElementById('sound-toggle-button');
+            const winLineElement = document.getElementById('win-line');
+            const confettiCanvas = document.getElementById('confetti-canvas');
+            const audioWarningElement = document.getElementById('audio-warning');
+            let confettiInstance = null;
+             try { confettiInstance = confetti.create(confettiCanvas, { resize: true, useWorker: true }); }
+             catch (e) { console.error("Could not initialize confetti:", e); }
+
+             // عناصر النافذة العائمة
+             const finalResultsModal = document.getElementById('final-results-modal');
+             const finalScoreDisplay = document.getElementById('final-score-display');
+             const playAgainButton = document.getElementById('play-again-button');
+
+            // المؤثرات الصوتية
+            let sounds = {};
+            let isSoundEnabled = true;
+            let audioInitialized = false;
+
+            // حالة اللعبة
+            const maxLevel = 10;
+            let currentLevel = 1;
+            let gridSize = 3;
+            let winCondition = 3;
+            let boardState = [];
+            let levelStartPlayer = 'X';
+            let currentPlayer = 'X';
+            let gameActive = true;
+            let scores = { X: 0, O: 0, draws: 0 };
+            let cells = [];
+
+            function initializeAudio() {
+                if (audioInitialized) return;
+
+                try {
+                    // إنشاء سياق الصوت
+                    Howler.init();
+                    
+                    // تحميل الأصوات كملفات صوتية مضمنة (Base64)
+                    sounds.click = new Howl({
+                        src: ['data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'],
+                        volume: 0.4
+                    });
+
+                    sounds.win = new Howl({
+                        src: ['data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQبHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'],
+                        volume: 0.7
+                    });
+
+                    sounds.draw = new Howl({
+                        src: ['data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQبHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'],
+                        volume: 0.6
+                    });
+
+                    sounds.levelUp = new Howl({
+                        src: ['data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVelLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQبHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'],
+                        volume: 0.7
+                    });
+
+                    sounds.gameOver = new Howl({
+                        src: ['data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVelLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQبHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV'],
+                        volume: 0.8
+                    });
+
+                    audioInitialized = true;
+                    console.log("Audio initialized successfully");
+                    
+                    // تشغيل صوت اختباري عند التهيئة الناجحة
+                    if (isSoundEnabled) {
+                        sounds.click.play();
+                    }
+                    
+                } catch (e) {
+                    console.error("Audio initialization failed:", e);
+                    // استخدم نظام الصوت البديل إذا فشل Howler.js
+                    setupFallbackAudio();
+                }
+            }
+
+            // نظام الصوت البديل باستخدام Web Audio API
+            function setupFallbackAudio() {
+                console.log("Setting up fallback audio system");
+                
+                sounds = {
+                    click: { play: () => playFallbackSound(800, 'sine', 0.2, 0.1) },
+                    win: { play: () => playFallbackSound(1046.5, 'triangle', 0.3, 0.5) },
+                    draw: { play: () => playFallbackSound(523.25, 'sine', 0.2, 0.3) },
+                    levelUp: { 
+                        play: () => {
+                            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioCtx.createOscillator();
+                            const gainNode = audioCtx.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioCtx.destination);
+                            
+                            oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                            oscillator.frequency.exponentialRampToValueAtTime(1046.5, audioCtx.currentTime + 0.5);
+                            gainNode.gain.value = 0.3;
+                            oscillator.type = 'sine';
+                            
+                            oscillator.start();
+                            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                            oscillator.stop(audioCtx.currentTime + 0.8);
+                        }
+                    },
+                    gameOver: { 
+                        play: () => {
+                            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioCtx.createOscillator();
+                            const gainNode = audioCtx.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioCtx.destination);
+                            
+                            oscillator.frequency.setValueAtTime(1046.5, audioCtx.currentTime);
+                            oscillator.frequency.exponentialRampToValueAtTime(261.63, audioCtx.currentTime + 0.7);
+                            gainNode.gain.value = 0.3;
+                            oscillator.type = 'sine';
+                            
+                            oscillator.start();
+                            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.0);
+                            oscillator.stop(audioCtx.currentTime + 1.0);
+                        }
+                    }
+                };
+                
+                audioInitialized = true;
+                console.log("Fallback audio system ready");
+            }
+
+            function playFallbackSound(freq, type, volume, duration) {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.frequency.value = freq;
+                    gainNode.gain.value = volume;
+                    oscillator.type = type;
+                    
+                    oscillator.start();
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                    oscillator.stop(audioCtx.currentTime + duration);
+                } catch (e) {
+                    console.error("Error playing fallback sound:", e);
+                }
+            }
+
+            // دالة تشغيل الصوت المعدلة
+            function playSound(soundKey) {
+                if (!isSoundEnabled || !audioInitialized) return;
+                
+                try {
+                    if (sounds[soundKey]) {
+                        sounds[soundKey].stop && sounds[soundKey].stop();
+                        sounds[soundKey].play();
+                    } else {
+                        console.warn(`Sound ${soundKey} not found`);
+                    }
+                } catch (e) {
+                    console.error(`Error playing sound ${soundKey}:`, e);
+                }
+            }
+
+            function initializeLevel() {
+                gridSize = currentLevel + 2;
+                winCondition = gridSize;
+                document.documentElement.style.setProperty('--grid-size', gridSize);
+                const baseSize = Math.max(2, 50 - gridSize * 4);
+                const maxSize = Math.max(25, 50 - gridSize * 4);
+                const newCellSize = `clamp(${baseSize}px, calc(88vw / ${gridSize}), ${maxSize}px)`;
+                document.documentElement.style.setProperty('--cell-size', newCellSize);
+                levelDisplayElement.textContent = `  المستوى : ${currentLevel}  - فوز بـ ${winCondition} `;
+                currentPlayer = levelStartPlayer;
+                createBoard();
+                resetBoardState();
+                console.log(`Level ${currentLevel}: ${gridSize}x${gridSize}, Win by ${winCondition}, Starts: ${currentPlayer}`);
+            }
+
+            function createBoard() {
+                boardElement.innerHTML = '';
+                cells = [];
+                const totalCells = gridSize * gridSize;
+                boardState = Array(totalCells).fill(null);
+
+                for (let i = 0; i < totalCells; i++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.setAttribute('data-index', i);
+                    cell.addEventListener('click', handleCellClick);
+                    const span = document.createElement('span');
+                    cell.appendChild(span);
+                    boardElement.appendChild(cell);
+                    cells.push(cell);
+                }
+            }
+
+            function resetBoardState(isNewGame = false) {
+                boardState.fill(null);
+                cells.forEach(cell => {
+                    const span = cell.querySelector('span');
+                    if(span) span.textContent = '';
+                    cell.classList.remove('x', 'o', 'filled', 'winning');
+                    cell.style.animation = 'none';
+                });
+                gameActive = true;
+                updateStatus();
+                winLineElement.style.display = 'none';
+                winLineElement.style.width = '0px';
+                winLineElement.style.transform = 'rotate(0deg)';
+                if (!isNewGame) saveGameSate();
+            }
+
+            function handleCellClick(event) {
+                const clickedCell = event.currentTarget;
+                const cellIndex = parseInt(clickedCell.getAttribute('data-index'));
+                if (isNaN(cellIndex) || boardState[cellIndex] !== null || !gameActive) return;
+
+                playSound('click');
+
+                boardState[cellIndex] = currentPlayer;
+                const span = clickedCell.querySelector('span');
+                if(span) span.textContent = currentPlayer;
+                clickedCell.classList.add(currentPlayer.toLowerCase(), 'filled');
+
+                const result = checkResult();
+                if (result.gameOver) {
+                    gameActive = false;
+                    handleGameOver(result);
+                    saveGameSate();
+                } else {
+                    switchPlayer();
+                    saveGameSate();
+                }
+            }
+
+function handleGameOver(result) {
+  if (result.winner) {
+    updateScores(result.winner);
+    highlightWinningCells(result.winningCells);
+    drawWinningLine(result.winningCells);
+    triggerConfetti();
+    
+    if (currentLevel < maxLevel) {
+      statusElement.textContent = `لاعب ${result.winner} فاز بالمستوى ${currentLevel}!`;
+      statusElement.className = 'status win';
+      playSound('win');
+      setTimeout(() => {
+        statusElement.textContent = `تهانينا! لننتقل للمستوى ${currentLevel + 1}...`;
+        statusElement.className = 'status level-up';
+        playSound('levelUp');
+      }, 2500);
+      setTimeout(startNextLevel, 4500);
+    } else {
+      statusElement.textContent = `لاعب ${result.winner} فاز بالمستوى الأخير!`;
+      statusElement.className = 'status win';
+      playSound('gameOver');
+      
+      finalScoreDisplay.innerHTML = `
+                    لقد أكملت جميع المستويات بنجاح!<br>
+                    الفائز النهائي هو: <span style="color:${result.winner === 'X' ? '#856404' : '#0c5460'};font-size:1.3em">${result.winner}</span><br>
+                    النتيجة النهائية:<br>
+                    <span>X: ${scores.X}</span> - <span>O: ${scores.O}</span> - <span>تعادل: ${scores.draws}</span>
+                `;
+      setTimeout(() => {
+        finalResultsModal.style.display = 'flex';
+      }, 1500);
+      gameActive = false;
+    }
+  } else if (result.draw) {
+    statusElement.textContent = `تعادل في المستوى ${currentLevel}! حاول مرة أخرى.`;
+    statusElement.className = 'status draw';
+    updateScores('draws');
+    playSound('draw');
+    
+    // في حالة التعادل في المستوى الأخير
+    if (currentLevel === maxLevel) {
+      finalScoreDisplay.innerHTML = `
+                    لقد أكملت جميع المستويات بنجاح!<br>
+                    النتيجة النهائية: <span style="color:#fd7e14">تعادل</span><br>
+                    التفاصيل:<br>
+                    <span>X: ${scores.X}</span> - <span>O: ${scores.O}</span> - <span>تعادل: ${scores.draws}</span>
+                `;
+      setTimeout(() => {
+        finalResultsModal.style.display = 'flex';
+      }, 1500);
+    }
+  }
+  updateScoreDisplay();
+}
+
+            function startNextLevel() {
+                levelStartPlayer = (levelStartPlayer === 'X' ? 'O' : 'X');
+                currentLevel++;
+                initializeLevel();
+                saveGameSate();
+            }
+
+            function switchPlayer() {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updateStatus();
+            }
+
+            function checkResult() {
+                const winInfo = checkForWin();
+                if (winInfo.hasWinner) { return { gameOver: true, winner: winInfo.winner, winningCells: winInfo.winningCells, draw: false }; }
+                if (!boardState.includes(null)) { return { gameOver: true, winner: null, winningCells: [], draw: true }; }
+                return { gameOver: false };
+            }
+
+            function checkForWin() {
+                const n = gridSize, k = winCondition, player = currentPlayer;
+                for (let r = 0; r < n; r++) { let rowWin = true; const idx = []; for (let c = 0; c < n; c++) { const i = r * n + c; idx.push(i); if (boardState[i] !== player) { rowWin = false; break; } } if (rowWin) return { hasWinner: true, winner: player, winningCells: idx }; }
+                for (let c = 0; c < n; c++) { let colWin = true; const idx = []; for (let r = 0; r < n; r++) { const i = r * n + c; idx.push(i); if (boardState[i] !== player) { colWin = false; break; } } if (colWin) return { hasWinner: true, winner: player, winningCells: idx }; }
+                let diag1Win = true; const d1idx = []; for (let i = 0; i < n; i++) { const idx = i * n + i; d1idx.push(idx); if (boardState[idx] !== player) { diag1Win = false; break; } } if (diag1Win) return { hasWinner: true, winner: player, winningCells: d1idx };
+                let diag2Win = true; const d2idx = []; for (let i = 0; i < n; i++) { const idx = i * n + (n - 1 - i); d2idx.push(idx); if (boardState[idx] !== player) { diag2Win = false; break; } } if (diag2Win) return { hasWinner: true, winner: player, winningCells: d2idx };
+                return { hasWinner: false };
+            }
+
+            function highlightWinningCells(indices) {
+                indices.forEach(index => { if(cells[index]) { cells[index].classList.add('winning'); cells[index].style.animation = 'none'; void cells[index].offsetWidth; cells[index].style.animation = 'pulseWin 0.8s infinite alternate'; } });
+            }
+
+            function drawWinningLine(indices) {
+                if (!indices || indices.length < winCondition || !cells[indices[0]] || !cells[indices[indices.length - 1]]) return;
+                const boardRect = boardElement.getBoundingClientRect(); if (boardRect.width === 0 || boardRect.height === 0) { requestAnimationFrame(() => drawWinningLine(indices)); return; }
+                const firstCell = cells[indices[0]], lastCell = cells[indices[indices.length - 1]];
+                const firstRect = firstCell.getBoundingClientRect(), lastRect = lastCell.getBoundingClientRect();
+                const boardArea = boardElement.parentElement, areaRect = boardArea.getBoundingClientRect();
+                const startX = firstRect.left + firstRect.width / 2 - areaRect.left, startY = firstRect.top + firstRect.height / 2 - areaRect.top;
+                const endX = lastRect.left + lastRect.width / 2 - areaRect.left, endY = lastRect.top + lastRect.height / 2 - areaRect.top;
+                const deltaX = endX - startX, deltaY = endY - startY;
+                const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY), angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+                winLineElement.style.width = `0px`; winLineElement.style.top = `${startY}px`; winLineElement.style.left = `${startX}px`; winLineElement.style.transform = `rotate(${angle}deg)`; winLineElement.style.display = 'block';
+                requestAnimationFrame(() => { requestAnimationFrame(() => { winLineElement.style.width = `${length}px`; }); });
+            }
+
+            function updateStatus() {
+                if (gameActive) { statusElement.textContent = `دور اللاعب ${currentPlayer}`; statusElement.className = 'status'; }
+            }
+
+            function updateScores(winner) {
+                if (winner === 'X') scores.X++; else if (winner === 'O') scores.O++; else if (winner === 'draws') scores.draws++;
+            }
+
+            function updateScoreDisplay() {
+                scoreXElement.textContent = scores.X; scoreOElement.textContent = scores.O; scoreDrawsElement.textContent = scores.draws;
+            }
+
+            function resetGame() {
+                scores = { X: 0, O: 0, draws: 0 };
+                currentLevel = 1;
+                levelStartPlayer = 'X';
+                updateScoreDisplay();
+                initializeLevel();
+                finalResultsModal.style.display = 'none';
+                saveGameSate();
+                console.log("Game reset to Level 1.");
+            }
+
+            function saveGameSate() {
+                try { const gameState = { currentLevel: currentLevel, scores: scores, soundEnabled: isSoundEnabled, boardState: boardState, currentPlayer: currentPlayer, gameActive: gameActive, levelStartPlayer: levelStartPlayer }; localStorage.setItem('ticTacToeProgressiveGame', JSON.stringify(gameState)); } catch (e) { console.error("Could not save game state:", e); }
+            }
+
+            function loadGameState() {
+                try { const savedState = localStorage.getItem('ticTacToeProgressiveGame'); if (savedState) { const gameState = JSON.parse(savedState); scores = (gameState.scores && typeof gameState.scores.X === 'number') ? gameState.scores : { X: 0, O: 0, draws: 0 }; currentLevel = (typeof gameState.currentLevel === 'number' && gameState.currentLevel >= 1 && gameState.currentLevel <= maxLevel) ? gameState.currentLevel : 1; isSoundEnabled = typeof gameState.soundEnabled === 'boolean' ? gameState.soundEnabled : true; levelStartPlayer = ['X', 'O'].includes(gameState.levelStartPlayer) ? gameState.levelStartPlayer : 'X'; updateSoundButton(); updateScoreDisplay(); initializeLevel(); const expectedBoardSize = (currentLevel + 2) * (currentLevel + 2); if (Array.isArray(gameState.boardState) && gameState.boardState.length === expectedBoardSize) { boardState = gameState.boardState; const loadedCurrentPlayer = ['X', 'O'].includes(gameState.currentPlayer) ? gameState.currentPlayer : levelStartPlayer; gameActive = typeof gameState.gameActive === 'boolean' ? gameState.gameActive : true; updateUIForLoadedBoard(loadedCurrentPlayer); if (!gameActive) { const result = checkResult(); if(result.gameOver) { handleGameOver(result); } else { gameActive = true; currentPlayer = loadedCurrentPlayer; updateStatus(); } } else { currentPlayer = loadedCurrentPlayer; updateStatus(); } } else { resetBoardState(); } console.log("Game state loaded. Level:", currentLevel, "Starts:", levelStartPlayer); } else { initializeLevel(); updateScoreDisplay(); } } catch (e) { console.error("Failed to load game state:", e); scores = { X: 0, O: 0, draws: 0 }; currentLevel = 1; levelStartPlayer = 'X'; isSoundEnabled = true; initializeLevel(); updateScoreDisplay(); localStorage.removeItem('ticTacToeProgressiveGame'); }
+            }
+
+            function updateUIForLoadedBoard(loadedCurrentPlayer) {
+                 cells.forEach((cell, index) => { const player = boardState[index]; const span = cell.querySelector('span'); if (player) { if(span) span.textContent = player; cell.classList.add(player.toLowerCase(), 'filled'); cell.classList.remove('winning'); cell.style.animation = 'none'; } else { if(span) span.textContent = ''; cell.classList.remove('x', 'o', 'filled', 'winning'); cell.style.animation = 'none'; } });
+            }
+
+            function toggleSound() {
+                 if (!audioInitialized) {
+                    initializeAudio();
+                 }
+                 isSoundEnabled = !isSoundEnabled;
+                 updateSoundButton();
+                 saveGameSate();
+                 if (isSoundEnabled && audioInitialized) playSound('click');
+            }
+
+            function updateSoundButton() {
+                soundToggleButton.textContent = isSoundEnabled ? '🔊 الصوت' : '🔇 كتم';
+                soundToggleButton.classList.toggle('active', isSoundEnabled);
+            }
+
+            function triggerConfetti() {
+                if (confettiInstance) { confettiInstance({ particleCount: 180, spread: 100, origin: { y: 0.6 }, gravity: 0.8 }); }
+            }
+
+            // ربط الأحداث
+            resetRoundButton.addEventListener('click', () => { initializeLevel(); saveGameSate(); });
+            resetGameButton.addEventListener('click', resetGame);
+            soundToggleButton.addEventListener('click', toggleSound);
+
+            playAgainButton.addEventListener('click', () => {
+                finalResultsModal.style.display = 'none';
+                resetGame();
+            });
+
+            // بدء اللعبة
+            loadGameState();
+
+            // محاولة تهيئة الصوت عند أول تفاعل مع الصفحة
+            document.body.addEventListener('click', function initAudioOnInteraction() {
+                initializeAudio();
+                document.body.removeEventListener('click', initAudioOnInteraction);
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>

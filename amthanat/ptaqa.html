@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة بطاقات الطلاب</title>
+    <!-- Google Fonts for better Arabic rendering (Cairo for modern look) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <!-- html2pdf.js library for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* General Resets and Base Styles */
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif; /* Apply Cairo font */
+            direction: rtl; /* Right-to-left for Arabic */
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        header h1 {
+            color: #0056b3;
+            font-size: 2.2em;
+            font-weight: 700;
+        }
+
+        .help-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .help-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Input Sections General Styling */
+        .input-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background-color: #fdfdfd;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .input-section h2 {
+            text-align: center;
+            color: #28a745;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+
+        .form-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-row input[type="text"],
+        .form-row input[type="date"],
+        .form-row input[type="number"], /* For year input */
+        .form-row input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-row input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        .form-row input[type="file"] {
+            padding: 8px; /* Adjust padding for file input */
+        }
+
+        .action-button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 700;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 15px;
+        }
+
+        .action-button.primary {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .action-button.primary:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .action-button.secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .action-button.secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .table-actions {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .action-button.excel {
+            background-color: #21a366; /* Excel green */
+            color: white;
+            margin-left: 10px; /* Add margin for RTL layout */
+        }
+
+        .action-button.excel:hover {
+            background-color: #1c8a55;
+        }
+
+        .table-responsive {
+            overflow-x: auto; /* For small screens */
+            margin-bottom: 30px;
+        }
+
+        #studentsTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        #studentsTable th,
+        #studentsTable td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        #studentsTable th {
+            background-color: #e9ecef;
+            color: #495057;
+            font-weight: 700;
+            white-space: nowrap; /* Prevent wrapping of headers */
+        }
+
+        #studentsTable td {
+            background-color: #fff;
+            white-space: nowrap; /* Prevent wrapping of cell content */
+        }
+
+        #studentsTable tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        #studentsTable tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        #studentsTable button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 0 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        #studentsTable .edit-btn {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        #studentsTable .edit-btn:hover {
+            background-color: #e0a800;
+        }
+
+        #studentsTable .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        #studentsTable .delete-btn:hover {
+            background-color: #c82333;
+        }
+
+        .card-generation-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .action-button.generate {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .action-button.generate:hover {
+            background-color: #0056b3;
+        }
+
+        .action-button.print {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .action-button.print:hover {
+            background-color: #138496;
+        }
+
+        .action-button.download {
+            background-color: #6f42c1; /* Purple for PDF */
+            color: white;
+        }
+
+        .action-button.download:hover {
+            background-color: #563d7c;
+        }
+
+        /* Help Icon */
+        .help-icon {
+            font-size: 0.8em;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 5px; /* For RTL */
+            cursor: help;
+            font-weight: bold;
+        }
+        
+        /* MODIFICATION: Style for Notification Area */
+        .notification {
+            display: none; /* Hidden by default */
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            color: #fff;
+            background-color: #28a745; /* Green for success */
+            text-align: center;
+            font-weight: bold;
+            transition: opacity 0.5s ease-out;
+        }
+
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+            padding-top: 50px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            width: 80%; /* Could be responsive */
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            text-align: right;
+        }
+
+        .modal-content h2 {
+            color: #007bff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-content p, .modal-content ul {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .modal-content ul {
+            list-style-position: inside;
+            padding-right: 20px;
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
+        }
+
+        .close-button {
+            color: #aaa;
+            float: left; /* Align to left in RTL */
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            left: 25px; /* Align to left */
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+        }
+
+        /* ID Card Styles */
+        .cards-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+            background-color: #fdfdfd;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .id-card {
+            position: relative;
+            background-color: #fff;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            
+            width: 290mm;
+            height: 185mm; 
+            margin: 3px 0  0;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: right;
+            page-break-after: always;
+            border: 5px double #444;
+        }
+                
+        .card-inner-border {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 12mm 15mm; 
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 10mm;
+        }
+
+        .card-header .ar-text {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .card-header .bold-text {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #000;
+        }
+        
+        .card-header .study-level-val {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        .card-content {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 15mm;
+            margin-bottom: 10mm;
+            flex-grow: 1;
+        }
+     
+        .photo-and-signature-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10mm;
+            width: 60mm;
+            flex-shrink: 0;
+        }
+        
+        .photo-box {
+            width: 100%;
+            height: 75mm;
+            border: 1px solid #555;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.1em;
+            color: #666;
+            line-height: 1.4;
+            padding: 8px;
+            position: relative;
+        }
+
+        .photo-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+            margin: auto;
+            height: auto;
+        }
+
+        .photo-box .no-photo-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px;
+            box-sizing: border-box;
+            background-color: #f9f9f9;
+        }
+
+        .fields-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5mm;
+            min-width: 40%;
+        }
+
+        .card-field {
+            display: flex;
+            align-items: baseline;
+            font-size: 1.3em;
+            padding-bottom: 8px;
+        }
+
+        .card-field .label {
+            flex-shrink: 0;
+            font-weight: 700;
+            margin-left: 10px;
+            color: #444;
+            background-color: rgba(173, 216, 230, 0.2);
+            padding: 4px 10px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 123, 255, 0.1);
+            min-width: 120px;
+        }
+
+        .card-field .value {
+            flex-grow: 1;
+            text-align: right;
+            min-height: 1.5em;
+        }
+
+        .dotted-line {
+            border-bottom: 2px dotted #000;
+            padding-bottom: 5px;
+        }
+
+        .dotted-line.parentheses::before {
+            content: '(';
+            margin-left: 5px;
+        }
+
+        .dotted-line.parentheses::after {
+            content: ')';
+            margin-right: 5px;
+        }
+
+        .signature-manager-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5mm;
+            width: 100%;
+        }
+
+        .signature-block, .manager-block {
+            width: 100%;
+            text-align: center;
+        }
+
+        .card-field-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2mm;
+        }
+
+        .card-field-footer .label {
+            margin-left: 0;
+            margin-bottom: 0;
+            font-size: 1.1em;
+            background-color: rgba(173, 216, 230, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 123, 255, 0.1);
+            font-weight: 600;
+            color: #444;
+        }
+
+        .signature-line-border {
+            border-bottom: 2px solid #000;
+            width: 80%;
+            height: 20px;
+            display: block;
+        }
+
+        .manager-name-val {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-bottom: none;
+            padding-bottom: 0;
+            min-height: unset;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #fff;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+
+            .container, .input-section, header, .table-actions, .card-generation-actions, .modal, .notification {
+                display: none !important;
+            }
+
+            .cards-section {
+                display: block !important;
+                width: 100%;
+                height: auto;
+                padding: 0;
+                margin: 0;
+                border: none;
+                box-shadow: none;
+                background-color: transparent;
+            }
+
+            .id-card {
+                margin: 0 auto !important;
+                border: 5px double #444 !important; /* Ensure border prints */
+                box-shadow: none;
+                page-break-after: always;
+                width: 250mm;
+                height: 150mm; 
+                position: relative;
+                left: 50%;
+                transform: translateX(-50%) scale(0.99);
+                transform-origin: center center;
+            }
+
+            .id-card:last-child {
+                page-break-after: avoid !important;
+            }
+            
+            .id-card .card-field {
+                font-size: 1.5em;
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .form-container {
+                grid-template-columns: 1fr;
+            }
+
+            .input-section h2 {
+                font-size: 1.5em;
+            }
+
+            .action-button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+
+            .table-actions, .card-generation-actions {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            .action-button.excel,
+            .action-button.generate,
+            .action-button.print,
+            .action-button.download {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .id-card {
+                width: 95vw;
+                height: auto;
+                padding: 0; 
+                font-size: 0.9em;
+                margin: 10px auto;
+            }
+            
+            .card-inner-border {
+                padding: 10mm;
+            }
+
+            .card-content {
+                flex-direction: column-reverse; 
+                gap: 15mm;
+                align-items: center;
+            }
+
+            .photo-box {
+                width: 50mm;
+                height: 65mm;
+            }
+
+            .fields-container {
+                width: 100%;
+                align-items: stretch;
+            }
+            .card-field {
+                font-size: 1.1em;
+            }
+        }
+        #dsa{
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Help Modal -->
+        <div id="helpModal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">×</span>
+                <h2>المساعدة</h2>
+                <p>هذا النظام يتيح لك إدارة بيانات الطلاب وإنشاء بطاقات هوية خاصة بهم للامتحانات.</p>
+                <ul>
+                    <li><strong>إدارة بيانات الطلاب:</strong> استخدم الجدول أدناه لإضافة، تعديل، أو حذف بيانات الطلاب.</li>
+                    <li><strong>أيقونة (؟) بجانب الحقول:</strong> توفر معلومات إضافية (تلميحات نصية) عند تمرير مؤشر الفأرة فوقها أو النقر عليها.</li>
+                    <li><strong>صورة الطالب:</strong> تأكد من أن الصورة حديثة وواضحة.</li>
+                    <li><strong>إنشاء البطاقات:</strong> بعد إضافة جميع الطلاب، اضغط على زر "إنشاء البطاقات" لعرض جميع البطاقات.</li>
+                    <li><strong>طباعة البطاقات:</strong> يرسل البطاقات المعروضة مباشرة إلى الطابعة.</li>
+                    <li><strong>تنزيل البطاقات PDF:</strong> يقوم بتحويل جميع البطاقات إلى ملف PDF واحد قابل للتنزيل، كل بطاقة في صفحة منفصلة.</li>
+                    <li><strong>تنزيل بيانات الجدول اكسيل:</strong> يقوم بتصدير بيانات الطلاب الحالية إلى ملف CSV (متوافق مع Excel).</li>
+                    <li><strong>الحفظ التلقائي:</strong> يتم حفظ بيانات الطلاب تلقائيًا في المتصفح.</li>
+                </ul>
+            </div>
+        </div>
+
+        <header>
+            <h1>نظام اصدار بطاقات الاشتراك الوزاري</h1>
+            
+            <button id="helpBtn" class="help-button">مساعدة</button>
+            
+        </header>
+<p class="card-text">لاصدار بطاقات الاشتراك لتلاميذ الصفوف الوزارية، مع امكانية تحميلها وطباعتها، وتصديرها بصيغة pdf , Excel.</p>
+        <section class="input-section">
+            <h2>إعدادات البطاقة العامة</h2>
+            <div class="form-container">
+                <div class="form-row">
+                    <label for="ministryName">اسم الوزارة <span class="help-icon" title="مثال: وزارة التربية.">?</span></label>
+                    <input type="text" id="ministryName" value="وزارة التربية">
+                </div>
+                <div class="form-row">
+                    <label for="directorateName">اسم المديرية العامة <span class="help-icon" title="مثال: المديرية العامة للتقويم والامتحانات.">?</span></label>
+                    <input type="text" id="directorateName" value="المديرية العامة للتقويم والامتحانات">
+                </div>
+                <div class="form-row">
+                    <label for="cardTitle">عنوان البطاقة <span class="help-icon" title="مثال: بطاقة الاشتراك في الامتحانات العامة.">?</span></label>
+                    <input type="text" id="cardTitle" value="بطاقة الاشتراك في الامتحانات العامة">
+                </div>
+                <div class="form-row">
+                    <label for="studyLevel">الدراسة والعام الدراسي <span class="help-icon" title="مثال: للدراسة الابتدائية للعام ٢٠٢٢-٢٠٢٣.">?</span></label>
+                    <input type="text" id="studyLevel" value="للدراسة الابتدائية للعام ٢٠٢٢-٢٠٢٣">
+                </div>
+                <div class="form-row">
+                    <label for="managerSignatureName">اسم المدير للتوقيع <span class="help-icon" title="الاسم الذي سيظهر أسفل البطاقة كتوقيع للمدير.">?</span></label>
+                    <input type="text" id="managerSignatureName" placeholder="ابراهيم عبد الكريم">
+                </div>
+                <button id="saveGlobalSettingsBtn" class="action-button primary">حفظ الإعدادات العامة</button>
+            </div>
+        </section>
+
+        <section class="input-section">
+            <h2>إدارة بيانات الطلاب</h2>
+            <div class="form-container">
+                <div class="form-row">
+                    <label for="fullName">الاسم الرباعي <span class="help-icon" title="أدخل الاسم الكامل للطالب (الرباعي).">?</span></label>
+                    <input type="text" id="fullName" placeholder="مثال: محمد علي أحمد محمود" required>
+                </div>
+                <div class="form-row">
+                    <label for="motherName">اسم الأم <span class="help-icon" title="أدخل الاسم الكامل لوالدة الطالب.">?</span></label>
+                    <input type="text" id="motherName" placeholder="مثال: فاطمة سعيد" required>
+                </div>
+                <div class="form-row">
+                    <label for="birthDate">المواليد <span class="help-icon" title="تاريخ ميلاد الطالب (سنة-شهر-يوم).">?</span></label>
+                    <input type="date" id="birthDate" required>
+                </div>
+                <div class="form-row">
+                    <label for="schoolName">المدرسة <span class="help-icon" title="اسم المدرسة التي يتبع لها الطالب.">?</span></label>
+                    <input type="text" id="schoolName" placeholder="مثال: مدرسة الأمل الابتدائية" required>
+                </div>
+                <div class="form-row">
+                    <label for="examNumber">الرقم الامتحاني <span class="help-icon" title="الرقم التعريفي الخاص بالطالب في الامتحانات.">?</span></label>
+                    <input type="text" id="examNumber" placeholder="مثال: 123456" required>
+                </div>
+                <div class="form-row">
+                    <label for="governorate">المحافظة <span class="help-icon" title="المحافظة التي يتبع لها الطالب/المدرسة.">?</span></label>
+                    <input type="text" id="governorate" placeholder="مثال: بغداد" required>
+                </div>
+                <div class="form-row">
+                    <label for="studentPhoto">صورة الطالب <span class="help-icon" title="صورة شخصية حديثة للطالب، يتم ختمها وتوقيعها لاحقًا من قبل المدير.">?</span></label>
+                    <input type="file" id="studentPhoto" accept="image/*">
+                </div>
+                <button id="addStudentBtn" class="action-button primary">إضافة طالب</button>
+                <button id="cancelEditBtn" class="action-button secondary" style="display: none;">إلغاء التعديل</button>
+            </div>
+
+            <!-- MODIFICATION: Notification area added here -->
+            <div id="notificationArea" class="notification"></div>
+
+            <div class="table-actions">
+                <button id="exportExcelBtn" class="action-button excel">تنزيل بيانات الجدول اكسيل</button>
+            </div>
+
+            <div class="table-responsive">
+                <table id="studentsTable">
+                    <thead>
+                        <tr>
+                            <th>الاسم الرباعي</th>
+                            <th>اسم الأم</th>
+                            <th>المواليد</th>
+                            <th>المدرسة</th>
+                            <th>الرقم الامتحاني</th>
+                            <th>المحافظة</th>
+                            <th>صورة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Student data will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-generation-actions">
+                <button id="generateCardsBtn" class="action-button generate">إنشاء البطاقات</button>
+                <button id="printCardsBtn" class="action-button print" style="display: none;">طباعة البطاقات</button>
+                <button id="downloadPdfBtn" class="action-button download" style="display: none;">تنزيل البطاقات PDF</button>
+            </div>
+        </section>
+
+        <!-- Hidden Card Template -->
+        <div id="cardTemplate" class="id-card" style="display: none;">
+            <div class="card-inner-border">
+                <div class="card-header">
+                    <div class="ar-text ministry-name-val">وزارة التربية</div>
+                    <div class="ar-text directorate-name-val">المديرية العامة للتقويم والامتحانات</div>
+                    <div class="ar-text bold-text card-title-val" id="dsa">بطاقة الاشتراك في الامتحانات العامة</div>
+                    <div class="ar-text study-level-val">للدراسة الابتدائية للعام ٢٠٢٢-٢٠٢٣</div>
+                </div>
+                
+                <div class="card-content">
+                    <div class="fields-container">
+                        <div class="card-field">
+                            <span class="label">الاسم الرباعي:</span>
+                            <span class="value full-name-val dotted-line"></span>
+                        </div>
+                        <div class="card-field">
+                            <span class="label">اسم الام:</span>
+                            <span class="value mother-name-val dotted-line"></span>
+                        </div>
+                        <div class="card-field">
+                            <span class="label">المواليد:</span>
+                            <span class="value birth-date-val dotted-line"></span>
+                        </div>
+                        <div class="card-field">
+                            <span class="label">المدرسة:</span>
+                            <span class="value school-name-val dotted-line"></span>
+                        </div>
+                        <div class="card-field">
+                            <span class="label">الرقم الامتحاني:</span>
+                            <span class="value exam-number-val dotted-line parentheses"></span>
+                        </div>
+                        <div class="card-field">
+                            <span class="label">المحافظة:</span>
+                            <span class="value governorate-val dotted-line"></span>
+                        </div>
+                    </div>
+
+                    <div class="photo-and-signature-container">
+                        <div class="photo-box">
+                            <img src="" alt="صورة الطالب" class="student-photo-preview">
+                            <div class="no-photo-text">
+                                صورة حديثة<br>
+                                تختم وتوقع<br>
+                                من قبل المدير
+                            </div>
+                        </div>
+                        
+                        <div class="signature-manager-container">
+                            <div class="signature-block">
+                                <div class="card-field-footer">
+                                    <span class="value signature-line-border"></span>
+                                </div>
+                            </div>
+                            <div class="manager-block">
+                                <div class="card-field-footer">
+                                    <span class="label" id="dsa">مدير المدرسة:</span>
+                                    <span class="value manager-name-val"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards Display Section -->
+        <section id="cardsSection" class="cards-section"></section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const studentsTableBody = document.querySelector('#studentsTable tbody');
+            const addStudentBtn = document.getElementById('addStudentBtn');
+            const cancelEditBtn = document.getElementById('cancelEditBtn');
+            const generateCardsBtn = document.getElementById('generateCardsBtn');
+            const printCardsBtn = document.getElementById('printCardsBtn');
+            const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+            const cardsSection = document.getElementById('cardsSection');
+            const cardTemplate = document.getElementById('cardTemplate');
+            const helpBtn = document.getElementById('helpBtn');
+            const helpModal = document.getElementById('helpModal');
+            const closeModalBtn = document.querySelector('.modal .close-button');
+            const notificationArea = document.getElementById('notificationArea'); // MODIFICATION
+
+            const ministryNameInput = document.getElementById('ministryName');
+            const directorateNameInput = document.getElementById('directorateName');
+            const cardTitleInput = document.getElementById('cardTitle');
+            const studyLevelInput = document.getElementById('studyLevel');
+            const managerSignatureNameInput = document.getElementById('managerSignatureName');
+            const saveGlobalSettingsBtn = document.getElementById('saveGlobalSettingsBtn');
+
+            let students = [];
+            let globalCardSettings = {};
+            let editingStudentId = null;
+            let notificationTimeout; // MODIFICATION
+
+            // MODIFICATION: Helper function to show notifications
+            const showNotification = (message, duration = 4000) => {
+                notificationArea.textContent = message;
+                notificationArea.style.display = 'block';
+                if (notificationTimeout) {
+                    clearTimeout(notificationTimeout);
+                }
+                notificationTimeout = setTimeout(() => {
+                    notificationArea.style.display = 'none';
+                }, duration);
+            };
+
+            const loadStudents = () => {
+                const storedStudents = localStorage.getItem('studentsData');
+                if (storedStudents) {
+                    students = JSON.parse(storedStudents);
+                    renderStudentsTable();
+                }
+            };
+
+            const saveStudents = () => {
+                localStorage.setItem('studentsData', JSON.stringify(students));
+            };
+
+            const loadGlobalSettings = () => {
+                const storedSettings = localStorage.getItem('globalCardSettings');
+                if (storedSettings) {
+                    globalCardSettings = JSON.parse(storedSettings);
+                } else {
+                    globalCardSettings = {
+                        ministryName: "وزارة التربية",
+                        directorateName: "المديرية العامة للتقويم والامتحانات",
+                        cardTitle: "بطاقة الاشتراك في الامتحانات العامة",
+                        studyLevel: "للدراسة الابتدائية للعام ٢٠٢٢-٢٠٢٣",
+                        managerSignatureName: ""
+                    };
+                }
+                ministryNameInput.value = globalCardSettings.ministryName;
+                directorateNameInput.value = globalCardSettings.directorateName;
+                cardTitleInput.value = globalCardSettings.cardTitle;
+                studyLevelInput.value = globalCardSettings.studyLevel;
+                managerSignatureNameInput.value = globalCardSettings.managerSignatureName;
+            };
+
+            const saveGlobalSettings = () => {
+                globalCardSettings = {
+                    ministryName: ministryNameInput.value.trim(),
+                    directorateName: directorateNameInput.value.trim(),
+                    cardTitle: cardTitleInput.value.trim(),
+                    studyLevel: studyLevelInput.value.trim(),
+                    managerSignatureName: managerSignatureNameInput.value.trim()
+                };
+                localStorage.setItem('globalCardSettings', JSON.stringify(globalCardSettings));
+                alert('تم حفظ الإعدادات العامة بنجاح!');
+            };
+
+            const formatDateForCSV = (dateString) => {
+                if (!dateString) return '';
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const [year, month, day] = parts;
+                    return `${day}/${month}/${year}`;
+                }
+                return dateString;
+            };
+
+            // MODIFICATION: Focus added to this function
+            const clearForm = () => {
+                document.getElementById('fullName').value = '';
+                document.getElementById('motherName').value = '';
+                document.getElementById('birthDate').value = '';
+                document.getElementById('schoolName').value = '';
+                document.getElementById('examNumber').value = '';
+                document.getElementById('governorate').value = '';
+                document.getElementById('studentPhoto').value = '';
+                
+                document.getElementById('fullName').focus(); // Focus on the name field for next entry
+
+                editingStudentId = null;
+                addStudentBtn.textContent = 'إضافة طالب';
+                addStudentBtn.classList.remove('secondary');
+                addStudentBtn.classList.add('primary');
+                cancelEditBtn.style.display = 'none';
+            };
+
+            const renderStudentsTable = () => {
+                studentsTableBody.innerHTML = '';
+                students.forEach(student => {
+                    const row = studentsTableBody.insertRow();
+                    row.dataset.id = student.id;
+
+                    row.insertCell().textContent = student.fullName;
+                    row.insertCell().textContent = student.motherName;
+                    row.insertCell().textContent = student.birthDate;
+                    row.insertCell().textContent = student.schoolName;
+                    row.insertCell().textContent = student.examNumber;
+                    row.insertCell().textContent = student.governorate;
+
+                    const photoCell = row.insertCell();
+                    if (student.photo) {
+                        const img = document.createElement('img');
+                        img.src = student.photo;
+                        img.alt = 'صورة الطالب';
+                        img.style.width = '50px';
+                        img.style.height = '50px';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '5px';
+                        photoCell.appendChild(img);
+                    } else {
+                        photoCell.textContent = 'لا توجد صورة';
+                    }
+
+                    const actionsCell = row.insertCell();
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'تعديل';
+                    editBtn.classList.add('edit-btn');
+                    editBtn.onclick = () => editStudent(student.id);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'حذف';
+                    deleteBtn.classList.add('delete-btn');
+                    deleteBtn.onclick = () => deleteStudent(student.id);
+
+                    actionsCell.appendChild(editBtn);
+                    actionsCell.appendChild(deleteBtn);
+                });
+            };
+
+            addStudentBtn.addEventListener('click', async () => {
+                const fullName = document.getElementById('fullName').value.trim();
+                const motherName = document.getElementById('motherName').value.trim();
+                const birthDate = document.getElementById('birthDate').value;
+                const schoolName = document.getElementById('schoolName').value.trim();
+                const examNumber = document.getElementById('examNumber').value.trim();
+                const governorate = document.getElementById('governorate').value.trim();
+                const studentPhotoFile = document.getElementById('studentPhoto').files[0];
+
+                if (!fullName || !motherName || !birthDate || !schoolName || !examNumber || !governorate) {
+                    alert('يرجى ملء جميع الحقول المطلوبة للطالب!');
+                    return;
+                }
+
+                let photoBase64 = null;
+                if (studentPhotoFile) {
+                    photoBase64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(studentPhotoFile);
+                    });
+                }
+
+                if (editingStudentId) {
+                    const studentIndex = students.findIndex(s => s.id === editingStudentId);
+                    if (studentIndex > -1) {
+                        students[studentIndex] = {
+                            id: editingStudentId,
+                            fullName,
+                            motherName,
+                            birthDate,
+                            schoolName,
+                            examNumber,
+                            governorate,
+                            photo: photoBase64 || students[studentIndex].photo
+                        };
+                    }
+                    // MODIFICATION: Removed alert, added notification
+                    showNotification('تم تحديث بيانات الطالب بنجاح!');
+                } else {
+                    const newStudent = {
+                        id: Date.now(),
+                        fullName,
+                        motherName,
+                        birthDate,
+                        schoolName,
+                        examNumber,
+                        governorate,
+                        photo: photoBase64
+                    };
+                    students.push(newStudent);
+                    // MODIFICATION: Removed alert, added notification with guide text
+                    showNotification('تمت إضافة الطالب بنجاح! يمكنك الآن إضافة طالب جديد.');
+                }
+
+                clearForm();
+                saveStudents();
+                renderStudentsTable();
+            });
+
+            const editStudent = (id) => {
+                const studentToEdit = students.find(s => s.id === id);
+                if (studentToEdit) {
+                    document.getElementById('fullName').value = studentToEdit.fullName;
+                    document.getElementById('motherName').value = studentToEdit.motherName;
+                    document.getElementById('birthDate').value = studentToEdit.birthDate;
+                    document.getElementById('schoolName').value = studentToEdit.schoolName;
+                    document.getElementById('examNumber').value = studentToEdit.examNumber;
+                    document.getElementById('governorate').value = studentToEdit.governorate;
+
+                    editingStudentId = id;
+                    addStudentBtn.textContent = 'حفظ التعديلات';
+                    addStudentBtn.classList.remove('primary');
+                    addStudentBtn.classList.add('secondary');
+                    cancelEditBtn.style.display = 'inline-block';
+                    document.getElementById('fullName').focus();
+                }
+            };
+
+            cancelEditBtn.addEventListener('click', () => {
+                clearForm();
+                showNotification('تم إلغاء التعديل.', 3000);
+            });
+
+            const deleteStudent = (id) => {
+                if (confirm('هل أنت متأكد أنك تريد حذف هذا الطالب؟')) {
+                    students = students.filter(student => student.id !== id);
+                    saveStudents();
+                    renderStudentsTable();
+                    showNotification('تم حذف الطالب بنجاح!');
+                }
+            };
+
+            generateCardsBtn.addEventListener('click', () => {
+                cardsSection.innerHTML = '';
+                if (students.length === 0) {
+                    alert('لا توجد بيانات طلاب لإنشاء البطاقات. يرجى إضافة طلاب أولاً.');
+                    cardsSection.style.display = 'none';
+                    printCardsBtn.style.display = 'none';
+                    downloadPdfBtn.style.display = 'none';
+                    return;
+                }
+
+                students.forEach(student => {
+                    const newCard = cardTemplate.cloneNode(true);
+                    newCard.style.display = 'flex';
+                    newCard.removeAttribute('id');
+
+                    newCard.querySelector('.ministry-name-val').textContent = globalCardSettings.ministryName;
+                    newCard.querySelector('.directorate-name-val').textContent = globalCardSettings.directorateName;
+                    newCard.querySelector('.card-title-val').textContent = globalCardSettings.cardTitle;
+                    newCard.querySelector('.study-level-val').textContent = globalCardSettings.studyLevel;
+                    
+                    newCard.querySelector('.full-name-val').textContent = student.fullName;
+                    newCard.querySelector('.mother-name-val').textContent = student.motherName;
+                    newCard.querySelector('.birth-date-val').textContent = student.birthDate;
+                    newCard.querySelector('.school-name-val').textContent = student.schoolName;
+                    newCard.querySelector('.exam-number-val').textContent = student.examNumber;
+                    newCard.querySelector('.governorate-val').textContent = student.governorate;
+
+                    const photoImg = newCard.querySelector('.student-photo-preview');
+
+                    if (student.photo) {
+                        photoImg.src = student.photo;
+                    } else {
+                        photoImg.src = '';
+                    }
+
+                    newCard.querySelector('.manager-name-val').textContent = globalCardSettings.managerSignatureName;
+
+                    cardsSection.appendChild(newCard);
+                });
+
+                cardsSection.style.display = 'flex';
+                printCardsBtn.style.display = 'inline-block';
+                downloadPdfBtn.style.display = 'inline-block';
+                alert('تم إنشاء البطاقات بنجاح!');
+            });
+
+            printCardsBtn.addEventListener('click', () => {
+                if (students.length === 0) {
+                    alert('لا توجد بطاقات لطباعتها. يرجى إنشاء البطاقات أولاً.');
+                    return;
+                }
+                window.print();
+            });
+
+            downloadPdfBtn.addEventListener('click', () => {
+                if (students.length === 0) {
+                    alert('لا توجد بطاقات لتنزيلها بصيغة PDF. يرجى إنشاء البطاقات أولاً.');
+                    return;
+                }
+
+                const opt = {
+                    margin: [0, 0, 0, 0],
+                    filename: 'بطاقات_الطلاب.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 3, 
+                        logging: true,
+                        useCORS: true,
+                        allowTaint: true,
+                        scrollY: 0,
+                        scrollX: 0,
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+                };
+
+                html2pdf().from(cardsSection).set(opt).save().then(() => {
+                    alert('تم تنزيل البطاقات بصيغة PDF بنجاح!');
+                });
+            });
+
+            exportExcelBtn.addEventListener('click', () => {
+                if (students.length === 0) {
+                    alert('لا توجد بيانات لتصديرها إلى Excel.');
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+                csvContent += "الاسم الرباعي,اسم الأم,المواليد,المدرسة,الرقم الامتحاني,المحافظة\n";
+
+                students.forEach(student => {
+                    const row = [
+                        `"${student.fullName}"`,
+                        `"${student.motherName}"`,
+                        `"${formatDateForCSV(student.birthDate)}"`,
+                        `"${student.schoolName}"`,
+                        `"${student.examNumber}"`,
+                        `"${student.governorate}"`
+                    ].join(',');
+                    csvContent += row + "\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "بيانات_الطلاب.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('تم تصدير بيانات الجدول إلى ملف Excel (CSV) بنجاح!');
+            });
+
+            helpBtn.addEventListener('click', () => {
+                helpModal.style.display = 'flex';
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                helpModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (event) => {
+                if (event.target == helpModal) {
+                    helpModal.style.display = 'none';
+                }
+            });
+
+            saveGlobalSettingsBtn.addEventListener('click', saveGlobalSettings);
+
+            const helpIcons = document.querySelectorAll('.help-icon');
+            helpIcons.forEach(icon => {
+                icon.addEventListener('click', (e) => {
+                    const helpText = icon.getAttribute('title');
+                    if (helpText) {
+                        alert(helpText);
+                    }
+                });
+            });
+
+            loadGlobalSettings();
+            loadStudents();
+        });
+    </script>
+</body>
+</html>

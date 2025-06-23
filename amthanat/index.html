@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام ادارة الامتحانات </title>
+    <meta name="description" content="  النظام الشامل لتوزيع وبناء خرائط وبطاقات الاشتراك في الامتحانات العامة والوزارية للصفوف المنتهية وغير المنتهية وخرائط توزيع المراقبات للكوادر التربوية وطباعتها وتنزيلها بصيغة ملف.
+.">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- استيراد خط القاهرة من جوجل -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ----------------------------------- */
+        /*    إعدادات الألوان الفاخرة والمظهر الداكن   */
+        /* ----------------------------------- */
+        :root {
+            --primary-color: #323344;      /* لون السيان الساطع */
+            --secondary-color: #ff2e63;   /* لون أحمر وردي للتأثيرات */
+            --background-gradient: linear-gradient(135deg, #1d2b3c 0%, #101820 100%); /* تدرج كحلي-أسود */
+            --card-background: #156882;   /* لون البطاقة (أغمق من الخلفية) */
+            --text-primary: #d8f625;       /* لون النص الأساسي (أبيض فاتح) */
+            --text-secondary: #c0c9d5;     /* لون النص الثانوي (رمادي سماوي) */
+            --glow-shadow: 0 0 25px rgba(8, 217, 214, 0.3);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--background-gradient);
+            color: var(--text-primary);
+            line-height: 1.8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 3rem 1.5rem;
+        }
+
+        /* ----------------------------------- */
+        /*         تنسيق الحاوية والعناوين        */
+        /* ----------------------------------- */
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 2rem 0;
+        }
+
+        .main-title {
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(8, 217, 214, 0.2);
+        }
+        i{
+            box-shadow: 10px;
+            font-size: 70px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 3.5rem auto;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2.5rem;
+        }
+
+        /* ----------------------------------- */
+        /*        تصميم البطاقة الاحترافي        */
+        /* ----------------------------------- */
+        .card {
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+            
+            /* الأنيميشن عند تحميل الصفحة */
+            opacity: 0;
+            transform: translateY(40px);
+            animation: fadeInSlideUp 0.6s forwards ease-out;
+        }
+        
+        /* تأثير التوهج الأنيق عند المرور */
+        .card:hover {
+            transform: translateY(-12px);
+            box-shadow: var(--glow-shadow);
+            border-color: var(--primary-color);
+        }
+
+        /* تأخير متتالي لظهور البطاقات */
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.3s; }
+        .card:nth-child(5) { animation-delay: 0.4s; }
+        .card:nth-child(6) { animation-delay: 0.5s; }
+
+        .card-image-wrapper {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 2rem auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid var(--primary-color);
+            box-shadow: 0 0 15px rgba(8, 217, 214, 0.2);
+            transition: transform 0.35s ease;
+        }
+
+        .card:hover .card-image-wrapper {
+            transform: scale(1.05);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* لضمان ملء الصورة للإطار بدون تشويه */
+            transition: transform 0.4s ease;
+        }
+        
+        .card:hover .card-image {
+            transform: scale(1.15);
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .card-text {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.9;
+        }
+
+        .card-btn {
+            display: inline-block;
+            text-decoration: none;
+            color: #fff;
+            background-color: var(--primary-color);
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(8, 217, 214, 0.25);
+        }
+        
+        .card-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 46, 99, 0.3);
+        }
+
+        /* ----------------------------------- */
+        /*          حركة ظهور البطاقات          */
+        /* ----------------------------------- */
+        @keyframes fadeInSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ----------------------------------- */
+        /*      التصميم المتجاوب للهواتف      */
+        /* ----------------------------------- */
+        @media (max-width: 992px) {
+            .card-grid {
+                grid-template-columns: 1fr; /* عمود واحد للشاشات المتوسطة والصغيرة */
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            body { padding: 2rem 1rem; }
+            .main-title { font-size: 2.2rem; }
+            .subtitle { font-size: 1rem; margin-bottom: 2.5rem; }
+            .card { padding: 2rem; }
+            .card-title{font-size: 20px;}
+            i{font-size: 30px}
+            .main-title{font-size: 25px}
+            .subtitle{font-size: 15px}
+            .card-text{font-size: 15px}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1 class="main-title">نظام ادارة الامتحانات </h1>
+        <p class="subtitle">  النظام الشامل لتوزيع وبناء خرائط وبطاقات الاشتراك في الامتحانات العامة والوزارية للصفوف المنتهية وغير المنتهية وخرائط توزيع المراقبات للكوادر التربوية وطباعتها وتنزيلها بصيغة ملف.</p>
+
+        <div class="card-grid">
+            
+            
+            <!-- البطاقة الأولى: عرض النتائج -->
+            <div class="card">
+                <i class="fas fa-chart-pie"></i>  
+                <h3 class="card-title">اصدار بطاقة اشتراك</h3>
+                <p class="card-text">لاصدار بطاقات الاشتراك لتلاميذ الصفوف الوزارية، مع امكانية تحميلها وطباعتها، وتصديرها بصيغة pdf , Excel.</p>
+                <a href="ptaqa.html" class="card-btn">عرض النموذج</a>
+            </div>
+
+           <div class="card">
+                <i class="fas fa-map"></i>  
+                <h3 class="card-title">خرائط الامتحانات الوزارية</h3>
+                <p class="card-text"> قم بتوزيع التلاميذ بسهولة ودقة عالية في الخرائط الامتحانية الوزارية.</p>
+                <a href="toziatlameth.html" class="card-btn">عرض النموذج</a>
+            </div>
+            
+            
+            <div class="card">
+                <i class="fas fa-chalkboard-teacher"></i>  
+                <h3 class="card-title"> جدول الامتحانات   العامة</h3>
+                <p class="card-text"> جدول الامتحانات العامة بحجم ورقة قم بانشاء الجدول وملئ الحقول المناسبة.</p>
+                <a href="jdolamthan.html" class="card-btn">عرض النموذج</a>
+            </div>
+            
+            
+            <div class="card">
+                <i class="fas fa-map-marked"></i>  
+                <h3 class="card-title"> خارطة الجلوس اليدوية </h3>
+                <p class="card-text"> قم بعمل خاطة جلوس التلاميذ في الامتحانات الوزارية والمدرسية العامة بسهولة وتنسيق جاهز للتعديل عليه .</p>
+                <a href="zhretajlos.html" class="card-btn">عرض النموذج</a>
+            </div>
+            
+
+            <div class="card">
+                <i class="fas fa-table"></i>  
+                <h3 class="card-title"> خرائط الجلوس العامة  </h3>
+                <p class="card-text">  الاداة المخصصة لانشاء خرائط الجلوس للتلاميذ للامتحانات المدرسية العامة .</p>
+                <a href="naatt.html" class="card-btn">عرض النموذج</a>
+            </div>
+            
+            <!-- البطاقة السادسة: المكتبة الرقمية -->
+            <div class="card">
+               <i class="fas fa-percent"></i> 
+                <h3 class="card-title">تواصل معنا</h3>
+                <p class="card-text">للاستفسار حول الية وعمل قسم اصدار النتائج التواصل معنا عبر النموذج التالي او الدخول للمنصة والتواصل عبر قسم من نحن.</p>
+                <a href="/toaselmana%20(1).html" class="card-btn">نموذج التواصل </a>
+            </div>
+                        
+            
+             <!-- البطاقة الخامسة: تقارير وتحليلات -->
+            <div class="card">
+                <i class="fas fa-medal"></i>
+                <h3 class="card-title">منصة المعلم المرشد </h3>
+                <p class="card-text">العودة لمنصة المعلم المرشد .</p>
+                <a href="/index.html" class="card-btn">اضغط هنا</a>
+            </div>
+            
+            
+            
+        </div>
+    </div>
+
+</body>
+</html>

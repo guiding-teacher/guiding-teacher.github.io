@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة دمج PDF الاحترافية</title>
+    <!-- Load pdf-lib Library -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Load fontkit (needed for reading/writing PDFs with various fonts) -->
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #28a745; /* Green for merging tool */
+            --secondary-color: #20c997; /* Tealish green */
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: var(--primary-color); /* Main success is primary */
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #424242;
+            --progress-bg: #555;
+            --progress-value-bg: var(--success-color);
+            --footer-bg: #222;
+            --footer-text: #aaa;
+            --list-item-bg: #3a3a3a;
+            --list-item-hover-bg: #4a4a4a;
+            --list-item-border: #505050;
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+        }
+
+        .merger-container { /* Renamed for clarity */
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 750px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .merger-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+
+        #pdfInputs { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #218838, #1b9a7a); box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfoDisplay {
+            display: block; margin-top: 10px; margin-bottom: 20px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #fileListContainer {
+            margin-top: 20px; margin-bottom: 25px; padding: 10px; border: 2px dashed var(--preview-border);
+            border-radius: var(--border-radius); min-height: 80px; background-color: var(--preview-bg);
+            text-align: right; font-size: 0.95em; color: #e0e0e0;
+        }
+        .file-list-placeholder { text-align: center; color: #aaa; padding: 20px 0; }
+        
+        .file-item {
+            background-color: var(--list-item-bg); border: 1px solid var(--list-item-border);
+            padding: 10px 15px; margin-bottom: 8px; border-radius: 6px;
+            display: flex; 
+            align-items: center; 
+            cursor: grab; user-select: none; transition: background-color 0.2s;
+        }
+        .file-item:hover { background-color: var(--list-item-hover-bg); }
+        .file-item.dragging { opacity: 0.5; background-color: var(--secondary-color); }
+        
+        .file-order-number {
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin-left: 8px; /* مسافة بين الرقم ومقبض السحب (في الترتيب المرئي RTL) */
+            flex-shrink: 0; /* لمنع التقلص */
+        }
+        .drag-handle {
+            cursor: grab;
+            color: var(--secondary-color);
+            font-size: 1.2em;
+            margin-left: 8px; /* مسافة بين المقبض وتفاصيل الملف (في الترتيب المرئي RTL) */
+            flex-shrink: 0; /* لمنع التقلص */
+        }
+        .file-details-main { /* لتجميع اسم الملف والمعلومات */
+            flex-grow: 1;
+            overflow: hidden;
+            text-align: right; 
+            margin-left: 10px; /* مسافة بين التفاصيل وزر الإزالة (في الترتيب المرئي RTL) */
+        }
+        .file-item-name {
+            display: block;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-size: 0.9em;
+        }
+        .file-item-info { 
+            display: block;
+            font-size: 0.8em; color: #bdc3c7; 
+            white-space: nowrap; 
+        }
+        .remove-file-btn {
+            background-color: var(--danger-color); color: white; border: none;
+            border-radius: 4px; padding: 4px 8px; font-size: 0.8em; cursor: pointer;
+            transition: background-color 0.2s;
+            flex-shrink: 0; /* لمنع التقلص */
+        }
+        .file-item:active { cursor: grabbing; }
+
+
+        #outputFilename {
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
+            background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #outputFilename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--primary-color), #1e7e34); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin-bottom: 15px;
+            box-shadow: 0 6px 18px rgba(40, 167, 69, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+            background: linear-gradient(135deg, #218838, #155724);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+
+        #statusDiv { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #download-options { margin-top: 25px; display: none; flex-direction: column; align-items: center; gap: 15px; }
+        .download-button {
+            display: inline-block; background-color: var(--primary-color); color: var(--button-text-color); padding: 12px 25px; text-decoration: none; border-radius: 8px;
+            font-size: 1rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 80%; max-width: 300px;
+        }
+        .download-button:hover { background-color: #218838; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(40, 167, 69, 0.5); }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: var(--footer-bg);
+            color: var(--footer-text); font-size: 0.85em; margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .merger-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfoDisplay { font-size: 0.95em; }
+            #fileListContainer { min-height: 90px; padding: 15px; font-size: 1em; }
+            .file-item-name { font-size: 0.95em; }
+            .file-item-info { font-size: 0.85em; }
+            #outputFilename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #statusDiv { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            .download-button { padding: 14px 30px; font-size: 1.05rem; width: auto; max-width: none; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            footer { font-size: 0.9em; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 16px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="merger-container">
+        <h1>أداة دمج PDF الاحترافية</h1>
+
+        <label for="pdfInputs" class="file-label">اختر ملفات PDF (حتى 5 ملفات)</label>
+        <input type="file" id="pdfInputs" accept="application/pdf" multiple>
+        <span id="fileInfoDisplay">لم يتم اختيار أي ملفات.</span>
+
+        <div id="fileListContainer">
+             <div class="file-list-placeholder">اسحب ملفات PDF هنا أو انقر لاختيارها. الملفات المختارة ستظهر هنا.</div>
+        </div>
+        
+        <input type="text" id="outputFilename" placeholder="الاسم الجديد للملف المدمج (اختياري)">
+
+        <button id="processBtn" disabled>بدء الدمج</button>
+
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="statusDiv"></div>
+
+        <div id="download-options">
+            <a id="downloadLinkPdf" href="#" download="merged_document.pdf" class="download-button">تحميل الملف المدمج (PDF)</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+
+    <script>
+        console.log("Merger Script start.");
+
+        if (typeof window.PDFLib === 'undefined' || typeof window.fontkit === 'undefined') {
+            console.error("pdf-lib or fontkit is not loaded!");
+            alert("خطأ: لم يتم تحميل المكتبات اللازمة (pdf-lib, fontkit). لا يمكن المتابعة.");
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('pdfInputs').disabled = true;
+        } else {
+            console.log("pdf-lib and fontkit loaded successfully.");
+            const { PDFDocument } = window.PDFLib;
+
+            // --- DOM Elements ---
+            const pdfInputs = document.getElementById('pdfInputs');
+            const fileInfoDisplay = document.getElementById('fileInfoDisplay');
+            const fileListContainer = document.getElementById('fileListContainer');
+            const outputFilenameInput = document.getElementById('outputFilename');
+            const processBtn = document.getElementById('processBtn');
+            const progressBarContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusDiv = document.getElementById('statusDiv');
+            const downloadOptionsDiv = document.getElementById('download-options');
+            const downloadLinkPdf = document.getElementById('downloadLinkPdf');
+
+            // --- State ---
+            let fileDetails = []; // Array of { id, name, arrayBuffer, pageCount, fileObject }
+            let mergedPdfBlobUrl = null;
+            let isProcessing = false;
+            let totalSelectedPages = 0;
+            const MAX_FILES = 5;
+            const MAX_TOTAL_PAGES = 500;
+
+            // --- Utility Functions ---
+            function cleanupBlobUrl() {
+                if (mergedPdfBlobUrl) {
+                    URL.revokeObjectURL(mergedPdfBlobUrl);
+                    mergedPdfBlobUrl = null;
+                    console.log("Merged PDF Blob URL revoked.");
+                }
+            }
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 بايت';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            function sanitizeFilename(filename) {
+                return filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_');
+            }
+            
+            function generateUniqueId() {
+                return Date.now().toString(36) + Math.random().toString(36).substring(2);
+            }
+
+            function renderFileList() {
+                fileListContainer.innerHTML = ''; // Clear existing list
+                totalSelectedPages = 0;
+
+                if (fileDetails.length === 0) {
+                    fileListContainer.innerHTML = '<div class="file-list-placeholder">اسحب ملفات PDF هنا أو انقر لاختيارها. الملفات المختارة ستظهر هنا.</div>';
+                    updateUIState();
+                    return;
+                }
+
+                fileDetails.forEach((file, index) => { // *** CHANGED: Added index ***
+                    totalSelectedPages += file.pageCount;
+                    const listItem = document.createElement('div');
+                    listItem.classList.add('file-item');
+                    listItem.setAttribute('draggable', 'true');
+                    listItem.dataset.id = file.id;
+
+                    // *** CHANGED: Updated innerHTML to include order number and new structure ***
+                    listItem.innerHTML = `
+                        <span class="file-order-number">${index + 1}.</span>
+                        <span class="drag-handle">☰</span>
+                        <div class="file-details-main">
+                            <span class="file-item-name" title="${file.name}">${file.name}</span>
+                            <span class="file-item-info">(${file.pageCount} صفحة، ${formatBytes(file.fileObject.size)})</span>
+                        </div>
+                        <button class="remove-file-btn" data-id="${file.id}" title="إزالة الملف">×</button>
+                    `;
+                    fileListContainer.appendChild(listItem);
+
+                    listItem.querySelector('.remove-file-btn').addEventListener('click', (e) => {
+                        e.stopPropagation(); 
+                        removeFile(file.id);
+                    });
+                });
+                updateUIState();
+            }
+            
+            function removeFile(id) {
+                fileDetails = fileDetails.filter(file => file.id !== id);
+                renderFileList(); 
+                if (fileDetails.length === 0) {
+                     outputFilenameInput.value = ''; 
+                }
+            }
+
+            function updateUIState(processing = isProcessing) {
+                const filesSelected = fileDetails.length > 0;
+                const pageLimitExceeded = totalSelectedPages > MAX_TOTAL_PAGES;
+                
+                processBtn.disabled = !filesSelected || processing || pageLimitExceeded || fileDetails.some(f => f.pageCount === 0);
+
+                if (filesSelected) {
+                    let infoText = `تم اختيار ${fileDetails.length} ملف(ات). إجمالي الصفحات: ${totalSelectedPages}.`;
+                    if (pageLimitExceeded) {
+                        infoText += ` <span style="color: var(--danger-color);">(تجاوز الحد الأقصى ${MAX_TOTAL_PAGES} صفحة!)</span>`;
+                        fileInfoDisplay.innerHTML = infoText;
+                    } else if (fileDetails.length > MAX_FILES) {
+                         infoText += ` <span style="color: var(--danger-color);">(تجاوز الحد الأقصى ${MAX_FILES} ملفات!)</span>`;
+                         fileInfoDisplay.innerHTML = infoText;
+                         processBtn.disabled = true;
+                    } else {
+                        fileInfoDisplay.innerHTML = infoText;
+                        fileInfoDisplay.style.color = 'var(--success-color)';
+                    }
+                    if (!outputFilenameInput.value && fileDetails.length > 0 && !processing && !statusDiv.textContent.includes('اكتمل') && !statusDiv.style.color.includes('danger')) {
+                        outputFilenameInput.value = 'ملف_مدمج';
+                    }
+                } else {
+                    fileInfoDisplay.textContent = 'لم يتم اختيار أي ملفات.';
+                    fileInfoDisplay.style.color = 'var(--text-color)';
+                    outputFilenameInput.value = '';
+                    downloadOptionsDiv.style.display = 'none';
+                    totalSelectedPages = 0;
+                }
+
+                progressBarContainer.style.display = processing ? 'block' : 'none';
+                 if (pageLimitExceeded && !processing) {
+                    statusDiv.textContent = `لا يمكن المتابعة، إجمالي عدد الصفحات (${totalSelectedPages}) يتجاوز الحد المسموح به (${MAX_TOTAL_PAGES}).`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                } else if (statusDiv.textContent.includes('يتجاوز الحد المسموح به') && !pageLimitExceeded) {
+                     statusDiv.textContent = ''; 
+                }
+            }
+
+
+            // --- File Input Handler ---
+            async function handleFileSelection(files) {
+                console.log("Handling file selection.");
+                if (isProcessing) {
+                    console.warn("Processing in progress, ignoring new file selection.");
+                    return;
+                }
+
+                const newFiles = Array.from(files);
+                if (fileDetails.length + newFiles.length > MAX_FILES) {
+                    statusDiv.textContent = `لا يمكن إضافة المزيد من الملفات. الحد الأقصى هو ${MAX_FILES} ملفات.`;
+                    statusDiv.style.color = 'var(--warning-color)';
+                    pdfInputs.value = null; 
+                    return;
+                }
+
+                statusDiv.innerHTML = 'جاري قراءة الملفات... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBarContainer.style.display = 'none'; 
+                progressBar.value = 0;
+                cleanupBlobUrl();
+                
+                let filesProcessed = 0;
+                for (const file of newFiles) {
+                    if (file.type !== 'application/pdf') {
+                        statusDiv.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF.`;
+                        statusDiv.style.color = 'var(--danger-color)';
+                        continue; 
+                    }
+
+                    if (fileDetails.some(f => f.name === file.name && f.fileObject.lastModified === file.lastModified && f.fileObject.size === file.size)) {
+                        console.log(`Skipping duplicate file: ${file.name}`);
+                        filesProcessed++;
+                        if (filesProcessed === newFiles.length) statusDiv.innerHTML = ''; 
+                        continue;
+                    }
+
+                    const fileId = generateUniqueId();
+                    const currentFileDetail = { id: fileId, name: file.name, arrayBuffer: null, pageCount: 0, fileObject: file };
+                    fileDetails.push(currentFileDetail); 
+                    renderFileList(); 
+                    updateUIState(); 
+
+                    try {
+                        const arrayBuffer = await file.arrayBuffer();
+                        currentFileDetail.arrayBuffer = arrayBuffer;
+
+                        const tempDoc = await PDFDocument.load(arrayBuffer, {
+                            updateMetadata: false,
+                            ignoreEncryption: true,
+                            fontkit: window.fontkit
+                        });
+                        currentFileDetail.pageCount = tempDoc.getPageCount();
+                        if (currentFileDetail.pageCount === 0) {
+                             statusDiv.textContent = `تحذير: الملف "${file.name}" لا يحتوي على صفحات أو لا يمكن قراءته.`;
+                             statusDiv.style.color = 'var(--warning-color)';
+                        }
+
+                    } catch (loadError) {
+                        console.error(`Error parsing PDF "${file.name}":`, loadError);
+                        statusDiv.textContent = `خطأ في قراءة الملف "${file.name}": ${loadError.message || 'ملف تالف أو محمي؟'}`;
+                        statusDiv.style.color = 'var(--danger-color)';
+                        currentFileDetail.pageCount = 0; 
+                    } finally {
+                        filesProcessed++;
+                        renderFileList(); 
+                        if (filesProcessed === newFiles.length) {
+                            if (!statusDiv.textContent.includes('خطأ') && !statusDiv.textContent.includes('تحذير')) {
+                                statusDiv.innerHTML = ''; 
+                            }
+                        }
+                         pdfInputs.value = null; 
+                    }
+                }
+                if (fileDetails.length === 0 && newFiles.length > 0 && !statusDiv.textContent.includes('جاري')) {
+                    statusDiv.textContent = 'لم يتم إضافة أي ملفات صالحة.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                }
+            }
+
+            pdfInputs.addEventListener("change", (e) => handleFileSelection(e.target.files));
+
+            // --- Drag and Drop for File Input ---
+            fileListContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isProcessing) fileListContainer.style.borderColor = 'var(--primary-color)';
+            });
+            fileListContainer.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileListContainer.style.borderColor = 'var(--preview-border)';
+            });
+            fileListContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                fileListContainer.style.borderColor = 'var(--preview-border)';
+                if (isProcessing) return;
+                if (e.dataTransfer.files.length > 0) { // This is for adding new files via drag/drop
+                    handleFileSelection(e.dataTransfer.files);
+                }
+                // Note: Reordering logic is handled in a separate 'drop' event further down
+            });
+
+            // --- Drag and Drop for Reordering List Items ---
+            let draggedItem = null;
+            fileListContainer.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('file-item')) {
+                    draggedItem = e.target;
+                    setTimeout(() => e.target.classList.add('dragging'), 0); 
+                }
+            });
+            fileListContainer.addEventListener('dragend', (e) => {
+                if (draggedItem && e.target.classList.contains('file-item')) {
+                    e.target.classList.remove('dragging');
+                    draggedItem = null;
+                }
+            });
+            fileListContainer.addEventListener('dragover', (e) => { // Handles positioning during drag
+                e.preventDefault();
+                if (!draggedItem) return;
+                const afterElement = getDragAfterElement(fileListContainer, e.clientY);
+                const draggable = draggedItem;
+                if (afterElement == null) {
+                    fileListContainer.appendChild(draggable);
+                } else {
+                    fileListContainer.insertBefore(draggable, afterElement);
+                }
+            });
+            // This 'drop' listener is specifically for when a list item is dropped to reorder.
+            // It's distinct from the file drop listener above.
+            fileListContainer.addEventListener('drop', (e) => { 
+                e.preventDefault(); 
+                if (draggedItem) { // This means it was a list item reorder
+                    draggedItem.classList.remove('dragging');
+                    const newOrderedIds = Array.from(fileListContainer.querySelectorAll('.file-item')).map(item => item.dataset.id);
+                    fileDetails.sort((a, b) => newOrderedIds.indexOf(a.id) - newOrderedIds.indexOf(b.id));
+                    draggedItem = null;
+                    console.log("Files reordered.");
+                    renderFileList(); // Re-render to update order numbers and ensure consistency
+                }
+                // If e.dataTransfer.files is populated, it's handled by the other drop listener.
+            });
+
+            function getDragAfterElement(container, y) {
+                const draggableElements = [...container.querySelectorAll('.file-item:not(.dragging)')];
+                return draggableElements.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset: offset, element: child };
+                    } else {
+                        return closest;
+                    }
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+            }
+
+            // --- Processing Logic ---
+            processBtn.addEventListener('click', async function() {
+                console.log("Process button clicked.");
+                if (isProcessing || fileDetails.length === 0) {
+                    statusDiv.textContent = 'الرجاء اختيار ملف PDF واحد على الأقل للدمج.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+                if (totalSelectedPages > MAX_TOTAL_PAGES) {
+                     statusDiv.textContent = `لا يمكن المتابعة، إجمالي عدد الصفحات (${totalSelectedPages}) يتجاوز الحد المسموح به (${MAX_TOTAL_PAGES}).`;
+                     statusDiv.style.color = 'var(--danger-color)';
+                     return;
+                }
+                 if (fileDetails.some(f => f.pageCount === 0)) {
+                    statusDiv.textContent = 'واحد أو أكثر من الملفات المحددة لا يحتوي على صفحات أو به خطأ. يرجى إزالته أو اختيار ملف آخر.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+
+
+                isProcessing = true;
+                updateUIState();
+                cleanupBlobUrl();
+                statusDiv.innerHTML = 'جاري التحضير للدمج... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBar.value = 0;
+                progressBarContainer.style.display = 'block';
+                console.log("Merging process started.");
+
+                try {
+                    const mergedPdfDoc = await PDFDocument.create();
+                    mergedPdfDoc.registerFontkit(window.fontkit); 
+                    progressBar.value = 5; 
+
+                    let filesProcessedForMerging = 0;
+                    const totalFilesToMerge = fileDetails.length;
+
+                    for (const fileDetail of fileDetails) {
+                        filesProcessedForMerging++;
+                        statusDiv.innerHTML = `جاري دمج الملف ${filesProcessedForMerging} من ${totalFilesToMerge} ("${fileDetail.name}")... <div class="spinner"></div>`;
+                        
+                        const pdfToMerge = await PDFDocument.load(fileDetail.arrayBuffer, { fontkit: window.fontkit });
+                        const pageIndices = pdfToMerge.getPageIndices();
+                        const copiedPages = await mergedPdfDoc.copyPages(pdfToMerge, pageIndices);
+                        copiedPages.forEach(page => mergedPdfDoc.addPage(page));
+                        
+                        progressBar.value = 5 + Math.round((filesProcessedForMerging / totalFilesToMerge) * 85); 
+                        console.log(`Merged: ${fileDetail.name}`);
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+
+                    statusDiv.innerHTML = 'جاري حفظ الملف المدمج... <div class="spinner"></div>';
+                    progressBar.value = 90;
+
+                    const mergedPdfBytes = await mergedPdfDoc.save({ useObjectStreams: true });
+                    progressBar.value = 98; 
+
+                    mergedPdfBlobUrl = URL.createObjectURL(new Blob([mergedPdfBytes], { type: 'application/pdf' }));
+                    
+                    let outputName = outputFilenameInput.value.trim();
+                    if (!outputName) {
+                        outputName = 'ملف_مدمج';
+                    } else {
+                        outputName = sanitizeFilename(outputName);
+                    }
+                    if (!outputName.toLowerCase().endsWith('.pdf')) {
+                        outputName += '.pdf';
+                    }
+
+                    downloadLinkPdf.href = mergedPdfBlobUrl;
+                    downloadLinkPdf.download = outputName;
+
+                    statusDiv.textContent = `اكتمل الدمج بنجاح! تم دمج ${fileDetails.length} ملف(ات).`;
+                    statusDiv.style.color = 'var(--success-color)';
+                    progressBar.value = 100;
+                    setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
+                    downloadOptionsDiv.style.display = 'flex';
+                    console.log("Merging and saving successful!");
+
+                } catch (error) {
+                    console.error("Error during PDF merging:", error);
+                    statusDiv.textContent = `حدث خطأ أثناء الدمج: ${error.message || 'خطأ غير معروف.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    progressBarContainer.style.display = 'none';
+                    downloadOptionsDiv.style.display = 'none';
+                    cleanupBlobUrl();
+                } finally {
+                    console.log("Processing finished (finally block).");
+                    isProcessing = false;
+                    const spinner = statusDiv.querySelector('.spinner');
+                    if (spinner) spinner.remove();
+                    updateUIState();
+                }
+            });
+
+            // --- Initial UI Setup ---
+            console.log("Setting initial UI state for merger.");
+            renderFileList(); 
+            updateUIState();
+            window.addEventListener('beforeunload', cleanupBlobUrl);
+            console.log("Merger script initialization complete.");
+        }
+    </script>
+
+</body>
+</html>

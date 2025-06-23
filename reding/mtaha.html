@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>مغامرة الحروف والنجوم</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        :root {
+            --primary-color: #6ab04c;
+            --secondary-color: #f9f9f9;
+            --accent-color: #f39c12;
+            --wall-color: #8d6e63;
+            --path-color: #ffffff;
+            --player-color: #e74c3c;
+            --end-color: #48dbfb;
+            --collectible-color: #9b59b6;
+            --star-color: #f1c40f;
+            --text-dark: #34495e;
+            --text-light: #ffffff;
+            --start-screen-bg: linear-gradient(145deg, #ffecd2, #fcb69f);
+            --game-bg: linear-gradient(to bottom, #e0f7fa, #b2ebf2);
+            --button-bg: #1abc9c;
+            --button-hover-bg: #16a085;
+            --button-active-bg: #117a65;
+            --info-bar-bg: rgba(255, 255, 255, 0.8);
+            --letter-display-bg: #fff3e0;
+            --particle-duration: 0.6s;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Cairo', sans-serif;
+            background: var(--game-bg);
+            color: var(--text-dark);
+            overscroll-behavior: none;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- شاشات التراكب --- */
+        #finalScreen, #idleScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            color: var(--text-light);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+            padding: 20px;
+            backdrop-filter: blur(6px);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        #finalScreen.visible, #idleScreen.visible {
+            display: flex;
+            opacity: 1;
+        }
+        #finalScreen .overlay-content, #idleScreen .overlay-content {
+            background-color: rgba(44, 62, 80, 0.9);
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        #finalScreen.visible .overlay-content, #idleScreen.visible .overlay-content {
+            transform: scale(1);
+        }
+        .overlay-screen h1 {
+            font-size: 2.2em;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+        .overlay-screen p {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .overlay-screen button {
+            padding: 12px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            font-family: 'Cairo', sans-serif;
+            color: var(--text-dark);
+            background-color: var(--star-color);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            margin: 5px;
+        }
+        .overlay-screen button:hover {
+            background-color: #f39c12;
+            transform: scale(1.05);
+        }
+        .overlay-screen button.secondary {
+            background-color: #bdc3c7;
+        }
+        .overlay-screen button.secondary:hover {
+            background-color: #95a5a6;
+        }
+
+        /* --- شاشة البداية --- */
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--start-screen-bg);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        #startScreen.hidden {
+            display: none;
+        }
+        #startScreen .overlay-content {
+            background: transparent;
+            box-shadow: none;
+            color: inherit;
+            transform: scale(1);
+            padding: 0;
+        }
+        #startScreen h1 {
+            color: var(--primary-color);
+        }
+        #startScreen button {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+        #startScreen button:hover {
+            background-color: #58a042;
+        }
+
+        /* --- منطقة اللعبة الرئيسية --- */
+        .game-wrapper {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            padding: 5px;
+        }
+        .game-wrapper.active {
+            display: flex;
+        }
+        .game-container {
+            position: relative;
+            text-align: center;
+            border: none;
+            background-color: transparent;
+            padding: 0;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 5px;
+            width: 100%;
+        }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 8px 10px;
+            margin: 0 auto 8px auto;
+            font-size: 1em;
+            font-weight: bold;
+            flex-wrap: wrap;
+            gap: 8px;
+            background: var(--info-bar-bg);
+            border-radius: 8px;
+        }
+        #level-display { order: 1; }
+        #word-count-display { order: 2; }
+        #letter-display {
+            order: 3;
+            flex-basis: 100%;
+            text-align: center;
+            font-size: 1.6em;
+            color: var(--primary-color);
+            background-color: var(--letter-display-bg);
+            padding: 5px 0;
+            border-radius: 5px;
+            margin: 5px 0;
+            border: 1px solid var(--primary-color);
+        }
+        #star-display { order: 4; }
+        #timer-display { order: 5; }
+        #level-display, #word-count-display, #star-display, #timer-display {
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            white-space: nowrap;
+        }
+        #star-display {
+            color: var(--star-color);
+        }
+        .canvas-container {
+            position: relative;
+            width: fit-content;
+            height: fit-content;
+            margin: 0 auto;
+        }
+        #mazeCanvas, #particleCanvas {
+            display: block;
+            max-width: 100%;
+            image-rendering: pixelated;
+            touch-action: none;
+            border-radius: 5px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #mazeCanvas {
+            z-index: 1;
+            border: 2px solid var(--wall-color);
+            background-color: var(--path-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #particleCanvas {
+            z-index: 2;
+            pointer-events: none;
+            background-color: transparent;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 260px;
+            margin: 0 auto 15px auto;
+        }
+        .controls button {
+            font-size: 2.5em;
+            padding: 12px;
+            border: none;
+            border-radius: 18px;
+            background: var(--button-bg);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+            aspect-ratio: 1 / 1;
+        }
+        .controls button:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-1px);
+        }
+        .controls button:active {
+            background-color: var(--button-active-bg);
+            transform: translateY(1px);
+        }
+        .controls .up {
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+        }
+        .controls .left {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+        }
+        .controls .down {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+        }
+        .controls .right {
+            grid-column: 3 / 4;
+            grid-row: 2 / 3;
+        }
+        #message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background-color: rgba(44, 62, 80, 0.95);
+            color: var(--text-light);
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-size: 1.4em;
+            font-weight: bold;
+            text-align: center;
+            display: none;
+            z-index: 50;
+            border: 3px solid var(--accent-color);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        #message.visible {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        #zoomWordDisplay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.1);
+            font-size: 3.5em;
+            font-weight: bold;
+            color: var(--collectible-color);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 15px;
+            z-index: 60;
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.4s ease;
+            pointer-events: none;
+            display: none;
+            border: 3px solid var(--accent-color);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        #zoomWordDisplay.visible {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .hidden-audio {
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .overlay-screen h1 {
+                font-size: 1.8em;
+            }
+            .overlay-screen p {
+                font-size: 1em;
+            }
+            .overlay-screen button {
+                font-size: 1em;
+                padding: 10px 25px;
+            }
+            .info-bar {
+                font-size: 0.9em;
+                gap: 4px;
+                padding: 6px 8px;
+            }
+            #level-display, #word-count-display, #star-display, #timer-display {
+                padding: 4px 8px;
+                font-size: 0.9em;
+            }
+            #letter-display {
+                font-size: 1.3em;
+            }
+            #message {
+                font-size: 1.1em;
+                padding: 15px 20px;
+            }
+            #zoomWordDisplay {
+                font-size: 2em;
+                padding: 10px 20px;
+            }
+            .controls {
+                max-width: 200px;
+                margin-bottom: 10px;
+            }
+            .controls button {
+                font-size: 2em;
+                padding: 8px;
+                border-radius: 15px;
+            }
+        }
+        @media (max-height: 600px) {
+            .game-wrapper {
+                padding-top: 3px;
+                padding-bottom: 3px;
+            }
+            .info-bar {
+                margin-bottom: 3px;
+            }
+            .controls {
+                margin-top: 3px;
+                margin-bottom: 8px;
+            }
+            #letter-display {
+                margin: 3px 0;
+                padding: 3px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- شاشات التراكب -->
+    <div id="startScreen" class="overlay-screen visible">
+        <div class="overlay-content">
+            <h1>مغامرة الحروف والنجوم</h1>
+            <p>انطلقي في رحلة ممتعة لجمع الكلمات والنجوم لكل حرف من حروف الهجاء!</p>
+            <button id="startButton">ابدأ المغامرة!</button>
+            <div id="continue-option" style="margin-top: 15px; display: none;">
+                <button id="continueButton">أكمل من المستوى <span id="savedLevelNum"></span></button>
+            </div>
+        </div>
+    </div>
+    <div id="finalScreen" class="overlay-screen">
+        <div class="overlay-content">
+            <h1>🎉 تهانينا! 🎉</h1>
+            <p id="finalMessage">لقد أكملت كل المستويات ببراعة!</p>
+            <p>✨ النجوم المجمعة: <span id="finalStars">0</span> ✨</p>
+            <button id="playAgainButton">العب مرة أخرى</button>
+        </div>
+    </div>
+    <div id="idleScreen" class="overlay-screen">
+        <div class="overlay-content">
+            <h1>هل ما زلت هنا؟</h1>
+            <p>لقد توقفت اللعبة مؤقتاً بسبب عدم النشاط.</p>
+            <button id="continueIdleButton">أكمل اللعب</button>
+            <button id="restartIdleButton" class="secondary">ابدأ من جديد</button>
+        </div>
+    </div>
+
+    <!-- منطقة اللعبة -->
+    <div class="game-wrapper">
+        <div class="game-container">
+            <div class="info-bar">
+                <div id="level-display">المستوى: 1/28</div>
+                <div id="letter-display">الحرف: أ</div>
+                <div id="star-display">⭐ 0</div>
+                <div id="word-count-display">الكلمات: 0/0</div>
+                <div id="timer-display">الوقت: 0 ث</div>
+            </div>
+            <div class="canvas-container">
+                <canvas id="mazeCanvas">متصفحك لا يدعم كانفاس HTML5</canvas>
+                <canvas id="particleCanvas"></canvas>
+            </div>
+            <div id="message" class="message"></div>
+            <div id="zoomWordDisplay"></div>
+        </div>
+        <div class="controls">
+            <button class="up" onclick="window.movePlayerWithFeedback('up')">▲</button>
+            <button class="left" onclick="window.movePlayerWithFeedback('left')">◄</button>
+            <button class="down" onclick="window.movePlayerWithFeedback('down')">▼</button>
+            <button class="right" onclick="window.movePlayerWithFeedback('right')">►</button>
+        </div>
+    </div>
+
+    <!-- عناصر الصوت -->
+    <audio id="moveSound" src="https://actions.google.com/sounds/v1/movement/footsteps_carpet_fast.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="collectSound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="winSound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="errorSound" src="https://actions.google.com/sounds/v1/impacts/hit_low_frequency.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="startSound" src="https://actions.google.com/sounds/v1/alarms/bell_timer.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="starSound" src="https://actions.google.com/sounds/v1/points/points_register.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="levelCompleteSound" src="https://actions.google.com/sounds/v1/achievements/achievement_trumpet.ogg" preload="auto" class="hidden-audio"></audio>
+    <audio id="idleAlertSound" src="https://actions.google.com/sounds/v1/notifications/quick_notice.ogg" preload="auto" class="hidden-audio"></audio>
+
+    <script>
+        // --- العناصر والمتغيرات ---
+        const mazeCanvas = document.getElementById('mazeCanvas');
+        const mazeCtx = mazeCanvas.getContext('2d');
+        const particleCanvas = document.getElementById('particleCanvas');
+        const particleCtx = particleCanvas.getContext('2d');
+        const messageDiv = document.getElementById('message');
+        const zoomWordDisplay = document.getElementById('zoomWordDisplay');
+        const levelDisplay = document.getElementById('level-display');
+        const letterDisplay = document.getElementById('letter-display');
+        const wordCountDisplay = document.getElementById('word-count-display');
+        const timerDisplay = document.getElementById('timer-display');
+        const starDisplay = document.getElementById('star-display');
+        const startScreen = document.getElementById('startScreen');
+        const startButton = document.getElementById('startButton');
+        const continueOptionDiv = document.getElementById('continue-option');
+        const continueButton = document.getElementById('continueButton');
+        const savedLevelNumSpan = document.getElementById('savedLevelNum');
+        const finalScreen = document.getElementById('finalScreen');
+        const finalMessageP = document.getElementById('finalMessage');
+        const finalStarsSpan = document.getElementById('finalStars');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const idleScreen = document.getElementById('idleScreen');
+        const continueIdleButton = document.getElementById('continueIdleButton');
+        const restartIdleButton = document.getElementById('restartIdleButton');
+        const gameWrapper = document.querySelector('.game-wrapper');
+        const canvasContainer = document.querySelector('.canvas-container');
+
+        let TILE_SIZE = 30;
+        const PLAYER_CHAR = '👧';
+        const END_CHAR = '🏆';
+        const STAR_CHAR = '⭐';
+        const WORD_PLACEHOLDER_CHAR = '📝';
+        const FONT_SIZE_RATIO = 0.65;
+        const IDLE_TIMEOUT_DURATION = 50000;
+
+        const arabicLetters = ['أ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'ه', 'و', 'ي'];
+        const wordsData = {
+            'أ': ['أسد', 'أرنب', 'أذن'],
+            'ب': ['بطة', 'بيت', 'باب'],
+            'ت': ['تفاح', 'تمر', 'تاج'],
+            'ث': ['ثعلب', 'ثوب', 'ثوم'],
+            'ج': ['جمل', 'جبل', 'جزر'],
+            'ح': ['حصان', 'حوت', 'حليب'],
+            'خ': ['خروف', 'خبز', 'خاتم'],
+            'د': ['ديك', 'دب', 'دار'],
+            'ذ': ['ذئب', 'ذرة', 'ذهب'],
+            'ر': ['رجل', 'رمان', 'رأس'],
+            'ز': ['زرافة', 'زيت', 'زهرة'],
+            'س': ['سمكة', 'ساعة', 'سرير'],
+            'ش': ['شمس', 'شجرة', 'شباك'],
+            'ص': ['صقر', 'صاروخ', 'صندوق'],
+            'ض': ['ضفدع', 'ضبع', 'ضوء'],
+            'ط': ['طائرة', 'طبل', 'طماطم'],
+            'ظ': ['ظبي', 'ظرف', 'ظل'],
+            'ع': ['عين', 'عصفور', 'علم'],
+            'غ': ['غزال', 'غيمة', 'غصن'],
+            'ف': ['فيل', 'فراشة', 'فم'],
+            'ق': ['قرد', 'قمر', 'قطار'],
+            'ك': ['كلب', 'كرسي', 'كرة'],
+            'ل': ['ليمون', 'لسان', 'لبن'],
+            'م': ['موز', 'ماء', 'مفتاح'],
+            'ن': ['نملة', 'نجمة', 'نمر'],
+            'ه': ['هرم', 'هلال', 'هدية'],
+            'و': ['ولد', 'وردة', 'وجه'],
+            'ي': ['يد', 'يمامة', 'يقطين']
+        };
+        const mazeTemplates = [
+            [
+                [1, 1, 1, 1, 1, 1, 1],
+                [1, 'S', 0, 1, 0, 'ST', 1],
+                [1, 1, 0, 1, 0, 1, 1],
+                [1, 0, 0, 0, 0, 0, 1],
+                [1, 'ST', 1, 1, 1, 0, 1],
+                [1, 0, 0, 0, 0, 'E', 1],
+                [1, 1, 1, 1, 1, 1, 1]
+            ],
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 'S', 0, 0, 1, 0, 0, 1],
+                [1, 1, 1, 0, 1, 'ST', 1, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 0, 1, 1, 0, 1, 0, 1],
+                [1, 0, 'ST', 1, 0, 1, 'E', 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 'S', 0, 0, 0, 1, 0, 'ST', 1],
+                [1, 1, 1, 0, 1, 1, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1, 1],
+                [1, 0, 1, 'ST', 1, 1, 0, 0, 1],
+                [1, 0, 0, 0, 0, 1, 0, 1, 1],
+                [1, 1, 1, 1, 0, 1, 'E', 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1]
+            ]
+        ];
+
+        let currentLevelIndex = 0;
+        let highestLevelReached = 0;
+        let currentMazeInstance = [];
+        let currentWords = [];
+        let playerPos = { x: 0, y: 0 };
+        let endPos = { x: 0, y: 0 };
+        let cols = 0;
+        let rows = 0;
+        let collectedWordsCount = 0;
+        let totalStarsCollected = 0;
+        let timeElapsed = 0;
+        let timerIntervalId = null;
+        let idleTimerId = null;
+        let gameActive = false;
+        let FONT_SIZE = 20;
+        let isSoundUnlocked = false;
+        let particles = [];
+        let animationFrameId = null;
+
+        const sounds = {
+            move: document.getElementById('moveSound'),
+            collect: document.getElementById('collectSound'),
+            win: document.getElementById('winSound'),
+            error: document.getElementById('errorSound'),
+            start: document.getElementById('startSound'),
+            star: document.getElementById('starSound'),
+            levelComplete: document.getElementById('levelCompleteSound'),
+            idleAlert: document.getElementById('idleAlertSound')
+        };
+        const synth = window.speechSynthesis;
+        let voices = [];
+
+        function populateVoiceList() {
+            if (typeof speechSynthesis === 'undefined') return;
+            voices = synth.getVoices().filter(voice => voice.lang.startsWith('ar'));
+        }
+        populateVoiceList();
+        if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
+
+        function playSound(soundId) {
+            if (!isSoundUnlocked) return;
+            const sound = sounds[soundId];
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(error => console.warn(`خطأ تشغيل الصوت ${soundId}:`, error));
+            }
+        }
+
+        function speakWord(text) {
+            if (!isSoundUnlocked || typeof speechSynthesis === 'undefined' || !synth) {
+                console.warn("Speech synthesis غير مدعوم أو لم يتم تفعيله.");
+                return;
+            }
+            if (synth.speaking) {
+                // synth.cancel();
+            }
+            const utterThis = new SpeechSynthesisUtterance(text);
+            utterThis.onerror = function (event) {
+                console.error('SpeechSynthesisUtterance.onerror:', event.error);
+            }
+            const arabicVoice = voices.find(voice => voice.lang === 'ar-SA') || voices.find(voice => voice.lang.startsWith('ar'));
+            if (arabicVoice) {
+                utterThis.voice = arabicVoice;
+            } else {
+                utterThis.lang = 'ar-SA';
+            }
+            synth.speak(utterThis);
+        }
+
+        function saveProgress() {
+            localStorage.setItem('highestLevelReached', highestLevelReached.toString());
+            localStorage.setItem('totalStarsCollected', totalStarsCollected.toString());
+        }
+
+        function loadProgress() {
+            const savedLevel = localStorage.getItem('highestLevelReached');
+            const savedStars = localStorage.getItem('totalStarsCollected');
+            if (savedLevel) {
+                highestLevelReached = parseInt(savedLevel, 10);
+            } else {
+                highestLevelReached = 0;
+            }
+            if (savedStars) {
+                totalStarsCollected = parseInt(savedStars, 10);
+            } else {
+                totalStarsCollected = 0;
+            }
+            updateStarDisplay();
+        }
+
+        function setupCanvasSize() {
+            const wrapper = gameWrapper;
+            const controlsHeight = document.querySelector('.controls').offsetHeight;
+            const infoBarHeight = document.querySelector('.info-bar').offsetHeight;
+            const containerPadding = 5;
+            const wrapperPadding = 5;
+            const bottomMargin = 20;
+
+            const availableHeight = wrapper.clientHeight - controlsHeight - infoBarHeight - containerPadding - wrapperPadding - bottomMargin;
+            const availableWidth = wrapper.clientWidth - 10;
+
+            const safeAvailableHeight = Math.max(1, availableHeight);
+            const safeAvailableWidth = Math.max(1, availableWidth);
+
+            const tileHeight = Math.floor(safeAvailableHeight / rows);
+            const tileWidth = Math.floor(safeAvailableWidth / cols);
+            TILE_SIZE = Math.max(10, Math.min(tileHeight, tileWidth));
+
+            mazeCanvas.width = particleCanvas.width = cols * TILE_SIZE;
+            mazeCanvas.height = particleCanvas.height = rows * TILE_SIZE;
+
+            canvasContainer.style.width = `${mazeCanvas.width}px`;
+            canvasContainer.style.height = `${mazeCanvas.height}px`;
+
+            FONT_SIZE = Math.max(8, Math.floor(TILE_SIZE * FONT_SIZE_RATIO));
+
+            const extraWidth = safeAvailableWidth - mazeCanvas.width;
+            canvasContainer.style.marginLeft = `${Math.max(0, extraWidth / 2)}px`;
+            canvasContainer.style.marginRight = `${Math.max(0, extraWidth / 2)}px`;
+        }
+
+        function startGame(startLevel = 0) {
+            console.log(`Starting game from level: ${startLevel}`);
+            hideAllScreens();
+            
+            // إخفاء شاشة البداية وإظهار منطقة اللعبة
+            startScreen.classList.add('hidden');
+            gameWrapper.classList.add('active');
+            
+            // بدء حلقة الأنيميشن إذا لم تكن قيد التشغيل
+            if (animationFrameId === null) {
+                animationLoop();
+            }
+            
+            // تحميل المستوى بعد تأكيد أن العناصر جاهزة
+            setTimeout(() => {
+                currentLevelIndex = startLevel;
+                if (!loadLevel(currentLevelIndex)) {
+                    console.error(`Failed to load level ${currentLevelIndex}`);
+                    // إعادة إظهار شاشة البداية إذا فشل التحميل
+                    gameWrapper.classList.remove('active');
+                    startScreen.classList.remove('hidden');
+                }
+            }, 50);
+        }
+
+        function loadLevel(levelIndex) {
+            if (levelIndex >= arabicLetters.length) {
+                showFinalScreen();
+                return false;
+            }
+
+            gameActive = true;
+            currentLevelIndex = levelIndex;
+            if (currentLevelIndex > highestLevelReached) {
+                highestLevelReached = currentLevelIndex;
+            }
+            const currentLetter = arabicLetters[currentLevelIndex];
+            const wordsForLetter = wordsData[currentLetter] || [];
+            const templateIndex = levelIndex % mazeTemplates.length;
+            const mazeTemplate = JSON.parse(JSON.stringify(mazeTemplates[templateIndex]));
+            currentMazeInstance = mazeTemplate;
+            rows = currentMazeInstance.length;
+            cols = currentMazeInstance[0].length;
+
+            collectedWordsCount = 0;
+            timeElapsed = 0;
+            clearTimeout(idleTimerId);
+            clearInterval(timerIntervalId);
+            messageDiv.classList.remove('visible');
+            zoomWordDisplay.classList.remove('visible');
+            currentWords = [];
+            particles = [];
+
+            const availableSlots = [];
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const tile = currentMazeInstance[y][x];
+                    if (tile !== 1 && tile !== 'E') {
+                        if (tile === 'S') {
+                            playerPos = { x: x, y: y };
+                            currentMazeInstance[y][x] = 0;
+                        } else if (tile !== 'ST') {
+                            availableSlots.push({ x, y });
+                            if (tile === 'W') currentMazeInstance[y][x] = 0;
+                        }
+                    } else if (tile === 'E') {
+                        endPos = { x: x, y: y };
+                    }
+                }
+            }
+
+            wordsForLetter.forEach(word => {
+                if (availableSlots.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availableSlots.length);
+                    const slot = availableSlots.splice(randomIndex, 1)[0];
+                    currentMazeInstance[slot.y][slot.x] = 'W';
+                    currentWords.push({
+                        word: word,
+                        x: slot.x,
+                        y: slot.y,
+                        collected: false
+                    });
+                } else {
+                    console.warn("لا توجد أماكن كافية للكلمات:", levelIndex);
+                }
+            });
+
+            setupCanvasSize();
+            updateUI();
+            drawMaze();
+            drawPlayer();
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+
+            timerIntervalId = setInterval(updateTimer, 1000);
+            resetIdleTimer();
+            return true;
+        }
+
+        function updateTimer() {
+            if (!gameActive) return;
+            timeElapsed++;
+            updateUI();
+        }
+
+        function updateStarDisplay() {
+            starDisplay.textContent = `⭐ ${totalStarsCollected}`;
+        }
+
+        function updateUI() {
+            levelDisplay.textContent = `المستوى: ${currentLevelIndex + 1}/${arabicLetters.length}`;
+            letterDisplay.textContent = `الحرف: ${arabicLetters[currentLevelIndex]}`;
+            wordCountDisplay.textContent = `الكلمات: ${collectedWordsCount}/${currentWords.length}`;
+            timerDisplay.textContent = `الوقت: ${timeElapsed} ث`;
+            updateStarDisplay();
+        }
+
+        function drawMaze() {
+            if (FONT_SIZE <= 0) FONT_SIZE = Math.max(8, Math.floor(TILE_SIZE * FONT_SIZE_RATIO));
+            mazeCtx.clearRect(0, 0, mazeCanvas.width, mazeCanvas.height);
+            mazeCtx.font = `${FONT_SIZE}px Arial`;
+            mazeCtx.textAlign = 'center';
+            mazeCtx.textBaseline = 'middle';
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const tile = currentMazeInstance[y][x];
+                    const drawX = x * TILE_SIZE;
+                    const drawY = y * TILE_SIZE;
+                    const centerX = drawX + TILE_SIZE / 2;
+                    const centerY = drawY + TILE_SIZE / 2;
+
+                    if (tile === 1) {
+                        mazeCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--wall-color');
+                        mazeCtx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+                    } else {
+                        mazeCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--path-color');
+                        mazeCtx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+
+                        if (tile === 'W') {
+                            const wordData = currentWords.find(w => w.x === x && w.y === y && !w.collected);
+                            if (wordData) {
+                                mazeCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--collectible-color');
+                                mazeCtx.fillText(WORD_PLACEHOLDER_CHAR, centerX, centerY);
+                            }
+                        } else if (tile === 'ST') {
+                            mazeCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--star-color');
+                            mazeCtx.fillText(STAR_CHAR, centerX, centerY);
+                        } else if (tile === 'E') {
+                            mazeCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--end-color');
+                            mazeCtx.fillText(END_CHAR, centerX, centerY);
+                            mazeCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-dark');
+                            mazeCtx.font = `${Math.max(8, Math.floor(FONT_SIZE * 0.8))}px Cairo`;
+                            mazeCtx.fillText(arabicLetters[currentLevelIndex], centerX, centerY + TILE_SIZE * 0.35);
+                            mazeCtx.font = `${FONT_SIZE}px Arial`;
+                        }
+                    }
+                }
+            }
+        }
+
+        function createParticle(x, y, color, count = 8, speed = 3, life = 40) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x * TILE_SIZE + TILE_SIZE / 2,
+                    y: y * TILE_SIZE + TILE_SIZE / 2,
+                    vx: (Math.random() - 0.5) * speed,
+                    vy: (Math.random() - 0.5) * speed,
+                    radius: Math.random() * 2.5 + 1.5,
+                    color: color,
+                    life: life,
+                    maxLife: life
+                });
+            }
+        }
+
+        function drawParticles() {
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                p.radius *= 0.97;
+
+                if (p.life <= 0 || p.radius < 0.5) {
+                    particles.splice(i, 1);
+                } else {
+                    particleCtx.beginPath();
+                    particleCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2, false);
+                    particleCtx.fillStyle = p.color;
+                    particleCtx.globalAlpha = Math.max(0, p.life / p.maxLife);
+                    particleCtx.fill();
+                }
+            }
+            particleCtx.globalAlpha = 1.0;
+        }
+
+        function drawPlayer() {
+            if (FONT_SIZE <= 0) FONT_SIZE = Math.max(8, Math.floor(TILE_SIZE * FONT_SIZE_RATIO));
+            const centerX = playerPos.x * TILE_SIZE + TILE_SIZE / 2;
+            const centerY = playerPos.y * TILE_SIZE + TILE_SIZE / 2;
+            mazeCtx.font = `${FONT_SIZE}px Arial`;
+            mazeCtx.textAlign = 'center';
+            mazeCtx.textBaseline = 'middle';
+            mazeCtx.fillText(PLAYER_CHAR, centerX, centerY);
+        }
+
+        function animationLoop() {
+            if (gameActive || particles.length > 0) {
+                drawParticles();
+            }
+            animationFrameId = requestAnimationFrame(animationLoop);
+        }
+
+        function stopAnimationLoop() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+        }
+
+        function canMoveTo(x, y) {
+            if (x < 0 || x >= cols || y < 0 || y >= rows) return false;
+            return currentMazeInstance[y][x] !== 1;
+        }
+
+        function showZoomWord(wordText) {
+            zoomWordDisplay.textContent = wordText;
+            zoomWordDisplay.classList.add('visible');
+            zoomWordDisplay.style.display = 'block';
+            setTimeout(() => {
+                zoomWordDisplay.classList.remove('visible');
+                setTimeout(() => {
+                    if (!zoomWordDisplay.classList.contains('visible')) {
+                        zoomWordDisplay.style.display = 'none';
+                    }
+                }, 400);
+            }, 2500);
+        }
+
+        function resetIdleTimer() {
+            clearTimeout(idleTimerId);
+            if (gameActive) {
+                idleTimerId = setTimeout(handleIdleTimeout, IDLE_TIMEOUT_DURATION);
+            }
+        }
+
+        function handleIdleTimeout() {
+            if (!gameActive) return;
+            console.log("Idle timeout triggered.");
+            gameActive = false;
+            clearInterval(timerIntervalId);
+            clearTimeout(idleTimerId);
+            playSound('idleAlert');
+            idleScreen.classList.add('visible');
+            stopAnimationLoop();
+        }
+
+        window.movePlayerWithFeedback = function(direction) {
+            if (!gameActive) return;
+            resetIdleTimer();
+
+            let nextX = playerPos.x;
+            let nextY = playerPos.y;
+            switch (direction) {
+                case 'up': nextY--; break;
+                case 'down': nextY++; break;
+                case 'left': nextX--; break;
+                case 'right': nextX++; break;
+            }
+
+            if (canMoveTo(nextX, nextY)) {
+                playerPos.x = nextX;
+                playerPos.y = nextY;
+                const targetTile = currentMazeInstance[playerPos.y][playerPos.x];
+                let collectedSomething = false;
+
+                if (targetTile === 'W') {
+                    const wordIndex = currentWords.findIndex(w => w.x === playerPos.x && w.y === playerPos.y && !w.collected);
+                    if (wordIndex !== -1) {
+                        currentWords[wordIndex].collected = true;
+                        collectedWordsCount++;
+                        collectedSomething = true;
+                        const collectedWord = currentWords[wordIndex].word;
+                        currentMazeInstance[playerPos.y][playerPos.x] = 0;
+                        playSound('collect');
+                        speakWord(collectedWord);
+                        showZoomWord(collectedWord);
+                        createParticle(playerPos.x, playerPos.y, getComputedStyle(document.documentElement).getPropertyValue('--collectible-color'));
+                        updateUI();
+                    }
+                } else if (targetTile === 'ST') {
+                    totalStarsCollected++;
+                    collectedSomething = true;
+                    currentMazeInstance[playerPos.y][playerPos.x] = 0;
+                    playSound('star');
+                    updateStarDisplay();
+                    createParticle(playerPos.x, playerPos.y, getComputedStyle(document.documentElement).getPropertyValue('--star-color'), 12);
+                    saveProgress();
+                }
+
+                if (!collectedSomething) {
+                    playSound('move');
+                }
+
+                drawMaze();
+                drawPlayer();
+
+                if (targetTile === 'E') {
+                    gameActive = false;
+                    clearInterval(timerIntervalId);
+                    clearTimeout(idleTimerId);
+                    stopAnimationLoop();
+
+                    playSound('levelComplete');
+                    createParticle(playerPos.x, playerPos.y, getComputedStyle(document.documentElement).getPropertyValue('--end-color'), 15, 4);
+
+                    if (currentLevelIndex + 1 > highestLevelReached) {
+                        highestLevelReached = currentLevelIndex + 1;
+                    }
+                    saveProgress();
+
+                    let winMessageText = `🎉 رائع! أكملت مستوى (${arabicLetters[currentLevelIndex]}) 🎉<br>الوقت: ${timeElapsed} ث`;
+                    if (collectedWordsCount === currentWords.length && currentWords.length > 0) {
+                        winMessageText += "<br>✨ جمعت كل الكلمات! ✨";
+                        playSound('win');
+                    }
+                    showMessage(winMessageText);
+
+                    setTimeout(() => {
+                        loadLevel(currentLevelIndex + 1);
+                    }, 3000);
+                }
+            } else {
+                playSound('error');
+            }
+        }
+
+        function showMessage(htmlContent, isFinal = false) {
+            messageDiv.innerHTML = htmlContent;
+            messageDiv.classList.add('visible');
+        }
+
+        function showFinalScreen() {
+            hideAllScreens();
+            gameActive = false;
+            gameWrapper.classList.remove('active');
+            clearInterval(timerIntervalId);
+            clearTimeout(idleTimerId);
+            stopAnimationLoop();
+            finalStarsSpan.textContent = totalStarsCollected;
+            finalScreen.classList.add('visible');
+        }
+
+        function hideAllScreens() {
+            startScreen.classList.add('hidden');
+            finalScreen.classList.remove('visible');
+            idleScreen.classList.remove('visible');
+            messageDiv.classList.remove('visible');
+        }
+
+        function resetGame() {
+            console.log("إعادة بدء اللعبة...");
+            hideAllScreens();
+            currentLevelIndex = 0;
+            totalStarsCollected = 0;
+            localStorage.removeItem('totalStarsCollected');
+            localStorage.removeItem('highestLevelReached');
+            highestLevelReached = 0;
+            updateStarDisplay();
+            startGame(0);
+        }
+
+        function unlockSound() {
+            if (isSoundUnlocked) return;
+            isSoundUnlocked = true;
+            const silentSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+            silentSound.play().then(() => silentSound.pause()).catch(() => {});
+            Object.values(sounds).forEach(sound => sound.load());
+            console.log("تم تفعيل الصوت.");
+        }
+
+        // --- مستمعو الأحداث ---
+        window.addEventListener('keydown', (e) => {
+            if (!gameActive || !gameWrapper.classList.contains('active')) return;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'a', 's', 'd'].includes(e.key)) {
+                e.preventDefault();
+            }
+            let direction = null;
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                    direction = 'up';
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    direction = 'down';
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                    direction = 'left';
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                    direction = 'right';
+                    break;
+            }
+            if (direction) {
+                window.movePlayerWithFeedback(direction);
+            }
+        });
+
+        window.addEventListener('touchmove', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (gameActive && gameWrapper.classList.contains('active')) {
+                    setupCanvasSize();
+                    drawMaze();
+                    drawPlayer();
+                }
+            }, 250);
+        });
+
+        startButton.addEventListener('click', () => {
+            unlockSound();
+            playSound('start');
+            startGame(0);
+        });
+
+        continueButton.addEventListener('click', () => {
+            unlockSound();
+            playSound('start');
+            startGame(highestLevelReached);
+        });
+
+        playAgainButton.addEventListener('click', resetGame);
+
+        continueIdleButton.addEventListener('click', () => {
+            if (idleScreen.classList.contains('visible')) {
+                idleScreen.classList.remove('visible');
+                gameActive = true;
+                timerIntervalId = setInterval(updateTimer, 1000);
+                resetIdleTimer();
+                playSound('collect');
+                if (animationFrameId === null) animationLoop();
+            }
+        });
+
+        restartIdleButton.addEventListener('click', resetGame);
+
+        // --- الإعداد الأولي ---
+        loadProgress();
+        if (highestLevelReached > 0 && highestLevelReached < arabicLetters.length) {
+            startButton.textContent = "ابدأ لعبة جديدة";
+            savedLevelNumSpan.textContent = highestLevelReached + 1;
+            continueOptionDiv.style.display = 'block';
+        } else {
+            startButton.textContent = "ابدأ المغامرة!";
+            continueOptionDiv.style.display = 'none';
+        }
+
+        console.log("اللعبة جاهزة. انتظر تفاعل المستخدم.");
+    </script>
+</body>
+</html>

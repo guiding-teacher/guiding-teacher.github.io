@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدونة الفيديوهات الفاخرة</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #D4AF37;
+            --secondary-color: #F4D03F;
+            --dark-bg: #16213e;
+            --card-bg: #2b2a2a;
+            --text-primary: #F5F5F5;
+            --text-secondary: #BDBDBD;
+            --divider-color: rgba(212, 175, 55, 0.3);
+            --like-color: #FF4757;
+            --link-color: #4DA6FF;
+        }
+        
+        body {
+            font-family: 'Tajawal', sans-serif;
+            direction: rtl;
+            background-color: rgb(246, 252, 254);
+            margin-left: 50px;
+            padding: 10px;
+            color: var(--text-primary);
+            background-image: radial-gradient(circle at 25% 25%, rgba(30, 30, 30, 0.9) 0%, rgba(10, 10, 10, 1) 100%);
+        }
+.youtube-container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* نسبة 16:9 */
+  overflow: hidden;
+  background: transparent; /* إزالة الخلفية السوداء */
+}
+
+.youtube-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent; /* إزالة الخلفية السوداء */
+}
+
+/* لإزالة الشريط الأسود السفلي */
+.youtube-container::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: transparent;
+}
+
+        .video-gallery-container {
+            max-width: 100%;
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        @media (min-width: 768px) {
+            .video-gallery-container {
+                max-width: 900px;
+                padding: 20px;
+            }
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin: 0;
+            padding-bottom: 15px;
+            display: inline-block;
+            position: relative;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .page-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to left, transparent, var(--primary-color), transparent);
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        #video-posts-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+
+        .video-post-item {
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-right: 3px solid var(--primary-color);
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInPost 0.4s ease-out forwards;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        @keyframes fadeInPost {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .video-post-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2);
+        }
+
+        .video-header {
+            padding: 20px 20px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .video-title {
+            font-size: 1.0rem;
+            color: var(--text-primary);
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            line-height: 1.0;
+        }
+
+        .video-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .uploader-name {
+            color: var(--secondary-color);
+            font-weight: 500;
+            margin-left: 5px;
+        }
+
+        .timestamp {
+            display: flex;
+            align-items: center;
+        }
+
+        .timestamp i {
+            margin-left: 5px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+       .video-player-wrapper {
+  position: relative;
+  text-align: center;
+  background: #000;
+  margin: 0 auto;
+  max-height: 80vh;
+  overflow: hidden;
+}
+
+.video-player-wrapper video {
+  position: relative;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 80vh;
+  margin: 0 auto;
+  display: block;
+}
+
+        .video-image-preview {
+            width: 100%;
+            max-height: none;
+            object-fit: contain;
+            display: block;
+            cursor: zoom-in;
+            background-color: #000;
+        }
+
+        .video-content {
+            padding: 15px 20px;
+        }
+
+        .video-description {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .video-description a {
+            color: var(--link-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .video-description a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+
+        .video-description a::after {
+            content: " (اضغط هنا)";
+            color: var(--primary-color);
+            font-size: 0.8em;
+            margin-right: 3px;
+        }
+
+        .video-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.1);
+            
+        }
+
+        .like-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            order: 2;
+            margin-left:0;
+            margin-right:auto;
+        }
+
+        .like-btn i {
+            margin-left: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .like-btn:hover {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: var(--like-color);
+        }
+
+        .like-btn.liked {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: var(--like-color);
+            color: var(--like-color);
+        }
+
+        .like-btn.liked i {
+            color: var(--like-color);
+        }
+
+        .like-count {
+            font-weight: 600;
+        }
+
+        .download-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            order: 1;
+        }
+
+        .download-btn i {
+            margin-left: 8px;
+        }
+
+        .download-btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .post-divider {
+            border: none;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+            margin: 30px 0;
+            opacity: 0.7;
+        }
+
+        .status-message {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 20px;
+            font-size: 1.1rem;
+            grid-column: 1 / -1;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        .golden-divider {
+          border: none;
+          height: 1px;
+          background: linear-gradient(to right,
+              transparent 0%,
+              #D4AF37 50%,
+              transparent 100%);
+          margin: 20px 0;
+          opacity: 0.8;
+        }
+
+        .page-numbers {
+            display: flex;
+            gap: 5px;
+        }
+
+        .page-number {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .page-number:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .page-number.active {
+            background: rgba(212, 175, 55, 0.3);
+            font-weight: 700;
+        }
+
+        .page-number.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pagination button {
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .pagination button:hover {
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Lightbox styles */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .lightbox-download {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(212, 175, 55, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Lightbox for image preview -->
+    <div class="lightbox" id="lightbox">
+        <span class="lightbox-close">&times;</span>
+        <a class="lightbox-download" id="lightbox-download" download>
+            <i class="fas fa-download"></i> تحميل الصورة
+        </a>
+        <img id="lightbox-img" src="images/" alt="صورة مكبرة">
+    </div>
+
+    <div class="video-gallery-container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-photo-video" style="margin-left: 10px;"></i>
+                منشورات الموقع
+            </h1>
+            <p class="page-subtitle">أحدث المنشورات المميزة لموقع المعلم المرشد</p>
+        </div>
+
+        <div id="video-posts-list">
+            <p class="status-message">
+                <span class="loading-spinner"></span>
+                جاري تحميل الفيديوهات...
+            </p>
+        </div>
+
+        <div class="pagination" id="pagination" style="display: none;">
+            <button id="first-btn" disabled><i class="fas fa-step-backward"></i> الأولى</button>
+            <button id="prev-btn" disabled><i class="fas fa-arrow-right"></i> السابق</button>
+            <div class="page-numbers" id="page-numbers"></div>
+            <button id="next-btn">التالي <i class="fas fa-arrow-left"></i></button>
+            <button id="last-btn">الأخيرة <i class="fas fa-step-forward"></i></button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js"></script>
+
+    <script>
+    // تكوين Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyBo3jI4fVUYZdz_SvVkIDslwpKsvYd2254",
+        authDomain: "comments-system-8158e.firebaseapp.com",
+        projectId: "comments-system-8158e",
+        storageBucket: "comments-system-8158e.appspot.com",
+        messagingSenderId: "1033836980839",
+        appId: "1:1033836980839:web:08675b0419bbbd6b2fc2c2",
+        measurementId: "G-47DT6Y2TPT"
+    };
+
+    // تهيئة Firebase
+    let db;
+    try {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+    } catch (e) {
+        console.error("Firebase initialization error:", e);
+        document.getElementById('video-posts-list').innerHTML = `
+            <p class="status-message" style="color: #FF4757;">
+                <i class="fas fa-exclamation-triangle"></i> خطأ في الاتصال بالنظام
+            </p>
+        `;
+    }
+
+    // العناصر DOM
+    const videoPostsList = document.getElementById('video-posts-list');
+    const pagination = document.getElementById('pagination');
+    const firstBtn = document.getElementById('first-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const lastBtn = document.getElementById('last-btn');
+    const pageNumbersContainer = document.getElementById('page-numbers');
+    const LIKED_POSTS_KEY = 'likedVideoPosts';
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxClose = document.querySelector('.lightbox-close');
+    const lightboxDownload = document.getElementById('lightbox-download');
+
+    // إعداد التقسيم (Pagination)
+    let currentPage = 1;
+    const postsPerPage = 10;
+    let lastVisible = null;
+    let firstVisible = null;
+    let totalPostsCount = 0;
+    let totalPages = 1;
+    let allPosts = [];
+    let currentPlayingVideo = null;
+
+    // ========== إدارة الفيديوهات ========== //
+    function stopCurrentVideo() {
+        if (currentPlayingVideo && !currentPlayingVideo.paused) {
+            currentPlayingVideo.pause();
+            currentPlayingVideo = null;
+        }
+    }
+
+    window.addEventListener('scroll', function() {
+        stopCurrentVideo();
+    });
+
+    // ========== إدارة الإعجابات ========== //
+    function getLikedPosts() {
+        const liked = localStorage.getItem(LIKED_POSTS_KEY);
+        return liked ? JSON.parse(liked) : [];
+    }
+
+    function saveLikedPost(postId) {
+        const liked = getLikedPosts();
+        if (!liked.includes(postId)) {
+            liked.push(postId);
+            localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify(liked));
+        }
+    }
+
+    function removeLikedPost(postId) {
+        let liked = getLikedPosts();
+        liked = liked.filter(id => id !== postId);
+        localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify(liked));
+    }
+
+    function isPostLiked(postId) {
+        return getLikedPosts().includes(postId);
+    }
+
+    // ========== معالجة الفيديوهات ========== //
+    function getVideoEmbedHtml(videoUrl, type) {
+        if (!videoUrl) return '<p class="video-error">لا يوجد رابط فيديو</p>';
+        
+        try {
+            if (type === 'iframe' || videoUrl.trim().toLowerCase().startsWith('<iframe')) {
+                const sanitized = videoUrl
+                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+                    .replace(/on\w+="[^"]*"/g, '')
+                    .replace(/style="[^"]*"/g, 'style="border:none; width:100%; height:100%;"');
+                return `<div class="video-embed-container">${sanitized}</div>`;
+            }
+            
+            const url = new URL(videoUrl);
+            
+            if (type === 'youtube' || url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
+                let videoId;
+                if (url.hostname.includes('youtu.be')) {
+                    videoId = url.pathname.substring(1);
+                } else {
+                    videoId = url.searchParams.get('v');
+                }
+                
+                if (videoId) {
+                    return `
+                            <div class="youtube-container">
+                                <iframe src="https://www.youtube.com/embed/${videoId}?
+                                            rel=0&
+                                            modestbranding=1&
+                                            autoplay=0&
+                                            showinfo=0&
+                                            controls=1&
+                                            fs=1&
+                                            iv_load_policy=3&
+                                            color=white&
+                                            theme=light"
+                                        frameborder="0"
+                                        allow="accelerometer; 
+                                               autoplay; 
+                                               clipboard-write; 
+                                               encrypted-media; 
+                                               gyroscope; 
+                                               picture-in-picture"
+                                        allowfullscreen>
+                                </iframe>
+                            </div>`;
+                }
+            }
+            
+            if (type === 'vimeo' || url.hostname.includes('vimeo.com')) {
+                const videoId = url.pathname.split('/').pop();
+                if (videoId && /^\d+$/.test(videoId)) {
+                    return `
+                            <div class="vimeo-container">
+                                <iframe src="https://player.vimeo.com/video/${videoId}?
+                                            title=0&
+                                            byline=0&
+                                            portrait=0&
+                                            color=ffffff"
+                                        frameborder="0"
+                                        allow="autoplay; fullscreen; picture-in-picture"
+                                        allowfullscreen>
+                                </iframe>
+                            </div>`;
+                }
+            }
+            
+            if (/\.(mp4|webm|ogg|mov)$/i.test(url.pathname)) {
+                return `
+                    <div class="native-video-container">
+                        <video controls playsinline>
+                            <source src="${videoUrl}" type="video/${url.pathname.split('.').pop().toLowerCase()}">
+                            متصفحك لا يدعم تشغيل الفيديو
+                        </video>
+                    </div>`;
+                }
+            
+        } catch (e) {
+            console.error("Error embedding video:", e);
+            return '<p class="video-error">تعذر عرض الفيديو. الرابط غير مدعوم</p>';
+        }
+        
+        return '<p class="video-error">نوع الفيديو غير مدعوم</p>';
+    }
+
+    // ========== عرض المنشورات ========== //
+    function displayVideoPost(post, postId, index) {
+        const postElement = document.createElement('div');
+        postElement.className = 'video-post-item';
+        postElement.dataset.postId = postId;
+        postElement.style.animationDelay = `${index * 0.1}s`;
+
+        const isLiked = isPostLiked(postId);
+        const processedDescription = processDescriptionLinks(escapeHTML(post.description));
+
+        postElement.innerHTML = `
+        <hr class="golden-divider">
+            <div class="video-header">
+                <h2 class="video-title">${escapeHTML(post.title)}</h2>
+                <div class="video-meta">
+                    <span class="timestamp">
+                        <i class="far fa-clock"></i> ${formatTimeAgo(post.timestamp?.toDate())}
+                    </span>
+                    <span class="uploader-name">
+                        <i class="far fa-user"></i> ${escapeHTML(post.uploaderName || 'المعلم المرشد')}
+                    </span>
+                </div>
+            </div>
+            
+            ${post.imageUrl ? 
+                `<img src="${post.imageUrl}" class="video-image-preview" alt="${escapeHTML(post.title)}" data-image-url="${post.imageUrl}">` : 
+                `<div class="video-player-wrapper">
+                    ${getVideoEmbedHtml(post.videoUrl, post.type)}
+                </div>`
+            }
+            
+            <div class="video-content">
+                <div class="video-description">
+                    ${processedDescription.replace(/\n/g, '<br>')}
+                </div>
+            </div>
+            
+            <div class="video-actions">
+                ${post.imageUrl ? 
+                    `<button class="download-btn" data-image-url="${post.imageUrl}">
+                        <i class="fas fa-download"></i>
+                        تحميل الصورة
+                    </button>` : 
+                    ''
+                }
+                <button class="like-btn ${isLiked ? 'liked' : ''}" data-post-id="${postId}">
+                    <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                    <span class="like-count">${post.likesCount || 0}</span>
+                </button>
+            </div>
+            
+        <hr class="golden-divider">
+        `;
+
+        videoPostsList.appendChild(postElement);
+
+        const likeBtn = postElement.querySelector('.like-btn');
+        if (likeBtn) likeBtn.addEventListener('click', handleLike);
+
+        const downloadBtn = postElement.querySelector('.download-btn');
+        if (downloadBtn) downloadBtn.addEventListener('click', handleDownload);
+
+        const imagePreview = postElement.querySelector('.video-image-preview');
+        if (imagePreview) imagePreview.addEventListener('click', showLightbox);
+
+        const videoElement = postElement.querySelector('video');
+        if (videoElement) {
+            videoElement.addEventListener('play', function() {
+                stopCurrentVideo();
+                currentPlayingVideo = this;
+            });
+        }
+
+        if (index < postsPerPage - 1) {
+            const divider = document.createElement('div');
+            divider.className = 'post-divider';
+            videoPostsList.appendChild(divider);
+        }
+    }
+
+    // ========== معالجة الأحداث ========== //
+    async function handleLike(event) {
+        const button = event.currentTarget;
+        const postId = button.dataset.postId;
+        const postRef = db.collection('videoPosts').doc(postId);
+        const heartIcon = button.querySelector('i');
+        const likeCount = button.querySelector('.like-count');
+        
+        const isLiked = button.classList.contains('liked');
+        const increment = isLiked ? -1 : 1;
+        
+        button.classList.toggle('liked', !isLiked);
+        heartIcon.classList.toggle('far', isLiked);
+        heartIcon.classList.toggle('fas', !isLiked);
+        
+        const currentCount = parseInt(likeCount.textContent) || 0;
+        likeCount.textContent = Math.max(0, currentCount + increment);
+        
+        if (isLiked) {
+            removeLikedPost(postId);
+        } else {
+            saveLikedPost(postId);
+        }
+        
+        try {
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(postRef);
+                if (!doc.exists) throw "المحتوى غير موجود";
+                
+                const currentLikes = doc.data().likesCount || 0;
+                transaction.update(postRef, { likesCount: Math.max(0, currentLikes + increment) });
+            });
+        } catch (error) {
+            console.error("Error updating like:", error);
+            button.classList.toggle('liked', isLiked);
+            heartIcon.classList.toggle('far', !isLiked);
+            heartIcon.classList.toggle('fas', isLiked);
+            likeCount.textContent = currentCount;
+            alert("حدث خطأ أثناء تسجيل الإعجاب. يرجى المحاولة مرة أخرى.");
+        }
+    }
+
+    function handleDownload(event) {
+        const imageUrl = event.currentTarget.dataset.imageUrl;
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = imageUrl.split('/').pop() || 'image.jpg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function showLightbox(event) {
+        const imgSrc = event.target.src;
+        lightboxImg.src = imgSrc;
+        lightboxDownload.href = imgSrc;
+        lightboxDownload.download = imgSrc.split('/').pop() || 'image.jpg';
+        lightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    lightboxClose.addEventListener('click', () => {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    });
+
+    // ========== أدوات مساعدة ========== //
+    function processDescriptionLinks(description) {
+        if (!description) return '';
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return description.replace(urlRegex, url => {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+    }
+
+    function formatTimeAgo(date) {
+        if (!date) return 'غير معروف';
+        const now = new Date();
+        const seconds = Math.round((now - date) / 1000);
+        if (isNaN(seconds) || seconds < 0) return 'الآن';
+        
+        const intervals = [
+            { label: 'سنة', seconds: 31536000 },
+            { label: 'شهر', seconds: 2592000 },
+            { label: 'أسبوع', seconds: 604800 },
+            { label: 'يوم', seconds: 86400 },
+            { label: 'ساعة', seconds: 3600 },
+            { label: 'دقيقة', seconds: 60 },
+            { label: 'ثانية', seconds: 1 }
+        ];
+        
+        for (let interval of intervals) {
+            const count = Math.floor(seconds / interval.seconds);
+            if (count >= 1) {
+                if (count === 1) return `منذ ${interval.label}`;
+                if (count === 2) return `منذ ${interval.label}ين`;
+                if (count <= 10) return `منذ ${count} ${interval.label === 'سنة' ? 'سنوات' : interval.label + 'ات'}`;
+                return `منذ ${count} ${interval.label}`;
+            }
+        }
+        return 'الآن';
+    }
+
+    function escapeHTML(str) {
+        if (str === null || typeof str === 'undefined') return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // ========== نظام التقسيم الجديد ========== //
+    function createPageNumbers() {
+        pageNumbersContainer.innerHTML = '';
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = startPage + maxVisiblePages - 1;
+        
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        // إضافة زر الصفحة الأولى إذا لزم الأمر
+        if (startPage > 1) {
+            const pageNumber = document.createElement('button');
+            pageNumber.className = 'page-number';
+            pageNumber.textContent = '1';
+            pageNumber.addEventListener('click', () => goToPage(1));
+            pageNumbersContainer.appendChild(pageNumber);
+            
+            if (startPage > 2) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.style.padding = '8px';
+                pageNumbersContainer.appendChild(ellipsis);
+            }
+        }
+        
+        // إضافة أرقام الصفحات المرئية
+        for (let i = startPage; i <= endPage; i++) {
+            const pageNumber = document.createElement('button');
+            pageNumber.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageNumber.textContent = i;
+            pageNumber.addEventListener('click', () => goToPage(i));
+            pageNumbersContainer.appendChild(pageNumber);
+        }
+        
+        // إضافة زر الصفحة الأخيرة إذا لزم الأمر
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const ellipsis = document.createElement('span');
+                ellipsis.textContent = '...';
+                ellipsis.style.padding = '8px';
+                pageNumbersContainer.appendChild(ellipsis);
+            }
+            
+            const pageNumber = document.createElement('button');
+            pageNumber.className = 'page-number';
+            pageNumber.textContent = totalPages;
+            pageNumber.addEventListener('click', () => goToPage(totalPages));
+            pageNumbersContainer.appendChild(pageNumber);
+        }
+    }
+
+    function goToPage(page) {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        
+        videoPostsList.innerHTML = `
+            <p class="status-message">
+                <span class="loading-spinner"></span>
+                جاري تحميل الفيديوهات...
+            </p>
+        `;
+        
+        currentPage = page;
+        loadPage();
+    }
+
+    function loadPage() {
+        const query = db.collection('videoPosts')
+            .orderBy('timestamp', 'desc');
+        
+        if (currentPage === 1) {
+            query.limit(postsPerPage).get()
+                .then(handlePageLoad)
+                .catch(handlePageError);
+        } else {
+            // حساب مؤشر البداية
+            const startIndex = (currentPage - 1) * postsPerPage;
+            
+            // الحصول على جميع المستندات لتحديد الصفحات
+            query.get().then((snapshot) => {
+                const allDocs = snapshot.docs;
+                totalPostsCount = allDocs.length;
+                totalPages = Math.ceil(totalPostsCount / postsPerPage);
+                
+                // تحديد وثيقة البداية للصفحة الحالية
+                const startDoc = allDocs[startIndex - 1];
+                
+                if (startDoc) {
+                    db.collection('videoPosts')
+                        .orderBy('timestamp', 'desc')
+                        .startAfter(startDoc)
+                        .limit(postsPerPage)
+                        .get()
+                        .then(handlePageLoad)
+                        .catch(handlePageError);
+                } else {
+                    handlePageLoad({ empty: true });
+                }
+            });
+        }
+    }
+
+    function handlePageLoad(snapshot) {
+        videoPostsList.innerHTML = '';
+        
+        if (snapshot.empty) {
+            videoPostsList.innerHTML = `
+                <p class="status-message">
+                    <i class="far fa-folder-open"></i> لا توجد فيديوهات في هذه الصفحة
+                </p>
+            `;
+            return;
+        }
+        
+        snapshot.forEach((doc, index) => {
+            displayVideoPost(doc.data(), doc.id, index);
+            lastVisible = doc;
+        });
+        
+        updatePaginationControls();
+    }
+
+    function updatePaginationControls() {
+        firstBtn.disabled = currentPage === 1;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = currentPage === totalPages;
+        lastBtn.disabled = currentPage === totalPages;
+        
+        createPageNumbers();
+        pagination.style.display = 'flex';
+    }
+
+    function handlePageError(error) {
+        console.error("Error loading page:", error);
+        videoPostsList.innerHTML = `
+            <p class="status-message" style="color: #FF4757;">
+                <i class="fas fa-exclamation-triangle"></i> حدث خطأ أثناء تحميل الفيديوهات
+            </p>
+        `;
+    }
+
+    // بدء التحميل عند اكتمال الصفحة
+    document.addEventListener('DOMContentLoaded', () => {
+        if (db) {
+            // الحصول على العدد الإجمالي للمنشورات
+            db.collection('videoPosts').get().then((snapshot) => {
+                totalPostsCount = snapshot.size;
+                totalPages = Math.ceil(totalPostsCount / postsPerPage);
+                loadPage();
+            }).catch(error => {
+                console.error("Error getting total posts count:", error);
+                loadPage(); // حاول تحميل الصفحة الأولى على أي حال
+            });
+            
+            // إضافة مستمعات الأحداث
+            firstBtn.addEventListener('click', () => goToPage(1));
+            prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+            nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+            lastBtn.addEventListener('click', () => goToPage(totalPages));
+        }
+    });
+</script>
+</body>
+</html>

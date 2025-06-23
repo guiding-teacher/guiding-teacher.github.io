@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سياسة الخصوصية - المعلم المرشد</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --color-background: #0a0a0f;
+            --color-surface: #161620;
+            --color-primary-text: #f5f5ff;
+            --color-secondary-text: #c0c0d0;
+            --color-accent: #d4af37;
+            --color-accent-light: #e6c76e;
+            --color-accent-dark: #b59530;
+            --color-border: #2a2a35;
+            --color-highlight: rgba(212, 175, 55, 0.2);
+            --font-primary: 'Tajawal', sans-serif;
+            --font-headings: 'Amiri', serif;
+            --transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            --radius: 16px;
+            --header-height: 80px;
+        }
+
+        /* تأثيرات التمرير */
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: var(--header-height);
+        }
+
+        /* شريط التمرير المخصص */
+        ::-webkit-scrollbar {
+            width: 14px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--color-surface);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(var(--color-accent), var(--color-accent-dark));
+            border-radius: 8px;
+            border: 3px solid var(--color-surface);
+            transition: var(--transition);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-accent-light);
+        }
+
+        body {
+            font-family: var(--font-primary);
+            line-height: 1.9;
+            margin: 0;
+            padding: 0;
+            background-color: var(--color-background);
+            color: var(--color-primary-text);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, rgba(212, 175, 55, 0.08) 0%, transparent 25%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* زر العودة للرئيسية في الأعلى */
+        .header-home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--color-accent);
+            color: var(--color-background);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: none;
+            outline: none;
+        }
+
+        .header-home-btn:hover {
+            background: var(--color-accent-light);
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 100px auto 70px;
+            padding: 60px;
+            background-color: var(--color-surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border-top: 5px solid var(--color-accent);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headings);
+            color: var(--color-accent);
+            font-weight: 700;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        h1 {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 40px;
+            position: relative;
+            animation: fadeInDown 0.8s ease-out;
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
+        }
+
+        h1::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 5px;
+            background: linear-gradient(90deg, var(--color-accent), var(--color-accent-dark));
+            margin: 30px auto 0;
+            border-radius: 3px;
+            box-shadow: 0 3px 10px rgba(212, 175, 55, 0.3);
+        }
+
+        h2 {
+            font-size: 2.4em;
+            margin-top: 70px;
+            margin-bottom: 35px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--color-border);
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            padding-right: 25px;
+        }
+
+        h2::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: -2px;
+            width: 150px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-accent), transparent);
+            border-radius: 2px;
+        }
+
+        h2 i {
+            margin-left: 15px;
+            color: var(--color-accent-light);
+            font-size: 0.9em;
+        }
+
+        h3 {
+            font-size: 1.8em;
+            color: var(--color-accent-light);
+            margin-top: 50px;
+            margin-bottom: 30px;
+            padding-right: 20px;
+            border-right: 4px solid var(--color-accent);
+            position: relative;
+        }
+
+        h3::before {
+            content: '';
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background: var(--color-accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--color-accent);
+        }
+
+        h3 i {
+            margin-left: 15px;
+            color: var(--color-accent-light);
+        }
+
+        p, li {
+            font-size: 1.15em;
+            margin-bottom: 30px;
+            color: var(--color-secondary-text);
+            position: relative;
+            z-index: 1;
+        }
+
+        p strong, li strong {
+            color: var(--color-primary-text);
+            font-weight: 700;
+            position: relative;
+            padding: 0 3px;
+        }
+
+        p strong::after, li strong::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--color-accent);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: var(--transition);
+            z-index: -1;
+        }
+
+        p strong:hover::after, li strong:hover::after {
+            transform: scaleX(1);
+        }
+
+        ul {
+            list-style-type: none;
+            padding-right: 0;
+            margin: 35px 0;
+        }
+
+        ul li {
+            padding-right: 45px;
+            position: relative;
+            margin-bottom: 25px;
+            transition: var(--transition);
+        }
+
+        ul li:hover {
+            transform: translateX(-10px);
+        }
+
+        ul li::before {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--color-accent);
+            font-size: 1em;
+            position: absolute;
+            right: 0;
+            top: 8px;
+            line-height: 1;
+            transition: var(--transition);
+        }
+
+        ul li:hover::before {
+            color: var(--color-accent-light);
+            transform: scale(1.3) rotate(5deg);
+            text-shadow: 0 0 8px rgba(212, 175, 55, 0.4);
+        }
+
+        a {
+            color: var(--color-accent-light);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--color-accent);
+            transition: var(--transition);
+            padding-bottom: 3px;
+            position: relative;
+        }
+
+        a:hover, a:focus {
+            color: var(--color-primary-text);
+            border-bottom-color: var(--color-primary-text);
+            border-bottom-style: solid;
+            text-shadow: 0 0 5px rgba(245, 245, 255, 0.3);
+        }
+
+        a::after {
+            content: '\f08e';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-right: 5px;
+            font-size: 0.7em;
+            opacity: 0;
+            transition: var(--transition);
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        a:hover::after {
+            opacity: 1;
+            right: -12px;
+        }
+
+        .highlight {
+            background-color: var(--color-highlight);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 500;
+            color: var(--color-accent-light);
+            border: 1px solid var(--color-border);
+            display: inline-block;
+            transition: var(--transition);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .highlight:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .highlight i {
+            margin-left: 8px;
+        }
+
+        .last-updated {
+            text-align: center;
+            font-style: italic;
+            margin-top: 80px;
+            padding-top: 30px;
+            border-top: 1px solid var(--color-border);
+            font-size: 1em;
+            color: var(--color-secondary-text);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .last-updated::before {
+            content: '\f073';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-left: 10px;
+            color: var(--color-accent-light);
+            font-size: 1.2em;
+        }
+
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+            margin: 60px 0;
+            border: none;
+            opacity: 0.3;
+            position: relative;
+        }
+
+        .section-divider::after {
+            content: '\f141';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--color-accent);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--color-surface);
+            padding: 0 15px;
+            font-size: 1.2em;
+        }
+
+        /* أزرار العودة للرئيسية */
+        .home-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-accent);
+            color: var(--color-background);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: var(--transition);
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-primary);
+            font-size: 1em;
+            margin: 40px auto;
+            width: fit-content;
+        }
+
+        .home-btn:hover {
+            background: var(--color-accent-light);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.4);
+            color: var(--color-background);
+        }
+
+        .home-btn i {
+            margin-right: 8px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: var(--color-accent);
+            color: var(--color-background);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            z-index: 100;
+            border: none;
+            outline: none;
+        }
+
+        .back-to-top:hover {
+            background: var(--color-accent-light);
+            transform: translateY(-5px) scale(1.1);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* تأثيرات الحركة */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* تأثيرات عند التمرير */
+        .fade-in {
+            opacity: 0;
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+        }
+
+        .slide-in-right {
+            transform: translateX(30px);
+        }
+
+        .slide-in-right.visible {
+            transform: translateX(0);
+        }
+
+        /* تصميم متجاوب */
+        @media (max-width: 992px) {
+            .container {
+                margin: 90px 30px 60px;
+                padding: 50px;
+            }
+            
+            h1 {
+                font-size: 2.6em;
+            }
+            
+            h2 {
+                font-size: 2.1em;
+            }
+            
+            h3 {
+                font-size: 1.6em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 80px 20px 50px;
+                padding: 40px 30px;
+            }
+            
+            h1 {
+                font-size: 2.3em;
+                margin-bottom: 50px;
+                padding-bottom: 30px;
+            }
+            
+            h2 {
+                font-size: 1.9em;
+                margin-top: 60px;
+            }
+            
+            h3 {
+                font-size: 1.5em;
+                margin-top: 45px;
+            }
+            
+            p, li {
+                font-size: 1.05em;
+            }
+            
+            ul li {
+                padding-right: 35px;
+            }
+            
+            .header-home-btn, .back-to-top {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1em;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .container {
+                margin: 70px 15px 40px;
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+                padding-bottom: 25px;
+            }
+            
+            h1::after {
+                width: 80px;
+                margin-top: 20px;
+            }
+            
+            h2 {
+                font-size: 1.7em;
+                padding-bottom: 15px;
+            }
+            
+            h3 {
+                font-size: 1.4em;
+                margin-top: 40px;
+            }
+            
+            p, li {
+                font-size: 1em;
+            }
+            
+            ul li {
+                padding-right: 30px;
+                margin-bottom: 20px;
+            }
+            
+            .section-divider {
+                margin: 50px 0;
+            }
+            
+            .home-btn {
+                padding: 10px 20px;
+                font-size: 0.95em;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- زر العودة للرئيسية في الأعلى -->
+    <a href="index.html" class="header-home-btn" title="العودة للصفحة الرئيسية">
+        <i class="fas fa-home"></i>
+    </a>
+
+    <div class="container">
+        <h1 class="fade-in">سياسة الخصوصية لموقع "المعلم المرشد"</h1>
+
+        <p class="fade-in"><strong>تاريخ السريان:</strong> <span class="highlight"><i class="fas fa-calendar-alt"></i> [ 2025/5/20 ]</span></p>
+
+        <p class="fade-in">أهلاً بكم في موقع "المعلم المرشد" ("منصة"). نحن نلتزم التزاماً راسخاً بحماية خصوصية مستخدمينا الكرام، سواء كانوا معلمين أو تلاميذ ("أنت"، "المستخدم"). توضح سياسة الخصوصية هذه، بعناية فائقة، كيف نجمع، نستخدم، نكشف، ونحمي معلوماتكم الشخصية عند استخدامكم لخدماتنا التعليمية المجانية الراقية، والتي تهدف لدعم التكنولوجيا في التعليم وتقديم تجربة تعليمية ثرية.</p>
+        <p class="fade-in">إن استخدامكم لموقع "المعلم المرشد" يُعد بمثابة موافقة ضمنية على الممارسات الموضحة في هذه السياسة المصممة لحماية مصالحكم.</p>
+
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-database"></i> 1. المعلومات التي نعتز بجمعها</h2>
+        <p class="fade-in">نسعى لجمع الحد الأدنى الضروري من المعلومات لتقديم خدماتنا وتحسينها باستمرار، وتشمل:</p>
+        
+        <h3 class="fade-in slide-in-right"><i class="fas fa-user-edit"></i> أ. معلومات تقدمونها لنا بمحض إرادتكم:</h3>
+        <ul>
+            <li class="fade-in"><strong>بيانات التسجيل الأساسية:</strong> عند انضمامكم إلى مجتمع "المعلم المرشد"، قد نطلب منكم معلومات تعريفية مثل الاسم، عنوان البريد الإلكتروني المعتمد، كلمة المرور (المشفرة بأحدث التقنيات)، وتحديد هويتكم كـ (معلم/تلميذ)، بالإضافة إلى المرحلة الدراسية أو المجالات المعرفية التي تثير اهتمامكم.</li>
+            <li class="fade-in"><strong>إثراء الملف الشخصي:</strong> لكم الحرية في إضافة معلومات اختيارية لإثراء ملفكم الشخصي، مما يعزز تجربتكم وتفاعلكم.</li>
+            <li class="fade-in"><strong>إبداعاتكم ومشاركاتكم:</strong> كافة المواد التعليمية، التعليقات البناءة، الاستفسارات القيمة، أو أي مساهمات فكرية تشاركونها على المنصة.</li>
+            <li class="fade-in"><strong>قنوات التواصل:</strong> في حال تواصلكم معنا مباشرة (عبر البريد الإلكتروني المخصص للدعم الفني أو الاستفسارات)، نحتفظ بسجل لهذه المراسلات لضمان جودة الخدمة.</li>
+        </ul>
+
+        <h3 class="fade-in slide-in-right"><i class="fas fa-robot"></i> ب. معلومات نجمعها تلقائيًا لتعزيز تجربتكم:</h3>
+        <ul>
+            <li class="fade-in"><strong>سجل الاستخدام والتفاعل:</strong> بيانات حول كيفية تفاعلكم مع خدماتنا، كالصفحات التي تستأثر باهتمامكم، الميزات التي تستخدمونها بكثرة، أوقات وتواريخ الزيارات، ومدة استغراقكم في كل جزء من المنصة.</li>
+            <li class="fade-in"><strong>بصمة الجهاز والمتصفح:</strong> عنوان بروتوكول الإنترنت (IP) الخاص بكم، نوع نظام التشغيل، طراز المتصفح، إعدادات اللغة المفضلة، والمعرّفات الفريدة لأجهزتكم.</li>
+            <li class="fade-in"><strong>ملفات تعريف الارتباط (Cookies) والتقنيات المماثلة:</strong> نستخدم ملفات تعريف الارتباط وتقنيات التتبع الحديثة لجمع معلومات تهدف إلى تحسين تجربتكم، فهم أنماط استخدام خدماتنا، وتخصيص المحتوى المعروض لكم. يمكنكم التحكم الكامل في ملفات تعريف الارتباط عبر إعدادات متصفحكم.</li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-cogs"></i> 2. أوجه استخدام معلوماتكم النبيلة</h2>
+        <p class="fade-in">نستخدم المعلومات التي نجمعها بشفافية ومسؤولية، وللأغراض السامية التالية:</p>
+        <ul>
+            <li class="fade-in"><strong>تقديم خدماتنا وصقلها:</strong> لتشغيل وصيانة الموقع بكفاءة، توفير الميزات والوظائف التي ترتقي بتجربتكم، وابتكار ميزات جديدة تلبي تطلعاتكم.</li>
+            <li class="fade-in"><strong>صياغة تجربة فريدة لكم:</strong> لتقديم محتوى وتوصيات تعليمية مصممة خصيصًا لتناسب اهتماماتكم وتفاعلاتكم السابقة مع المنصة.</li>
+            <li class="fade-in"><strong>التواصل الفعّال معكم:</strong> لإرسال إشعارات هامة تخص حسابكم، تحديثات جوهرية للخدمة، والرد على استفساراتكم وطلبات الدعم بسرعة واحترافية.</li>
+            <li class="fade-in"><strong>تحصين المنصة وأمنها:</strong> لحماية أمن وسلامة منصتنا ومجتمع مستخدميها، ورصد ومنع أي محاولات احتيال أو أنشطة غير مصرح بها.</li>
+            <li class="fade-in"><strong>التحليل والبحث التطويري:</strong> لفهم عميق لكيفية استخدام خدماتنا، وإجراء أبحاث تهدف إلى تحسين وتطوير المحتوى والخدمات التعليمية المقدمة.</li>
+            <li class="fade-in"><strong>الامتثال للتشريعات والتنظيمات:</strong> للوفاء بالتزاماتنا القانونية والاستجابة للطلبات القانونية الرسمية والمستوفية للشروط.</li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-share-alt"></i> 3. مشاركة معلوماتكم: حدود وضوابط</h2>
+        <p class="fade-in">نؤكد لكم أننا لا نقوم ببيع معلوماتكم الشخصية لأي طرف ثالث. قد نشارك معلوماتكم في حالات محدودة جداً ومضبوطة، وهي كالتالي:</p>
+        <ul>
+            <li class="fade-in"><strong>شركاء الخدمة الموثوقون:</strong> قد نشارك بعض المعلومات مع أطراف ثالثة من مزودي الخدمات الذين يدعموننا في تشغيل الموقع وتقديم خدماتنا (مثل خدمات الاستضافة السحابية، أدوات تحليل البيانات، وخدمات الدعم الفني المتخصصة). يُلزم هؤلاء المزودون تعاقديًا بحماية معلوماتكم والتقيد بسياسات خصوصية صارمة.</li>
+            <li class="fade-in"><strong>مقتضيات قانونية قاهرة:</strong> إذا طُلب منا ذلك بموجب نص قانوني، أو استجابة لإجراءات قانونية سارية المفعول (مثل أمر قضائي أو استدعاء رسمي)، أو لحماية حقوقنا وممتلكاتنا وسلامة مستخدمينا أو الصالح العام.</li>
+            <li class="fade-in"><strong>انتقال الملكية أو الأعمال:</strong> في حالات الاندماج، الاستحواذ، إعادة الهيكلة، الإفلاس، أو بيع كل أو جزء من أصولنا، قد يتم نقل معلوماتكم كجزء من تلك الصفقة. سنقوم بإخطاركم قبل نقل معلوماتكم الشخصية وخضوعها لسياسة خصوصية مختلفة، إن حدث ذلك.</li>
+            <li class="fade-in"><strong>بموافقتكم الصريحة:</strong> قد نشارك معلوماتكم مع أطراف ثالثة أخرى فقط بعد الحصول على موافقتكم الواضحة والمسبقة للقيام بذلك.</li>
+        </ul>
+        
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-shield-alt"></i> 4. أمن بياناتكم: أولويتنا القصوى</h2>
+        <p class="fade-in">نتخذ تدابير أمنية متقدمة، تقنية وتنظيمية وإدارية، لحماية معلوماتكم الشخصية من أي وصول غير مصرح به، استخدام غير مشروع، تعديل، كشف، أو إتلاف. ومع ذلك، نود التنويه بأنه لا توجد طريقة نقل عبر الإنترنت أو طريقة تخزين إلكتروني آمنة بنسبة 100% بشكل مطلق، وبالتالي لا يمكننا تقديم ضمان كامل لأمن معلوماتكم.</p>
+        <p class="fade-in">تقع على عاتقكم مسؤولية الحفاظ على سرية كلمة المرور الخاصة بكم، وندعوكم لعدم مشاركتها مع أي شخص كان، واختيار كلمة مرور قوية وفريدة.</p>
+
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-child"></i> 5. خصوصية براعم المستقبل: الأطفال</h2>
+        <p class="fade-in">نحن ندرك الأهمية البالغة لحماية خصوصية الأطفال في الفضاء الرقمي، خاصة في سياق تعليمي. موقع "المعلم المرشد" يستهدف المعلمين والتلاميذ على حد سواء.</p>
+        <ul>
+            <li class="fade-in">إذا كان المستخدم تلميذاً دون السن القانونية التي تسمح بالموافقة على معالجة البيانات الشخصية في بلد إقامته (على سبيل المثال، أقل من 13 عاماً في الولايات المتحدة الأمريكية، أو أقل من 16 عاماً في بعض دول الاتحاد الأوروبي ما لم تكن هناك موافقة من ولي الأمر)، فإننا نشجع بشدة على استخدام الموقع تحت إشراف وتوجيه ولي الأمر أو المعلم المسؤول.</li>
+            <li class="fade-in">في حال كان التسجيل مطلوباً للتلاميذ، قد نطلب موافقة موثقة من ولي الأمر أو المعلم نيابة عن ولي الأمر.</li>
+            <li class="fade-in">نحن لا نقوم بجمع معلومات شخصية عن قصد من الأطفال دون السن القانوني المحدد دون الحصول على موافقة يمكن التحقق منها من ولي الأمر، أو عبر المدرسة/المعلم بموجب تفويض من ولي الأمر.</li>
+            <li class="fade-in">يحق لأولياء الأمور أو المعلمين مراجعة المعلومات الشخصية لأبنائهم/تلاميذهم، أو طلب حذفها، وذلك عبر التواصل معنا مباشرة.</li>
+        </ul>
+
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-user-shield"></i> 6. حقوقكم الأصيلة تجاه بياناتكم</h2>
+        <p class="fade-in">وفقًا للقوانين والتشريعات السارية في بلدكم، قد تتمتعون بحقوق معينة فيما يتعلق بمعلوماتكم الشخصية التي نحتفظ بها، وتشمل هذه الحقوق على سبيل المثال لا الحصر:</p>
+        <ul>
+            <li class="fade-in"><strong>حق الوصول والاطلاع:</strong> طلب الحصول على نسخة من المعلومات الشخصية التي نحتفظ بها عنكم.</li>
+            <li class="fade-in"><strong>حق التصحيح والتعديل:</strong> طلب تصحيح أي معلومات غير دقيقة أو غير مكتملة تخصكم.</li>
+            <li class="fade-in"><strong>حق الحذف ("الحق في النسيان"):</strong> طلب حذف معلوماتكم الشخصية في ظروف معينة يسمح بها القانون.</li>
+            <li class="fade-in"><strong>حق تقييد المعالجة:</strong> طلب تقييد كيفية استخدامنا لمعلوماتكم الشخصية في حالات محددة.</li>
+            <li class="fade-in"><strong>حق الاعتراض على المعالجة:</strong> الاعتراض على معالجتنا لمعلوماتكم الشخصية لأسباب مشروعة.</li>
+        </ul>
+        <p class="fade-in">لممارسة أي من هذه الحقوق، أو للاستفسار عنها، يرجى التكرم بالتواصل معنا عبر البريد الإلكتروني الموضح أدناه. قد نطلب منكم تأكيد هويتكم قبل الاستجابة لطلبكم، وذلك لضمان أمن بياناتكم.</p>
+
+         
+
+       
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-sync-alt"></i> 7. تطور سياستنا: التحديثات والتغييرات</h2>
+        <p class="fade-in">قد نقوم بتحديث سياسة الخصوصية هذه من حين لآخر لتعكس أي تغييرات في ممارساتنا، أو لأسباب تشغيلية، قانونية، أو تنظيمية مستجدة. سنقوم بإخطاركم بأي تغييرات جوهرية من خلال نشر النسخة المحدثة من السياسة على هذه الصفحة، مع تعديل "تاريخ السريان" الموضح في الأعلى. نشجعكم على مراجعة هذه السياسة بشكل دوري لتكونوا على اطلاع دائم بكيفية حمايتنا لمعلوماتكم.</p>
+
+        <hr class="section-divider">
+
+        <h2 class="fade-in"><i class="fas fa-envelope"></i> 9. تواصلوا معنا: جسور الثقة</h2>
+        <p class="fade-in">إذا كانت لديكم أية أسئلة، استفسارات، أو ملاحظات قيمة حول سياسة الخصوصية هذه أو ممارساتنا المتعلقة بالبيانات، فلا تترددوا أبداً في التواصل معنا. فريقنا مستعد لخدمتكم عبر:</p>
+        <p class="fade-in">البريد الإلكتروني: <a href="mailto:golv222@gmail.com" class="highlight"><i class="fas fa-envelope"></i> golv222@gmail.com</a></p>
+
+        <!-- زر العودة للرئيسية في الأسفل -->
+        <a href="index.html" class="home-btn">
+            <i class="fas fa-home"></i> العودة للصفحة الرئيسية
+        </a>
+
+        <p class="last-updated fade-in">تم آخر تحديث لهذه السياسة في: [2025/5/20]</p>
+    </div>
+
+    <button class="back-to-top" id="backToTop" title="العودة للأعلى">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // تأثيرات الظهور عند التمرير
+        const fadeElements = document.querySelectorAll('.fade-in, .slide-in-right');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        fadeElements.forEach(element => {
+            observer.observe(element);
+        });
+
+        // زر العودة للأعلى
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // تأثيرات عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelector('h1').style.opacity = '1';
+            }, 100);
+            
+            // تأثير نبض لزر العودة للرئيسية في الأعلى
+            const headerHomeBtn = document.querySelector('.header-home-btn');
+            setInterval(() => {
+                headerHomeBtn.style.animation = 'pulse 2s infinite';
+            }, 5000);
+        });
+    </script>
+
+</body>
+</html>

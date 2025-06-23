@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://guiding-teacher.web.app/sitemap.xml

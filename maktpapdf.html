@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مكتبة PDF متقدمة - النسخة النهائية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* لوحة الألوان الداكنة */
+            --bg-dark: #1a1d24;
+            --card-bg: #2a2d35;
+            --primary-accent: #4facfe;  /* أزرق سماوي (للأزرار والتحويم) */
+            --secondary-accent: #00f2fe; /* سيان مشرق (للأيقونات حالياً) */
+            /* !! لون العنوان الجديد - أزرق هادئ !! */
+            --title-color: #5dade2;
+            --primary-gradient: linear-gradient(135deg, var(--primary-accent) 0%, var(--secondary-accent) 100%);
+            --text-light: #e8e8e8;
+            --text-muted: #b0b0b0;
+            --border-color: #3a3d45;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --progress-bg: #555;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --button-color: #6c5ce7; /* لون جديد للزر */
+            --button-hover: #5649c0; /* لون الزر عند التحويم */
+            --button-active: #4538a8; /* لون الزر عند الضغط */
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            line-height: 1.7;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            direction: rtl;
+            padding-bottom: 4rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* --- !! تعديل لون عنوان الصفحة !! --- */
+        header h1 {
+            font-weight: 800;
+            font-size: 2.8rem;
+            /* استخدام متغير اللون الجديد للعنوان */
+            color: var(--title-color);
+            margin: 0;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+            animation: textGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes textGlow {
+            from {
+                text-shadow: 0 0 5px rgba(93, 173, 226, 0.5);
+            }
+            to {
+                text-shadow: 0 0 15px rgba(93, 173, 226, 0.8), 0 0 20px rgba(93, 173, 226, 0.6);
+            }
+        }
+        /* --- نهاية تعديل لون عنوان الصفحة --- */
+
+
+        .pdf-library {
+            padding: 1rem 0;
+        }
+
+        .pdf-grid {
+            display: grid;
+            /* 3 أعمدة في السطر للشاشات الكبيرة */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2.5rem;
+        }
+
+        /* تحريك ظهور البطاقات */
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes cardEnter {
+            0% {
+                opacity: 0;
+                transform: translateY(50px) rotateX(90deg);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) rotateX(0);
+            }
+        }
+
+        .pdf-card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px var(--shadow-color);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                        box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                        border-color 0.4s ease;
+            overflow: hidden;
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: cardEnter 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .pdf-card:nth-child(3n+2) { animation-delay: 0.1s; }
+        .pdf-card:nth-child(3n+3) { animation-delay: 0.2s; }
+
+        .pdf-card:hover {
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            border-color: var(--primary-accent);
+        }
+
+        .pdf-icon-wrapper {
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+        .pdf-card:hover .pdf-icon-wrapper {
+             transform: scale(1.1);
+        }
+
+        /* لون الأيقونة (السيان المشرق حالياً) */
+        .pdf-icon-wrapper svg {
+            width: 50px;
+            height: 50px;
+            fill: var(--secondary-accent);
+            transition: fill 0.3s ease;
+        }
+         .pdf-card:hover .pdf-icon-wrapper svg {
+             fill: var(--primary-accent); /* تغيير للأزرق عند المرور */
+         }
+
+        .pdf-info {
+            flex-grow: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        .pdf-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 0.8rem;
+            word-wrap: break-word;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        .pdf-card:hover .pdf-title {
+            color: var(--primary-accent);
+            text-shadow: 0 0 8px rgba(79, 172, 254, 0.4);
+        }
+
+        .pdf-description {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            word-wrap: break-word;
+            min-height: 50px;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+         .pdf-card:hover .pdf-description {
+            color: var(--text-light);
+            transform: translateY(-3px);
+         }
+
+        .progress-status-container {
+            height: 30px;
+            margin-bottom: 1rem;
+            position: relative;
+            display: none;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #fff; /* نص أبيض فوق الشريط */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+            z-index: 2;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: var(--progress-bg);
+            border-radius: 5px;
+            overflow: hidden;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            /* يمكنك تغيير لون شريط التقدم هنا إذا أردت */
+            background: var(--primary-gradient);
+            border-radius: 5px;
+            transition: width 0.2s linear;
+            box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+        }
+
+        /* لون زر التحميل (تدرج الأزرق السماوي إلى السيان) */
+        .pdf-button {
+            display: inline-block;
+            background: var(--button-color);
+            color: #ffffff;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin-top: auto;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+        }
+
+        .pdf-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .pdf-button:hover {
+            background: var(--button-hover);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.6);
+        }
+        
+        .pdf-button:active {
+            background: var(--button-active);
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 3px 10px rgba(108, 92, 231, 0.4);
+        }
+
+        .pdf-button:hover:before {
+            left: 100%;
+        }
+
+        .pdf-button.loading {
+            cursor: not-allowed;
+            background: var(--text-muted);
+            box-shadow: none;
+            color: #ccc;
+        }
+        .pdf-button.loading:before { display: none; }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85em;
+            margin-top: 0.5rem;
+            display: none;
+            font-weight: bold;
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        /* --- الاستجابة للشاشات المختلفة --- */
+
+        /* شاشات أصغر (لابتوب صغير/تابلت كبير) - عمودان */
+        @media (max-width: 1100px) {
+            .pdf-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 2rem;
+            }
+             .pdf-card:nth-child(3n+2),
+             .pdf-card:nth-child(3n+3) { animation-delay: 0s; }
+             .pdf-card:nth-child(2n+2) { animation-delay: 0.1s; }
+        }
+
+        /* تابلت */
+        @media (max-width: 768px) {
+             header h1 { font-size: 2.4rem; }
+             /* قد تحتاج لتقليل الحشو أو حجم الخط هنا أيضاً إذا بدت البطاقات مزدحمة */
+        }
+
+
+        /* !! هواتف - تعديل لعرض 3 أعمدة !! */
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.8rem; } /* تصغير العنوان الرئيسي */
+            .pdf-grid {
+                /* !! إجبار على عرض 3 أعمدة !! */
+                grid-template-columns: repeat(3, 1fr);
+                /* تقليل المسافة بشكل كبير لتناسب الأعمدة الضيقة */
+                gap: 0.8rem;
+            }
+             .pdf-card {
+                 /* تقليل الحشو داخل البطاقة */
+                 padding: 0.8rem 0.6rem;
+                 min-height: 180px; /* ارتفاع ثابت للبطاقات على الهاتف */
+             }
+             /* إلغاء تأثير التكبير عند المرور على الهاتف (قد يكون مزعجاً) */
+            .pdf-card:hover {
+                 transform: translateY(-5px); /* إبقاء الرفع البسيط */
+                 /* يمكنك إزالة box-shadow عند المرور هنا أيضاً إذا أردت */
+            }
+             /* تصغير الخطوط والأيقونة لتناسب المساحة الضيقة */
+             .pdf-title { font-size: 0.9rem; margin-bottom: 0.5rem;}
+             .pdf-description { font-size: 0.75rem; min-height: 40px; margin-bottom: 0.8rem; }
+             .pdf-button { padding: 0.5rem 0.8rem; font-size: 0.7rem;}
+             .pdf-icon-wrapper svg { width: 30px; height: 30px; margin-bottom: 0.5rem; }
+             .progress-status-container { margin-bottom: 0.5rem; height: 20px;}
+             .progress-text { font-size: 0.7em; top: -3px; }
+             .progress-container { height: 6px; }
+             /* إلغاء تأخير التحريك لضمان ظهور كل شيء بسرعة */
+             .pdf-card:nth-child(n) { animation-delay: 0s !important; }
+             
+             /* تعديل تأثيرات الهاتف */
+             .pdf-card:hover .pdf-icon-wrapper {
+                 transform: scale(1.05);
+             }
+             .pdf-card:hover .pdf-description {
+                 transform: translateY(-2px);
+             }
+        }
+        /* --- نهاية تعديلات الهاتف --- */
+   footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: rgb(37, 43, 45);
+            color: Teal; font-size: 1.0em; margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: #293; text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <header class="container">
+        <!-- العنوان يستخدم اللون الجديد --title-color -->
+        <h1>مكتبة ملفات PDF المتقدمة</h1>
+    </header>
+
+    <main class="container">
+        <section class="pdf-library">
+            <!-- الشبكة ستعرض 3 بطاقات في السطر حتى على الهواتف -->
+            <div class="pdf-grid">
+
+                <!-- === البطاقات من 1 إلى 18 === -->
+                <!-- (نفس كود البطاقات الـ 18 من الإجابة السابقة، لا تغيير هنا) -->
+
+                 <!-- البطاقة 1 -->
+                <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20ZM10 18H14V17H10V18ZM10 16H14V15H10V16ZM10 14H14V13H10V14Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">تقرير الأداء 2024</h3>
+                        <p class="pdf-description">تحليل شامل للأداء المالي والتشغيلي للعام الحالي.</p>
+                    </div>
+                    <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                    <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/report-2024.pdf"
+                            data-filename="report-2024-final.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 2 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 3H4.5C3.67 3 3 3.67 3 4.5V19.5C3 20.33 3.67 21 4.5 21H19.5C20.33 21 21 20.33 21 19.5V4.5C21 3.67 20.33 3 19.5 3ZM9 17H6V7H9V17ZM13 17H10V12H13V17ZM17 17H14V9H17V17Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">دليل التصميم الحديث</h3>
+                        <p class="pdf-description">أحدث الاتجاهات والتقنيات في عالم التصميم الجرافيكي والواجهات.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/modern-design-guide.pdf"
+                            data-filename="modern-design-guide.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                 <!-- البطاقة 3 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">ملف تعريفي للموظفين</h3>
+                        <p class="pdf-description">دليل شامل لفريق العمل وهيكلة الشركة الداخلية.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/employee-profiles.pdf"
+                            data-filename="employee-profiles.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- ... البطاقات 4 إلى 18 ... -->
+                  <!-- البطاقة 4 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M21 11H6.83L10.41 7.41L9 6L3 12L9 18L10.41 16.59L6.83 13H21V11Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">كتيب الترحيب بالعملاء</h3>
+                        <p class="pdf-description">دليل إرشادي للعملاء الجدد يشرح الخدمات والسياسات.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/customer-welcome-kit.pdf"
+                            data-filename="customer-welcome-kit.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 5 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM7 15.5C7 14.12 8.12 13 9.5 13S12 14.12 12 15.5C12 16.88 10.88 18 9.5 18S7 16.88 7 15.5ZM17 17H14V15H17V17ZM17 13H14V11H17V13ZM17 9H9.5C8.16 9 7.12 9.91 7.02 11.2L7 11.5V12H5V5H19V9H17Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">دراسة حالة تسويقية</h3>
+                        <p class="pdf-description">تحليل حملة تسويقية ناجحة ونتائجها بالتفصيل.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/marketing-case-study.pdf"
+                            data-filename="marketing-case-study.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 6 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3 13H11V3H3V13ZM3 21H11V15H3V21ZM13 21H21V11H13V21ZM13 3V9H21V3H13Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">قالب خطة المشروع</h3>
+                        <p class="pdf-description">نموذج جاهز للاستخدام لتخطيط وإدارة المشاريع بفعالية.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/project-plan-template.pdf"
+                            data-filename="project-plan-template.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 7 -->
+                <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M21.99 4C21.99 2.9 21.1 2 20 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H18L22 22L21.99 4ZM18 14H6V12H18V14ZM18 11H6V9H18V11ZM18 8H6V6H18V8Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">سياسة الخصوصية المحدثة</h3>
+                        <p class="pdf-description">آخر تحديثات سياسة الخصوصية وشروط الاستخدام.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/privacy-policy-updated.pdf"
+                            data-filename="privacy-policy-updated.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 8 -->
+                <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM11 16H13V14H11V16ZM11 12H13V7H11V12Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">دليل استكشاف الأخطاء</h3>
+                        <p class="pdf-description">حلول للمشاكل الشائعة وكيفية التعامل معها خطوة بخطوة.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/troubleshooting-guide.pdf"
+                            data-filename="troubleshooting-guide.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 9 -->
+                <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 6V3.5C16.5 2.67 15.83 2 15 2H9C8.17 2 7.5 2.67 7.5 3.5V6H3V21H21V6H16.5ZM9 4H15V6H9V4ZM19 19H5V8H19V19ZM12 10C10.9 10 10 10.9 10 12C10 13.1 10.9 14 12 14C13.1 14 14 13.1 14 12C14 10.9 13.1 10 12 10Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">فرص استثمارية جديدة</h3>
+                        <p class="pdf-description">تحليل للفرص الاستثمارية المتاحة في السوق الحالي.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/investment-opportunities.pdf"
+                            data-filename="investment-opportunities.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 10 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 2ZM10 17L6 13L7.41 11.59L10 14.17L16.59 7.58L18 9L10 17Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">معايير الأمان والجودة</h3>
+                        <p class="pdf-description">المعايير المتبعة لضمان أمان البيانات وجودة الخدمات.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/security-quality-standards.pdf"
+                            data-filename="security-quality-standards.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 11 -->
+                <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20 6H4V4H20V6ZM4 14H12V16H4V14ZM4 10H20V12H4V10ZM14 14H20V16H14V14ZM4 18H12V20H4V18ZM14 18H20V20H14V18Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">ملاحظات اجتماع مجلس الإدارة</h3>
+                        <p class="pdf-description">ملخص لأهم القرارات والنقاشات في اجتماع الإدارة الأخير.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/board-meeting-notes.pdf"
+                            data-filename="board-meeting-notes.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 12 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17 3H7C5.9 3 5 3.9 5 5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V5C19 3.9 18.1 3 17 3ZM7 19V5H17V19H7ZM16 13H13V16H11V13H8V11H11V8H13V11H16V13Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">تطبيق الهاتف الجديد</h3>
+                        <p class="pdf-description">دليل استخدام تطبيق الهاتف الجديد ومميزاته الحصرية.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/new-mobile-app-guide.pdf"
+                            data-filename="new-mobile-app-guide.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                 <!-- البطاقة 13 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">تحليل المنافسين</h3>
+                        <p class="pdf-description">دراسة تفصيلية لنقاط القوة والضعف لدى المنافسين الرئيسيين.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/competitor-analysis.pdf"
+                            data-filename="competitor-analysis.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                 <!-- البطاقة 14 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 3H4.5C3.67 3 3 3.67 3 4.5V19.5C3 20.33 3.67 21 4.5 21H19.5C20.33 21 21 20.33 21 19.5V4.5C21 3.67 20.33 3 19.5 3ZM9 17H6V7H9V17ZM13 17H10V12H13V17ZM17 17H14V9H17V17Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">خطة التدريب والتطوير</h3>
+                        <p class="pdf-description">برنامج تدريبي للموظفين لتعزيز المهارات وتطوير الكفاءات.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/training-development-plan.pdf"
+                            data-filename="training-development-plan.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                 <!-- البطاقة 15 -->
+                 <article class="pdf-card">
+                    <div class="pdf-icon-wrapper">
+                         <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"/></svg>
+                    </div>
+                    <div class="pdf-info">
+                        <h3 class="pdf-title">استبيان رضا العملاء</h3>
+                        <p class="pdf-description">نتائج تحليل استبيان رضا العملاء الأخير وتوصيات التحسين.</p>
+                    </div>
+                     <div class="progress-status-container">
+                         <span class="progress-text">0%</span>
+                         <div class="progress-container">
+                             <div class="progress-bar"></div>
+                         </div>
+                     </div>
+                     <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                    <button class="pdf-button"
+                            data-url="https://your-host.com/path/to/customer-satisfaction-survey.pdf"
+                            data-filename="customer-satisfaction-survey.pdf">
+                        تحميل الملف
+                    </button>
+                </article>
+
+                <!-- البطاقة 16 -->
+                <article class="pdf-card">
+                   <div class="pdf-icon-wrapper">
+                       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M21.99 4C21.99 2.9 21.1 2 20 2H4C2.9 2 2 2.9 2 4V16C2 17.1 2.9 18 4 18H18L22 22L21.99 4ZM18 14H6V12H18V14ZM18 11H6V9H18V11ZM18 8H6V6H18V8Z"/></svg>
+                   </div>
+                   <div class="pdf-info">
+                       <h3 class="pdf-title">العروض الترويجية القادمة</h3>
+                       <p class="pdf-description">تفاصيل العروض والخصومات الخاصة المخطط لها للشهر القادم.</p>
+                   </div>
+                    <div class="progress-status-container">
+                        <span class="progress-text">0%</span>
+                        <div class="progress-container">
+                            <div class="progress-bar"></div>
+                        </div>
+                    </div>
+                    <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                   <button class="pdf-button"
+                           data-url="https://your-host.com/path/to/upcoming-promotions.pdf"
+                           data-filename="upcoming-promotions.pdf">
+                       تحميل الملف
+                   </button>
+               </article>
+
+               <!-- البطاقة 17 -->
+                <article class="pdf-card">
+                   <div class="pdf-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM11 16H13V14H11V16ZM11 12H13V7H11V12Z"/></svg>
+                   </div>
+                   <div class="pdf-info">
+                       <h3 class="pdf-title">الأسئلة الشائعة FAQ</h3>
+                       <p class="pdf-description">إجابات شاملة لأكثر الأسئلة تكراراً حول المنتجات والخدمات.</p>
+                   </div>
+                    <div class="progress-status-container">
+                        <span class="progress-text">0%</span>
+                        <div class="progress-container">
+                            <div class="progress-bar"></div>
+                        </div>
+                    </div>
+                    <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                   <button class="pdf-button"
+                           data-url="https://your-host.com/path/to/faq-document.pdf"
+                           data-filename="faq-document.pdf">
+                       تحميل الملف
+                   </button>
+               </article>
+
+               <!-- البطاقة 18 -->
+                <article class="pdf-card">
+                   <div class="pdf-icon-wrapper">
+                       <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M16.5 6V3.5C16.5 2.67 15.83 2 15 2H9C8.17 2 7.5 2.67 7.5 3.5V6H3V21H21V6H16.5ZM9 4H15V6H9V4ZM19 19H5V8H19V19ZM12 10C10.9 10 10 10.9 10 12C10 13.1 10.9 14 12 14C13.1 14 14 13.1 14 12C14 10.9 13.1 10 12 10Z"/></svg>
+                   </div>
+                   <div class="pdf-info">
+                       <h3 class="pdf-title">الشراكات الاستراتيجية</h3>
+                       <p class="pdf-description">نظرة عامة على الشراكات الحالية والمستقبلية للشركة.</p>
+                   </div>
+                    <div class="progress-status-container">
+                        <span class="progress-text">0%</span>
+                        <div class="progress-container">
+                            <div class="progress-bar"></div>
+                        </div>
+                    </div>
+                    <span class="error-message">فشل التحميل، تحقق من الرابط أو الاتصال.</span>
+                   <button class="pdf-button"
+                           data-url="https://your-host.com/path/to/strategic-partnerships.pdf"
+                           data-filename="strategic-partnerships.pdf">
+                       تحميل الملف
+                   </button>
+               </article>
+
+                <!-- === نهاية تكرار البطاقات === -->
+
+            </div>
+        </section>
+    </main>
+<footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+    <script>
+        // --- JavaScript code remains the same ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const downloadButtons = document.querySelectorAll('.pdf-button');
+
+            downloadButtons.forEach(button => {
+                button.addEventListener('click', handleDownloadClick);
+            });
+        });
+
+        async function handleDownloadClick(event) {
+            const button = event.currentTarget;
+            const card = button.closest('.pdf-card');
+            if (!card) return;
+
+            const progressStatusContainer = card.querySelector('.progress-status-container');
+            const progressBar = card.querySelector('.progress-bar');
+            const progressText = card.querySelector('.progress-text');
+            const errorMessage = card.querySelector('.error-message');
+            const pdfUrl = button.dataset.url;
+            const filename = button.dataset.filename || 'download.pdf';
+
+            if (button.classList.contains('loading')) return;
+            button.classList.add('loading');
+            button.disabled = true;
+            button.textContent = 'جاري التحميل...';
+            errorMessage.style.display = 'none';
+            progressStatusContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+
+            try {
+                const response = await fetch(pdfUrl);
+
+                if (!response.ok) {
+                    throw new Error(`فشل تحميل الملف: ${response.status} ${response.statusText}`);
+                }
+
+                const totalSize = Number(response.headers.get('Content-Length'));
+                let receivedLength = 0;
+                const chunks = [];
+                const reader = response.body.getReader();
+
+                while(true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    chunks.push(value);
+                    receivedLength += value.length;
+
+                    if (totalSize) {
+                        const percentage = Math.round((receivedLength / totalSize) * 100);
+                        progressBar.style.width = `${percentage}%`;
+                        progressText.textContent = `${percentage}%`;
+                    } else {
+                         progressText.textContent = `تم تحميل ${(receivedLength / 1024 / 1024).toFixed(1)} MB`;
+                    }
+                }
+
+                progressBar.style.width = '100%';
+                progressText.textContent = 'اكتمل!';
+
+                const blob = new Blob(chunks, { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                 setTimeout(() => {
+                     resetButtonState(button, progressStatusContainer);
+                 }, 1500);
+
+            } catch (error) {
+                console.error('خطأ أثناء تحميل الملف:', error);
+                errorMessage.textContent = error.message.includes('Failed to fetch')
+                    ? 'فشل التحميل. تحقق من اتصالك بالإنترنت أو إعدادات CORS على الخادم.'
+                    : `خطأ: ${error.message.substring(0, 100)}`;
+                errorMessage.style.display = 'block';
+                resetButtonState(button, progressStatusContainer);
+            }
+        }
+
+         function resetButtonState(button, progressContainer) {
+             button.classList.remove('loading');
+             button.disabled = false;
+             button.textContent = 'تحميل الملف';
+             setTimeout(() => {
+                 progressContainer.style.display = 'none';
+             }, 500);
+         }
+    </script>
+
+</body>
+</html>

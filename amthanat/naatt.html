@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>برنامج خرائط توزيع الطلاب والكوادر (مُحسَّن)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* --- خطوط وألوان أساسية --- */
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4a90e2; /* أزرق مميز */
+            --secondary-color: #f5a623; /* برتقالي */
+            --background-color: #2b3d4f; /* رمادي فاتح جداً */
+            --card-background: #ffffff;
+            --text-color: #333;
+            --border-color: #dee2e6;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        /* --- الترويسة والقائمة --- */
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-weight: 700;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0 30px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap; /* للتجاوب مع الشاشات الصغيرة */
+        }
+
+        nav ul li button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        nav ul li button:hover,
+        nav ul li button.active {
+            background-color: #357abd; /* درجة أغمق عند المرور أو النشاط */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(74, 144, 226, 0.4);
+        }
+
+        nav ul li button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- الأقسام (مخفية بشكل افتراضي) --- */
+        .section {
+            display: none;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* --- الجداول --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: var(--border-radius);
+            overflow: hidden; /* للحفاظ على زوايا الجدول الدائرية */
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: right;
+            vertical-align: middle;
+        }
+
+        thead th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tbody tr:hover {
+            background-color: #e9ecef; /* لون خفيف عند المرور */
+        }
+
+        /* --- حقول الإدخال والأزرار داخل الجداول والأقسام --- */
+        input[type="text"],
+        input[type="number"],
+        input[type="search"], /* لتناسق حقل البحث لاحقاً إذا أضيف */
+        select { /* لتناسق القوائم المنسدلة إذا أضيفت */
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-sizing: border-box; /* لضمان أن الحاشية والحدود ضمن العرض المحدد */
+            font-size: 0.95rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="search"]:focus,
+        select:focus {
+           border-color: var(--primary-color);
+           box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+           outline: none;
+        }
+
+
+        .table-actions button,
+        .section-actions button,
+        .general-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-left: 5px; /* مسافة بين أزرار الإجراءات */
+            vertical-align: middle; /* محاذاة رأسية للأزرار */
+        }
+
+        .table-actions button.delete-btn,
+        .section-actions button.delete-all-btn {
+            background-color: var(--danger-color);
+        }
+        .table-actions button.delete-btn:hover,
+        .section-actions button.delete-all-btn:hover {
+            background-color: #c82333;
+        }
+
+        .table-actions button.edit-btn,
+        .section-actions button.pdf-btn {
+            background-color: var(--secondary-color);
+        }
+        .table-actions button.edit-btn:hover,
+        .section-actions button.pdf-btn:hover {
+             background-color: #e0930b;
+        }
+
+        .general-button {
+            display: inline-block; /* أو block حسب الحاجة */
+            padding: 12px 30px;
+            font-size: 1rem;
+            margin-top: 15px;
+             background-color: var(--success-color); /* لون أخضر للتوزيع */
+             width: auto; /* زر التوزيع لا يحتاج عرض كامل */
+        }
+        .general-button:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+             box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        }
+
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+             margin-bottom: 15px;
+        }
+
+        .input-group label {
+            flex-shrink: 0; /* منع النص من التقلص */
+             font-weight: 600;
+             margin-left: 5px;
+        }
+
+        .input-group input {
+            flex-grow: 1; /* السماح للحقل بالتمدد */
+            margin-bottom: 0; /* إزالة الهامش السفلي لأنه مدار بواسطة input-group */
+        }
+
+
+        /* --- منطقة إخراج التوزيع --- */
+        .distribution-output {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9ecef; /* خلفية مميزة لمنطقة الإخراج */
+            border: 1px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            min-height: 100px; /* ارتفاع أدنى للمنطقة */
+        }
+
+        /* --- تصميم صفحة A4 الافتراضية --- */
+        .a4-page {
+            background-color: white;
+            width: 210mm; /* عرض A4 */
+            min-height: 297mm; /* ارتفاع A4 */
+            padding: 15mm;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; /* مسافة بين مربعات الطلاب */
+            align-content: flex-start; /* لمحاذاة العناصر من الأعلى */
+            page-break-after: always; /* لضمان صفحة جديدة عند الطباعة */
+        }
+
+        .a4-page.landscape {
+            width: 297mm;
+            min-height: 210mm;
+            padding: 10mm;
+        }
+
+        .student-pair-box {
+            border: 2px solid var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            width: calc(33.33% - 10px); /* ثلاث مربعات بالسطر مع المسافات */
+            box-sizing: border-box;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+             font-size: 0.9rem;
+             overflow-wrap: break-word; /* لكسر الكلمات الطويلة */
+        }
+        .student-pair-box:hover {
+             transform: scale(1.03);
+             box-shadow: var(--shadow);
+        }
+
+        .a4-page h3 { /* عنوان القاعة */
+            width: 100%;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        .a4-page h4 { /* عنوان القطاع */
+             width: 100%;
+             text-align: right;
+             margin-top: 15px;
+             margin-bottom: 10px;
+             font-weight: 600;
+             color: #555;
+             font-size: 1rem;
+        }
+
+        /* --- تصميم جدول توزيع الكوادر --- */
+        .a4-page.landscape table {
+            margin-top: 10px;
+            font-size: 0.85rem; /* خط أصغر قليلاً للطاولات الكبيرة */
+             border: 1px solid #999; /* حدود أغمق قليلاً للطاولة المطبوعة */
+        }
+         .a4-page.landscape th, .a4-page.landscape td {
+            padding: 8px 10px; /* حشوة أقل قليلاً */
+            border: 1px solid #bbb;
+         }
+         .a4-page.landscape thead th {
+              background-color: #e0e0e0; /* خلفية رمادية للترويسة */
+              color: #333;
+              font-weight: bold;
+         }
+         .a4-page h3.day-title { /* عنوان اليوم */
+             font-size: 1.4rem;
+             margin-bottom: 20px;
+         }
+
+        /* --- أنماط الطباعة --- */
+        .print-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+        }
+        .print-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+            font-size: 0.9rem;
+        }
+
+        /* --- مؤثرات إضافية --- */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- التجاوب مع الشاشات الصغيرة --- */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 15px;
+            }
+
+            nav ul {
+                flex-direction: column;
+                align-items: stretch; /* الأزرار تمتد بعرض القائمة */
+            }
+            nav ul li button {
+                 width: 100%;
+                 margin-bottom: 5px; /* مسافة بين الأزرار العمودية */
+            }
+
+            th, td {
+                padding: 8px 10px; /* حشوة أقل للخلايا */
+                font-size: 0.9rem; /* خط أصغر قليلاً */
+            }
+
+             .table-responsive {
+                 overflow-x: auto;
+                 -webkit-overflow-scrolling: touch; /* تمرير سلس على iOS */
+                 border: 1px solid var(--border-color); /* إضافة إطار للمنطقة القابلة للتمرير */
+                 border-radius: var(--border-radius);
+                 margin-bottom: 15px;
+             }
+             .table-responsive table {
+                 margin-top: 0;
+                 margin-bottom: 0;
+                 border: none; /* الإطار موجود على العنصر الحاوي */
+                 border-radius: 0;
+                 box-shadow: none;
+                 min-width: 600px; /* عرض أدنى للجدول داخل الحاوية القابلة للتمرير */
+             }
+
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-group label {
+                margin-bottom: 5px;
+                margin-left: 0; /* لا حاجة لهامش جانبي في التخطيط العمودي */
+                text-align: right; /* التأكيد على المحاذاة */
+            }
+
+            .student-pair-box {
+                width: calc(50% - 10px); /* مربعان في السطر */
+                 font-size: 0.85rem;
+            }
+
+             /* إخفاء حجم A4 الفعلي على الشاشات الصغيرة وعرض المحتوى بشكل متدفق */
+            .distribution-output .a4-page {
+                width: auto; /* عرض تلقائي */
+                min-height: auto; /* ارتفاع تلقائي */
+                height: auto;
+                padding: 15px;
+                margin: 10px 0;
+                border: 1px dashed var(--primary-color); /* تمييز منطقة الإخراج */
+                box-shadow: none;
+                page-break-after: unset; /* لا نريد فواصل صفحات على الشاشة */
+            }
+            .distribution-output .a4-page.landscape {
+                width: auto;
+                min-height: auto;
+                height: auto;
+            }
+
+             .general-button {
+                 width: 100%; /* جعل أزرار التوزيع بعرض كامل */
+                 padding: 15px;
+             }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+            nav ul li button {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+             th, td {
+                font-size: 0.8rem; /* خط أصغر */
+             }
+             .student-pair-box {
+                width: 100%; /* مربع واحد في السطر */
+             }
+             .table-responsive table {
+                 min-width: 450px; /* تقليل العرض الأدنى أكثر */
+             }
+        }
+
+         /* --- أنماط الطباعة --- */
+         @media print {
+             body {
+                 font-family: Arial, sans-serif; /* خط مناسب للطباعة */
+                 background-color: #fff;
+                 color: #000;
+                 font-size: 10pt; /* حجم خط أساسي للطباعة */
+             }
+             .container {
+                 width: 100%;
+                 margin: 0;
+                 padding: 0;
+                 box-shadow: none;
+                 border: none;
+             }
+             header, nav, .section:not(.active), /* إخفاء العناصر غير المراد طباعتها */
+             #student-input-section, #hall-config-section, #teacher-input-section, #days-config-section, /* إخفاء أقسام الإدخال */
+             .section-actions, .general-button, .table-actions button, /* إخفاء الأزرار */
+             footer, /* إخفاء التذييل */
+             .no-print { /* فئة مخصصة لإخفاء أي عنصر آخر */
+                 display: none !important;
+             }
+
+             .distribution-output {
+                 margin: 0;
+                 padding: 0;
+                 border: none;
+                 background-color: transparent;
+             }
+
+             .a4-page {
+                 width: 210mm !important;
+                 height: 297mm !important;
+                 margin: 0 auto !important; /* توسيط الصفحة في معاينة الطباعة */
+                 padding: 10mm 15mm !important; /* تعديل الهوامش للطباعة */
+                 border: none !important;
+                 box-shadow: none !important;
+                 page-break-after: always !important; /* ضمان فاصل الصفحات */
+                 overflow: hidden !important; /* منع أي محتوى زائد من الظهور */
+                 box-sizing: border-box !important;
+                 font-size: 9pt !important; /* حجم خط أصغر قليلاً للطباعة */
+                 display: flex !important; /* التأكد من الحفاظ على flex للطباعة */
+                 flex-wrap: wrap !important;
+                 align-content: flex-start !important;
+                 gap: 5mm !important; /* تقليل المسافة للطباعة */
+             }
+
+             .a4-page.landscape {
+                 width: 297mm !important;
+                 height: 210mm !important;
+                 padding: 10mm !important;
+                 font-size: 8pt !important; /* حجم أصغر للوضع الأفقي */
+             }
+
+             .student-pair-box {
+                 width: calc(33.33% - 5mm) !important; /* تعديل العرض ليناسب هوامش الطباعة */
+                 border: 1px solid #666 !important; /* حدود أرق للطباعة */
+                 padding: 8px !important;
+                 margin: 0 !important; /* الاعتماد على gap في الصفحة */
+                 box-sizing: border-box !important;
+                 overflow-wrap: break-word !important; /* لكسر الكلمات الطويلة إذا لزم الأمر */
+                  background-color: #fff !important; /* تأكيد الخلفية البيضاء */
+                  font-size: 8.5pt !important;
+                  box-shadow: none !important;
+                  transform: none !important;
+                  page-break-inside: avoid !important; /* منع كسر المربع */
+             }
+
+            .a4-page h3, .a4-page h4 {
+                 color: #000 !important;
+                 border-bottom: 1px solid #ccc !important;
+                 font-size: 11pt !important;
+                 page-break-after: avoid !important;
+            }
+            .a4-page.landscape table {
+                 width: 100% !important;
+                 border-collapse: collapse !important;
+                 border: 1px solid #333 !important;
+            }
+            .a4-page.landscape th, .a4-page.landscape td {
+                border: 1px solid #666 !important;
+                padding: 4px 6px !important; /* تقليل الحشو */
+                color: #000 !important; /* تأكيد اللون الأسود */
+            }
+            .a4-page.landscape thead th {
+                background-color: #eee !important; /* تلوين خفيف للترويسة */
+                font-weight: bold !important;
+            }
+
+            /* منع الأيتام والأرامل في الطباعة */
+            table { page-break-inside: auto !important; }
+            tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+            thead { display: table-header-group !important; } /* تكرار الترويسة في كل صفحة */
+            tfoot { display: table-footer-group !important; }
+            h3, h4 { page-break-after: avoid !important; }
+            .student-pair-box { page-break-inside: avoid !important; }
+            .table-responsive { overflow: visible !important; border: none !important; } /* عرض كامل الجدول عند الطباعة */
+
+         }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-map-marked-alt"></i> مولد خرائط توزيع الطلاب والكوادر   </h1>
+        </header>
+
+        <nav>
+            <ul>
+                <li><button id="btn-show-students" class="active"><i class="fas fa-users"></i> بيانات وتوزيع التلاميذ</button></li>
+                <li><button id="btn-show-teachers"><i class="fas fa-chalkboard-teacher"></i> بيانات وتوزيع الكوادر</button></li>
+            </ul>
+        </nav>
+
+        <!-- ======================= قسم بيانات وتوزيع التلاميذ ======================= -->
+        <section id="student-section" class="section active">
+            <h2><i class="fas fa-user-graduate"></i> إدارة بيانات التلاميذ</h2>
+
+            <!-- منطقة إدخال بيانات التلميذ -->
+            <div id="student-input-section" style="margin-bottom: 30px; padding: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #f8f9fa;">
+                <h3><i class="fas fa-plus-circle"></i> إضافة / تعديل تلميذ</h3>
+                 <div class="input-group">
+                     <label for="student-name">اسم التلميذ:</label>
+                     <input type="text" id="student-name" placeholder="أدخل اسم التلميذ الرباعي">
+                 </div>
+                 <div class="input-group">
+                     <label for="student-class">الصف:</label>
+                     <input type="text" id="student-class" placeholder="مثال: السادس العلمي">
+                 </div>
+                <button id="add-student-btn" class="general-button" style="background-color: var(--primary-color); margin-left: 10px;"><i class="fas fa-user-plus"></i> إضافة تلميذ</button>
+                <button id="update-student-btn" class="general-button" style="background-color: var(--secondary-color); display: none; margin-left: 10px;"><i class="fas fa-save"></i> تحديث البيانات</button>
+                <button id="cancel-edit-student-btn" class="general-button" style="background-color: #6c757d; display: none;"><i class="fas fa-times"></i> إلغاء التعديل</button>
+                 <input type="hidden" id="edit-student-index"> <!-- حقل مخفي لتخزين مؤشر التلميذ عند التعديل -->
+            </div>
+
+             <!-- جدول عرض التلاميذ -->
+            <h3><i class="fas fa-list-ul"></i> قائمة التلاميذ المدخلين</h3>
+            <div class="table-responsive">
+                <table id="student-table">
+                    <thead>
+                        <tr>
+                            <th>ت</th>
+                            <th>اسم التلميذ</th>
+                            <th>الصف</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table-body">
+                        <!-- سيتم ملء الصفوف هنا بواسطة JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+             <p id="no-students-msg" style="text-align: center; color: #777; display: none;">لا يوجد تلاميذ مدخلين حالياً.</p>
+
+            <!-- قسم إعدادات التوزيع -->
+             <div id="hall-config-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <h3><i class="fas fa-cogs"></i> إعدادات توزيع التلاميذ</h3>
+                 <div class="input-group">
+                     <label for="num-halls">عدد القاعات المطلوبة:</label>
+                     <input type="number" id="num-halls" min="1" value="1" style="max-width: 150px;">
+                 </div>
+                 <div class="input-group">
+                     <label for="students-per-hall">عدد التلاميذ لكل قاعة:</label>
+                     <input type="number" id="students-per-hall" min="1" placeholder="اتركه فارغاً للتوزيع التلقائي" style="max-width: 150px;">
+                 </div>
+                 <div class="input-group">
+                     <label for="school-name">اسم المدرسة:</label>
+                     <input type="text" id="school-name" placeholder="أدخل اسم المدرسة">
+                 </div>
+                 <div class="input-group">
+                     <label for="director-name">اسم المدير:</label>
+                     <input type="text" id="director-name" placeholder="ابراهيم المدير الافتراضي ">
+                 </div>
+                 <div class="section-actions" style="margin-bottom: 20px;">
+                     <button id="delete-all-students-btn" class="delete-all-btn"><i class="fas fa-trash-alt"></i> حذف كل التلاميذ</button>
+                     <button id="print-students-btn" class="pdf-btn no-print"><i class="fas fa-print"></i> طباعة توزيع الطلاب</button>
+                     <button id="download-pdf-students-btn" class="pdf-btn no-print"><i class="fas fa-file-pdf"></i> تنزيل PDF</button>
+                     <button id="download-image-students-btn" class="pdf-btn no-print"><i class="fas fa-image"></i> تنزيل صورة</button>
+                 </div>
+
+                <button id="distribute-students-btn" class="general-button"><i class="fas fa-random"></i> توزيع التلاميذ على القاعات</button>
+            </div>
+
+            <!-- منطقة عرض نتائج توزيع التلاميذ -->
+            <div id="student-distribution-output" class="distribution-output">
+                <!-- سيتم عرض صفحات A4 هنا -->
+            </div>
+        </section>
+
+        <!-- ======================= قسم بيانات وتوزيع الكوادر ======================= -->
+        <section id="teacher-section" class="section">
+            <h2><i class="fas fa-user-tie"></i> إدارة بيانات الكوادر (المراقبين)</h2>
+
+             <!-- منطقة إدخال بيانات الكادر -->
+            <div id="teacher-input-section" style="margin-bottom: 30px; padding: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #f8f9fa;">
+                 <h3><i class="fas fa-plus-circle"></i> إضافة / تعديل كادر</h3>
+                 <div class="input-group">
+                     <label for="teacher-name">اسم الكادر:</label>
+                     <input type="text" id="teacher-name" placeholder="أدخل اسم الكادر">
+                 </div>
+                 <button id="add-teacher-btn" class="general-button" style="background-color: var(--primary-color); margin-left: 10px;"><i class="fas fa-user-plus"></i> إضافة كادر</button>
+                 <button id="update-teacher-btn" class="general-button" style="background-color: var(--secondary-color); display: none; margin-left: 10px;"><i class="fas fa-save"></i> تحديث البيانات</button>
+                 <button id="cancel-edit-teacher-btn" class="general-button" style="background-color: #6c757d; display: none;"><i class="fas fa-times"></i> إلغاء التعديل</button>
+                 <input type="hidden" id="edit-teacher-index"> <!-- حقل مخفي لتخزين مؤشر الكادر عند التعديل -->
+            </div>
+
+             <!-- جدول عرض الكوادر -->
+             <h3><i class="fas fa-list-ul"></i> قائمة الكوادر المدخلين</h3>
+            <div class="table-responsive">
+                 <table id="teacher-table">
+                     <thead>
+                         <tr>
+                             <th>ت</th>
+                             <th>اسم الكادر</th>
+                             <th>إجراءات</th>
+                         </tr>
+                     </thead>
+                     <tbody id="teacher-table-body">
+                         <!-- سيتم ملء الصفوف هنا بواسطة JavaScript -->
+                     </tbody>
+                 </table>
+             </div>
+             <p id="no-teachers-msg" style="text-align: center; color: #777; display: none;">لا يوجد كوادر مدخلين حالياً.</p>
+
+             <!-- قسم إعدادات توزيع الكوادر -->
+            <div id="days-config-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                <h3><i class="fas fa-cogs"></i> إعدادات توزيع الكوادر</h3>
+                 <div class="input-group">
+                     <label for="num-days">عدد أيام المراقبة:</label>
+                     <input type="number" id="num-days" min="1" value="1" style="max-width: 150px;">
+                 </div>
+                 <div class="input-group">
+                     <label for="num-halls-teachers">عدد القاعات:</label>
+                     <input type="number" id="num-halls-teachers" min="1" value="1" style="max-width: 150px;">
+                 </div>
+                 <div class="input-group">
+                     <label for="school-name-teachers">اسم المدرسة:</label>
+                     <input type="text" id="school-name-teachers" placeholder="أدخل اسم المدرسة">
+                 </div>
+                 <div class="input-group">
+                     <label for="director-name-teachers">اسم المدير:</label>
+                     <input type="text" id="director-name-teachers" placeholder="ابراهيم المدير الافتراضي">
+                 </div>
+                 <div class="section-actions" style="margin-bottom: 20px;">
+                     <button id="delete-all-teachers-btn" class="delete-all-btn"><i class="fas fa-trash-alt"></i> حذف كل الكوادر</button>
+                     <button id="print-teachers-btn" class="pdf-btn no-print"><i class="fas fa-print"></i> طباعة توزيع الكوادر</button>
+                     <button id="download-pdf-teachers-btn" class="pdf-btn no-print"><i class="fas fa-file-pdf"></i> تنزيل PDF</button>
+                     <button id="download-image-teachers-btn" class="pdf-btn no-print"><i class="fas fa-image"></i> تنزيل صورة</button>
+                 </div>
+                <button id="distribute-teachers-btn" class="general-button"><i class="fas fa-calendar-alt"></i> توزيع الكوادر على الأيام والقاعات</button>
+            </div>
+
+            <!-- منطقة عرض نتائج توزيع الكوادر -->
+            <div id="teacher-distribution-output" class="distribution-output">
+                 <!-- سيتم عرض صفحات A4 الأفقية هنا -->
+            </div>
+        </section>
+
+        <footer>
+             <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+        </footer>
+
+    </div> <!-- نهاية .container -->
+
+    <script>
+        // الانتظار حتى يتم تحميل كامل HTML
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM fully loaded and parsed");
+
+            // --- الحصول على العناصر الأساسية من DOM ---
+            const btnShowStudents = document.getElementById('btn-show-students');
+            const btnShowTeachers = document.getElementById('btn-show-teachers');
+            const studentSection = document.getElementById('student-section');
+            const teacherSection = document.getElementById('teacher-section');
+
+            // عناصر قسم التلاميذ
+            const studentNameInput = document.getElementById('student-name');
+            const studentClassInput = document.getElementById('student-class');
+            const addStudentBtn = document.getElementById('add-student-btn');
+            const updateStudentBtn = document.getElementById('update-student-btn');
+            const cancelEditStudentBtn = document.getElementById('cancel-edit-student-btn');
+            const editStudentIndexInput = document.getElementById('edit-student-index');
+            const studentTableBody = document.getElementById('student-table-body');
+            const noStudentsMsg = document.getElementById('no-students-msg');
+            const studentTableElement = document.getElementById('student-table');
+            const numHallsInput = document.getElementById('num-halls');
+            const studentsPerHallInput = document.getElementById('students-per-hall');
+            const schoolNameInput = document.getElementById('school-name');
+            const directorNameInput = document.getElementById('director-name');
+            const deleteAllStudentsBtn = document.getElementById('delete-all-students-btn');
+            const printStudentsBtn = document.getElementById('print-students-btn');
+            const downloadPdfStudentsBtn = document.getElementById('download-pdf-students-btn');
+            const downloadImageStudentsBtn = document.getElementById('download-image-students-btn');
+            const distributeStudentsBtn = document.getElementById('distribute-students-btn');
+            const studentDistributionOutput = document.getElementById('student-distribution-output');
+            const studentInputSection = document.getElementById('student-input-section');
+
+            // عناصر قسم الكوادر
+            const teacherNameInput = document.getElementById('teacher-name');
+            const addTeacherBtn = document.getElementById('add-teacher-btn');
+            const updateTeacherBtn = document.getElementById('update-teacher-btn');
+            const cancelEditTeacherBtn = document.getElementById('cancel-edit-teacher-btn');
+            const editTeacherIndexInput = document.getElementById('edit-teacher-index');
+            const teacherTableBody = document.getElementById('teacher-table-body');
+            const noTeachersMsg = document.getElementById('no-teachers-msg');
+            const teacherTableElement = document.getElementById('teacher-table');
+            const numDaysInput = document.getElementById('num-days');
+            const numHallsTeachersInput = document.getElementById('num-halls-teachers');
+            const schoolNameTeachersInput = document.getElementById('school-name-teachers');
+            const directorNameTeachersInput = document.getElementById('director-name-teachers');
+            const deleteAllTeachersBtn = document.getElementById('delete-all-teachers-btn');
+            const printTeachersBtn = document.getElementById('print-teachers-btn');
+            const downloadPdfTeachersBtn = document.getElementById('download-pdf-teachers-btn');
+            const downloadImageTeachersBtn = document.getElementById('download-image-teachers-btn');
+            const distributeTeachersBtn = document.getElementById('distribute-teachers-btn');
+            const teacherDistributionOutput = document.getElementById('teacher-distribution-output');
+            const teacherInputSection = document.getElementById('teacher-input-section');
+
+            const currentYearSpan = document.getElementById('current-year');
+
+            // التحقق من وجود العناصر الأساسية
+            if (!btnShowStudents || !btnShowTeachers || !studentSection || !teacherSection || !studentTableBody || !teacherTableBody) {
+                console.error("Critical error: Some essential elements are missing in the page!");
+                alert("حدث خطأ أثناء تحميل الصفحة. يرجى المحاولة مرة أخرى أو الاتصال بالدعم.");
+                return;
+            }
+
+            // --- إدارة البيانات (LocalStorage) ---
+            let students = JSON.parse(localStorage.getItem('students')) || [];
+            let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+            let schoolInfo = JSON.parse(localStorage.getItem('schoolInfo')) || { name: '', director: '' };
+
+            function saveStudents() {
+                try {
+                    localStorage.setItem('students', JSON.stringify(students));
+                } catch (e) {
+                    console.error("Failed to save students data:", e);
+                    alert("حدث خطأ أثناء حفظ بيانات الطلاب. قد لا يتم حفظ التغييرات.");
+                }
+            }
+
+            function saveTeachers() {
+                 try {
+                    localStorage.setItem('teachers', JSON.stringify(teachers));
+                 } catch (e) {
+                    console.error("Failed to save teachers data:", e);
+                     alert("حدث خطأ أثناء حفظ بيانات الكوادر. قد لا يتم حفظ التغييرات.");
+                 }
+            }
+
+            function saveSchoolInfo() {
+                try {
+                    localStorage.setItem('schoolInfo', JSON.stringify(schoolInfo));
+                } catch (e) {
+                    console.error("Failed to save school info:", e);
+                }
+            }
+
+            // --- دالة خلط مصفوفة (Fisher-Yates Shuffle) ---
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]]; // تبديل العناصر
+                }
+            }
+
+            // --- دالة لتجنب ثغرات XSS ---
+            function escapeHtml(unsafe) {
+                if (typeof unsafe !== 'string') return unsafe;
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            // --- وظائف عرض وتحديث جداول البيانات ---
+
+            function renderStudentTable() {
+                console.log("Rendering student table...");
+                studentTableBody.innerHTML = ''; // مسح الجدول الحالي
+                if (students.length === 0) {
+                    if(noStudentsMsg) noStudentsMsg.style.display = 'block';
+                    if(studentTableElement) studentTableElement.style.display = 'none';
+                } else {
+                    if(noStudentsMsg) noStudentsMsg.style.display = 'none';
+                    if(studentTableElement) studentTableElement.style.display = 'table';
+
+                    students.forEach((student, index) => {
+                        const row = studentTableBody.insertRow();
+                        if (!student) {
+                           console.warn(`Skipping invalid student data at index ${index}`);
+                           return;
+                        }
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${escapeHtml(student.name)}</td>
+                            <td>${escapeHtml(student.class)}</td>
+                            <td class="table-actions">
+                                <button class="edit-btn" data-index="${index}"><i class="fas fa-edit"></i> تعديل</button>
+                                <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i> حذف</button>
+                            </td>
+                        `;
+                    });
+                }
+                 console.log("Student table rendering complete.");
+            }
+
+            function renderTeacherTable() {
+                console.log("Rendering teacher table...");
+                teacherTableBody.innerHTML = '';
+                if (teachers.length === 0) {
+                    if(noTeachersMsg) noTeachersMsg.style.display = 'block';
+                    if(teacherTableElement) teacherTableElement.style.display = 'none';
+                } else {
+                    if(noTeachersMsg) noTeachersMsg.style.display = 'none';
+                    if(teacherTableElement) teacherTableElement.style.display = 'table';
+
+                    teachers.forEach((teacher, index) => {
+                         const row = teacherTableBody.insertRow();
+                         if (!teacher) {
+                             console.warn(`Skipping invalid teacher data at index ${index}`);
+                             return;
+                         }
+                         row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${escapeHtml(teacher.name)}</td>
+                            <td class="table-actions">
+                                 <button class="edit-btn" data-index="${index}"><i class="fas fa-edit"></i> تعديل</button>
+                                 <button class="delete-btn" data-index="${index}"><i class="fas fa-trash"></i> حذف</button>
+                            </td>
+                        `;
+                    });
+                }
+                console.log("Teacher table rendering complete.");
+            }
+
+            // --- وظائف إدارة الطلاب (إضافة, تعديل, حذف) ---
+
+            function resetStudentForm() {
+                studentNameInput.value = '';
+                studentClassInput.value = '';
+                editStudentIndexInput.value = '';
+                addStudentBtn.style.display = 'inline-block';
+                updateStudentBtn.style.display = 'none';
+                cancelEditStudentBtn.style.display = 'none';
+                 const titleElement = studentInputSection.querySelector('h3');
+                 if (titleElement) titleElement.innerHTML = '<i class="fas fa-plus-circle"></i> إضافة تلميذ جديد';
+            }
+
+            function addStudent() {
+                const name = studentNameInput.value.trim();
+                const studentClass = studentClassInput.value.trim();
+
+                if (name && studentClass) {
+                    students.push({ name, class: studentClass });
+                    saveStudents();
+                    renderStudentTable();
+                    resetStudentForm();
+                    if (studentNameInput) studentNameInput.focus();
+                } else {
+                    alert('يرجى ملء جميع حقول بيانات التلميذ.');
+                }
+            }
+
+            function prepareEditStudent(index) {
+                const student = students[index];
+                if (!student) return;
+
+                studentNameInput.value = student.name;
+                studentClassInput.value = student.class;
+                editStudentIndexInput.value = index;
+
+                addStudentBtn.style.display = 'none';
+                updateStudentBtn.style.display = 'inline-block';
+                cancelEditStudentBtn.style.display = 'inline-block';
+
+                 const titleElement = studentInputSection.querySelector('h3');
+                 if (titleElement) titleElement.innerHTML = '<i class="fas fa-edit"></i> تعديل بيانات التلميذ';
+
+                if (studentInputSection) studentInputSection.scrollIntoView({ behavior: 'smooth' });
+                if (studentNameInput) studentNameInput.focus();
+            }
+
+            function updateStudent() {
+                const index = parseInt(editStudentIndexInput.value);
+                const name = studentNameInput.value.trim();
+                const studentClass = studentClassInput.value.trim();
+
+                if (!isNaN(index) && index >= 0 && index < students.length && name && studentClass) {
+                    students[index] = { name, class: studentClass };
+                    saveStudents();
+                    renderStudentTable();
+                    resetStudentForm();
+                } else {
+                    alert('يرجى ملء جميع الحقول بشكل صحيح لتحديث بيانات التلميذ.');
+                }
+            }
+
+            function deleteStudent(index) {
+                if (isNaN(index) || index < 0 || index >= students.length) {
+                     console.error("Invalid index for deleteStudent:", index);
+                     return;
+                }
+                 const studentName = students[index].name;
+                if (confirm(`هل أنت متأكد من حذف التلميذ: ${escapeHtml(studentName)}؟`)) {
+                    students.splice(index, 1);
+                    saveStudents();
+                    renderStudentTable();
+                    if (editStudentIndexInput.value === index.toString()) {
+                        resetStudentForm();
+                    }
+                }
+            }
+
+            function deleteAllStudents() {
+                if (students.length > 0 && confirm('تحذير: سيتم حذف جميع بيانات التلاميذ المدخلة نهائياً. هل أنت متأكد؟')) {
+                    students = [];
+                    saveStudents();
+                    renderStudentTable();
+                    if(studentDistributionOutput) studentDistributionOutput.innerHTML = '';
+                    resetStudentForm();
+                } else if (students.length === 0) {
+                     alert('لا يوجد تلاميذ لحذفهم.');
+                 }
+            }
+
+            // --- وظائف إدارة الكوادر (إضافة, تعديل, حذف) ---
+
+            function resetTeacherForm() {
+                teacherNameInput.value = '';
+                editTeacherIndexInput.value = '';
+                addTeacherBtn.style.display = 'inline-block';
+                updateTeacherBtn.style.display = 'none';
+                cancelEditTeacherBtn.style.display = 'none';
+                const titleElement = teacherInputSection.querySelector('h3');
+                 if (titleElement) titleElement.innerHTML = '<i class="fas fa-plus-circle"></i> إضافة كادر جديد';
+            }
+
+            function addTeacher() {
+                const name = teacherNameInput.value.trim();
+                if (name) {
+                    teachers.push({ name });
+                    saveTeachers();
+                    renderTeacherTable();
+                    resetTeacherForm();
+                    if(teacherNameInput) teacherNameInput.focus();
+                } else {
+                    alert('يرجى إدخال اسم الكادر.');
+                }
+            }
+
+            function prepareEditTeacher(index) {
+                 const teacher = teachers[index];
+                 if (!teacher) return;
+
+                 teacherNameInput.value = teacher.name;
+                 editTeacherIndexInput.value = index;
+
+                 addTeacherBtn.style.display = 'none';
+                 updateTeacherBtn.style.display = 'inline-block';
+                 cancelEditTeacherBtn.style.display = 'inline-block';
+
+                 const titleElement = teacherInputSection.querySelector('h3');
+                 if (titleElement) titleElement.innerHTML = '<i class="fas fa-edit"></i> تعديل بيانات الكادر';
+
+                 if(teacherInputSection) teacherInputSection.scrollIntoView({ behavior: 'smooth' });
+                 if(teacherNameInput) teacherNameInput.focus();
+             }
+
+            function updateTeacher() {
+                 const index = parseInt(editTeacherIndexInput.value);
+                 const name = teacherNameInput.value.trim();
+
+                 if (!isNaN(index) && index >= 0 && index < teachers.length && name) {
+                     teachers[index] = { name };
+                     saveTeachers();
+                     renderTeacherTable();
+                     resetTeacherForm();
+                 } else {
+                     alert('يرجى إدخال اسم صحيح لتحديث بيانات الكادر.');
+                 }
+             }
+
+            function deleteTeacher(index) {
+                if (isNaN(index) || index < 0 || index >= teachers.length) {
+                     console.error("Invalid index for deleteTeacher:", index);
+                     return;
+                }
+                const teacherName = teachers[index].name;
+                if (confirm(`هل أنت متأكد من حذف الكادر: ${escapeHtml(teacherName)}؟`)) {
+                    teachers.splice(index, 1);
+                    saveTeachers();
+                    renderTeacherTable();
+                    if (editTeacherIndexInput.value === index.toString()) {
+                        resetTeacherForm();
+                    }
+                }
+            }
+
+            function deleteAllTeachers() {
+                 if (teachers.length > 0 && confirm('تحذير: سيتم حذف جميع بيانات الكوادر المدخلة نهائياً. هل أنت متأكد؟')) {
+                     teachers = [];
+                     saveTeachers();
+                     renderTeacherTable();
+                     if(teacherDistributionOutput) teacherDistributionOutput.innerHTML = '';
+                     resetTeacherForm();
+                 } else if (teachers.length === 0) {
+                     alert('لا يوجد كوادر لحذفهم.');
+                 }
+            }
+
+            // --- وظائف التوزيع ---
+function distributeStudents() {
+  const numHalls = parseInt(numHallsInput.value);
+  if (isNaN(numHalls) || numHalls < 1) {
+    alert("يرجى إدخال عدد صحيح وموجب للقاعات.");
+    return;
+  }
+  if (students.length === 0) {
+    alert("لا يوجد تلاميذ لتوزيعهم. يرجى إدخال بيانات التلاميذ أولاً.");
+    return;
+  }
+  if (students.length < 2) {
+    alert("يجب أن يكون هناك تلميذين على الأقل للبدء بالتوزيع.");
+    return;
+  }
+  
+  if (!studentDistributionOutput) return;
+  studentDistributionOutput.innerHTML = '';
+  let shuffledStudents = [...students];
+  shuffleArray(shuffledStudents);
+  
+  // حفظ معلومات المدرسة
+  schoolInfo = {
+    name: schoolNameInput.value.trim(),
+    director: directorNameInput.value.trim()
+  };
+  saveSchoolInfo();
+  
+  // حساب عدد التلاميذ لكل قاعة إذا تم تحديده
+  let studentsPerHall = parseInt(studentsPerHallInput.value);
+  if (isNaN(studentsPerHall) || studentsPerHall < 1) {
+    studentsPerHall = Math.ceil(shuffledStudents.length / numHalls);
+  }
+  
+  // التأكد من أن عدد الطلاب لكل قاعة زوجي
+  if (studentsPerHall % 2 !== 0) {
+    studentsPerHall += 1; // لجعله زوجياً
+  }
+  
+  let studentIndex = 0;
+  for (let h = 1; h <= numHalls; h++) {
+    const page = document.createElement('div');
+    page.classList.add('a4-page');
+    
+    // إضافة رأس الصفحة مع اسم المدرسة
+    let headerHTML = `<div class="print-header"><h2>${escapeHtml(schoolInfo.name || 'المدرسة')}</h2></div>`;
+    headerHTML += `<h3>القاعة رقم: ${h}</h3>`;
+    page.innerHTML = headerHTML;
+    
+    const studentsInThisHall = [];
+    const targetCount = (h === numHalls) ?
+      (shuffledStudents.length - studentIndex) :
+      Math.min(studentsPerHall, shuffledStudents.length - studentIndex);
+    
+    for (let i = 0; i < targetCount && studentIndex < shuffledStudents.length; i++) {
+      studentsInThisHall.push(shuffledStudents[studentIndex]);
+      studentIndex++;
+    }
+    
+    const halfPoint = Math.ceil(studentsInThisHall.length / 2);
+    const sectorAStudents = studentsInThisHall.slice(0, halfPoint);
+    const sectorBStudents = studentsInThisHall.slice(halfPoint);
+    
+    if (sectorAStudents.length > 0) {
+      page.innerHTML += `<h4>القطاع ( أ )</h4>`;
+      // تقسيم الطلاب إلى أزواج (مربعات تحتوي على طالبين فقط)
+      for (let i = 0; i < sectorAStudents.length; i += 2) {
+        const box = document.createElement('div');
+        box.classList.add('student-pair-box');
+        const student1 = sectorAStudents[i];
+        const student2 = (i + 1 < sectorAStudents.length) ? sectorAStudents[i + 1] : null;
+        
+        box.innerHTML = `
+                    <div><strong>${escapeHtml(student1.name)}</strong> - ${escapeHtml(student1.class)}</div>
+                    ${student2 ? `<div><strong>${escapeHtml(student2.name)}</strong> - ${escapeHtml(student2.class)}</div>` : '<div style="color: #aaa;">(مقعد فردي)</div>'}
+                 `;
+        page.appendChild(box);
+      }
+    }
+    
+    if (sectorBStudents.length > 0) {
+      page.innerHTML += `<h4 style="clear: both; margin-top: 20px;">القطاع ( ب )</h4>`;
+      // تقسيم الطلاب إلى أزواج (مربعات تحتوي على طالبين فقط)
+      for (let i = 0; i < sectorBStudents.length; i += 2) {
+        const box = document.createElement('div');
+        box.classList.add('student-pair-box');
+        const student1 = sectorBStudents[i];
+        const student2 = (i + 1 < sectorBStudents.length) ? sectorBStudents[i + 1] : null;
+        box.innerHTML = `
+                    <div><strong>${escapeHtml(student1.name)}</strong> - ${escapeHtml(student1.class)}</div>
+                     ${student2 ? `<div><strong>${escapeHtml(student2.name)}</strong> - ${escapeHtml(student2.class)}</div>` : '<div style="color: #aaa;">(مقعد فردي)</div>'}
+                 `;
+        page.appendChild(box);
+      }
+    }
+    
+    // إضافة تذييل الصفحة مع اسم المدير
+    page.innerHTML += `<div class="print-footer">مدير المدرسة: ${escapeHtml(schoolInfo.director || '')}</div>`;
+    
+    studentDistributionOutput.appendChild(page);
+  }
+  alert(`تم توزيع ${students.length} تلميذ على ${numHalls} قاعة بنجاح. يمكنك الآن طباعة النتائج.`);
+  if (studentDistributionOutput) studentDistributionOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+             
+             function distributeTeachers() {
+                 const numDays = parseInt(numDaysInput.value);
+                 const numHalls = parseInt(numHallsTeachersInput.value);
+
+                 if (isNaN(numDays) || numDays < 1) {
+                     alert("يرجى إدخال عدد صحيح وموجب لأيام المراقبة.");
+                     return;
+                 }
+
+                 if (isNaN(numHalls) || numHalls < 1) {
+                    alert("يرجى إدخال عدد صحيح وموجب للقاعات.");
+                    return;
+                }
+
+                  if (teachers.length === 0) {
+                     alert("لا يوجد كوادر لتوزيعهم. يرجى إدخال بيانات الكوادر أولاً.");
+                     return;
+                 }
+
+                 const requiredTeachersPerDay = numHalls * 2;
+                 if (teachers.length < requiredTeachersPerDay) {
+                     alert(`تحذير: عدد الكوادر (${teachers.length}) أقل من العدد المطلوب ليوم واحد (${requiredTeachersPerDay} لـ ${numHalls} قاعات بقطاعين). سيتم تكرار بعض الكوادر في نفس اليوم.`);
+                 }
+
+                if (!teacherDistributionOutput) return;
+                 teacherDistributionOutput.innerHTML = '';
+
+                 // حفظ معلومات المدرسة
+                 schoolInfo = {
+                     name: schoolNameTeachersInput.value.trim(),
+                     director: directorNameTeachersInput.value.trim()
+                 };
+                 saveSchoolInfo();
+
+                 for (let day = 1; day <= numDays; day++) {
+                     const page = document.createElement('div');
+                     page.classList.add('a4-page', 'landscape');
+
+                     let shuffledTeachers = [...teachers];
+                     shuffleArray(shuffledTeachers);
+
+                     let tableHTML = `
+                         <div class="print-header"><h2>${escapeHtml(schoolInfo.name || 'المدرسة')}</h2></div>
+                         <h3 class="day-title">توزيع مراقبي اليوم: ${day}</h3>
+                         <table border="1">
+                             <thead>
+                                 <tr>
+                                     <th>ت</th>
+                                     <th>اسم المعلم / المراقب</th>
+                                     <th>القاعة</th>
+                                     <th>القطاع</th>
+                                     <th>عدد الغياب</th>
+                                     <th>الدفاتر المستلمة</th>
+                                     <th>الدفاتر المسترجعة</th>
+                                     <th>التوقيع</th>
+                                     <th>التاريخ</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                     `;
+
+                     let teacherIndex = 0;
+                     let rowNum = 1;
+                     for (let hall = 1; hall <= numHalls; hall++) {
+                         const teacherA = shuffledTeachers[teacherIndex % shuffledTeachers.length];
+                         tableHTML += `
+                             <tr>
+                                 <td>${rowNum++}</td>
+                                 <td>${escapeHtml(teacherA.name)}</td>
+                                 <td>${hall}</td>
+                                 <td>أ</td>
+                                 <td></td><td></td><td></td><td></td><td></td>
+                             </tr>
+                         `;
+                         teacherIndex++;
+
+                          const teacherB = shuffledTeachers[teacherIndex % shuffledTeachers.length];
+                         tableHTML += `
+                             <tr>
+                                 <td>${rowNum++}</td>
+                                 <td>${escapeHtml(teacherB.name)}</td>
+                                 <td>${hall}</td>
+                                 <td>ب</td>
+                                 <td></td><td></td><td></td><td></td><td></td>
+                             </tr>
+                         `;
+                          teacherIndex++;
+                     }
+
+                     tableHTML += `</tbody></table>`;
+                     tableHTML += `<div class="print-footer">مدير المدرسة: ${escapeHtml(schoolInfo.director || '')}</div>`;
+                     page.innerHTML = tableHTML;
+                     teacherDistributionOutput.appendChild(page);
+                 }
+                  alert(`تم إنشاء جداول توزيع الكوادر لـ ${numDays} يوم بنجاح. يمكنك الآن طباعة النتائج.`);
+                  if(teacherDistributionOutput) teacherDistributionOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+             }
+
+            // --- وظائف التنقل والطباعة ---
+
+            function showStudentSection() {
+                 console.log("Showing Student Section...");
+                 studentSection.classList.add('active');
+                 teacherSection.classList.remove('active');
+                 btnShowStudents.classList.add('active');
+                 btnShowTeachers.classList.remove('active');
+            }
+
+            function showTeacherSection() {
+                 console.log("Showing Teacher Section...");
+                 studentSection.classList.remove('active');
+                 teacherSection.classList.add('active');
+                 btnShowStudents.classList.remove('active');
+                 btnShowTeachers.classList.add('active');
+            }
+
+            function printOutput(outputAreaId) {
+                 const outputArea = document.getElementById(outputAreaId);
+                 if (!outputArea || outputArea.children.length === 0) {
+                     alert("لا يوجد محتوى للطباعة في هذا القسم. يرجى إنشاء التوزيع أولاً.");
+                     return;
+                 }
+                 window.print();
+            }
+
+            async function downloadAsPDF(outputAreaId, fileName) {
+                const outputArea = document.getElementById(outputAreaId);
+                if (!outputArea || outputArea.children.length === 0) {
+                    alert("لا يوجد محتوى لتحويله إلى PDF. يرجى إنشاء التوزيع أولاً.");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF();
+
+                for (let i = 0; i < outputArea.children.length; i++) {
+                    const page = outputArea.children[i];
+                    const canvas = await html2canvas(page, {
+                        scale: 2,
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true
+                    });
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                    if (i > 0) {
+                        pdf.addPage();
+                    }
+
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                }
+
+                pdf.save(fileName || 'output.pdf');
+            }
+
+            async function downloadAsImage(outputAreaId, fileName) {
+                const outputArea = document.getElementById(outputAreaId);
+                if (!outputArea || outputArea.children.length === 0) {
+                    alert("لا يوجد محتوى لتحويله إلى صورة. يرجى إنشاء التوزيع أولاً.");
+                    return;
+                }
+
+                // إذا كان هناك صفحة واحدة فقط
+                if (outputArea.children.length === 1) {
+                    const canvas = await html2canvas(outputArea.children[0], {
+                        scale: 2,
+                        logging: false,
+                        useCORS: true,
+                        allowTaint: true
+                    });
+
+                    const link = document.createElement('a');
+                    link.download = fileName || 'output.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } else {
+                    // إذا كان هناك عدة صفحات، ننشئ أرشيف zip
+                    alert("سيتم تنزيل الأرشيف المضغوط لجميع الصفحات.");
+                    
+                    const JSZip = await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+                    const zip = new JSZip.default();
+                    const folder = zip.folder("output_images");
+
+                    for (let i = 0; i < outputArea.children.length; i++) {
+                        const page = outputArea.children[i];
+                        const canvas = await html2canvas(page, {
+                            scale: 2,
+                            logging: false,
+                            useCORS: true,
+                            allowTaint: true
+                        });
+
+                        const imgData = canvas.toDataURL('image/png').replace(/^data:image\/(png);base64,/, "");
+                        folder.file(`page_${i+1}.png`, imgData, {base64: true});
+                    }
+
+                    const content = await zip.generateAsync({type: "blob"});
+                    const link = document.createElement('a');
+                    link.download = fileName || 'output_images.zip';
+                    link.href = URL.createObjectURL(content);
+                    link.click();
+                }
+            }
+
+            // --- ربط الأحداث ---
+            console.log("Adding event listeners...");
+
+            // أزرار التنقل الرئيسية
+            if (btnShowStudents) {
+                btnShowStudents.addEventListener('click', showStudentSection);
+                console.log("Event listener added to btnShowStudents.");
+            } else {
+                 console.error("btnShowStudents not found!");
+            }
+
+            if (btnShowTeachers) {
+                btnShowTeachers.addEventListener('click', showTeacherSection);
+                 console.log("Event listener added to btnShowTeachers.");
+            } else {
+                console.error("btnShowTeachers not found!");
+            }
+
+            // أزرار قسم الطلاب
+            if (addStudentBtn) addStudentBtn.addEventListener('click', addStudent);
+            if (updateStudentBtn) updateStudentBtn.addEventListener('click', updateStudent);
+            if (cancelEditStudentBtn) cancelEditStudentBtn.addEventListener('click', resetStudentForm);
+            if (deleteAllStudentsBtn) deleteAllStudentsBtn.addEventListener('click', deleteAllStudents);
+            if (distributeStudentsBtn) distributeStudentsBtn.addEventListener('click', distributeStudents);
+            if (printStudentsBtn) printStudentsBtn.addEventListener('click', () => printOutput('student-distribution-output'));
+            if (downloadPdfStudentsBtn) downloadPdfStudentsBtn.addEventListener('click', () => downloadAsPDF('student-distribution-output', 'توزيع_الطلاب.pdf'));
+            if (downloadImageStudentsBtn) downloadImageStudentsBtn.addEventListener('click', () => downloadAsImage('student-distribution-output', 'توزيع_الطلاب.png'));
+
+            // أزرار قسم الكوادر
+            if (addTeacherBtn) addTeacherBtn.addEventListener('click', addTeacher);
+            if (updateTeacherBtn) updateTeacherBtn.addEventListener('click', updateTeacher);
+            if (cancelEditTeacherBtn) cancelEditTeacherBtn.addEventListener('click', resetTeacherForm);
+            if (deleteAllTeachersBtn) deleteAllTeachersBtn.addEventListener('click', deleteAllTeachers);
+            if (distributeTeachersBtn) distributeTeachersBtn.addEventListener('click', distributeTeachers);
+            if (printTeachersBtn) printTeachersBtn.addEventListener('click', () => printOutput('teacher-distribution-output'));
+            if (downloadPdfTeachersBtn) downloadPdfTeachersBtn.addEventListener('click', () => downloadAsPDF('teacher-distribution-output', 'توزيع_الكوادر.pdf'));
+            if (downloadImageTeachersBtn) downloadImageTeachersBtn.addEventListener('click', () => downloadAsImage('teacher-distribution-output', 'توزيع_الكوادر.png'));
+
+            // إضافة طالب/كادر عند الضغط على Enter
+            if (studentClassInput) {
+                studentClassInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (updateStudentBtn.style.display === 'none') {
+                            addStudent();
+                        } else {
+                            updateStudent();
+                        }
+                    }
+                });
+            }
+
+            if (teacherNameInput) {
+                teacherNameInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        if (updateTeacherBtn.style.display === 'none') {
+                            addTeacher();
+                        } else {
+                            updateTeacher();
+                        }
+                    }
+                });
+            }
+
+            // تفويض الأحداث للجداول
+            if (studentTableBody) {
+                studentTableBody.addEventListener('click', (event) => {
+                    const target = event.target.closest('button');
+                    if (!target) return;
+
+                    const index = parseInt(target.getAttribute('data-index'));
+                    if (isNaN(index)) return;
+
+                    if (target.classList.contains('edit-btn')) {
+                        prepareEditStudent(index);
+                    } else if (target.classList.contains('delete-btn')) {
+                        deleteStudent(index);
+                    }
+                });
+            }
+
+            if (teacherTableBody) {
+                teacherTableBody.addEventListener('click', (event) => {
+                    const target = event.target.closest('button');
+                    if (!target) return;
+
+                    const index = parseInt(target.getAttribute('data-index'));
+                    if (isNaN(index)) return;
+
+                    if (target.classList.contains('edit-btn')) {
+                        prepareEditTeacher(index);
+                    } else if (target.classList.contains('delete-btn')) {
+                        deleteTeacher(index);
+                    }
+                });
+            }
+
+            // --- التهيئة عند تحميل الصفحة ---
+            console.log("Initializing page...");
+            
+            // تحميل بيانات المدرسة المحفوظة
+            if (schoolInfo) {
+                if (schoolNameInput) schoolNameInput.value = schoolInfo.name || '';
+                if (directorNameInput) directorNameInput.value = schoolInfo.director || '';
+                if (schoolNameTeachersInput) schoolNameTeachersInput.value = schoolInfo.name || '';
+                if (directorNameTeachersInput) directorNameTeachersInput.value = schoolInfo.director || '';
+            }
+            
+            renderStudentTable();
+            renderTeacherTable();
+            
+            // تحديد القسم النشط عند التحميل
+            studentSection.classList.add('active');
+            teacherSection.classList.remove('active');
+            btnShowStudents.classList.add('active');
+            btnShowTeachers.classList.remove('active');
+            
+            if (currentYearSpan) currentYearSpan.textContent = new Date().getFullYear();
+            console.log("Page initialization complete.");
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>

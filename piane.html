@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الأداة الرياضية الاحترافية المتطورة</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #2c3e50; --surface-color: #34495e; --primary-color: #46627f;
+            --accent-color: #3498db; --accent-glow: rgba(52, 152, 219, 0.4);
+            --text-color: #ecf0f1; --text-secondary: #bdc3c7;
+            --success-color: #2ecc71; --danger-color: #e74c3c; --warning-color: #f39c12;
+            --border-radius: 12px; --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        
+        body {
+            font-family: 'Almarai', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--surface-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header h2 {
+            text-align: center;
+            font-size: 1.6rem;
+            color: #d0d712 ;
+            text-shadow: 0 0 10px var(--accent-glow);
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        header h2::after {
+            content: '';
+            display: block;
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            margin: 0.5rem auto;
+            border-radius: 2px;
+        }
+        
+        .tab-navigation {
+            display: flex;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .tab-btn {
+            padding: 0rem 1.5rem;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-family: 'Almarai', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            flex-grow: 1;
+            border-bottom: 3px solid transparent;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-color);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            background-color: var(--primary-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 1rem;
+            color: var(--text-color);
+            box-sizing: border-box;
+            transition: var(--transition);
+            font-family: 'Almarai', sans-serif;
+        }
+        
+        input[type="color"] {
+            min-height: 45px;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: transparent;
+            width: 50px;
+            height: 40px;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.6;
+        }
+        
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .action-btn {
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .action-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .action-btn:active {
+            transform: translateY(0);
+        }
+        
+        .result-box {
+            background-color: var(--primary-color);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            border-right: 4px solid var(--success-color);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--success-color);
+            text-align: right;
+            animation: fadeIn 0.3s ease;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+        
+        .result-box.error {
+            color: var(--danger-color);
+            border-right-color: var(--danger-color);
+        }
+        
+        .data-table-input {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .data-table-input th {
+            text-align: right;
+            padding: 1rem;
+            color: var(--text-secondary);
+            background-color: rgba(0, 0, 0, 0.2);
+            font-weight: 700;
+        }
+        
+        .data-table-input td {
+            padding: 0.8rem;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .data-table-input tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .remove-row-btn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .remove-row-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+        
+        .add-row-btn {
+            background-color: transparent;
+            border: 2px dashed var(--accent-color);
+            color: var(--accent-color);
+            padding: 0.8rem;
+            width: 100%;
+            margin-top: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .add-row-btn:hover {
+            background-color: var(--accent-color);
+            color: #fff;
+            border-style: solid;
+        }
+        
+        .chart-container {
+            margin-top: 2rem;
+            position: relative;
+            height: 400px;
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .chart-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            align-items: center;
+        }
+        
+        #description-wrapper {
+            margin-top: 1rem;
+            background-color: var(--primary-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        #custom-description-output {
+            color: var(--text-color);
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            white-space: pre-line;
+        }
+        
+        #stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            min-width: 120px;
+            padding: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            flex-grow: 1;
+        }
+        
+        .stat-item span {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.3rem;
+        }
+        
+        .stat-item strong {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+        
+        .download-btn {
+            background-color: var(--success-color);
+        }
+        
+        .download-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .share-btn {
+            background-color: var(--warning-color);
+        }
+        
+        .share-btn:hover {
+            background-color: #e67e22;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-group .action-btn {
+            margin-top: 0;
+            flex: 1;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            max-width: 300px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background-color: var(--danger-color);
+        }
+        
+        .toast.warning {
+            background-color: var(--warning-color);
+        }
+        
+        .chart-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            z-index: 10;
+        }
+        
+        .chart-loading i {
+            font-size: 3rem;
+            color: var(--accent-color);
+            animation: spin 1.5s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .dd{
+           width: 90%;
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>الأداة الرياضية الاحترافية المتطورة</h2>
+        </header>
+        
+        <nav class="tab-navigation">
+            <button class="tab-btn" data-target="eq-solver">
+                <i class="fas fa-calculator"></i> حاسبة المعادلات
+            </button>
+            <button class="tab-btn active" data-target="chart-gen">
+                <i class="fas fa-chart-bar"></i> صانع الرسوم البيانية
+            </button>
+        </nav>
+        
+        <main>
+            <section id="eq-solver" class="tab-content">
+                <div class="form-group">
+                    <label for="eq-select">اختر المعادلة:</label>
+                    <select id="eq-select" class="styled-select"></select>
+                </div>
+                
+                <div id="eq-inputs"></div>
+                
+                <button id="calc-btn" class="action-btn">
+                    <i class="fas fa-calculator"></i> احسب
+                </button>
+                
+                <div id="eq-result"></div>
+            </section>
+            
+            <section id="chart-gen" class="tab-content active">
+                <div class="form-group">
+                    <label>إدارة البيانات:</label>
+                    <div class="btn-group">
+                        <button id="save-project-btn" class="action-btn">
+                            <i class="fas fa-save"></i> حفظ المشروع
+                        </button>
+                        <div class="file-input-wrapper">
+                            <button class="file-input-btn" onclick="document.getElementById('load-project-input').click();"  class="action-btn">
+                                <i class="fas fa-folder-open"></i> فتح مشروع
+                                <input type="file" id="load-project-input" accept=".json" style="display: none;">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="data-table-container">
+                    <table class="data-table-input">
+                        <thead>
+                            <tr>
+                                <th id="label-h">العنوان</th>
+                                <th id="value-h">القيمة</th>
+                                <th>اللون</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-tbody"></tbody>
+                    </table>
+                    <button id="add-row-btn" class="add-row-btn">
+                        <i class="fas fa-plus"></i> إضافة صف
+                    </button>
+                </div>
+                
+                <div class="chart-options">
+                     <div class="form-group">
+                        <label for="chart-type">نوع الرسم:</label>
+                        <select id="chart-type" class="styled-select">
+                            <option value="bar">أعمدة</option>
+                            <option value="line">خطي</option>
+                            <option value="pie">دائري</option>
+                            <option value="doughnut">دونات</option>
+                            <option value="polarArea">مساحة قطبية</option>
+                            <option value="radar">رادار</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="chart-title">عنوان الرسم:</label>
+                        <input type="text" id="chart-title" placeholder="مبيعات المحل التجاري">
+                    </div>
+                    <div class="form-group">
+                        <label for="chart-subtitle">عنوان فرعي (اختياري):</label>
+                        <input type="text" id="chart-subtitle" placeholder="للعام 2023-2024">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="custom-desc">وصف مخصص (يظهر في الصورة):</label>
+                    <textarea id="custom-desc" placeholder="أضف تحليلك أو ملاحظاتك هنا..."></textarea>
+                </div>
+                
+                <button id="gen-chart-btn" class="action-btn">
+                    <i class="fas fa-paint-brush"></i> أنشئ/حدّث الرسم
+                </button>
+                
+                <div class="chart-container">
+                    <canvas id="myChart"></canvas>
+                    <div class="chart-loading">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                </div>
+                
+                <div class="btn-group" style="margin-top: 2rem;">
+                    <button id="dl-chart-btn" class="action-btn download-btn" style="display: none;">
+                        <i class="fas fa-download"></i> تحميل صورة متكاملة
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        Chart.register(ChartDataLabels);
+        Chart.defaults.font.family = "'Almarai', sans-serif";
+        Chart.defaults.color = '#ecf0f1';
+        
+        const DEF_COLORS = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22', '#d35400'];
+        let myChart = null;
+        let chartState = {};
+        
+        const elements = {
+            tabBtns: document.querySelectorAll('.tab-btn'), tabContents: document.querySelectorAll('.tab-content'),
+            eqSelect: document.getElementById('eq-select'), eqInputs: document.getElementById('eq-inputs'), calcBtn: document.getElementById('calc-btn'), eqResult: document.getElementById('eq-result'),
+            chartType: document.getElementById('chart-type'), chartTitle: document.getElementById('chart-title'), chartSubtitle: document.getElementById('chart-subtitle'),
+            genChartBtn: document.getElementById('gen-chart-btn'), dlChartBtn: document.getElementById('dl-chart-btn'),
+            canvas: document.getElementById('myChart'), addRowBtn: document.getElementById('add-row-btn'), dataTbody: document.getElementById('data-tbody'),
+            customDesc: document.getElementById('custom-desc'),
+            saveProjectBtn: document.getElementById('save-project-btn'),
+            loadProjectInput: document.getElementById('load-project-input'),
+            chartLoading: document.querySelector('.chart-loading'), toast: document.getElementById('toast'),
+        };
+        
+        const equations = [
+            { id: 'bmi', name: 'مؤشر كتلة الجسم', variables: [{id: 'w', label: 'الوزن', unit: 'كجم'}, {id: 'h', label: 'الطول', unit: 'سم'}], solve(v) { if (v.h <= 0) throw new Error("الطول يجب أن يكون أكبر من صفر."); const bmi = v.w / Math.pow(v.h / 100, 2); let c = ''; if (bmi < 18.5) c = 'نقص في الوزن'; else if (bmi < 25) c = 'وزن طبيعي'; else if (bmi < 30) c = 'زيادة في الوزن'; else c = 'سمنة'; return `النتيجة: ${bmi.toFixed(2)} BMI (${c})`; } },
+            { id: 'loan', name: 'قسط القرض الشهري', variables: [{id: 'p', label: 'مبلغ القرض'}, {id: 'r', label: 'الفائدة السنوية', unit: '%'}, {id: 'n', label: 'عدد السنوات'}], solve(v) { const mR = (v.r/100)/12, M = v.n*12, pR = (mR * Math.pow(1+mR, M)) / (Math.pow(1+mR, M)-1), mP = v.p*pR, tP = mP*M, tI = tP-v.p; return `القسط الشهري: ${mP.toFixed(2)}\nإجمالي السداد: ${tP.toFixed(2)}\nإجمالي الفائدة: ${tI.toFixed(2)}`; } }
+        ];
+        
+        function initEquationSolver() {
+            elements.eqSelect.innerHTML = '';
+            equations.forEach(eq => { elements.eqSelect.innerHTML += `<option value="${eq.id}">${eq.name}</option>`; });
+            function displayEquationInputs() {
+                const selectedEq = equations.find(eq => eq.id === elements.eqSelect.value);
+                if (!selectedEq) return;
+                elements.eqInputs.innerHTML = selectedEq.variables.map(v => `<div class="form-group"><label for="eq-${v.id}">${v.label} ${v.unit ? `(${v.unit})` : ''}</label><input type="number" id="eq-${v.id}" step="any" required></div>`).join('');
+                elements.eqResult.innerHTML = '';
+            }
+            function calculateEquation() {
+                const selectedEq = equations.find(eq => eq.id === elements.eqSelect.value);
+                if (!selectedEq) return;
+                const values = {}; let valid = true;
+                selectedEq.variables.forEach(v => {
+                    const input = document.getElementById(`eq-${v.id}`); const value = parseFloat(input.value);
+                    if (isNaN(value)) { input.style.borderColor = 'var(--danger-color)'; valid = false; } else { input.style.borderColor = 'rgba(255, 255, 255, 0.1)'; values[v.id] = value; }
+                });
+                if (!valid) { elements.eqResult.innerHTML = '<div class="result-box error">الرجاء إدخال قيم صالحة.</div>'; return; }
+                try { const result = selectedEq.solve(values); elements.eqResult.innerHTML = `<div class="result-box">${result}</div>`; } catch (error) { elements.eqResult.innerHTML = `<div class="result-box error">خطأ: ${error.message}</div>`; }
+            }
+            elements.eqSelect.addEventListener('change', displayEquationInputs);
+            elements.calcBtn.addEventListener('click', calculateEquation);
+            displayEquationInputs();
+        }
+        
+        function initChartGenerator() {
+            function wrapText(context, text, x, y, maxWidth, lineHeight) {
+                const lines = text.split('\n');
+                lines.forEach(lineText => {
+                    const words = lineText.split(' '); let line = '';
+                    for (let n = 0; n < words.length; n++) {
+                        let testLine = line + words[n] + ' ';
+                        if (context.measureText(testLine).width > maxWidth && n > 0) {
+                            context.fillText(line, x, y);
+                            line = words[n] + ' '; y += lineHeight;
+                        } else { line = testLine; }
+                    }
+                    context.fillText(line, x, y);
+                    y += lineHeight;
+                });
+                return y;
+            }
+            function addDataRow(label = '', value = '', color = '') {
+                const row = document.createElement('tr');
+                const rowColor = color || DEF_COLORS[elements.dataTbody.rows.length % DEF_COLORS.length];
+                row.innerHTML = `<td><input type="text" class="data-label" value="${label}" placeholder="عنوان"></td><td><input type="number" class="data-value" value="${value}" step="any" placeholder="قيمة"></td><td><input type="color" class="data-color" value="${rowColor}"></td><td><button class="remove-row-btn" title="حذف الصف"><i class="fas fa-trash"></i></button></td>`;
+                elements.dataTbody.appendChild(row);
+            }
+            elements.dataTbody.addEventListener('click', e => { const btn = e.target.closest('.remove-row-btn'); if (btn) { btn.closest('tr').remove(); } });
+            function showToast(message, type = 'success', duration = 3000) {
+                elements.toast.textContent = message;
+                elements.toast.className = `toast ${type} show`;
+                setTimeout(() => elements.toast.classList.remove('show'), duration);
+            }
+            function generateChart() {
+                const rows = Array.from(elements.dataTbody.querySelectorAll('tr'));
+                if (rows.length === 0) { showToast('أضف بيانات أولاً!', 'error'); return; }
+                elements.chartLoading.style.display = 'flex';
+                
+                const dataValues = rows.map(row => parseFloat(row.querySelector('.data-value').value) || 0);
+                const sum = dataValues.reduce((a, b) => a + b, 0);
+
+                chartState = { 
+                    title: elements.chartTitle.value, subtitle: elements.chartSubtitle.value, type: elements.chartType.value, customDesc: elements.customDesc.value, 
+                    data: rows.map(row => ({ label: row.querySelector('.data-label').value, value: parseFloat(row.querySelector('.data-value').value) || 0, color: row.querySelector('.data-color').value })),
+                    stats: { sum: sum, avg: sum / dataValues.length, max: Math.max(...dataValues), min: Math.min(...dataValues) }
+                };
+
+                if (myChart) myChart.destroy();
+                setTimeout(() => {
+                    try {
+                        myChart = new Chart(elements.canvas, {
+                            type: chartState.type,
+                            data: { labels: chartState.data.map(d => d.label), datasets: [{ data: chartState.data.map(d => d.value), backgroundColor: chartState.data.map(d => d.color), borderColor: '#34495e', borderWidth: 3 }] },
+                            options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { color: '#fff', font: { weight: 'bold' } }, title: { display: false }, legend: { display: false } } }
+                        });
+                        elements.dlChartBtn.style.display = 'flex';
+                        showToast('تم إنشاء الرسم البياني بنجاح!');
+                    } catch (error) { showToast(`خطأ: ${error.message}`, 'error'); } 
+                    finally { elements.chartLoading.style.display = 'none'; }
+                }, 100);
+            }
+            
+            async function downloadChartWithDesc() {
+                if (!myChart) { return showToast('لا يوجد رسم بياني لتحميله', 'error'); }
+                elements.chartLoading.style.display = 'flex';
+
+                const originalOptions = JSON.parse(JSON.stringify(myChart.options));
+                const whiteBgPlugin = {
+                    id: 'customCanvasBackgroundColor',
+                    beforeDraw: (chart) => {
+                        const { ctx } = chart;
+                        ctx.save();
+                        ctx.globalCompositeOperation = 'destination-over';
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, chart.width, chart.height);
+                        ctx.restore();
+                    }
+                };
+
+                try {
+                    // Step 1: Prepare chart for static export
+                    myChart.options.animation = false;
+                    myChart.options.plugins.datalabels.color = '#000000';
+                    if (myChart.options.scales) {
+                        Object.values(myChart.options.scales).forEach(scale => {
+                            if(scale.ticks) scale.ticks.color = '#000000';
+                            if(scale.grid) scale.grid.color = '#eeeeee';
+                        });
+                    }
+
+                    Chart.register(whiteBgPlugin);
+                    myChart.update('none');
+
+                    const chartImage = new Image();
+                    chartImage.onload = () => {
+                        const FINAL_WIDTH = 1600;
+                        const FINAL_HEIGHT = 1600;
+                        const PADDING = 80;
+                        const finalCanvas = document.createElement('canvas');
+                        finalCanvas.width = FINAL_WIDTH;
+                        finalCanvas.height = FINAL_HEIGHT;
+                        const ctx = finalCanvas.getContext('2d');
+                        
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, FINAL_WIDTH, FINAL_HEIGHT);
+
+                        // Step 2: Draw components
+                        let currentY = PADDING;
+                        ctx.fillStyle = '#000000';
+                        ctx.textAlign = 'center';
+
+                        if (chartState.title) {
+                            ctx.font = 'bold 70px Almarai, sans-serif';
+                            ctx.fillText(chartState.title, FINAL_WIDTH / 2, currentY);
+                            currentY += 80;
+                        }
+                        if (chartState.subtitle) {
+                            ctx.font = 'normal 45px Almarai, sans-serif';
+                            ctx.fillStyle = '#555555';
+                            ctx.fillText(chartState.subtitle, FINAL_WIDTH / 2, currentY);
+                            currentY += 70;
+                        } else if (chartState.title) { currentY += 20; }
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(PADDING, currentY);
+                        ctx.lineTo(FINAL_WIDTH - PADDING, currentY);
+                        ctx.strokeStyle = '#cccccc';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        currentY += 50;
+                        
+                        // Draw Manual Legend
+                        ctx.font = 'normal 30px Almarai, sans-serif';
+                        const legendItems = chartState.data.map(item => ({
+                            label: item.label, color: item.color,
+                            width: 30 + 15 + ctx.measureText(item.label).width // box + padding + text
+                        }));
+                        const totalLegendWidth = legendItems.reduce((sum, item) => sum + item.width, 0) + Math.max(0, legendItems.length - 1) * 40;
+                        let currentX = (FINAL_WIDTH - totalLegendWidth) / 2;
+                        
+                        legendItems.forEach(item => {
+                            ctx.fillStyle = item.color;
+                            ctx.fillRect(currentX, currentY - 22, 30, 30);
+                            ctx.fillStyle = '#000000';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(item.label, currentX + 30 + 15, currentY);
+                            currentX += item.width + 40; // 40 is the gap between items
+                        });
+                        currentY += 60;
+                        
+                        const chartMaxWidth = FINAL_WIDTH - PADDING * 2;
+                        const scale = chartMaxWidth / chartImage.width;
+                        const chartHeight = chartImage.height * scale;
+                        ctx.drawImage(chartImage, PADDING, currentY, chartMaxWidth, chartHeight);
+                        let bottomOfContent = currentY + chartHeight + 40;
+
+                        if (chartState.customDesc) {
+                            ctx.textAlign = 'right';
+                            ctx.fillStyle = '#333333';
+                            ctx.font = 'bold 32px Almarai, sans-serif';
+                            ctx.fillText("", FINAL_WIDTH - PADDING, bottomOfContent);
+                            bottomOfContent += 45;
+                            ctx.font = 'normal 30px Almarai, sans-serif';
+                            bottomOfContent = wrapText(ctx, chartState.customDesc, FINAL_WIDTH - PADDING, bottomOfContent, chartMaxWidth, 45);
+                        }
+                        
+                        if(chartState.stats) {
+                            const statsY = bottomOfContent + 20;
+                            const statsHeight = 80;
+                            ctx.fillStyle = '#2c3e50';
+                            ctx.fillRect(PADDING, statsY, chartMaxWidth, statsHeight);
+
+                            const stats = [
+                                { label: 'المجموع', value: chartState.stats.sum.toLocaleString() }, { label: 'المتوسط', value: chartState.stats.avg.toFixed(1) },
+                                { label: 'الأعلى', value: chartState.stats.max.toLocaleString() }, { label: 'الأدنى', value: chartState.stats.min.toLocaleString() }
+                            ];
+                            const segmentWidth = chartMaxWidth / stats.length;
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = 'bold 28px Almarai, sans-serif';
+                            ctx.textAlign = 'center';
+                            
+                            stats.forEach((stat, index) => {
+                                const segmentX = PADDING + (index * segmentWidth);
+                                ctx.fillText(`${stat.label}: ${stat.value}`, segmentX + segmentWidth / 2, statsY + 50);
+                                if (index < stats.length - 1) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(segmentX + segmentWidth, statsY + 15);
+                                    ctx.lineTo(segmentX + segmentWidth, statsY + statsHeight - 15);
+                                    ctx.strokeStyle = '#46627f';
+                                    ctx.lineWidth = 2;
+                                    ctx.stroke();
+                                }
+                            });
+                        }
+
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = '#999999';
+                        ctx.font = 'normal 24px Almarai, sans-serif';
+                        ctx.fillText(`تم الإنشاء بواسطة الأداة الرياضية - ${new Date().toLocaleDateString('ar-EG')}`, FINAL_WIDTH / 2, FINAL_HEIGHT - 30);
+
+                        const link = document.createElement('a');
+                        link.href = finalCanvas.toDataURL('image/png');
+                        link.download = `${(chartState.title || 'chart').replace(/ /g, '_')}.png`;
+                        link.click();
+                        
+                        showToast('تم تحميل الصورة بنجاح!');
+                    };
+                    chartImage.onerror = () => { throw new Error("فشل تحميل صورة الرسم البياني."); };
+                    chartImage.src = myChart.toBase64Image();
+
+                } catch (error) {
+                    showToast(`خطأ في تحميل الصورة: ${error.message}`, 'error');
+                } finally {
+                    Chart.unregister(whiteBgPlugin);
+                    myChart.options = originalOptions;
+                    myChart.update('none');
+                    elements.chartLoading.style.display = 'none';
+                }
+            }
+            
+            function saveProject() {
+                const rows = Array.from(elements.dataTbody.querySelectorAll('tr'));
+                if (rows.length === 0) return showToast('لا توجد بيانات لحفظها', 'error');
+                const project = { title: elements.chartTitle.value, subtitle: elements.chartSubtitle.value, type: elements.chartType.value, description: elements.customDesc.value, data: rows.map(row => ({ label: row.querySelector('.data-label').value, value: row.querySelector('.data-value').value, color: row.querySelector('.data-color').value })) };
+                localStorage.setItem('lastChartProject', JSON.stringify(project));
+                showToast('تم حفظ المشروع بنجاح');
+            }
+            function loadProject(projectData) {
+                 try {
+                    const project = projectData;
+                    elements.dataTbody.innerHTML = '';
+                    elements.chartTitle.value = project.title || '';
+                    elements.chartSubtitle.value = project.subtitle || '';
+                    elements.chartType.value = project.type || 'bar';
+                    elements.customDesc.value = project.description || '';
+                    if (project.data && project.data.length > 0) { project.data.forEach(row => addDataRow(row.label, row.value, row.color)); } else { addDataRow(); }
+                    showToast('تم تحميل المشروع بنجاح');
+                } catch (error) { showToast('خطأ في تحميل البيانات', 'error'); }
+            }
+            function handleFileLoad(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = e => { try { loadProject(JSON.parse(e.target.result)); } catch(err) { showToast('ملف غير صالح أو تالف', 'error'); } };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+            function loadLastProject() {
+                const lastProjectJSON = localStorage.getItem('lastChartProject');
+                if (lastProjectJSON) { try { loadProject(JSON.parse(lastProjectJSON)); } catch(e) { localStorage.removeItem('lastChartProject'); } }
+            }
+            
+            elements.genChartBtn.addEventListener('click', generateChart);
+            elements.dlChartBtn.addEventListener('click', downloadChartWithDesc);
+            elements.saveProjectBtn.addEventListener('click', saveProject);
+            elements.loadProjectInput.addEventListener('change', handleFileLoad);
+            elements.addRowBtn.addEventListener('click', () => addDataRow());
+            
+            addDataRow('السكر', 450);
+            addDataRow('الزيت', 300);
+            addDataRow('الرز', 250);
+            addDataRow('المعجون', 180);
+            addDataRow('البقوليات', 400);
+            loadLastProject();
+        }
+        
+        function initTabNavigation() {
+            elements.tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elements.tabContents.forEach(tab => tab.classList.remove('active'));
+                    elements.tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(btn.dataset.target).classList.add('active');
+                });
+            });
+        }
+        
+        initTabNavigation();
+        initEquationSolver();
+        initChartGenerator();
+    });
+    </script>
+</body>
+</html>

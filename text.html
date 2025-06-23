@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أداة تحويل النص إلى صورة</title>
+<!-- Load Quill.js RTE -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<!-- html2canvas for image conversion -->
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<!-- Fonts --> 
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"> <!-- UI Font --> 
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet"> <!-- Default Content Font --> 
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet"> 
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&display=swap" rel="stylesheet"> 
+<link href="https://fonts.googleapis.com/css2?family=Rakkas&display=swap" rel="stylesheet"> 
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet"> 
+<!-- Font Awesome for icons --> 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> 
+<!-- Favicon --> 
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>"> 
+
+<style>
+:root {
+  --primary-color: #4361ee;
+  --primary-light: #4895ef;
+  --secondary-color: #3f37c9;
+  --accent-color: #f72585;
+  --background-start: #0f172a;
+  --background-end: #1e293b;
+  --text-color: #f8fafc;
+  --container-bg: #1e293b;
+  --container-border: #334155;
+  --input-bg: #334155;
+  --input-border: #475569;
+  --input-text: #ffffff;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+  --info-color: #00b4d8;
+  --info-dark: #0077b6;
+  --border-radius: 12px;
+  --box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  --button-text-color: #ffffff;
+  --progress-bg: #475569;
+  --progress-value-bg: var(--primary-light);
+  --footer-bg: #0f172a;
+  --footer-text: #94a3b8;
+  --quill-toolbar-bg: #334155;
+  --quill-editor-bg: #1e293b;
+  --quill-editor-text: var(--text-color);
+  --quill-border: var(--container-border);
+  --transition-speed: 0.3s;
+  --tooltip-bg: rgba(0, 0, 0, 0.8);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Cairo', sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--background-start), var(--background-end));
+  color: var(--text-color);
+  direction: rtl;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+.main-container {
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.editor-container {
+  background-color: var(--container-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--container-border);
+  overflow: hidden;
+  transition: all var(--transition-speed) ease;
+  margin-bottom: 30px;
+}
+
+.editor-container:hover {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.header {
+  padding: 25px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+  z-index: 1;
+}
+
+.header h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 2;
+}
+
+.header p {
+  opacity: 0.9;
+  font-size: 0.95rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Quill Editor Styles */
+#editorToolbar {
+  background-color: var(--quill-toolbar-bg);
+  border-bottom: 1px solid var(--quill-border);
+  padding: 12px;
+}
+
+.ql-snow .ql-picker-label, .ql-snow .ql-picker-options {
+  color: var(--text-color) !important;
+}
+
+#editorToolbar .custom-font-size-controls {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+#editorToolbar .custom-font-size-label, #editorToolbar .custom-font-size-unit {
+  color: var(--text-color) !important;
+  vertical-align: middle;
+  margin: 0 3px;
+  display: inline-block;
+  height: 24px;
+  line-height: 24px;
+}
+
+#editorToolbar .ql-custom-btn {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-color);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  vertical-align: middle;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-speed), border-color var(--transition-speed);
+}
+
+#editorToolbar .ql-custom-btn:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-light);
+  color: white;
+}
+
+#editorToolbar .ql-custom-btn i {
+  font-size: 11px;
+}
+
+.ql-snow .ql-stroke {
+  stroke: var(--text-color) !important;
+}
+
+.ql-snow .ql-fill {
+  fill: var(--text-color) !important;
+}
+
+.ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  border-color: var(--primary-color) !important;
+}
+
+.ql-snow .ql-picker-options {
+  background-color: var(--quill-toolbar-bg) !important;
+  border-color: var(--quill-border) !important;
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="Amiri"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="Amiri"]::before {
+  font-family: "Amiri", serif;
+  content: "Amiri";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="Tajawal"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="Tajawal"]::before {
+  font-family: "Tajawal", sans-serif;
+  content: "Tajawal";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="Lalezar"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="Lalezar"]::before {
+  font-family: "Lalezar", cursive;
+  content: "Lalezar";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="Rakkas"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="Rakkas"]::before {
+  font-family: "Rakkas", cursive;
+  content: "Rakkas";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="Scheherazade New"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="Scheherazade New"]::before {
+  font-family: "Scheherazade New", serif;
+  content: "Scheherazade";
+}
+
+.ql-snow .ql-picker.ql-font .ql-picker-label[data-value="sans-serif"]::before,
+.ql-snow .ql-picker.ql-font .ql-picker-item[data-value="sans-serif"]::before {
+  font-family: sans-serif;
+  content: "Sans Serif";
+}
+
+.ql-snow .ql-picker-item:hover,
+.ql-snow .ql-picker-item.ql-selected {
+  background-color: var(--secondary-color) !important;
+  color: white !important;
+}
+
+.ql-snow .ql-picker-item.ql-selected::before {
+  color: white !important;
+}
+
+#editor {
+  height: 400px;
+  background-color: var(--quill-editor-bg);
+  color: var(--quill-editor-text);
+  font-family: 'Amiri', serif;
+  font-size: 18px;
+  direction: rtl;
+}
+
+#editor .ql-editor {
+  padding: 20px;
+  direction: rtl;
+  text-align: right;
+}
+
+/* Apply font families to content */
+.ql-font-Amiri {
+  font-family: 'Amiri', serif;
+}
+
+.ql-font-Tajawal {
+  font-family: 'Tajawal', sans-serif;
+}
+
+.ql-font-Lalezar {
+  font-family: 'Lalezar', cursive;
+}
+
+.ql-font-Rakkas {
+  font-family: 'Rakkas', cursive;
+}
+
+.ql-font-Scheherazade_New {
+  font-family: 'Scheherazade New', serif;
+}
+
+.ql-font-sans-serif {
+  font-family: sans-serif;
+}
+
+#editor .ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: normal;
+  right: 20px;
+  left: auto;
+}
+
+/* Controls Section */
+.controls {
+  padding: 20px;
+  background-color: var(--container-bg);
+  border-top: 1px solid var(--container-border);
+}
+
+.control-group {
+  margin-bottom: 20px;
+}
+
+.control-group:last-child {
+  margin-bottom: 0;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--primary-light);
+}
+
+.control-row {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.control-option {
+  flex: 1;
+  min-width: 150px;
+}
+
+select, input[type="text"] {
+  width: 100%;
+  padding: 12px 15px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--border-radius);
+  color: var(--input-text);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  transition: all var(--transition-speed) ease;
+}
+
+select:focus, input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+input[type="text"] {
+  direction: ltr;
+  text-align: left;
+}
+
+input[type="text"]::placeholder {
+  direction: rtl;
+  text-align: right;
+  color: #94a3b8;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 25px;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-speed) ease;
+  border: none;
+  outline: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: var(--button-text-color);
+  box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled, .btn-info:disabled {
+  background: #475569;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, var(--info-color), var(--info-dark));
+  color: var(--button-text-color);
+  box-shadow: 0 4px 15px rgba(0, 180, 216, 0.3);
+}
+
+.btn-info:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 180, 216, 0.4);
+  background: linear-gradient(135deg, var(--info-dark), var(--info-color));
+}
+
+.btn-info:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-block {
+  display: flex;
+  width: 100%;
+}
+
+/* Progress Bar */
+.progress-container {
+  margin: 20px 0;
+  display: none;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  appearance: none;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--progress-bg);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-bar::-webkit-progress-bar {
+  background-color: var(--progress-bg);
+  border-radius: 4px;
+}
+
+.progress-bar::-webkit-progress-value {
+  background-color: var(--progress-value-bg);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-bar::-moz-progress-bar {
+  background-color: var(--progress-value-bg);
+  border-radius: 4px;
+}
+
+/* Status Messages */
+.status-message {
+  margin: 15px 0;
+  font-weight: 600;
+  min-height: 1.5em;
+  text-align: center;
+  padding: 10px;
+  border-radius: var(--border-radius);
+  transition: all var(--transition-speed);
+}
+
+.status-info {
+  color: var(--primary-light);
+  background-color: rgba(67, 97, 238, 0.1);
+}
+
+.status-success {
+  color: var(--success-color);
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.status-error {
+  color: var(--danger-color);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.status-warning {
+  color: var(--warning-color);
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+/* Download Options */
+.download-options {
+  display: none;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Preview Section */
+.preview-section {
+  margin-top: 30px;
+  display: none;
+}
+
+.preview-container {
+  border: 2px dashed var(--container-border);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+#imagePreview {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  display: none;
+}
+
+.preview-placeholder {
+  color: #94a3b8;
+  padding: 40px 0;
+  font-size: 1.1rem;
+}
+
+/* Footer */
+footer {
+  width: 100%;
+  padding: 20px 0;
+  text-align: center;
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
+  font-size: 0.85em;
+  margin-top: auto;
+  border-top: 1px solid var(--container-border);
+}
+
+footer a {
+  color: var(--primary-light);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease;
+}
+
+footer a:hover {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+/* Spinner Animation */
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: var(--primary-light);
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: 200px;
+  background-color: var(--tooltip-bg);
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  body {
+    padding: 15px;
+  }
+  .header h1 {
+    font-size: 1.6rem;
+  }
+  #editor {
+    height: 350px;
+  }
+  .control-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .control-option {
+    min-width: 100%;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body > *:not(.main-container), .main-container > *:not(.editor-container), .editor-container > *:not(#editor), .editor-container > .header, #editorToolbar, .controls, .preview-section, footer {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .main-container, .editor-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background-color: white !important;
+    overflow: visible !important;
+  }
+  #editor {
+    height: auto !important;
+    border: none !important;
+    background-color: white !important;
+    padding: 0 !important;
+    color: black !important;
+    overflow: visible !important;
+    font-family: 'Amiri', serif !important;
+  }
+  #editor .ql-editor {
+    font-size: 12pt !important;
+    color: black !important;
+    padding: 20mm !important;
+    direction: rtl !important;
+    text-align: right !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background-color: white !important;
+  }
+  #editor .ql-editor * {
+    color: black !important;
+    background-color: transparent !important;
+    font-family: inherit !important;
+  }
+  #editor .ql-editor .ql-font-Amiri {
+    font-family: 'Amiri', serif !important;
+  }
+  #editor .ql-editor .ql-font-Tajawal {
+    font-family: 'Tajawal', sans-serif !important;
+  }
+  #editor .ql-editor .ql-font-Lalezar {
+    font-family: 'Lalezar', cursive !important;
+  }
+  #editor .ql-editor .ql-font-Rakkas {
+    font-family: 'Rakkas', cursive !important;
+  }
+  #editor .ql-editor .ql-font-Scheherazade_New {
+    font-family: 'Scheherazade New', serif !important;
+  }
+  #editor .ql-editor .ql-font-sans-serif {
+    font-family: sans-serif !important;
+  }
+  #editor .ql-editor a {
+    color: #0066cc !important;
+    text-decoration: underline !important;
+  }
+  #editor .ql-editor img, #editor .ql-editor video {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  #editor .ql-editor.ql-blank::before {
+    display: none !important;
+  }
+}
+
+/* Utility Classes */
+.hidden {
+  display: none !important;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-3 {
+  margin-top: 15px;
+}
+
+.mb-3 {
+  margin-bottom: 15px;
+}
+</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+<div class="main-container">
+  <div class="editor-container">
+    <div class="header">
+      <h1><i class="fas fa-image"> </i>   تحويل النص إلى صورة</h1>
+      <p>قم بتحويل نصوصك العربية إلى صور بجودة عالية مع خيارات متعددة</p>
+    </div>
+
+    <div id="editorToolbar">
+      <span class="ql-formats">
+        <select class="ql-font">
+          <option value="Amiri" selected>Amiri (افتراضي)</option>
+          <option value="Tajawal">Tajawal</option>
+          <option value="Lalezar">Lalezar</option>
+          <option value="Rakkas">Rakkas</option>
+          <option value="Scheherazade New">Scheherazade New</option>
+          <option value="sans-serif">Sans Serif</option>
+        </select>
+        <span class="custom-font-size-controls">
+          <label for="customFontSizeInput" class="custom-font-size-label">الحجم:</label>
+          <button type="button" id="fontSizeDecrementBtn" class="ql-custom-btn" title="تصغير الخط"><i class="fas fa-minus"></i></button>
+          <input type="number" id="customFontSizeInput" min="8" max="120" value="18" title="حجم الخط (px)" style="width: 45px; padding: 2px 5px; height: 24px; border: 1px solid var(--input-border); background-color: var(--input-bg); color: var(--input-text); border-radius: 4px; vertical-align: middle; line-height: normal; margin: 0 3px; text-align: center;">
+          <button type="button" id="fontSizeIncrementBtn" class="ql-custom-btn" title="تكبير الخط"><i class="fas fa-plus"></i></button>
+          <span class="custom-font-size-unit">px</span>
+        </span>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-bold"></button>
+        <button class="ql-italic"></button>
+        <button class="ql-underline"></button>
+        <button class="ql-strike"></button>
+      </span>
+      <span class="ql-formats">
+        <select class="ql-color"></select>
+        <select class="ql-background"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-script" value="sub"></button>
+        <button class="ql-script" value="super"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-header" value="1"></button>
+        <button class="ql-header" value="2"></button>
+        <button class="ql-blockquote"></button>
+        <button class="ql-code-block"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-list" value="ordered"></button>
+        <button class="ql-list" value="bullet"></button>
+        <button class="ql-indent" value="-1"></button>
+        <button class="ql-indent" value="+1"></button>
+      </span>
+      <span class="ql-formats">
+        <select class="ql-align"></select>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-link"></button>
+        <button class="ql-video"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-clean"></button>
+      </span>
+      <span class="ql-formats">
+        <button class="ql-direction" value="rtl"></button>
+      </span>
+    </div>
+    
+    <div id="editor" dir="rtl">
+      <p>مرحباً بك في أداة تحويل النص إلى صورة</p>
+      <p>يمكنك كتابة أو لصق النص هنا واستخدام أدوات التنسيق أعلاه لتعديل مظهر النص.</p>
+      <p style="text-align: center;"><strong>مثال على نص منسق</strong></p>
+      <p><span style="color: #4361ee;">هذا نص ملون</span> <em>وهذا نص مائل</em></p>
+      <ol>
+        <li>عنصر قائمة مرقمة</li>
+        <li>عنصر آخر</li>
+      </ol>
+      <blockquote>هذا اقتباس منسق بشكل خاص</blockquote>
+    </div>
+    
+    <div class="controls">
+      <div class="control-group">
+        <label for="outputFilename"><i class="fas fa-file-image"></i> اسم ملف الصورة الناتج</label>
+        <input type="text" id="outputFilename" placeholder="مثال: نص_عربي_ملون">
+      </div>
+      
+      <div class="control-group">
+        <label><i class="fas fa-cog"></i> إعدادات الصورة</label>
+        <div class="control-row">
+          <div class="control-option">
+            <label for="imageFormat">نوع الصورة</label>
+            <select id="imageFormat">
+              <option value="png">PNG (جودة عالية)</option>
+              <option value="jpeg">JPEG (حجم أصغر)</option>
+              <option value="webp">WebP (حديث، متوازن)</option>
+            </select>
+          </div>
+          <div class="control-option">
+            <label for="imageQuality">جودة الصورة (لـ JPEG/WebP)</label>
+            <select id="imageQuality">
+              <option value="1.0">100% - الأفضل</option>
+              <option value="0.9">90% - جيد جداً</option>
+              <option value="0.8" selected>80% - متوازن</option>
+              <option value="0.7">70% - جيد</option>
+              <option value="0.6">60% - متوسط</option>
+            </select>
+          </div>
+          <div class="control-option">
+            <label for="imageOrientation">اتجاه الصورة</label>
+            <select id="imageOrientation">
+              <option value="portrait" selected>عمودي (Portrait)</option>
+              <option value="landscape">أفقي (Landscape)</option>
+              <option value="auto">تلقائي (حسب المحتوى)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="control-group">
+        <label><i class="fas fa-palette"></i> خيارات إضافية</label>
+        <div class="control-row">
+          <div class="control-option">
+            <label for="backgroundColor">لون الخلفية</label>
+            <select id="backgroundColor">
+              <option value="transparent" selected>شفاف (لـ PNG فقط)</option>
+              <option value="#ffffff">أبيض</option>
+              <option value="#f8fafc">أبيض فاتح</option>
+              <option value="#1e293b">أزرق داكن (مطابق للمحرر)</option>
+              <option value="#0f172a">أسود مزرق</option>
+            </select>
+          </div>
+          <div class="control-option">
+            <label for="addPadding">إضافة هامش</label>
+            <select id="addPadding">
+              <option value="0">بدون هامش</option>
+              <option value="20" selected>هامش صغير (20px)</option>
+              <option value="40">هامش متوسط (40px)</option>
+              <option value="60">هامش كبير (60px)</option>
+            </select>
+          </div>
+          <div class="control-option">
+            <label for="addShadow">إضافة ظل</label>
+            <select id="addShadow">
+              <option value="none">بدون ظل</option>
+              <option value="small" selected>ظل صغير</option>
+              <option value="medium">ظل متوسط</option>
+              <option value="large">ظل كبير</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <button id="processBtn" class="btn btn-primary btn-block">
+        <i class="fas fa-magic"></i> تحويل إلى صورة
+      </button>
+      
+      <button id="printBtn" class="btn btn-info btn-block mt-3">
+        <i class="fas fa-print"></i> طباعة المحتوى
+      </button>
+      
+      <div class="progress-container" id="progressContainer">
+        <div class="status-message status-info" id="statusMessage"></div>
+        <progress class="progress-bar" id="progressBar" value="0" max="100"></progress>
+      </div>
+      
+      <div class="download-options" id="downloadOptions">
+        <a id="downloadLink" href="#" class="btn btn-primary">
+          <i class="fas fa-download"></i> تحميل الصورة
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="preview-section" id="previewSection">
+    <h3 class="text-center"><i class="fas fa-eye"></i> معاينة الصورة</h3>
+    <div class="preview-container">
+      <div class="preview-placeholder" id="previewPlaceholder">سيظهر هنا معاينة للصورة بعد التحويل</div>
+      <img id="imagePreview" alt="معاينة الصورة المحولة">
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© <span id="currentYear"></span> جميع الحقوق محفوظة. أداة تحويل النص إلى صورة.</p>
+  <p class="mt-3">تم التطوير باستخدام <i class="fas fa-heart" style="color: var(--accent-color);"></i> HTML5, CSS3, JavaScript</p>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("Initializing Text-to-Image Converter");
+  document.getElementById('currentYear').textContent = new Date().getFullYear();
+  
+  const outputFilenameInput = document.getElementById('outputFilename');
+  const processBtn = document.getElementById('processBtn');
+  const printBtn = document.getElementById('printBtn');
+  const progressContainer = document.getElementById('progressContainer');
+  const progressBar = document.getElementById('progressBar');
+  const statusMessage = document.getElementById('statusMessage');
+  const downloadOptions = document.getElementById('downloadOptions');
+  const downloadLink = document.getElementById('downloadLink');
+  const previewSection = document.getElementById('previewSection');
+  const imagePreview = document.getElementById('imagePreview');
+  const previewPlaceholder = document.getElementById('previewPlaceholder');
+  const imageFormat = document.getElementById('imageFormat');
+  const imageQuality = document.getElementById('imageQuality');
+  const imageOrientation = document.getElementById('imageOrientation');
+  const backgroundColor = document.getElementById('backgroundColor');
+  const addPadding = document.getElementById('addPadding');
+  const addShadow = document.getElementById('addShadow');
+  const customFontSizeInput = document.getElementById('customFontSizeInput');
+  const fontSizeDecrementBtn = document.getElementById('fontSizeDecrementBtn');
+  const fontSizeIncrementBtn = document.getElementById('fontSizeIncrementBtn');
+  const fontSelect = document.querySelector('.ql-font');
+
+  // Register custom fonts and size handling with Quill
+  const FontStyle = Quill.import('attributors/style/font');
+  FontStyle.whitelist = ['Amiri', 'Tajawal', 'Lalezar', 'Rakkas', 'Scheherazade New', 'sans-serif'];
+  Quill.register(FontStyle, true);
+
+  // IMPORTANT: Register SizeStyle to allow arbitrary pixel values for font size
+  const SizeStyle = Quill.import('attributors/style/size');
+  Quill.register(SizeStyle, true);
+
+  let defaultEditorFontSize = 18; // Fallback default
+
+  const quill = new Quill('#editor', {
+    modules: {
+      toolbar: '#editorToolbar'
+    },
+    theme: 'snow',
+    placeholder: 'اكتب النص هنا ليتم تحويله إلى صورة...',
+  });
+
+  // After Quill is initialized, get the actual default editor font size from computed styles
+  if (quill.root) {
+    defaultEditorFontSize = parseInt(window.getComputedStyle(quill.root).fontSize) || 18;
+    customFontSizeInput.value = defaultEditorFontSize;
+  }
+
+  quill.format('direction', 'rtl');
+  quill.format('align', 'right');
+  
+  let imageBlobUrl = null;
+  let isProcessing = false;
+
+  function updateStatus(message, type = 'info') {
+    statusMessage.textContent = message;
+    statusMessage.className = 'status-message';
+    
+    if (type === 'info') {
+      statusMessage.classList.add('status-info');
+      statusMessage.innerHTML = '<i class="fas fa-info-circle"></i> ' + message + ' <div class="spinner"></div>';
+    } else if (type === 'success') {
+      statusMessage.classList.add('status-success');
+      statusMessage.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+    } else if (type === 'error') {
+      statusMessage.classList.add('status-error');
+      statusMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
+    } else if (type === 'warning') {
+      statusMessage.classList.add('status-warning');
+      statusMessage.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + message;
+    }
+  }
+
+  function cleanupBlobUrl() {
+    if (imageBlobUrl) {
+      URL.revokeObjectURL(imageBlobUrl);
+      imageBlobUrl = null;
+    }
+  }
+
+  function sanitizeFilename(filename) {
+    return filename.replace(/[/\\?%*:|"<>]/g, '-')
+      .replace(/\s+/g, '_')
+      .replace(/-+/g, '-')
+      .replace(/^[-_]+|[-_]+$/g, '');
+  }
+
+  function getFileExtension() {
+    switch(imageFormat.value) {
+      case 'jpeg': return 'jpg';
+      case 'png': return 'png';
+      case 'webp': return 'webp';
+      default: return 'png';
+    }
+  }
+
+  // --- Custom Font Size Logic ---
+  function getEffectiveFontSize() {
+    const range = quill.getSelection();
+    let sizeToReturn = parseInt(customFontSizeInput.value) || defaultEditorFontSize; // Start with input or default
+
+    if (range) { // If there's a cursor or selection
+        const formats = quill.getFormat(range.index, range.length);
+        if (formats.size) {
+            // Uniform size in selection or at cursor (for toggled format)
+            const parsedSize = parseInt(formats.size);
+            if (!isNaN(parsedSize)) {
+                sizeToReturn = parsedSize;
+            }
+        } else if (range.length > 0) { 
+            // Selection exists, but formats.size was undefined (mixed or no common size)
+            // Try getting format of the first character of selection
+            const firstCharFormat = quill.getFormat(range.index, 1);
+            if (firstCharFormat.size) {
+                const parsedSize = parseInt(firstCharFormat.size);
+                if (!isNaN(parsedSize)) {
+                    sizeToReturn = parsedSize;
+                }
+            }
+        }
+        // If still no specific size found from selection/cursor, `sizeToReturn` remains as `customFontSizeInput.value` or `defaultEditorFontSize`
+    }
+    return isNaN(sizeToReturn) ? defaultEditorFontSize : sizeToReturn; // Final fallback
+  }
+
+  function applyCustomFontSizeFromInput() {
+    const sizeVal = customFontSizeInput.value;
+    
+    if (sizeVal === '') {
+        quill.format('size', false, Quill.sources.USER); // Remove explicit size formatting
+        customFontSizeInput.value = defaultEditorFontSize; // Reset input to default editor size
+        // If no selection, and you want the placeholder text to adopt default size immediately:
+        if (!quill.getSelection()) {
+             quill.format('size', defaultEditorFontSize + 'px', Quill.sources.USER);
+        }
+        return;
+    }
+
+    const size = parseInt(sizeVal);
+    
+    if (isNaN(size)) {
+        alert('الرجاء إدخال رقم صالح لحجم الخط.');
+        customFontSizeInput.value = getEffectiveFontSize(); // Revert input to current effective/default size
+        return;
+    }
+
+    const minSize = parseInt(customFontSizeInput.min) || 8;
+    const maxSize = parseInt(customFontSizeInput.max) || 120;
+      
+    if (size >= minSize && size <= maxSize) {
+        quill.format('size', size + 'px', Quill.sources.USER);
+    } else {
+        alert(`الرجاء إدخال حجم خط صالح بين ${minSize} و ${maxSize}.`);
+        customFontSizeInput.value = getEffectiveFontSize(); // Revert input
+    }
+  }
+
+  customFontSizeInput.addEventListener('change', applyCustomFontSizeFromInput);
+  
+  customFontSizeInput.addEventListener('keypress', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyCustomFontSizeFromInput();
+      customFontSizeInput.blur(); // Optionally blur to avoid repeated 'Enter' if user keeps pressing
+    }
+  });
+
+  function handleFontSizeChangeViaButtons(increment) {
+    const currentSizeInInput = parseInt(customFontSizeInput.value);
+    let baseSize;
+
+    // Prefer the input's current value if it's valid, otherwise use selection's effective size
+    if (!isNaN(currentSizeInInput)) {
+        baseSize = currentSizeInInput;
+    } else {
+        baseSize = getEffectiveFontSize();
+    }
+    
+    const minSize = parseInt(customFontSizeInput.min) || 8;
+    const maxSize = parseInt(customFontSizeInput.max) || 120;
+    
+    let newSize = baseSize + increment;
+    newSize = Math.max(minSize, Math.min(maxSize, newSize)); // Clamp to min/max
+    
+    customFontSizeInput.value = newSize; // Update input field
+    quill.format('size', newSize + 'px', Quill.sources.USER); // Apply to Quill
+  }
+
+  fontSizeIncrementBtn.addEventListener('click', () => handleFontSizeChangeViaButtons(1));
+  fontSizeDecrementBtn.addEventListener('click', () => handleFontSizeChangeViaButtons(-1));
+
+  quill.on('selection-change', (range, oldRange, source) => {
+    if (range) { // When selection or cursor position changes
+        customFontSizeInput.value = getEffectiveFontSize();
+      
+        const formats = quill.getFormat(range.index, range.length);
+        if (formats.font) {
+            fontSelect.value = formats.font;
+        } else {
+            // Optional: Handle mixed fonts in selection or reset fontSelect
+            // fontSelect.value = FontStyle.whitelist[0]; // Reset to default like Amiri
+        }
+    }
+  });
+
+  fontSelect.addEventListener('change', function() {
+    const font = this.value;
+    quill.format('font', font, Quill.sources.USER);
+  });
+
+  quill.on('text-change', (delta, oldDelta, source) => {
+    processBtn.disabled = quill.getLength() <= 1 && quill.getText().trim() === '';
+  });
+
+  // --- End Custom Font Size Logic ---
+
+  processBtn.addEventListener('click', async function() {
+    if (isProcessing) return;
+    
+    if (quill.getLength() <= 1 && quill.getText().trim() === '') {
+      updateStatus('الرجاء إدخال بعض النص للتحويل.', 'warning');
+      return;
+    }
+    
+    isProcessing = true;
+    cleanupBlobUrl();
+    downloadOptions.style.display = 'none';
+    previewSection.style.display = 'none';
+    progressContainer.style.display = 'block';
+    progressBar.value = 0;
+    processBtn.disabled = true;
+    printBtn.disabled = true;
+    
+    try {
+      updateStatus('جاري تحضير المحتوى...', 'info');
+      progressBar.value = 10;
+      
+      const editorElement = quill.root; // Use quill.root which is the .ql-editor element
+      const clonedElement = editorElement.cloneNode(true);
+      const padding = parseInt(addPadding.value);
+      const bgColor = backgroundColor.value === 'transparent' && imageFormat.value === 'png' ? 'transparent' : (backgroundColor.value === 'transparent' ? '#ffffff' : backgroundColor.value);
+      
+      clonedElement.style.backgroundColor = bgColor;
+      clonedElement.style.padding = padding + 'px';
+      clonedElement.style.borderRadius = '8px'; // Optional: if you want rounded corners on the image itself
+      // clonedElement.style.maxWidth = '100%'; // May not be needed if width is set later
+      clonedElement.style.direction = 'rtl';
+      
+      // Ensure base font for the cloned element matches editor's default if not overridden by Quill
+      // This is generally handled by Quill's content itself.
+      // const currentEditorFont = quill.getFormat().font || FontStyle.whitelist[0];
+      // clonedElement.style.fontFamily = `'${currentEditorFont}', ${currentEditorFont === 'sans-serif' ? 'sans-serif': 'serif'}`;
+      
+      // Correct text color for light backgrounds if text is using the default dark theme color
+      if (bgColor === '#ffffff' || bgColor === '#f8fafc') {
+          const defaultDarkThemeTextColor = getComputedStyle(editorElement).color;
+          clonedElement.querySelectorAll('*').forEach(el => {
+              if (getComputedStyle(el).color === defaultDarkThemeTextColor && !el.style.color) {
+                  el.style.color = '#000000'; // Change to black for light backgrounds
+              }
+          });
+          // Also set for the root cloned element if it has the default dark theme color
+          if (getComputedStyle(clonedElement).color === defaultDarkThemeTextColor && !clonedElement.style.color) {
+              clonedElement.style.color = '#000000';
+          }
+      }
+      
+      switch(addShadow.value) {
+        case 'small': clonedElement.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)'; break;
+        case 'medium': clonedElement.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.2)'; break;
+        case 'large': clonedElement.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.3)'; break;
+        default: clonedElement.style.boxShadow = 'none';
+      }
+      
+      let targetWidth;
+      // Create a temporary container to measure the actual scrollWidth of the content
+      const tempSizingContainer = document.createElement('div');
+      tempSizingContainer.style.position = 'absolute';
+      tempSizingContainer.style.left = '-99999px'; // Off-screen
+      tempSizingContainer.style.visibility = 'hidden';
+      tempSizingContainer.style.padding = padding + 'px'; // Match padding
+      tempSizingContainer.style.fontFamily = getComputedStyle(editorElement).fontFamily; // Match font
+      tempSizingContainer.style.fontSize = getComputedStyle(editorElement).fontSize; // Match font size
+      
+      const tempClonedContent = editorElement.cloneNode(true);
+      // Remove explicit width/height from ql-editor that might constrain measurement
+      tempClonedContent.style.width = 'auto'; 
+      tempClonedContent.style.height = 'auto';
+      tempClonedContent.style.padding = '0'; // Inner padding is already part of content
+
+      tempSizingContainer.appendChild(tempClonedContent);
+      document.body.appendChild(tempSizingContainer);
+      
+      // Measure scrollWidth of the inner content for 'auto' orientation
+      const contentScrollWidth = tempClonedContent.scrollWidth; 
+      document.body.removeChild(tempSizingContainer);
+
+      switch(imageOrientation.value) {
+        case 'portrait': targetWidth = 800; break;
+        case 'landscape': targetWidth = 1200; break;
+        case 'auto':
+        default: targetWidth = contentScrollWidth + (padding * 2); // Add padding to measured width
+      }
+      
+      // Ensure a minimum width to avoid issues with very narrow content
+      targetWidth = Math.max(targetWidth, 300); // e.g., min width 300px
+      
+      clonedElement.style.width = targetWidth + 'px';
+      
+      // The container for html2canvas
+      const captureContainer = document.createElement('div');
+      captureContainer.style.position = 'absolute';
+      captureContainer.style.left = '-99999px'; // Way off-screen
+      captureContainer.style.width = targetWidth + 'px'; 
+      // captureContainer.style.overflow = 'hidden'; // Not always needed, html2canvas crops by width/height of element
+      captureContainer.appendChild(clonedElement);
+      document.body.appendChild(captureContainer);
+      
+      updateStatus('جاري تحويل النص إلى صورة...', 'info');
+      progressBar.value = 30;
+      
+      const canvas = await html2canvas(clonedElement, {
+        backgroundColor: bgColor === 'transparent' ? null : bgColor,
+        scale: 2, // For higher resolution
+        logging: false,
+        useCORS: true,
+        allowTaint: true, // If you have external images and useCORS doesn't work
+        width: targetWidth, // Explicitly set canvas width
+        windowWidth: targetWidth, // Simulate window width for responsive content if any
+        // height: clonedElement.scrollHeight, // Capture full height
+        onprogress: (progress) => {
+          progressBar.value = 30 + Math.floor(progress * 60);
+        }
+      });
+      
+      progressBar.value = 90;
+      updateStatus('جاري تحضير الصورة للتحميل...', 'info');
+      document.body.removeChild(captureContainer); // Clean up the off-screen container
+      
+      const quality = parseFloat(imageQuality.value);
+      const format = imageFormat.value;
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          // Fallback or error for specific cases like empty canvas
+          if (canvas.width === 0 || canvas.height === 0) {
+             throw new Error('فشل إنشاء صورة: أبعاد اللوحة صفرية.');
+          }
+          throw new Error('فشل إنشاء Blob للصورة.');
+        }
+        
+        imageBlobUrl = URL.createObjectURL(blob);
+        let filename = outputFilenameInput.value.trim() || 'نص_عربي';
+        filename = sanitizeFilename(filename);
+        const extension = getFileExtension();
+        
+        if (!filename.toLowerCase().endsWith('.' + extension)) {
+          filename += '.' + extension;
+        }
+        
+        downloadLink.href = imageBlobUrl;
+        downloadLink.download = filename;
+        downloadLink.innerHTML = `<i class="fas fa-download"></i> تحميل ${filename}`;
+        
+        imagePreview.src = imageBlobUrl;
+        imagePreview.style.display = 'block';
+        previewPlaceholder.style.display = 'none';
+        previewSection.style.display = 'block';
+        
+        updateStatus('تم إنشاء الصورة بنجاح!', 'success');
+        progressBar.value = 100;
+        downloadOptions.style.display = 'flex';
+        isProcessing = false;
+        processBtn.disabled = false;
+        printBtn.disabled = false;
+        previewSection.scrollIntoView({ behavior: 'smooth' });
+      }, 'image/' + format, quality);
+      
+    } catch (error) {
+      console.error("Image conversion error:", error);
+      updateStatus(`حدث خطأ: ${error.message || 'خطأ غير معروف'}`, 'error');
+      isProcessing = false;
+      processBtn.disabled = false;
+      printBtn.disabled = false;
+      progressContainer.style.display = 'none';
+    }
+  });
+
+  printBtn.addEventListener('click', () => {
+    window.print();
+  });
+
+  window.addEventListener('beforeunload', cleanupBlobUrl);
+
+  // Set default filename
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+  outputFilenameInput.value = `نص_عربي_${dateStr}`;
+
+  // Disable process button if editor is empty on load
+  processBtn.disabled = quill.getLength() <= 1 && quill.getText().trim() === '';
+});
+</script>
+</body>
+</html>

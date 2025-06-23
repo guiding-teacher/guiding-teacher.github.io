@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول الدروس (تصحيح حذف الأعمدة)</title>
+    <!-- jsPDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <!-- Amiri Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Basic & Layout Styles --- */
+        body { font-family: 'Amiri', serif; direction: rtl; margin: 0; padding: 10px; background-color: #312a2a; font-size: 14px; }
+        .schedule-container { background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 100%; overflow: hidden; }
+        h1, h2 { text-align: center; color: #333; border: 1px dashed transparent; padding: 5px; cursor: text; margin-bottom: 10px; }
+        h1[contenteditable="true"]:hover, h2[contenteditable="true"]:hover { border-color: #ccc; background-color: #f0f0f0; }
+        h1[contenteditable="true"]:focus, h2[contenteditable="true"]:focus { outline: 1px solid #007bff; background-color: #fff; border-color: #007bff; }
+        h2 { font-size: 1.2em; }
+        .footer-text { text-align: left; margin-top: 15px; padding: 5px 10px; font-weight: bold; color: #555; border: 1px dashed transparent; cursor: text; }
+        .footer-text[contenteditable="true"]:hover { border-color: #ccc; background-color: #f0f0f0; }
+        .footer-text[contenteditable="true"]:focus { outline: 1px solid #007bff; background-color: #fff; border-color: #007bff; }
+
+        /* --- Table Styles --- */
+        .table-wrapper { overflow-x: auto; width: 100%; margin-bottom: 15px; -webkit-overflow-scrolling: touch; border: 1px solid #ddd; }
+        #scheduleTable { width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        #scheduleTable th, #scheduleTable td { border: 1px solid #ccc; padding: 8px 6px; text-align: center; vertical-align: middle; word-wrap: break-word; min-width: 80px; position: relative; }
+        #scheduleTable thead th { background-color: #f2f2f2; font-weight: bold; color: #333; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #aaa; }
+        #scheduleTable thead .grade-header { background-color: #f8d7da; color: #721c24; }
+        #scheduleTable thead .sub-header { background-color: #e2e3e5; }
+        #scheduleTable thead .grade-header-alt { background-color: #d4edda; color: #155724; }
+        #scheduleTable tbody .day-cell { background-color: #ffe8cc !important; font-weight: bold; vertical-align: middle; position: sticky; left: 0; z-index: 1; border-right: 2px solid #adadad; }
+        #scheduleTable tbody tr:hover .day-cell { background-color: #fdddb3 !important; }
+        #scheduleTable tbody tr.day-separator td,
+        #scheduleTable tbody tr.day-separator .day-cell { border-bottom: 2px solid #555 !important; }
+
+        /* --- Editable, Selection & Highlight Styles --- */
+        [contenteditable="true"] { background-color: #ffffdd; cursor: text; border: 1px dashed transparent; }
+        [contenteditable="true"]:hover { border-color: #ccc; }
+        [contenteditable="true"]:focus { outline: 1px solid #007bff; background-color: #fff; border-color: #007bff; box-shadow: 0 0 3px rgba(0, 123, 255, 0.5); }
+        .selected-cell { outline: 2px solid #fd7e14 !important; outline-offset: -1px; box-shadow: 0 0 5px rgba(253, 126, 20, 0.7); background-color: #fff3cd !important; }
+        .duplicate-teacher { background-color: #f8d7da !important; outline: 2px solid #dc3545 !important; color: #721c24 !important; }
+        .duplicate-teacher[title] { border-bottom: 2px dotted #dc3545; }
+
+        /* --- Inline Delete Button Styles --- */
+        .delete-btn { position: absolute; width: 16px; height: 16px; background-color: #dc3545; color: white; border: none; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; cursor: pointer; font-weight: bold; z-index: 3; opacity: 0.5; transition: opacity 0.2s ease, background-color 0.2s ease; display: flex; align-items: center; justify-content: center; padding: 0; }
+        *:hover > .delete-btn { opacity: 1; }
+        .delete-btn:hover { background-color: #c82333; opacity: 1; }
+        .delete-row-btn { top: 50%; left: 1px; transform: translateY(-50%); }
+        .delete-col-btn { top: 1px; left: 1px; }
+
+        /* --- Action Button Styles --- */
+        .button-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 15px; padding: 5px; border-radius: 5px; }
+        .button-group button { padding: 8px 15px; font-size: 14px; font-family: 'Amiri', serif; cursor: pointer; border: none; border-radius: 5px; color: white; transition: background-color 0.3s ease; }
+        .action-buttons button { background-color: #007bff; } /* Blue */
+        .action-buttons button:hover { background-color: #0056b3; }
+        .stats-button { background-color: #6c757d; } /* Grey */
+        .stats-button:hover { background-color: #5a6268; }
+        .edit-buttons button.insert { background-color: #28a745; } /* Green */
+        .edit-buttons button.insert:hover { background-color: #218838; }
+        .edit-buttons button.clear { background-color: #ffc107; color: #333; } /* Yellow */
+        .edit-buttons button.clear:hover { background-color: #e0a800; }
+        .edit-buttons button.delete { background-color: #dc3545; } /* Red */
+        .edit-buttons button.delete:hover { background-color: #c82333; }
+        .reset-button { background-color: #ff8c00; } /* Dark Orange */
+         .reset-button:hover { background-color: #cc7000; }
+
+        /* --- Statistics Modal Styles (Enhanced) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); direction: rtl; }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px 30px; border: 1px solid #bbb; width: 85%; max-width: 800px; border-radius: 8px; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .modal-close { color: #aaa; position: absolute; left: 15px; top: 5px; font-size: 32px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .modal-close:hover, .modal-close:focus { color: black; text-decoration: none; }
+        #statsContent h2 { margin-top: 0; margin-bottom: 20px; text-align: center; color: #333; }
+        #statsContent h3 { margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 8px; color: #0056b3; }
+        #statsContent h4 { margin-top: 15px; margin-bottom: 8px; color: #444; }
+        .stats-section { margin-bottom: 20px; padding: 15px; background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; }
+        .stats-list { list-style: none; padding-right: 0; margin: 0; }
+        .stats-list-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dotted #eee; }
+        .stats-list-item:last-child { border-bottom: none; }
+        .stats-key { font-weight: bold; color: #555; margin-left: 10px; }
+        .stats-value { color: #000; }
+        .teacher-load-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .teacher-load-table th, .teacher-load-table td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        .teacher-load-table th { background-color: #e9ecef; font-weight: bold; }
+        .teacher-load-table td ul { list-style: disc; padding-right: 18px; margin: 0; font-size: 0.95em; }
+        .teacher-load-table td li { margin-bottom: 3px; }
+
+        /* --- Print Styles --- */
+        @media print { /* (Keep previous print styles) */
+            body { margin: 0; background-color: #fff; font-size: 10pt; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; width: 100%; }
+            .schedule-container { box-shadow: none; padding: 0; border-radius: 0; overflow: visible; max-width: none; width: 100%; }
+            .table-wrapper { overflow-x: visible; width: 100%; border: none; }
+            .button-group, .modal { display: none !important; }
+            .footer-text { text-align: left !important; border: none !important; background-color: transparent !important; padding: 0 !important; margin: 10px 0 0 10px; }
+            .delete-btn { display: none !important; }
+            #scheduleTable { width: 100%; border: 1px solid #000; font-size: 7pt; table-layout: auto; min-width: 0; }
+            #scheduleTable th, #scheduleTable td { border: 1px solid #000 !important; padding: 3px; color: #000 !important; background-color: #fff !important; position: static !important; }
+            #scheduleTable thead th { font-weight: bold; background-color: #eee !important; border-bottom: 1px solid #000 !important; }
+            #scheduleTable tbody .day-cell { font-weight: bold; background-color: #f0f0f0 !important; border-right: 1px solid #000 !important; }
+            #scheduleTable tbody tr.day-separator td,
+            #scheduleTable tbody tr.day-separator .day-cell { border-bottom: 2px solid #333 !important; }
+            [contenteditable="true"] { background-color: transparent !important; border: none !important; padding: 3px; }
+            .selected-cell, .duplicate-teacher { outline: none !important; box-shadow: none !important; background-color: inherit !important; color: inherit !important; }
+            .duplicate-teacher[title] { border-bottom: none; }
+            @page { size: A4 landscape; margin: 0.7cm; }
+        }
+        
+        
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    
+<div class="schedule-container">
+
+    <h1 id="mainTitle" contenteditable="true">إدارة مدرسة: الذكاء الابتدائية للبنات</h1>
+    <h2 id="subTitle" contenteditable="true">جدول الدروس الاسبوعي رقم ( ٤ ) - يعمل بموجبه بتاريخ ٢٤ / ١٠ / ٢٠٢٤</h2>
+
+    <!-- Action Buttons -->
+    <div class="button-group action-buttons">
+        <button id="printButton">طباعة الجدول</button>
+        <button id="pdfButton">تحويل إلى PDF</button>
+        <button id="statsButton" class="stats-button">إظهار الإحصائيات</button>
+        <button id="resetTableBtn" class="reset-button">إعادة تعيين الجدول</button>
+    </div>
+
+     <!-- Edit Buttons -->
+     <div class="button-group edit-buttons">
+        <button id="insertRowBtn" class="insert">إضافة صف تحت المحدد</button>
+        <button id="addEndColBtn" class="insert">إضافة عمود للنهاية</button>
+        <button id="clearCellBtn" class="clear">مسح الخلية المحددة</button>
+        <button id="deleteSelectedColBtn" class="delete">حذف العمود المحدد</button>
+    </div>
+
+    <div class="table-wrapper" id="tableWrapper">
+        <table id="scheduleTable">
+            <thead id="scheduleHead">
+                <!-- Header loaded from localStorage or default -->
+                 <tr><th rowspan="2" class="day-cell" contenteditable="true">الأيام والدروس</th><th rowspan="2" contenteditable="true">الدروس</th><th colspan="2" class="grade-header" contenteditable="true">الصف الاول</th><th colspan="2" class="grade-header-alt" contenteditable="true">الصف الثاني</th><th colspan="2" class="grade-header" contenteditable="true">الصف الثالث</th><th colspan="2" class="grade-header-alt" contenteditable="true">الصف الرابع</th><th colspan="2" class="grade-header" contenteditable="true">الصف الخامس - أ</th><th colspan="2" class="grade-header-alt" contenteditable="true">الصف الخامس - ب</th><th colspan="2" class="grade-header" contenteditable="true">الصف السادس</th></tr>
+                 <tr><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th><th class="sub-header" contenteditable="true">المعلم</th><th class="sub-header" contenteditable="true">المادة</th></tr>
+            </thead>
+            <tbody id="scheduleBody">
+                <!-- Body loaded from localStorage or default -->
+                <tr><td rowspan="6" class="day-cell" contenteditable="true">الأحد</td><td>1</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">هدى</td><td contenteditable="true">قراءة</td><td contenteditable="true">انتصار</td><td contenteditable="true">عربي</td><td contenteditable="true">حبيب</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td c d contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ضحى</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td></tr>
+                 <tr><td>2</td><td contenteditable="true">ايلاف</td><td contenteditable="true">رياضيات</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">اجتماعيات</td></tr>
+                 <tr><td>3</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td><td contenteditable="true">مشارق</td><td contenteditable="true">اسلامية</td><td contenteditable="true">مشارق</td><td contenteditable="true">اسلامية</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">خديجة</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td></tr>
+                 <tr><td>4</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">هدى</td><td contenteditable="true">E</td><td contenteditable="true">انتصار</td><td contenteditable="true">رياضيات</td><td contenteditable="true">انتصار</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">علوم</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">مشارق</td><td contenteditable="true">رياضيات</td></tr>
+                 <tr><td>5</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">نور مكي</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">رياضيات</td><td contenteditable="true">حنين</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td><td contenteditable="true">علوم</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td></tr>
+                 <tr><td>6</td><td contenteditable="true">فاطمة</td><td contenteditable="true">فنية</td><td contenteditable="true">هدى</td><td contenteditable="true">فنية</td><td contenteditable="true">انتصار</td><td contenteditable="true">عربي</td><td contenteditable="true">مشارق</td><td contenteditable="true">فنية</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">عربي</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td contenteditable="true">E</td></tr>
+                 <tr><td rowspan="6" class="day-cell" contenteditable="true">الاثنين</td><td>1</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">هدى</td><td contenteditable="true">قراءة</td><td contenteditable="true">انتصار</td><td contenteditable="true">رياضيات</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ضحى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">اجتماعيات</td></tr>
+                 <tr><td>2</td><td contenteditable="true">ايلاف</td><td contenteditable="true">رياضيات</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">انتصار</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td><td contenteditable="true">مشارق</td><td contenteditable="true">رياضيات</td></tr>
+                 <tr><td>3</td><td contenteditable="true">مشارق</td><td contenteditable="true">اسلامية</td><td contenteditable="true">خديجة</td><td contenteditable="true">اسلامية</td><td contenteditable="true">جنان</td><td contenteditable="true">عربي</td><td contenteditable="true">حبيب</td><td contenteditable="true">علوم</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">E</td><td contenteditable="true">جنان</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td><td contenteditable="true">E</td></tr>
+                 <tr><td>4</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">انتصار</td><td contenteditable="true">قراءة</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">حنين</td><td contenteditable="true">عربي</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">علوم</td><td contenteditable="true">نور مكي</td><td contenteditable="true">علوم</td></tr>
+                 <tr><td>5</td><td contenteditable="true">ايلاف</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">فنية</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">فنية</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">ضحى</td><td contenteditable="true">اسلامية</td><td contenteditable="true">حبيب</td><td contenteditable="true">اسلامية</td></tr>
+                 <tr><td>6</td><td contenteditable="true">ايلاف</td><td contenteditable="true">فنية</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">انتصار</td><td contenteditable="true">قراءة</td><td contenteditable="true">جنان</td><td contenteditable="true">فنية</td><td contenteditable="true">نور</td><td contenteditable="true">فنية</td><td contenteditable="true">فاطمة</td><td contenteditable="true">رياضة</td><td contenteditable="true">مشارق</td><td contenteditable="true">رياضة</td></tr>
+                 <tr><td rowspan="6" class="day-cell" contenteditable="true">الثلاثاء</td><td>1</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">هدى</td><td contenteditable="true">قراءة</td><td contenteditable="true">انتصار</td><td contenteditable="true">عربي</td><td contenteditable="true">حبيب</td><td contenteditable="true">عربي</td><td contenteditable="true">حنين</td><td contenteditable="true">E</td><td contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td></tr>
+                 <tr><td>2</td><td contenteditable="true">ايلاف</td><td contenteditable="true">رياضيات</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">ضحى</td><td contenteditable="true">رياضيات</td></tr>
+                 <tr><td>3</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td><td contenteditable="true">هدى</td><td contenteditable="true">فنية</td><td contenteditable="true">انتصار</td><td contenteditable="true">اسلامية</td><td contenteditable="true">حبيب</td><td contenteditable="true">علوم</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">علوم</td><td contenteditable="true">خديجة</td><td contenteditable="true">اسلامية</td><td contenteditable="true">حبيب</td><td contenteditable="true">اسلامية</td></tr>
+                 <tr><td>4</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">حبيب</td><td contenteditable="true">عربي</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">E</td><td contenteditable="true">خديجة</td><td contenteditable="true">علوم</td></tr>
+                 <tr><td>5</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">رياضة</td><td contenteditable="true">انتصار</td><td contenteditable="true">قراءة</td><td contenteditable="true">مشارق</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">جنان</td><td contenteditable="true">فنية</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">رياضة</td><td contenteditable="true">فاطمة</td><td contenteditable="true">E</td></tr>
+                 <tr><td>6</td><td contenteditable="true">ايلاف</td><td contenteditable="true">فنية</td><td contenteditable="true">هدى</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td><td contenteditable="true">E</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">فاطمة</td><td contenteditable="true">فنية</td><td contenteditable="true">مشارق</td><td contenteditable="true">فنية</td></tr>
+                 <tr><td rowspan="6" class="day-cell" contenteditable="true">الأربعاء</td><td>1</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">هدى</td><td contenteditable="true">قراءة</td><td contenteditable="true">انتصار</td><td contenteditable="true">قراءة</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td><td contenteditable="true">نور مكي</td><td contenteditable="true">E</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td></tr>
+                 <tr><td>2</td><td contenteditable="true">ايلاف</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور مكي</td><td contenteditable="true">E</td><td contenteditable="true">جنان</td><td contenteditable="true">رياضيات</td><td contenteditable="true">حبيب</td><td contenteditable="true">رياضيات</td><td contenteditable="true">حنين</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">جنان</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">حنين</td><td contenteditable="true">اجتماعيات</td></tr>
+                 <tr><td>3</td><td contenteditable="true">فاطمة</td><td contenteditable="true">اخلاقية</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">اخلاقية</td><td contenteditable="true">خديجة</td><td contenteditable="true">اسلامية</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">نور مكي</td><td contenteditable="true">علوم</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">علوم</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td></tr>
+                 <tr><td>4</td><td contenteditable="true">ايلاف</td><td contenteditable="true">فنية</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">انتصار</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور مكي</td><td contenteditable="true">E</td><td contenteditable="true">فاطمة</td><td contenteditable="true">رياضة</td><td contenteditable="true">فاطمة</td><td contenteditable="true">رياضة</td><td contenteditable="true">فاطمة</td><td contenteditable="true">رياضة</td></tr>
+                 <tr><td>5</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">حبيب</td><td contenteditable="true">عربي</td><td contenteditable="true">خديجة</td><td contenteditable="true">اسلامية</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">اجتماعيات</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">اجتماعيات</td></tr>
+                 <tr><td>6</td><td contenteditable="true">ايلاف</td><td contenteditable="true">علوم</td><td contenteditable="true">خديجة</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td><td contenteditable="true">E</td><td contenteditable="true">جنان</td><td contenteditable="true">عربي</td><td contenteditable="true">حبيب</td><td contenteditable="true">اسلامية</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">رياضيات</td><td contenteditable="true">مشارق</td><td contenteditable="true">E</td></tr>
+                 <tr><td rowspan="6" class="day-cell" contenteditable="true">الخميس</td><td>1</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">هدى</td><td contenteditable="true">قراءة</td><td contenteditable="true">انتصار</td><td contenteditable="true">قراءة</td><td contenteditable="true">حبيب</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور مكي</td><td contenteditable="true">عربي</td><td contenteditable="true">ضحى</td><td contenteditable="true">رياضيات</td></tr>
+                 <tr><td>2</td><td contenteditable="true">ايلاف</td><td contenteditable="true">رياضيات</td><td contenteditable="true">هدى</td><td contenteditable="true">رياضيات</td><td contenteditable="true">جنان</td><td contenteditable="true">اسلامية</td><td contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور مكي</td><td contenteditable="true">E</td><td contenteditable="true">ضحى</td><td contenteditable="true">عربي</td><td contenteditable="true">حنين</td><td contenteditable="true">عربي</td></tr>
+                 <tr><td>3</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">رياضة</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">رياضة</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">ابراهيم</td><td contenteditable="true">رياضيات</td><td contenteditable="true">مشارق</td><td contenteditable="true">علوم</td><td contenteditable="true">حنين</td><td contenteditable="true">علوم</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td></tr>
+                 <tr><td>4</td><td contenteditable="true">ايلاف</td><td contenteditable="true">قراءة</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td><td contenteditable="true">انتصار</td><td contenteditable="true">رياضيات</td><td contenteditable="true">فاطمة</td><td contenteditable="true">فنية</td><td contenteditable="true">نور مكي</td><td contenteditable="true">رياضيات</td><td contenteditable="true">نور جاسم</td><td contenteditable="true">E</td><td contenteditable="true">حنين</td><td contenteditable="true">E</td></tr>
+                 <tr><td>5</td><td contenteditable="true">فاطمة</td><td contenteditable="true">علوم</td><td contenteditable="true">نور مكي</td><td contenteditable="true">E</td><td contenteditable="true">انتصار</td><td contenteditable="true">فنية</td><td contenteditable="true">حبيب</td><td contenteditable="true">اسلامية</td><td contenteditable="true">ضحى</td><td contenteditable="true">اسلامية</td><td contenteditable="true">حبيب</td><td contenteditable="true">اسلامية</td><td contenteditable="true">حبيب</td><td contenteditable="true">اسلامية</td></tr>
+                 <tr><td>6</td><td contenteditable="true">حنين</td><td contenteditable="true">اسلامية</td><td contenteditable="true">خديجة</td><td contenteditable="true">اسلامية</td><td contenteditable="true">انتصار</td><td contenteditable="true">عربي</td><td contenteditable="true">حبيب</td><td contenteditable="true">عربي</td><td contenteditable="true">خديجة</td><td contenteditable="true">فنية</td><td contenteditable="true">فاطمة</td><td contenteditable="true">فنية</td><td contenteditable="true"></td></td>ق</td><td contenteditable="true">رياضة</td></tr>
+            </tbody>
+        </table>
+    </div> <!-- End table-wrapper -->
+
+    <!-- Footer -->
+     <div id="footerText" class="footer-text" contenteditable="true">
+        مدير المدرسة: ابراهيم عبد الكريم
+    </div>
+
+</div><!-- End schedule-container -->
+
+<!-- Statistics Modal -->
+<div id="statsModal" class="modal"> <div class="modal-content"> <span class="modal-close" id="closeStatsModal">×</span> <h2 id="statsModalTitle">إحصائيات الجدول الدراسي</h2> <div id="statsContent"><p>جارٍ تحميل الإحصائيات...</p></div> </div> </div>
+
+<script>
+    // --- DOM Elements ---
+    const scheduleContainer = document.querySelector('.schedule-container');
+    const mainTitle = document.getElementById('mainTitle');
+    const subTitle = document.getElementById('subTitle');
+    const footerText = document.getElementById('footerText');
+    const scheduleTable = document.getElementById('scheduleTable');
+    const scheduleHead = document.getElementById('scheduleHead');
+    const scheduleBody = document.getElementById('scheduleBody');
+    const tableWrapper = document.getElementById('tableWrapper');
+    const printButton = document.getElementById('printButton');
+    const pdfButton = document.getElementById('pdfButton');
+    const insertRowBtn = document.getElementById('insertRowBtn');
+    const addEndColBtn = document.getElementById('addEndColBtn');
+    const clearCellBtn = document.getElementById('clearCellBtn');
+    const deleteSelectedColBtn = document.getElementById('deleteSelectedColBtn');
+    const resetTableBtn = document.getElementById('resetTableBtn');
+    const statsButton = document.getElementById('statsButton');
+    const statsModal = document.getElementById('statsModal');
+    const statsContent = document.getElementById('statsContent');
+    const closeStatsModalBtn = document.getElementById('closeStatsModal');
+    const { jsPDF } = window.jspdf;
+
+    // --- State ---
+    let lastClickedCell = null;
+    let saveTimeout = null;
+    const LS_KEYS = {
+        HEAD: 'scheduleTableHeadHTML_v9', BODY: 'scheduleTableBodyHTML_v9', // Version up
+        TITLE: 'scheduleMainTitle_v9', SUBTITLE: 'scheduleSubTitle_v9',
+        FOOTER: 'scheduleFooterText_v9'
+    };
+    let initialTableHeadHTML = ''; let initialTableBodyHTML = '';
+    let initialMainTitleHTML = ''; let initialSubTitleHTML = ''; let initialFooterHTML = '';
+
+    // --- Utility Functions ---
+    function getDayCellForRow(row) { /* Finds governing TD.day-cell */
+        if (!row?.cells?.[0]) return null; if (row.cells[0].classList.contains('day-cell')) return row.cells[0];
+        let cr = row; while (cr = cr.previousElementSibling) { const fc = cr.cells[0]; if (fc?.classList.contains('day-cell')) { const sp = parseInt(fc.getAttribute('rowspan') || '1'); if (row.sectionRowIndex < cr.sectionRowIndex + sp) return fc; else return null; } } return null;
+    }
+    function renumberLessons(dayCell) { /* Renumbers lessons */
+        if (!dayCell) return; const sr = dayCell.closest('tr'); const sp = parseInt(dayCell.getAttribute('rowspan') || '1'); let lc = 1; let cr = sr;
+        for (let i = 0; i < sp; i++) { if (!cr) break; const li = (cr.cells[0]?.classList.contains('day-cell')) ? 1 : 0; const lce = cr.cells[li]; if (lce?.tagName === 'TD' && !lce.classList.contains('day-cell')) lce.innerText = lc++; else if (sp === 1 && cr.cells[1]?.tagName === 'TD') cr.cells[1].innerText = lc++; cr = cr.nextElementSibling; }
+    }
+    function applyDaySeparators() { /* Adds visual separator line */
+        const rows = scheduleBody.rows; for (let i = 0; i < rows.length; i++) rows[i].classList.remove('day-separator');
+        let cdc = null; let dsri = -1; for (let i = 0; i < rows.length; i++) { const fc = rows[i].cells[0]; if (fc?.classList.contains('day-cell')) { if (cdc) { const sp = parseInt(cdc.getAttribute('rowspan') || '1'); const pdlri = dsri + sp - 1; if (pdlri < rows.length && pdlri >= 0) rows[pdlri].classList.add('day-separator'); } cdc = fc; dsri = i; } }
+        if (cdc) { const sp = parseInt(cdc.getAttribute('rowspan') || '1'); const ldlri = dsri + sp - 1; if (ldlri < rows.length && ldlri >= 0) rows[ldlri].classList.add('day-separator'); }
+    }
+    function addDeleteButton(cell, type) { /* Adds inline X button */
+        cell.querySelector('.delete-btn')?.remove(); const btn = document.createElement('button'); btn.innerHTML = '×'; btn.classList.add('delete-btn');
+        if (type === 'row') { btn.classList.add('delete-row-btn'); btn.title = 'حذف الصف'; }
+        else if (type === 'column') { btn.classList.add('delete-col-btn'); btn.title = 'حذف عمود الصف الدراسي'; }
+        cell.prepend(btn);
+    }
+    function addAllDeleteButtons() { /* Iterates and adds buttons */
+        scheduleHead.rows[0].querySelectorAll('th[colspan="2"]').forEach(th => addDeleteButton(th, 'column'));
+        scheduleBody.querySelectorAll('tr').forEach(row => { const li = (row.cells[0]?.classList.contains('day-cell')) ? 1 : 0; const lce = row.cells[li]; if(lce?.tagName === 'TD' && !lce.classList.contains('day-cell')) addDeleteButton(lce, 'row'); });
+    }
+    function clearHighlights(scopeElement = document) { scopeElement.querySelectorAll('.duplicate-teacher').forEach(el => { el.classList.remove('duplicate-teacher'); el.removeAttribute('title'); }); }
+
+    // --- Persistence Functions ---
+    function saveTableState() {
+        if (!localStorage) return; try { if (lastClickedCell) lastClickedCell.classList.remove('selected-cell'); clearHighlights(scheduleTable); scheduleTable.querySelectorAll('.delete-btn').forEach(btn => btn.remove()); localStorage.setItem(LS_KEYS.HEAD, scheduleHead.innerHTML); localStorage.setItem(LS_KEYS.BODY, scheduleBody.innerHTML); localStorage.setItem(LS_KEYS.TITLE, mainTitle.innerHTML); localStorage.setItem(LS_KEYS.SUBTITLE, subTitle.innerHTML); localStorage.setItem(LS_KEYS.FOOTER, footerText.innerHTML); addAllDeleteButtons(); } catch (e) { console.error("Error saving state:", e); }
+    }
+    function loadTableState() {
+        if (!localStorage) return; const sh = localStorage.getItem(LS_KEYS.HEAD); const sb = localStorage.getItem(LS_KEYS.BODY); const st = localStorage.getItem(LS_KEYS.TITLE); const sst = localStorage.getItem(LS_KEYS.SUBTITLE); const sf = localStorage.getItem(LS_KEYS.FOOTER); if (sh) scheduleHead.innerHTML = sh; if (sb) scheduleBody.innerHTML = sb; if (st) mainTitle.innerHTML = st; if (sst) subTitle.innerHTML = sst; if (sf) footerText.innerHTML = sf; addAllDeleteButtons(); applyDaySeparators();
+    }
+    function resetTableToInitial() {
+         if (confirm('هل أنت متأكد من إعادة تعيين الجدول إلى حالته الأصلية؟ سيتم فقدان جميع التغييرات المحفوظة.')) {
+             Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
+             scheduleHead.innerHTML = initialTableHeadHTML; scheduleBody.innerHTML = initialTableBodyHTML;
+             mainTitle.innerHTML = initialMainTitleHTML; subTitle.innerHTML = initialSubTitleHTML; footerText.innerHTML = initialFooterHTML;
+             lastClickedCell = null; clearHighlights(scheduleTable); addAllDeleteButtons(); applyDaySeparators();
+             alert('تمت إعادة تعيين الجدول.');
+         }
+     }
+
+    // --- Duplicate Teacher Check ---
+    function checkDuplicateTeacherInRow(editedCell) { /* (Corrected Logic) */
+        const editedRow = editedCell.closest('tr'); if (!editedRow || editedRow.parentNode !== scheduleBody) return;
+        const editedTeacherName = editedCell.innerText.trim().toLowerCase();
+        clearHighlights(editedRow); if (!editedTeacherName) return;
+        const teacherIndices = []; const headerCells = scheduleHead.rows[1].cells;
+        for(let i=0; i < headerCells.length; i++) if(headerCells[i].innerText.includes('المعلم')) teacherIndices.push(i);
+        const rowCells = editedRow.cells; const dayCellOffset = rowCells[0]?.classList.contains('day-cell') ? 1 : 0;
+        const duplicateCells = [];
+        teacherIndices.forEach(headerIndex => { const cellIndexInRow = headerIndex + dayCellOffset; if (cellIndexInRow < rowCells.length) { const currentCell = rowCells[cellIndexInRow]; if (currentCell.innerText.trim().toLowerCase() === editedTeacherName) { duplicateCells.push(currentCell); } } });
+        if (duplicateCells.length > 1) { duplicateCells.forEach(cell => { cell.classList.add('duplicate-teacher'); cell.title = `المعلم "${editedCell.innerText.trim()}" مكرر`; }); if (!window.duplicateAlertShown) { alert(`تنبيه: المعلم "${editedCell.innerText.trim()}" مكرر في هذا الصف!`); window.duplicateAlertShown = true; setTimeout(() => { window.duplicateAlertShown = false; }, 1500); } }
+    }
+
+    // --- Event Listeners ---
+    scheduleTable.addEventListener('click', (e) => { /* Cell Selection */
+        const target = e.target; if (target.classList.contains('delete-btn')) return;
+        if ((target.tagName === 'TD' || target.tagName === 'TH') && !target.classList.contains('day-cell')) { const pr = target.closest('tr'); if (target.tagName === 'TD' && pr?.parentNode === scheduleBody) { const li = pr.cells[0]?.classList.contains('day-cell') ? 1 : 0; if (target.cellIndex === li) { if (lastClickedCell) lastClickedCell.classList.remove('selected-cell'); lastClickedCell = null; return; } } if (lastClickedCell) lastClickedCell.classList.remove('selected-cell'); lastClickedCell = target; target.classList.add('selected-cell'); } else { if (lastClickedCell) lastClickedCell.classList.remove('selected-cell'); lastClickedCell = null; }
+    });
+    scheduleTable.addEventListener('click', (e) => { /* Delegated Delete Click */
+        const target = e.target; if (target.classList.contains('delete-row-btn')) deleteRow(target.closest('tr')); else if (target.classList.contains('delete-col-btn')) deleteColumnPairByGradeHeader(target.closest('th'));
+    });
+    printButton.addEventListener('click', () => window.print());
+    pdfButton.addEventListener('click', exportToPDF);
+    statsButton.addEventListener('click', generateAndShowStatistics);
+    closeStatsModalBtn.addEventListener('click', () => statsModal.style.display = 'none');
+    statsModal.addEventListener('click', (e) => { if (e.target === statsModal) statsModal.style.display = 'none'; });
+    scheduleContainer.addEventListener('input', (e) => { /* Save on edit, check dupes */
+        const target = e.target; if (target.hasAttribute('contenteditable') && target.getAttribute('contenteditable') === 'true') { clearTimeout(window.saveTimeout); window.saveTimeout = setTimeout(saveTableState, 600); const pr = target.closest('tr'); if(pr && target.tagName === 'TD' && pr.parentNode === scheduleBody){ const dco = pr.cells[0]?.classList.contains('day-cell') ? 1 : 0; const chi = target.cellIndex - dco; /* Check if it's a Teacher cell */ if (scheduleHead.rows[1].cells[chi]?.innerText.includes('المعلم')) checkDuplicateTeacherInRow(target); else clearHighlights(pr); } else clearHighlights(scheduleTable); }
+    });
+    scheduleContainer.addEventListener('blur', (e) => { /* Auto-delete empty header/day on blur */
+        const target = e.target; if (target.hasAttribute('contenteditable') && target.getAttribute('contenteditable') === 'true' && target.innerText.trim() === '') { if (target.tagName === 'TH' && target.closest('tr') === scheduleHead.rows[0] && target.hasAttribute('colspan')) { if (confirm(`اسم الصف فارغ. هل تريد حذف هذا الصف الدراسي وأعمدته؟`)) deleteColumnPairByGradeHeader(target); else target.focus(); } else if (target.tagName === 'TD' && target.classList.contains('day-cell')) { if (confirm(`اسم اليوم فارغ. هل تريد حذف هذا اليوم وجميع صفوفه؟`)) deleteDayBlock(target); else target.focus(); } }
+    }, true);
+    clearCellBtn.addEventListener('click', () => { /* Clear Selected Cell Content */
+        if(lastClickedCell?.hasAttribute('contenteditable') && lastClickedCell.getAttribute('contenteditable') === 'true'){ lastClickedCell.innerText = ''; lastClickedCell.dispatchEvent(new Event('input', { bubbles: true, cancelable: true })); } else { alert('الرجاء تحديد خلية قابلة للتعديل أولاً.'); }
+    });
+    deleteSelectedColBtn.addEventListener('click', () => { /* Delete Column based on Selected Cell */
+         if (!lastClickedCell) { alert("الرجاء تحديد خلية في العمود المطلوب حذفه أولاً."); return; }
+         const clickedCell = lastClickedCell; const clickedIndex = clickedCell.cellIndex; const parentRow = clickedCell.closest('tr'); const isHeader = parentRow.parentNode.tagName === 'THEAD';
+         let effectiveClickedIndex = clickedIndex; if (!isHeader && parentRow.cells[0]?.classList.contains('day-cell')) effectiveClickedIndex++;
+         if (effectiveClickedIndex < 2) { alert("لا يمكن حذف عمود اليوم أو عمود الدروس."); return; }
+         // Calculate indices for the *second* header row
+         const colStartIndexInSecondRow = 2 + Math.floor((effectiveClickedIndex - 2) / 2) * 2;
+         const teacherHeaderIndex = colStartIndexInSecondRow; const subjectHeaderIndex = colStartIndexInSecondRow + 1;
+         // Find the corresponding Grade Header
+         let gradeHeaderCellToDelete = null; let currentHeadColIndex = 0; const gradeHeaders = scheduleHead.rows[0].cells;
+         for(let i=0; i < gradeHeaders.length; i++){ const cell = gradeHeaders[i]; const span = cell.hasAttribute('rowspan') ? 1 : parseInt(cell.getAttribute('colspan') || 1); if(currentHeadColIndex < teacherHeaderIndex && currentHeadColIndex + span > teacherHeaderIndex){ gradeHeaderCellToDelete = cell; break; } currentHeadColIndex += span; }
+         if (gradeHeaderCellToDelete) { if (!confirm(`هل أنت متأكد من حذف الصف الدراسي '${gradeHeaderCellToDelete.innerText}' والأعمدة المرتبطة به؟`)) return; deleteColumnPairByIndices(teacherHeaderIndex, subjectHeaderIndex, gradeHeaderCellToDelete); }
+         else { alert("لم يتم العثور على الصف الدراسي المرتبط بالخلية المحددة."); }
+    });
+    resetTableBtn.addEventListener('click', resetTableToInitial);
+
+    // --- Insertion Logic ---
+    insertRowBtn.addEventListener('click', () => {
+        if (!lastClickedCell || lastClickedCell.closest('tbody') !== scheduleBody) { alert("الرجاء تحديد خلية لإضافة صف تحتها."); return; }
+        const clickedRow = lastClickedCell.closest('tr'); const tbody = clickedRow.parentNode; const dayCell = getDayCellForRow(clickedRow);
+        if (dayCell) dayCell.setAttribute('rowspan', parseInt(dayCell.getAttribute('rowspan') || '1') + 1);
+        const newRow = tbody.insertRow(clickedRow.sectionRowIndex + 1); const headerCellCount = scheduleHead.rows[1].cells.length;
+        const lessonCell = newRow.insertCell(0); lessonCell.innerText = '?'; addDeleteButton(lessonCell, 'row');
+        for (let i = 0; i < headerCellCount; i++) { const newCell = newRow.insertCell(-1); newCell.setAttribute('contenteditable', 'true'); newCell.innerText = '-'; }
+        if (dayCell) renumberLessons(dayCell); applyDaySeparators(); saveTableState();
+        if (newRow.cells[1]) { if (lastClickedCell) lastClickedCell.classList.remove('selected-cell'); lastClickedCell = newRow.cells[1]; lastClickedCell.classList.add('selected-cell'); lastClickedCell.focus(); }
+    });
+    addEndColBtn.addEventListener('click', () => { /* Add column to end */
+        const hr = scheduleHead.rows; const br = scheduleBody.rows; const ghr = hr[0]; const ngrh = document.createElement('th');
+        ngrh.setAttribute('colspan', '2'); ngrh.setAttribute('contenteditable', 'true'); const lgrh = ghr.cells[ghr.cells.length - 1];
+        ngrh.className = (lgrh?.classList.contains('grade-header')) ? 'grade-header-alt' : 'grade-header'; ngrh.innerText = 'صف جديد'; ghr.appendChild(ngrh); addDeleteButton(ngrh, 'column');
+        const shr = hr[1]; const nth = document.createElement('th'); nth.className = 'sub-header'; nth.setAttribute('contenteditable', 'true'); nth.innerText = 'المعلم'; shr.appendChild(nth);
+        const nsh = document.createElement('th'); nsh.className = 'sub-header'; nsh.setAttribute('contenteditable', 'true'); nsh.innerText = 'المادة'; shr.appendChild(nsh);
+        for (let i = 0; i < br.length; i++) { const brow = br[i]; const ntc = brow.insertCell(-1); ntc.setAttribute('contenteditable', 'true'); ntc.innerText = '-'; const nsc = brow.insertCell(-1); nsc.setAttribute('contenteditable', 'true'); nsc.innerText = '-'; }
+        applyDaySeparators(); saveTableState();
+    });
+
+    // --- Deletion Logic (CORRECTED) ---
+    function deleteRow(rowToDelete) { /* Delete single row */
+        if (!rowToDelete || rowToDelete.closest('tbody') !== scheduleBody) return; const dayCell = getDayCellForRow(rowToDelete);
+        if (dayCell) { let cs = parseInt(dayCell.getAttribute('rowspan') || '1'); if (cs <= 1 && rowToDelete.cells[0] === dayCell) { alert("لا يمكن حذف الصف الوحيد لليوم."); return; } if (cs > 1) { dayCell.setAttribute('rowspan', cs - 1); if (rowToDelete.cells[0] === dayCell) { const nr = rowToDelete.nextElementSibling; if (nr?.cells.length > 0 && !nr.cells[0]?.classList.contains('day-cell')) nr.insertBefore(dayCell, nr.cells[0]); else { console.error("Cannot move Day cell"); dayCell.setAttribute('rowspan', cs); return; } } } else dayCell.removeAttribute('rowspan'); }
+        const dcfr = getDayCellForRow(rowToDelete); rowToDelete.remove(); if (lastClickedCell && !document.body.contains(lastClickedCell)) lastClickedCell = null; if (dcfr) renumberLessons(dcfr); applyDaySeparators(); saveTableState();
+    }
+
+    function deleteColumnPairByIndices(teacherHeaderIndex, subjectHeaderIndex, gradeHeaderCellToDelete) {
+        // Core deletion logic by index - indices are for the *second* header row
+        if (teacherHeaderIndex < 0 || subjectHeaderIndex < 0 || !gradeHeaderCellToDelete || !document.body.contains(gradeHeaderCellToDelete)) {
+             console.error("Invalid indices or grade header provided for deletion."); return;
+         }
+         // --- Delete Headers ---
+         const subHeaderRow = scheduleHead.rows[1]; // Target the second header row
+         // Delete cells from the second row using the *received* indices
+         if (subHeaderRow.cells[subjectHeaderIndex]) subHeaderRow.deleteCell(subjectHeaderIndex); else console.warn(`Core Delete: Subject header index ${subjectHeaderIndex} not found in row 1.`);
+         if (subHeaderRow.cells[teacherHeaderIndex]) subHeaderRow.deleteCell(teacherHeaderIndex); else console.warn(`Core Delete: Teacher header index ${teacherHeaderIndex} not found in row 1.`);
+         // Delete the Grade Header from the first row
+         gradeHeaderCellToDelete.remove();
+         // --- Delete Body Cells ---
+         const bodyRows = scheduleBody.rows;
+         for (let i = 0; i < bodyRows.length; i++) {
+             const row = bodyRows[i]; let rti = teacherHeaderIndex; let rsi = subjectHeaderIndex;
+             // Adjust indices based on Day cell presence *relative to the second header row indices*
+             if (!row.cells[0]?.classList.contains('day-cell')) { rti--; rsi--; }
+             // Delete using adjusted indices for this specific row
+             if (rsi >= 0 && row.cells.length > rsi) row.deleteCell(rsi);
+             if (rti >= 0 && row.cells.length > rti) row.deleteCell(rti);
+         }
+         if (lastClickedCell && !document.body.contains(lastClickedCell)) lastClickedCell = null;
+         applyDaySeparators(); saveTableState();
+    }
+
+    function deleteColumnPairByGradeHeader(gradeHeaderCell) { /* Calculates indices for row 1 and calls core logic */
+        if (!gradeHeaderCell || gradeHeaderCell.tagName !== 'TH' || gradeHeaderCell.closest('tr') !== scheduleHead.rows[0]) return;
+        let colStartIndexInSecondRow = 0; let currentCell = gradeHeaderCell.previousElementSibling;
+        while (currentCell) { colStartIndexInSecondRow += currentCell.hasAttribute('rowspan') ? 1 : parseInt(currentCell.getAttribute('colspan') || 1); currentCell = currentCell.previousElementSibling; }
+        const teacherHeaderIndex = colStartIndexInSecondRow; const subjectHeaderIndex = colStartIndexInSecondRow + 1;
+        // Confirmation is now handled by the blur event or the main delete button
+        // if (!confirm(`...`)) return;
+        deleteColumnPairByIndices(teacherHeaderIndex, subjectHeaderIndex, gradeHeaderCell); // Pass calculated indices and the grade header cell
+    }
+    function deleteDayBlock(dayCell) { /* Delete all rows for a day */
+        if (!dayCell || !dayCell.classList.contains('day-cell')) return; const startRow = dayCell.closest('tr'); const span = parseInt(dayCell.getAttribute('rowspan') || '1'); let currentRow = startRow; const rowsToDelete = []; for(let i=0; i < span; i++){ if(!currentRow) break; rowsToDelete.push(currentRow); currentRow = currentRow.nextElementSibling; }
+        // Confirmation is handled by blur event
+        rowsToDelete.forEach(row => row.remove()); if (lastClickedCell && !document.body.contains(lastClickedCell)) lastClickedCell = null; applyDaySeparators(); saveTableState();
+    }
+
+    // --- Statistics Logic ---
+     function generateAndShowStatistics() { /* Enhanced Styling */
+         statsContent.innerHTML = '<p>جارٍ حساب الإحصائيات...</p>'; statsModal.style.display = 'block';
+         try { const dailyCounts = {}; const weeklySubjectCounts = {}; const teacherLoads = {}; let totalWeeklyLessons = 0; let currentDayName = '';
+             const gradeHeaders = Array.from(scheduleHead.rows[0].cells).slice(1); const subHeaders = scheduleHead.rows[1].cells; const columnInfo = []; let currentGradeIndex = 0;
+             gradeHeaders.forEach(gh => { const gradeName = gh.innerText.trim(); const span = parseInt(gh.getAttribute('colspan') || 1); for (let i = 0; i < span; i++) { const subHeaderIndex = currentGradeIndex + i; if(subHeaders[subHeaderIndex]){ const isTeacher = subHeaders[subHeaderIndex].innerText.includes('المعلم'); columnInfo.push({ grade: gradeName, type: isTeacher ? 'teacher' : 'subject', subHeaderIndex: subHeaderIndex }); } } currentGradeIndex += span; });
+             for (const row of scheduleBody.rows) { const firstCell = row.cells[0]; if (firstCell?.classList.contains('day-cell')) { currentDayName = firstCell.innerText.trim() || 'يوم غير مسمى'; dailyCounts[currentDayName] = 0; } if (!currentDayName) continue; const isDayRowStart = firstCell?.classList.contains('day-cell'); const cellOffset = isDayRowStart ? 2 : 1; if (row.cells.length > cellOffset -1) { dailyCounts[currentDayName]++; totalWeeklyLessons++; let currentTeacher = ''; let currentSubject = ''; let currentGrade = ''; for (let i = cellOffset; i < row.cells.length; i++) { const cell = row.cells[i]; const content = cell.innerText.trim(); const headerMapIndex = i - cellOffset; if (content && columnInfo[headerMapIndex]) { const info = columnInfo[headerMapIndex]; currentGrade = info.grade; if (info.type === 'teacher') currentTeacher = content; else { currentSubject = content; if (currentTeacher && currentSubject && currentGrade) { weeklySubjectCounts[currentGrade] = weeklySubjectCounts[currentGrade] || {}; weeklySubjectCounts[currentGrade][currentSubject] = (weeklySubjectCounts[currentGrade][currentSubject] || 0) + 1; teacherLoads[currentTeacher] = teacherLoads[currentTeacher] || { total: 0, classes: new Set() }; teacherLoads[currentTeacher].total++; teacherLoads[currentTeacher].classes.add(`${currentGrade} - ${currentSubject}`); } } } if (columnInfo[headerMapIndex]?.type === 'subject') currentTeacher = ''; } } }
+             let html = '<div class="stats-section">'; html += '<h3>ملخص الحصص</h3><ul class="stats-list">'; for (const day in dailyCounts) html += `<li class="stats-list-item"><span class="stats-key">${day}:</span><span class="stats-value">${dailyCounts[day]} حصص</span></li>`; html += `<li class="stats-list-item"><span class="stats-key">الإجمالي الأسبوعي:</span><span class="stats-value">${totalWeeklyLessons} حصص</span></li>`; html += '</ul></div>';
+             html += '<div class="stats-section"><h3>توزيع الحصص (أسبوعي)</h3>'; if (Object.keys(weeklySubjectCounts).length > 0) { for (const grade in weeklySubjectCounts) { html += `<h4>${grade}</h4><ul class="stats-list">`; const sortedSubjects = Object.entries(weeklySubjectCounts[grade]).sort((a, b) => b[1] - a[1]); sortedSubjects.forEach(([subject, count]) => html += `<li class="stats-list-item"><span class="stats-key">${subject}:</span><span class="stats-value">${count} حصص</span></li>`); html += '</ul>'; } } else html += '<p>لا توجد بيانات.</p>'; html += '</div>';
+             html += '<div class="stats-section"><h3>نصاب المعلمين</h3>'; if (Object.keys(teacherLoads).length > 0) { html += '<table class="teacher-load-table"><thead><tr><th>المعلم</th><th>إجمالي الحصص</th><th>الصفوف والمواد</th></tr></thead><tbody>'; const sortedTeachers = Object.entries(teacherLoads).sort((a, b) => b[1].total - a[1].total); sortedTeachers.forEach(([teacher, data]) => { html += `<tr><td>${teacher}</td><td>${data.total}</td><td><ul>`; Array.from(data.classes).sort().forEach(cls => { html += `<li>${cls}</li>`; }); html += '</ul></td></tr>'; }); html += '</tbody></table>'; } else html += '<p>لا توجد بيانات.</p>'; html += '</div>';
+             statsContent.innerHTML = html;
+         } catch (error) { console.error("Stats Error:", error); statsContent.innerHTML = '<p>خطأ بحساب الإحصائيات.</p>'; }
+     }
+
+    // --- PDF Export Function ---
+    function exportToPDF() { /* A4 Landscape is default, titles included */
+         if (lastClickedCell) lastClickedCell.classList.remove('selected-cell'); const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' }); doc.setFont('Amiri'); const schoolTitleText = mainTitle.innerText; const tableTitleText = subTitle.innerText; const footerContent = footerText.innerText; const tableElement = document.getElementById('scheduleTable'); const tableClone = tableElement.cloneNode(true); tableClone.querySelectorAll('.delete-btn').forEach(btn => btn.remove()); const pageWidth = doc.internal.pageSize.getWidth(); doc.setFontSize(16); doc.text(schoolTitleText, pageWidth / 2, 40, { align: 'center' }); doc.setFontSize(12); doc.text(tableTitleText, pageWidth / 2, 60, { align: 'center' });
+         doc.autoTable({ html: tableClone, startY: 80, theme: 'grid', styles: { font: 'Amiri', halign: 'center', valign: 'middle', cellPadding: 3, fontSize: 7, lineWidth: 0.5, overflow: 'linebreak' }, headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.5, fontSize: 8 }, alternateRowStyles: { fillColor: [245, 245, 245] }, willDrawCell: function (data) { if (data.section === 'body' && data.row.raw?.classList.contains('day-separator')) { doc.setLineWidth(1.5); doc.setDrawColor(85, 85, 85); doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height); } }, didParseCell: function (data) { if (data.cell.raw?.hasAttribute('contenteditable')) { data.cell.styles.fillColor = false; data.cell.text = [data.cell.raw.innerText]; } if (data.column.index === 0 && data.cell.raw?.classList.contains('day-cell')) { data.cell.styles.fillColor = [255, 232, 204]; data.cell.styles.fontStyle = 'bold'; } if (data.section === 'head') { if (data.cell.raw?.classList.contains('grade-header')) { data.cell.styles.fillColor = [248, 215, 218]; data.cell.styles.textColor = [114, 28, 36]; } else if (data.cell.raw?.classList.contains('grade-header-alt')) { data.cell.styles.fillColor = [212, 237, 218]; data.cell.styles.textColor = [21, 87, 36]; } else if (data.cell.raw?.classList.contains('sub-header')) { data.cell.styles.fillColor = [226, 227, 229]; data.cell.styles.textColor = [0, 0, 0]; } } }, didDrawPage: function (data) { const finalPageHeight = doc.internal.pageSize.getHeight(); doc.setFontSize(10); doc.text(footerContent, data.settings.margin.left, finalPageHeight - 20); } });
+         doc.save('جدول_الدروس_الاسبوعي_المعدل.pdf');
+    }
+
+    // --- Initial Setup ---
+     document.addEventListener('DOMContentLoaded', () => {
+         initialTableHeadHTML = scheduleHead.innerHTML; initialTableBodyHTML = scheduleBody.innerHTML;
+         initialMainTitleHTML = mainTitle.innerHTML; initialSubTitleHTML = subTitle.innerHTML; initialFooterHTML = footerText.innerHTML;
+         loadTableState(); // Load potentially saved state
+     });
+
+</script>
+
+</body>
+</html>

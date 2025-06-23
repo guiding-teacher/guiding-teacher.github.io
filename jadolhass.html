@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج جدول توزيع الحصص</title>
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* General Styles */
+        :root {
+            --primary-color: #4CAF50; /* Green */
+            --secondary-color: #f4f4f4; /* Light Gray */
+            --header-bg: #e0f2f1; /* Light Teal for page header */
+            --table-main-header-bg: #a8d8d4; /* Distinct color for top table header */
+            --table-subheader-bg: #b2dfdb; /* Teal for grade headers */
+            --table-subsubheader-bg: #dcedc8; /* Lighter for Teacher/Subject */
+            --table-border-color: #ccc;
+            --button-bg: #4CAF50;
+            --button-hover-bg: #45a049;
+            --delete-button-bg: #f44336; /* Red */
+            --delete-button-hover-bg: #e53935;
+            --font-family: 'Tahoma', 'Arial', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            background-color: #192b2b;
+            line-height: 1.6;
+            direction: rtl;
+            font-size: 14px;
+        }
+
+        /* Page Header (Outside Table) - Simplified */
+        .page-header {
+            background-color: #454555 ;
+            padding: 10px 15px;
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 15px;
+        }
+        .page-header h2 { /* Keeping main title outside table header */
+            margin: 5px 0;
+            color: #fafafa;
+        }
+
+
+        main {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 15px;
+            gap: 20px;
+        }
+
+        /* Control Panel Styles */
+        #control-panel {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex: 1;
+            min-width: 300px;
+            max-width: 450px;
+            align-self: flex-start;
+        }
+
+        #control-panel h2, #control-panel h3 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="number"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--table-border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .control-button, button {
+            background-color: var(--button-bg);
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        button:hover, .control-button:hover {
+             background-color: var(--button-hover-bg);
+        }
+        .form-group button {
+             padding: 6px 10px;
+             font-size: 0.9em;
+             margin-right: 5px;
+        }
+
+
+        #teacher-form .control-button, #settings-form .control-button {
+            display: block;
+            width: 100%;
+        }
+
+        .generate-button {
+            background-color: #2196F3;
+            margin-top: 20px;
+            width: 100%;
+            display: block;
+        }
+        .generate-button:hover {
+            background-color: #1e88e5;
+        }
+
+
+        #assignments-list-container, #grade-management-container {
+            margin-top: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--table-border-color);
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        #assignments-list, #grades-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #assignments-list li, #grades-list li {
+            background-color: #e9e9e9;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .delete-button {
+            background-color: var(--delete-button-bg);
+            color: white;
+            border: none;
+            padding: 3px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-right: auto;
+            margin-left: 5px;
+        }
+
+        .delete-button:hover {
+            background-color: var(--delete-button-hover-bg);
+        }
+        #settings-form .form-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+         #settings-form .form-group label {
+            flex-basis: 100px;
+            margin-bottom: 0;
+         }
+        #settings-form .form-group input {
+            flex-grow: 1;
+        }
+
+        /* Schedule Display Styles */
+        #schedule-display {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex: 3;
+            overflow-x: auto;
+            min-width: 60%;
+        }
+
+        #schedule-display h2 { /* Title above the actions */
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .schedule-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .schedule-actions .control-button {
+             width: auto;
+             display: inline-block;
+             margin-top: 5px;
+        }
+
+        #schedule-table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 15px;
+            /* Ensure it's not hidden by default if JS fails */
+            /* display: none; */ /* Commenting this out for debug */
+        }
+
+        #schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            min-width: 1000px;
+        }
+
+        #schedule-table th,
+        #schedule-table td {
+            border: 1px solid var(--table-border-color);
+            padding: 6px 4px;
+            text-align: center;
+            font-size: 0.85em;
+            word-wrap: break-word;
+            vertical-align: middle;
+        }
+
+         /* Table Headers Styling */
+        #schedule-table thead th {
+            font-weight: bold;
+            position: sticky; /* Make headers sticky */
+            z-index: 2; /* Ensure it's above body */
+        }
+         /* Top Header Row */
+         #schedule-table thead tr.top-header-row th {
+            background-color: var(--table-main-header-bg);
+            padding: 8px 10px;
+            font-size: 1em;
+            position: sticky;
+            top: 0; /* Stick to the very top */
+             z-index: 3; /* Above other headers */
+         }
+         .top-header-content { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+         .top-header-content .school-name { text-align: right; flex: 1; font-weight: bold;}
+         .top-header-content .table-title { text-align: center; flex: 2; font-weight: bold; font-size: 1.1em;}
+         .top-header-content .date-info { text-align: left; flex: 1; font-size: 0.9em;}
+
+         /* Second Header Row */
+         #schedule-table thead tr.grade-header-row th {
+             background-color: var(--table-subheader-bg);
+             position: sticky;
+             top: 40px; /* Adjust based on top header height */
+             z-index: 2;
+         }
+          /* Third Header Row */
+         #schedule-table thead tr.sub-header-row th {
+            background-color: var(--table-subsubheader-bg);
+            font-size: 0.8em;
+             position: sticky;
+             top: 70px; /* Adjust based on top 2 header heights */
+             z-index: 2;
+        }
+
+        #schedule-table tbody td:first-child { /* Day cell */
+            font-weight: bold;
+            background-color: #f0f0f0;
+            vertical-align: middle;
+        }
+        #schedule-table tbody tr td:nth-child(2) { /* Period cell */
+            font-weight: bold;
+            background-color: #f8f8f8;
+        }
+        
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: rgb(37, 43, 45);
+            color: Teal; font-size: 1.0em; margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+        .empty-slot { color: #aaa; font-style: italic; background-color: #fff !important; }
+        #principal-signature { text-align: left; margin-top: 20px; font-weight: bold; padding-left: 20px; display: block; }
+        .message { text-align: center; padding: 10px; margin: 10px 0; border-radius: 4px; font-weight: bold; }
+        .message.success { background-color: #dff0d8; color: #3c763d; border: 1px solid #d6e9c6; }
+        .message.error { background-color: #f2dede; color: #a94442; border: 1px solid #ebccd1; }
+        .message.info { background-color: #d9edf7; color: #31708f; border: 1px solid #bce8f1; }
+        .message:empty { display: none; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 8px; position: relative; }
+        .close-button { color: #aaa; position: absolute; left: 15px; top: 10px; font-size: 28px; font-weight: bold; }
+        html[dir="rtl"] .close-button { left: auto; right: 15px; }
+        .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
+        #stats-data h3 { margin-top: 15px; color: var(--primary-color); }
+        #stats-data ul { list-style: disc; padding-right: 20px; }
+
+        /* Responsive Design */
+        @media (max-width: 992px) { main { flex-direction: column; } #control-panel { max-width: none; order: 1; } #schedule-display { order: 2; min-width: 0; } #schedule-table { min-width: 800px; font-size: 0.8em; } #schedule-table th, #schedule-table td { padding: 5px 3px; } #schedule-table thead tr.grade-header-row th { top: 35px; } #schedule-table thead tr.sub-header-row th { top: 60px; } }
+        @media (max-width: 600px) { body { font-size: 13px; } .page-header h2 { font-size: 1.1em; } #control-panel, #schedule-display { padding: 15px; } .modal-content { width: 90%; margin: 15% auto; } #schedule-table { min-width: 600px; font-size: 0.75em; } #schedule-table th, #schedule-table td { padding: 4px 2px; } .form-group { flex-direction: column; align-items: stretch; } #settings-form .form-group label { flex-basis: auto; margin-bottom: 5px;} .top-header-content { flex-direction: column; gap: 3px; text-align: center;} .top-header-content .school-name, .top-header-content .table-title, .top-header-content .date-info { text-align: center; flex: auto; } #schedule-table thead tr.top-header-row th { font-size: 0.9em; } #schedule-table thead tr.grade-header-row th { top: 55px; } #schedule-table thead tr.sub-header-row th { top: 80px; } }
+
+        /* Print Styles */
+        @media print { @page { size: A4 landscape; margin: 1cm; } body { background-color: #fff; font-size: 9pt; color: #000; -webkit-print-color-adjust: exact; color-adjust: exact; } #control-panel, .schedule-actions, #stats-modal, .page-header h2, button, input, select, #assignments-list-container, #grade-management-container { display: none !important; } .page-header { display: none !important; } main, #schedule-display { padding: 0; margin: 0; box-shadow: none; border: none; width: 100%; overflow: visible !important; } #schedule-table-container { overflow: visible !important; } #schedule-table { width: 100%; min-width: 0; border: 1px solid #666 !important; font-size: 7.5pt; table-layout: auto; border-collapse: collapse !important; } #schedule-table th, #schedule-table td { border: 1px solid #666 !important; padding: 3px 2px; color: #000 !important; background-color: #fff !important; word-wrap: break-word; } #schedule-table thead tr.top-header-row th, #schedule-table thead tr.grade-header-row th, #schedule-table thead tr.sub-header-row th { background-color: #eee !important; font-weight: bold; position: static !important; } #schedule-table tbody td:first-child, #schedule-table tbody tr td:nth-child(2) { background-color: #f8f8f8 !important; font-weight: bold; } .empty-slot { color: #999 !important; background-color: #fff !important; } #principal-signature { display: block !important; text-align: left; margin-top: 15px; font-weight: bold; position: fixed; bottom: 1cm; left: 1cm; font-size: 10pt; background: none !important; } .top-header-content { display: flex !important; } .top-header-content .school-name, .top-header-content .table-title, .top-header-content .date-info { color: #000 !important; } }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    
+   <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="page-header"> <h2>إنشاء وتوزيع جدول الحصص</h2> </div>
+    <main>
+        <section id="control-panel">
+            <h2>لوحة التحكم</h2>
+            <button id="stats-button" class="control-button" style="width: auto; display: inline-block; margin-bottom: 15px;">عرض الإحصائيات</button>
+             <form id="settings-form"> <h3>إعدادات الجدول</h3> <div class="form-group"><label for="school-name">اسم المدرسة:</label><input type="text" id="school-name" required></div> <div class="form-group"><label for="principal-name">اسم المدير:</label><input type="text" id="principal-name" required></div> <div class="form-group"><label for="schedule-week">رقم الأسبوع:</label><input type="number" id="schedule-week" min="1" value="1" required></div> <div class="form-group"><label for="schedule-date">تاريخ البدء:</label><input type="date" id="schedule-date" required></div> <button type="submit" class="control-button">حفظ الإعدادات</button> </form>
+             <hr style="margin: 20px 0;"> <h3>إدارة الصفوف الدراسية</h3> <div class="form-group"><label for="new-grade-name">اسم الصف الجديد:</label><input type="text" id="new-grade-name" placeholder="مثال: الصف السابع"><button type="button" id="add-grade-button" style="width: auto;">إضافة صف</button></div> <div id="grade-management-container"><h4>الصفـوف الحالية:</h4><ul id="grades-list"></ul></div>
+             <hr style="margin: 20px 0;">
+            <form id="teacher-form"> <h3>إضافة معلم / مادة</h3> <div class="form-group"><label for="teacher-name">اسم المعلم:</label><input type="text" id="teacher-name" required></div> <div class="form-group"><label for="grade-level">الصف:</label><select id="grade-level" required></select></div> <div class="form-group"><label for="subject">المادة:</label><select id="subject" required><option value="قراءة">قراءة</option><option value="رياضيات">رياضيات</option><option value="علوم">علوم</option><option value="اسلامية">تربية اسلامية</option><option value="اجتماعيات">اجتماعيات</option><option value="E">لغة انكليزية (E)</option><option value="فنية">فنية / نشيد</option><option value="رياضة">رياضة</option><option value="اخلاقية">اخلاقية</option><option value="عربي">لغة عربية</option></select></div> <div class="form-group"><label for="day-off">يوم الاستراحة:</label><select id="day-off"><option value="لا يوجد">لا يوجد</option><option value="الأحد">الأحد</option><option value="الاثنين">الاثنين</option><option value="الثلاثاء">الثلاثاء</option><option value="الاربعاء">الاربعاء</option><option value="الخميس">الخميس</option></select></div> <div class="form-group"><label for="weekly-hours">عدد الحصص الأسبوعية:</label><select id="weekly-hours" required><script> for (let i = 1; i <= 30; i++) { document.write(`<option value="${i}">${i}</option>`); } </script></select></div> <button type="submit" class="control-button">إضافة للجدول المبدئي</button> </form>
+            <div id="assignments-list-container"><h3>البيانات المضافة:</h3><ul id="assignments-list"></ul></div>
+            <button id="generate-schedule" class="control-button generate-button">أنشئ الجدول الآن</button>
+            <p id="generation-message" class="message"></p>
+        </section>
+        <section id="schedule-display">
+            <h2>عرض الجدول</h2>
+             <div class="schedule-actions"><button id="print-button" class="control-button">طباعة الجدول</button><button id="pdf-button" class="control-button">حفظ كـ PDF</button></div>
+            <div id="schedule-table-container"> <!-- Removed display: none; for debugging -->
+                <table id="schedule-table"><thead></thead><tbody id="schedule-body"></tbody></table>
+            </div>
+            <span id="principal-signature" style="display: none;">مدير المدرسة: </span>
+        </section>
+        
+    </main>
+    <div id="stats-modal" class="modal"><div class="modal-content"><span class="close-button">×</span><h2>إحصائيات الجدول</h2><div id="stats-data"></div></div>
+    
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const settingsForm = document.getElementById('settings-form');
+            const schoolNameInput = document.getElementById('school-name');
+            const principalNameInput = document.getElementById('principal-name');
+            const scheduleWeekInput = document.getElementById('schedule-week');
+            const scheduleDateInput = document.getElementById('schedule-date');
+            const principalSignature = document.getElementById('principal-signature');
+            const gradeManagementContainer = document.getElementById('grade-management-container');
+            const newGradeNameInput = document.getElementById('new-grade-name');
+            const addGradeButton = document.getElementById('add-grade-button');
+            const gradesList = document.getElementById('grades-list');
+            const gradeLevelSelect = document.getElementById('grade-level');
+            const teacherForm = document.getElementById('teacher-form');
+            const teacherNameInput = document.getElementById('teacher-name');
+            const subjectSelect = document.getElementById('subject');
+            const dayOffSelect = document.getElementById('day-off');
+            const weeklyHoursSelect = document.getElementById('weekly-hours');
+            const assignmentsList = document.getElementById('assignments-list');
+            const generateButton = document.getElementById('generate-schedule');
+            const scheduleTableContainer = document.getElementById('schedule-table-container');
+            const scheduleTable = document.getElementById('schedule-table');
+            const scheduleBody = document.getElementById('schedule-body');
+            const generationMessage = document.getElementById('generation-message');
+            const printButton = document.getElementById('print-button');
+            const pdfButton = document.getElementById('pdf-button');
+            const statsButton = document.getElementById('stats-button');
+            const statsModal = document.getElementById('stats-modal');
+            const statsData = document.getElementById('stats-data');
+            const closeModalButton = statsModal.querySelector('.close-button');
+
+            // --- Data ---
+            let schoolSettings = { schoolName: 'اسم المدرسة الافتراضي', principalName: 'ابراهيم المدير الافتراضي', scheduleWeek: 1, scheduleDate: '' };
+            let customGrades = [];
+            let teacherAssignments = [];
+            const defaultGrades = ["الصف الأول", "الصف الثاني", "الصف الثالث", "الصف الرابع", "الصف الخامس - أ", "الصف الخامس - ب", "الصف السادس"];
+            const days = ["الأحد", "الاثنين", "الثلاثاء", "الاربعاء", "الخميس"];
+            const periods = [1, 2, 3, 4, 5, 6];
+            let currentScheduleData = null;
+
+            // --- Utility Functions ---
+            function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+
+            // --- Settings Management ---
+            function loadSettings() { const storedSettings = localStorage.getItem('schoolSettings'); if (storedSettings) { schoolSettings = JSON.parse(storedSettings); } if (!schoolSettings.scheduleDate) { const today = new Date(); schoolSettings.scheduleDate = today.toISOString().split('T')[0]; } updateSettingsDisplay(); populateSettingsForm(); }
+            function saveSettings() { localStorage.setItem('schoolSettings', JSON.stringify(schoolSettings)); displayMessage('تم حفظ الإعدادات.', 'success', generationMessage); updateSettingsDisplay(); if (currentScheduleData) { renderScheduleTable(currentScheduleData); } }
+            function updateSettingsDisplay() { if(schoolSettings.principalName){ principalSignature.textContent = `مدير المدرسة: ${schoolSettings.principalName}`; principalSignature.style.display = 'block'; } else { principalSignature.style.display = 'none'; } }
+            function populateSettingsForm(){ schoolNameInput.value = schoolSettings.schoolName; principalNameInput.value = schoolSettings.principalName; scheduleWeekInput.value = schoolSettings.scheduleWeek; scheduleDateInput.value = schoolSettings.scheduleDate; }
+            function handleSaveSettings(event) { event.preventDefault(); schoolSettings.schoolName = schoolNameInput.value.trim(); schoolSettings.principalName = principalNameInput.value.trim(); schoolSettings.scheduleWeek = scheduleWeekInput.value; schoolSettings.scheduleDate = scheduleDateInput.value; saveSettings(); }
+
+            // --- Grade Management ---
+            function getEffectiveGrades() { return customGrades.length > 0 ? [...customGrades] : [...defaultGrades]; }
+            function loadGrades() { const storedGrades = localStorage.getItem('customGrades'); if (storedGrades) { customGrades = JSON.parse(storedGrades); } renderGradesList(); populateGradeDropdowns(); }
+            function saveGrades() { localStorage.setItem('customGrades', JSON.stringify(customGrades)); }
+            function renderGradesList() { gradesList.innerHTML = ''; const gradesToRender = getEffectiveGrades(); if (gradesToRender.length === 0) { gradesList.innerHTML = '<li>لا توجد صفوف. استخدام الافتراضي.</li>'; return; } gradesToRender.forEach((grade, index) => { const li = document.createElement('li'); li.textContent = grade; if (customGrades.length > 0) { const deleteButton = document.createElement('button'); deleteButton.textContent = 'حذف'; deleteButton.classList.add('delete-button'); deleteButton.dataset.index = index; deleteButton.onclick = handleDeleteGrade; li.appendChild(deleteButton); } gradesList.appendChild(li); }); }
+            function populateGradeDropdowns() { gradeLevelSelect.innerHTML = ''; const gradesToUse = getEffectiveGrades(); gradesToUse.forEach(grade => { const option = document.createElement('option'); option.value = grade; option.textContent = grade; gradeLevelSelect.appendChild(option); }); }
+            function handleAddGrade() { const newGrade = newGradeNameInput.value.trim(); if (!newGrade) { displayMessage('أدخل اسم الصف.', 'error', generationMessage); return; } if (customGrades.length === 0) customGrades = []; if (customGrades.includes(newGrade)) { displayMessage('الصف موجود.', 'error', generationMessage); return; } customGrades.push(newGrade); saveGrades(); renderGradesList(); populateGradeDropdowns(); newGradeNameInput.value = ''; displayMessage(`تمت إضافة الصف: ${newGrade}`, 'success', generationMessage); }
+            function handleDeleteGrade(event) { const indexToDelete = parseInt(event.target.dataset.index, 10); const deletedGrade = customGrades[indexToDelete]; customGrades.splice(indexToDelete, 1); saveGrades(); renderGradesList(); populateGradeDropdowns(); teacherAssignments = teacherAssignments.filter(assign => assign.grade !== deletedGrade); saveAssignments(); renderAssignmentsList(); displayMessage(`تم حذف الصف: ${deletedGrade}`, 'success', generationMessage); if (customGrades.length === 0) { populateGradeDropdowns(); } }
+
+            // --- Assignment Management ---
+            function loadAssignments() { const storedAssignments = localStorage.getItem('teacherAssignments'); if (storedAssignments) { teacherAssignments = JSON.parse(storedAssignments); } renderAssignmentsList(); }
+            function saveAssignments() { localStorage.setItem('teacherAssignments', JSON.stringify(teacherAssignments)); }
+            function renderAssignmentsList() { assignmentsList.innerHTML = ''; if (teacherAssignments.length === 0) { assignmentsList.innerHTML = '<li>لم تتم إضافة بيانات.</li>'; return; } teacherAssignments.forEach((assignment, index) => { const li = document.createElement('li'); li.innerHTML = `<span><strong>${assignment.teacher}</strong> - ${assignment.grade} - ${assignment.subject} (${assignment.hours} حصص) - استراحة: ${assignment.dayOff}</span><button class="delete-button" data-index="${index}">حذف</button>`; assignmentsList.appendChild(li); }); assignmentsList.querySelectorAll('.delete-button').forEach(button => button.addEventListener('click', handleDeleteAssignment)); }
+            function handleAddAssignment(event) { event.preventDefault(); const newAssignment = { id: Date.now(), teacher: teacherNameInput.value.trim(), grade: gradeLevelSelect.value, subject: subjectSelect.value, dayOff: dayOffSelect.value, hours: parseInt(weeklyHoursSelect.value, 10), }; if (!newAssignment.teacher || !newAssignment.grade || !newAssignment.subject || isNaN(newAssignment.hours)) { displayMessage('يرجى ملء حقول المعلم.', 'error', generationMessage); return; } teacherAssignments.push(newAssignment); saveAssignments(); renderAssignmentsList(); teacherForm.reset(); populateGradeDropdowns(); displayMessage('تمت إضافة بيانات المعلم.', 'success', generationMessage); }
+            function handleDeleteAssignment(event) { const indexToDelete = parseInt(event.target.dataset.index, 10); teacherAssignments.splice(indexToDelete, 1); saveAssignments(); renderAssignmentsList(); displayMessage('تم حذف البند.', 'success', generationMessage); }
+            function displayMessage(message, type = 'info', element = generationMessage) { element.textContent = message; element.className = `message ${type}`; setTimeout(() => { if(element.textContent === message) { element.textContent = ''; element.className = 'message';} }, 5000); }
+
+            // --- Schedule Generation Logic ---
+            function generateSchedule() {
+                console.log("FUNC: generateSchedule started");
+                try { // Add a try...catch block for better error reporting
+                    if (teacherAssignments.length === 0) {
+                        displayMessage('لا توجد بيانات لإنشاء الجدول.', 'error');
+                        scheduleTableContainer.style.display = 'none'; currentScheduleData = null; return;
+                    }
+                    displayMessage('جاري إنشاء الجدول...', 'info');
+                    // Ensure container is hidden *before* generation attempt
+                    scheduleTableContainer.style.display = 'none';
+
+                    const currentGrades = getEffectiveGrades();
+                    const numberOfDays = days.length;
+                    let schedule = {};
+                    let busySlots = {}; // busySlots[day][period] = Set of teacher names
+                    let assignmentSlotsNeeded = [];
+
+                    // 1. Create pool of slots with preferred days
+                    teacherAssignments.forEach(assign => {
+                        const slotsForThisAssignment = [];
+                        const availableDays = days.filter(d => d !== assign.dayOff);
+                        const targetDaysCount = Math.min(assign.hours, availableDays.length);
+
+                        if (availableDays.length === 0 && assign.hours > 0) {
+                            console.warn(`Assignment ${assign.subject}/${assign.grade} needs ${assign.hours}h but no available days.`);
+                            for (let i = 0; i < assign.hours; i++) { slotsForThisAssignment.push({ ...assign, slotId: `${assign.id}-fallback-${i}`, preferredDay: null }); }
+                        } else if (targetDaysCount > 0) {
+                            let assignedDays = shuffleArray([...availableDays]).slice(0, targetDaysCount);
+                            assignedDays.forEach((day, index) => { if (index < assign.hours) { slotsForThisAssignment.push({ ...assign, slotId: `${assign.id}-${index}`, preferredDay: day }); } });
+                            let remainingSlotsCount = assign.hours - assignedDays.length;
+                            for (let i = 0; i < remainingSlotsCount; i++) { let randomDay = availableDays[Math.floor(Math.random() * availableDays.length)]; slotsForThisAssignment.push({ ...assign, slotId: `${assign.id}-rem-${i}`, preferredDay: randomDay }); }
+                            while (slotsForThisAssignment.length < assign.hours) { console.warn(`Slot count mismatch for ${assign.subject}/${assign.grade}. Adding fill.`); let randomDay = availableDays.length > 0 ? availableDays[Math.floor(Math.random() * availableDays.length)] : null; slotsForThisAssignment.push({ ...assign, slotId: `${assign.id}-fill-${slotsForThisAssignment.length}`, preferredDay: randomDay }); }
+                             slotsForThisAssignment.length = assign.hours; // Truncate if somehow too many were added
+                        } else if (assign.hours > 0) {
+                            console.warn(`Assignment ${assign.subject}/${assign.grade} needs ${assign.hours}h but targetDaysCount=0.`);
+                            for (let i = 0; i < assign.hours; i++) { slotsForThisAssignment.push({ ...assign, slotId: `${assign.id}-otherfallback-${i}`, preferredDay: null }); }
+                        }
+                        assignmentSlotsNeeded.push(...slotsForThisAssignment);
+                    });
+
+                    assignmentSlotsNeeded = shuffleArray(assignmentSlotsNeeded);
+                    console.log(`INFO: Total slots to place: ${assignmentSlotsNeeded.length}`);
+
+                    // 2. Initialize structures
+                    currentGrades.forEach(grade => { schedule[grade] = {}; days.forEach(day => { schedule[grade][day] = {}; periods.forEach(period => { schedule[grade][day][period] = null; }); }); });
+                    days.forEach(day => { busySlots[day] = {}; periods.forEach(period => { busySlots[day][period] = new Set(); }); });
+
+                    // 3. Fill schedule grid
+                    let unassignedSlots = [];
+                    const slotsToFill = [...assignmentSlotsNeeded];
+                    const allGridSlots = [];
+                    days.forEach(day => periods.forEach(period => currentGrades.forEach(grade => allGridSlots.push({ day, period, grade }))));
+                    shuffleArray(allGridSlots);
+                    console.log(`INFO: Total grid slots to iterate: ${allGridSlots.length}`);
+
+                    for (const { day, period, grade } of allGridSlots) {
+                        if (schedule?.[grade]?.[day]?.[period] !== null) continue;
+
+                        let placed = false;
+                        let preferredSlotIndex = -1;
+                        for (let i = 0; i < slotsToFill.length; i++) { const needed = slotsToFill[i]; if (needed.grade === grade && needed.preferredDay === day && needed.dayOff !== day && !busySlots[day]?.[period]?.has(needed.teacher) ) { preferredSlotIndex = i; break; } }
+
+                        if (preferredSlotIndex !== -1) {
+                            const slotToPlace = slotsToFill.splice(preferredSlotIndex, 1)[0];
+                            schedule[grade][day][period] = { teacher: slotToPlace.teacher, subject: slotToPlace.subject };
+                            busySlots[day][period].add(slotToPlace.teacher);
+                            placed = true;
+                        } else {
+                            let fallbackSlotIndex = -1;
+                            for (let i = 0; i < slotsToFill.length; i++) { const needed = slotsToFill[i]; if (needed.grade === grade && needed.dayOff !== day && !busySlots[day]?.[period]?.has(needed.teacher) ) { fallbackSlotIndex = i; break; } }
+                            if (fallbackSlotIndex !== -1) {
+                                const slotToPlace = slotsToFill.splice(fallbackSlotIndex, 1)[0];
+                                schedule[grade][day][period] = { teacher: slotToPlace.teacher, subject: slotToPlace.subject };
+                                busySlots[day][period].add(slotToPlace.teacher);
+                                placed = true;
+                            }
+                        }
+                        if (!placed && !schedule[grade][day][period]) {
+                            schedule[grade][day][period] = { teacher: '-', subject: '-' };
+                        }
+                    }
+
+                    unassignedSlots = [...slotsToFill];
+                    console.log("INFO: Unassigned Slots after generation:", unassignedSlots);
+
+                    // --- Rendering ---
+                    currentScheduleData = schedule; // Store the generated data
+                    renderScheduleTable(currentScheduleData); // Render the table using the data
+
+                    // **** Explicitly ensure container is visible ****
+                    if (scheduleTableContainer) {
+                        scheduleTableContainer.style.display = 'block'; // Make sure it's visible
+                        console.log("INFO: Set scheduleTableContainer display to 'block'. Computed style:", window.getComputedStyle(scheduleTableContainer).display);
+                    } else {
+                        console.error("ERROR: scheduleTableContainer element not found after generation attempt!");
+                    }
+
+                     // Check if table body was populated after rendering
+                     if (scheduleBody && scheduleBody.children.length > 0) {
+                         console.log(`INFO: Table body populated with ${scheduleBody.children.length} rows.`);
+                     } else if (scheduleBody) {
+                         console.warn("WARN: Table body is empty after rendering attempt.");
+                     } else {
+                         console.error("ERROR: scheduleBody element not found after rendering attempt!");
+                     }
+
+                    if (unassignedSlots.length > 0) { displayMessage(`تم إنشاء الجدول، لكن لم يتم توزيع ${unassignedSlots.length} حصة بسبب القيود.`, 'error'); }
+                    else { displayMessage('تم إنشاء الجدول بنجاح!', 'success'); }
+
+                } catch (error) {
+                    console.error("ERROR during schedule generation or rendering:", error);
+                    displayMessage(`حدث خطأ أثناء إنشاء الجدول: ${error.message}`, 'error');
+                     // Try to show the container anyway, it might contain partial results or headers
+                     if (scheduleTableContainer) {
+                        scheduleTableContainer.style.display = 'block';
+                     }
+                }
+                console.log("FUNC: generateSchedule finished");
+            }
+
+
+            // --- Render Schedule Table ---
+            function renderScheduleTable(scheduleData) {
+                console.log("FUNC: renderScheduleTable started");
+                const thead = scheduleTable.querySelector('thead'); const tbody = scheduleBody;
+                if (!thead || !tbody) { console.error("ERROR: Table head or body not found!"); return; }
+                thead.innerHTML = ''; tbody.innerHTML = ''; // Clear previous content
+
+                if (!scheduleData || Object.keys(scheduleData).length === 0) { console.warn("WARN: renderScheduleTable received null or empty data. Cannot render."); return; }
+
+                try { // Add try...catch here too for rendering errors
+                    const currentGrades = getEffectiveGrades(); const totalColumns = 2 + (currentGrades.length * 2);
+
+                    // --- Render Headers ---
+                    const topHeaderRow = document.createElement('tr'); topHeaderRow.classList.add('top-header-row'); const topHeaderCell = document.createElement('th'); topHeaderCell.colSpan = totalColumns; const topHeaderDiv = document.createElement('div'); topHeaderDiv.classList.add('top-header-content'); topHeaderDiv.innerHTML = `<span class="school-name">${schoolSettings.schoolName || 'اسم المدرسة'}</span><span class="table-title">نموذج جدول توزيع الحصص للمعلمين</span><span class="date-info">الأسبوع: ${schoolSettings.scheduleWeek || '-'} | التاريخ: ${schoolSettings.scheduleDate || '-'}</span>`; topHeaderCell.appendChild(topHeaderDiv); topHeaderRow.appendChild(topHeaderCell); thead.appendChild(topHeaderRow);
+                    const gradeHeaderRow = document.createElement('tr'); gradeHeaderRow.classList.add('grade-header-row'); const thDay = document.createElement('th'); thDay.rowSpan = 2; thDay.textContent = 'اليوم'; gradeHeaderRow.appendChild(thDay); const thPeriod = document.createElement('th'); thPeriod.rowSpan = 2; thPeriod.textContent = 'الدرس'; gradeHeaderRow.appendChild(thPeriod); currentGrades.forEach(grade => { const thGrade = document.createElement('th'); thGrade.colSpan = 2; thGrade.textContent = grade; gradeHeaderRow.appendChild(thGrade); }); thead.appendChild(gradeHeaderRow);
+                    const subHeaderRow = document.createElement('tr'); subHeaderRow.classList.add('sub-header-row'); currentGrades.forEach(() => { const thTeacher = document.createElement('th'); thTeacher.textContent = 'المعلم'; subHeaderRow.appendChild(thTeacher); const thSubject = document.createElement('th'); thSubject.textContent = 'المادة'; subHeaderRow.appendChild(thSubject); }); thead.appendChild(subHeaderRow);
+                    console.log("INFO: Table headers rendered.");
+
+                    // --- Render Body Rows ---
+                    let rowCount = 0;
+                    days.forEach(day => {
+                        periods.forEach((period, periodIndex) => {
+                            const tr = document.createElement('tr');
+                            if (periodIndex === 0) { const dayCell = document.createElement('td'); dayCell.rowSpan = periods.length; dayCell.textContent = day; dayCell.style.verticalAlign = 'middle'; tr.appendChild(dayCell); }
+                            const periodCell = document.createElement('td'); periodCell.textContent = period; tr.appendChild(periodCell);
+                            currentGrades.forEach(grade => {
+                                const assignment = scheduleData?.[grade]?.[day]?.[period]; const teacherCell = document.createElement('td'); const subjectCell = document.createElement('td');
+                                if (assignment && assignment.teacher !== '-') { teacherCell.textContent = assignment.teacher; subjectCell.textContent = assignment.subject; }
+                                else { teacherCell.innerHTML = ' '; subjectCell.innerHTML = ' '; teacherCell.classList.add('empty-slot'); subjectCell.classList.add('empty-slot'); }
+                                tr.appendChild(teacherCell); tr.appendChild(subjectCell);
+                            });
+                            tbody.appendChild(tr);
+                            rowCount++;
+                        });
+                    });
+                    console.log(`INFO: Table body rendered with ${rowCount} rows.`);
+
+                } catch (error) {
+                    console.error("ERROR during table rendering:", error);
+                    displayMessage(`حدث خطأ أثناء عرض الجدول: ${error.message}`, 'error');
+                }
+                 console.log("FUNC: renderScheduleTable finished");
+            }
+
+            // --- Action Buttons (Print/PDF/Stats) ---
+            function handlePrint() { if (!currentScheduleData || scheduleBody.children.length === 0) { displayMessage('لا يوجد جدول للطباعة.', 'error'); return; } window.print(); }
+            function handleSavePdf() { if (!currentScheduleData || scheduleBody.children.length === 0) { displayMessage('لا يوجد جدول للحفظ.', 'error'); return; } displayMessage('جاري تحضير ملف PDF...', 'info'); const { jsPDF } = window.jspdf; const tableElement = document.getElementById('schedule-table'); const signatureElement = document.getElementById('principal-signature'); const wasSigHidden = signatureElement.style.display === 'none'; if (wasSigHidden) signatureElement.style.display = 'block'; html2canvas(tableElement, { scale: 2, useCORS: true, logging: false, scrollX: -window.scrollX, scrollY: -window.scrollY, windowWidth: tableElement.scrollWidth, windowHeight: tableElement.scrollHeight }).then(canvas => { const imgData = canvas.toDataURL('image/png'); const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }); const imgProps = pdf.getImageProperties(imgData); const pdfWidth = pdf.internal.pageSize.getWidth() - 20; const pdfHeight = pdf.internal.pageSize.getHeight() - 20; const imgWidth = imgProps.width; const imgHeight = imgProps.height; const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight); const finalImgWidth = imgWidth * ratio; const finalImgHeight = imgHeight * ratio; const xPos = (pdf.internal.pageSize.getWidth() - finalImgWidth) / 2; const yPos = 10; pdf.addImage(imgData, 'PNG', xPos, yPos, finalImgWidth, finalImgHeight); if (schoolSettings.principalName) { pdf.setFontSize(10); const sigYPos = yPos + finalImgHeight + 8; const finalSigYPos = Math.min(sigYPos, pdf.internal.pageSize.getHeight() - 15); pdf.text(`مدير المدرسة: ${schoolSettings.principalName}`, 15 , finalSigYPos ); } pdf.save(`جدول_حصص_${schoolSettings.schoolName}_اسبوع_${schoolSettings.scheduleWeek}.pdf`); displayMessage('تم إنشاء ملف PDF بنجاح.', 'success'); }).catch(error => { console.error("Error generating PDF:", error); displayMessage('حدث خطأ أثناء إنشاء ملف PDF.', 'error'); }).finally(() => { if (wasSigHidden) signatureElement.style.display = 'none'; }); }
+            function showStatistics() { if (teacherAssignments.length === 0) { statsData.innerHTML = '<p>لا توجد بيانات.</p>'; statsModal.style.display = 'block'; return; } let statsHTML = ''; const currentGrades = getEffectiveGrades(); statsHTML += `<h3>إحصائيات عامة:</h3><ul><li>الصفوف: ${currentGrades.length}</li><li>المعلمون: ${new Set(teacherAssignments.map(a => a.teacher)).size}</li><li>إجمالي الحصص: ${teacherAssignments.reduce((sum, a) => sum + a.hours, 0)}</li></ul>`; const teacherHours = teacherAssignments.reduce((acc, assign) => { acc[assign.teacher] = (acc[assign.teacher] || 0) + assign.hours; return acc; }, {}); statsHTML += '<h3>حصص كل معلم:</h3><ul>'; for (const teacher in teacherHours) { statsHTML += `<li>${teacher}: ${teacherHours[teacher]}</li>`; } statsHTML += '</ul>'; const subjectHours = teacherAssignments.reduce((acc, assign) => { acc[assign.subject] = (acc[assign.subject] || 0) + assign.hours; return acc; }, {}); statsHTML += '<h3>حصص كل مادة (إجمالي):</h3><ul>'; for (const subject in subjectHours) { statsHTML += `<li>${subject}: ${subjectHours[subject]}</li>`; } statsHTML += '</ul>'; const gradeHours = teacherAssignments.reduce((acc, assign) => { acc[assign.grade] = (acc[assign.grade] || 0) + assign.hours; return acc; }, {}); statsHTML += '<h3>حصص كل صف:</h3><ul>'; currentGrades.forEach(grade => { statsHTML += `<li>${grade}: ${gradeHours[grade] || 0}</li>`; }); statsHTML += '</ul>'; const dayOffCounts = teacherAssignments.reduce((acc, assign) => { if (assign.dayOff !== 'لا يوجد') { if (!acc[assign.dayOff]) acc[assign.dayOff] = new Set(); acc[assign.dayOff].add(assign.teacher); } return acc; }, {}); statsHTML += '<h3>المستريحون:</h3><ul>'; if (Object.keys(dayOffCounts).length > 0) { for (const day in dayOffCounts) { statsHTML += `<li>${day}: ${Array.from(dayOffCounts[day]).join(', ')} (${dayOffCounts[day].size})</li>`; } } else { statsHTML += '<li>لا توجد استراحة.</li>'; } statsHTML += '</ul>'; statsData.innerHTML = statsHTML; statsModal.style.display = 'block'; }
+
+            // --- Event Listeners ---
+            settingsForm.addEventListener('submit', handleSaveSettings);
+            addGradeButton.addEventListener('click', handleAddGrade);
+            teacherForm.addEventListener('submit', handleAddAssignment);
+
+            // Check if generateButton exists before adding listener
+            if (generateButton) {
+                generateButton.addEventListener('click', generateSchedule);
+                console.log("Listener attached to #generate-schedule button.");
+            } else {
+                console.error("ERROR: Button with id 'generate-schedule' not found!");
+            }
+
+            printButton.addEventListener('click', handlePrint);
+            pdfButton.addEventListener('click', handleSavePdf);
+            statsButton.addEventListener('click', showStatistics);
+            closeModalButton.addEventListener('click', () => { statsModal.style.display = 'none'; });
+            window.addEventListener('click', (event) => { if (event.target === statsModal) { statsModal.style.display = 'none'; } });
+
+            // --- Initial Load ---
+            loadSettings();
+            loadGrades();
+            loadAssignments();
+            console.log("Initial setup complete.");
+            // Optional: Initially hide the table container until generated
+            if (scheduleTableContainer) scheduleTableContainer.style.display = 'none';
+
+        });
+    </script>
+    
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+</body>
+</html>

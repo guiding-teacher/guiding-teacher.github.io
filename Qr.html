@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مولد رموز QR والباركود الاحترافي</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-bg: #121212; 
+            --secondary-bg: #1e1e1e; 
+            --card-bg: #2a2a2a; 
+            --accent-color: #00A8E8; 
+            --lux-gold: #CFB53B; 
+            --text-color: #e0e0e0;
+            --input-bg: #333333;
+            --input-border: #4f4f4f;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            font-family: 'Tajawal', 'Cairo', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px; /* Reduced padding for small screens initially */
+            line-height: 1.7;
+            direction: rtl;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-size: 15px; /* Slightly smaller base font for mobile */
+        }
+
+        .container {
+            width: 100%;
+            max-width: 950px;
+            background: linear-gradient(145deg, var(--secondary-bg), var(--primary-bg));
+            padding: 20px; /* Reduced padding */
+            border-radius: 15px; /* Slightly smaller radius */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--lux-gold);
+            border: 1px solid rgba(207, 181, 59, 0.3);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px; /* Reduced margin */
+            padding-bottom: 15px; /* Reduced padding */
+            border-bottom: 1px solid var(--lux-gold);
+        }
+
+        header h1 {
+            font-size: 1.8em; /* Adjusted for mobile first */
+            color: var(--lux-gold);
+            font-family: 'Cairo', sans-serif;
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(207, 181, 59, 0.4);
+        }
+        header h1 i {
+            margin-left: 10px; /* Reduced margin */
+            vertical-align: middle;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-direction: column; /* Stack controls and display area on mobile */
+            gap: 20px; /* Reduced gap */
+        }
+
+        .controls,
+        .qr-display-area {
+            flex: 1; /* Allow them to take full width when stacked */
+            width: 100%; /* Ensure full width */
+            background-color: var(--card-bg);
+            padding: 20px; /* Reduced padding */
+            border-radius: 10px; /* Smaller radius */
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            box-sizing: border-box; /* Important for width 100% with padding */
+        }
+        
+        .control-group {
+            margin-bottom: 18px; /* Reduced margin */
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--text-color);
+            font-size: 1em; /* Adjusted font size */
+        }
+        .control-group label i {
+            margin-right: 6px;
+            color: var(--accent-color);
+        }
+
+        .control-group input[type="text"],
+        .control-group input[type="url"],
+        .control-group textarea,
+        .control-group select {
+            width: 100%;
+            padding: 12px; /* Reduced padding */
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            color: var(--text-color);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.95rem; /* Adjusted font size */
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .control-group input:focus,
+        .control-group textarea:focus,
+        .control-group select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 168, 232, 0.25); /* Softer focus */
+            outline: none;
+        }
+
+        .control-group input[type="color"] {
+            padding: 0; 
+            height: 42px; /* Adjusted height */
+            border-radius: 6px;
+            border: 1px solid var(--input-border);
+            cursor: pointer;
+            box-sizing: border-box; 
+            background-color: var(--input-bg);
+            width: 60px; /* Adjusted width for mobile */
+        }
+        .control-group input[type="color"]::-webkit-color-swatch-wrapper { padding: 4px; }
+        .control-group input[type="color"]::-webkit-color-swatch { border: none; border-radius: 3px; }
+        .control-group input[type="color"]::-moz-color-swatch { border: none; border-radius: 3px; }
+
+        .control-group textarea {
+            resize: vertical;
+            min-height: 70px; /* Adjusted min-height */
+        }
+
+        .control-group small {
+            display: block;
+            margin-top: 5px;
+            font-size: 0.8em; /* Adjusted font size */
+            color: #b0b0b0;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px; /* Reduced gap */
+            margin-top: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--accent-color);
+            transform: scale(0.9); /* Slightly smaller checkbox */
+        }
+        .checkbox-group label {
+            margin-bottom: 0;
+            font-weight: normal;
+            cursor: pointer;
+            font-size: 0.9rem; /* Adjusted font size */
+        }
+
+        button#generateBtn {
+            background: linear-gradient(135deg, var(--accent-color), #007bff);
+            color: white;
+            border: none;
+            padding: 12px 20px; /* Adjusted padding */
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem; /* Adjusted font size */
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 8px;
+            box-shadow: 0 3px 10px rgba(0, 168, 232, 0.25);
+        }
+        button#generateBtn:hover {
+            background: linear-gradient(135deg, #007bff, var(--accent-color));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 168, 232, 0.4);
+        }
+        button#generateBtn:disabled {
+            background: #555 !important; 
+            cursor: not-allowed !important;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .qr-display-area h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--lux-gold);
+            font-size: 1.5em; /* Adjusted font size */
+        }
+
+        #barcodeContainer { 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: white; 
+            padding: 15px; /* Reduced padding */
+            border-radius: 8px;
+            width: 100%; 
+            max-width: 280px; /* Ensure it doesn't get too wide on slightly larger "mobile" views */
+            min-height: 250px; /* Adjusted height */
+            margin: 0 auto 15px auto; /* Center it and add bottom margin */
+            border: 2px dashed var(--input-border);
+            box-sizing: border-box;
+            overflow: hidden; 
+        }
+        #barcodeOutput { 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        #barcodeOutput img, #barcodeOutput svg, #barcodeOutput canvas {
+            max-width: 100%;
+            max-height: 220px; /* Adjusted max height for preview */
+            height: auto;
+            object-fit: contain;
+        }
+
+        .arabic-label {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            font-size: 1.3em; /* Adjusted font size */
+            font-weight: bold;
+            color: var(--text-color);
+            text-align: center;
+            margin-top: 10px;
+            min-height: 30px; 
+            word-break: break-word;
+            width: 100%;
+        }
+
+        button#downloadBtn {
+            background-color: var(--lux-gold);
+            color: var(--primary-bg);
+            border: none;
+            padding: 10px 18px; /* Adjusted padding */
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1rem; /* Adjusted font size */
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            width: 100%; /* Make download button full width on mobile */
+            justify-content: center; /* Center content in full-width button */
+        }
+        button#downloadBtn:hover:not(:disabled) { 
+            background-color: #b89d30;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(207, 181, 59, 0.25);
+        }
+        button#downloadBtn:disabled {
+             background-color: #777 !important;
+             color: #aaa !important;
+             cursor: not-allowed !important;
+             transform: none !important;
+             box-shadow: none !important;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--input-border);
+            font-size: 0.85em; /* Adjusted font size */
+            color: #aaa;
+        }
+        footer p { margin: 4px 0; }
+        footer a { color: var(--accent-color); text-decoration: none; font-weight: bold; }
+        footer a:hover { text-decoration: underline; }
+        .footer-icon { color: var(--lux-gold); margin: 0 4px; }
+
+        #barcodeInfo {
+            font-size: 0.75em; /* Adjusted font size */
+            color: var(--accent-color);
+            margin-top: 4px;
+            min-height: 1.1em;
+            text-align: center;
+        }
+
+        /* Larger screens - Tablet and Desktop */
+        @media (min-width: 768px) {
+            body {
+                padding: 20px; /* Restore padding for larger screens */
+                font-size: 16px; /* Restore base font size */
+            }
+            .container {
+                padding: 35px;
+                border-radius: 20px;
+            }
+            header {
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+            }
+            header h1 {
+                font-size: 2.5em; /* Restore H1 size */
+            }
+            header h1 i {
+                margin-left: 15px;
+            }
+            .main-layout {
+                flex-direction: row; /* Side-by-side for controls and display */
+                gap: 30px;
+            }
+            .controls {
+                padding: 25px;
+                border-radius: 12px;
+                min-width: 320px; /* Give controls a minimum width */
+                flex: 1;
+            }
+            .qr-display-area {
+                padding: 25px;
+                border-radius: 12px;
+                flex: 1.5; /* Give more space to display area */
+            }
+            .control-group {
+                margin-bottom: 22px;
+            }
+            .control-group label {
+                font-size: 1.05em;
+            }
+            .control-group input[type="text"],
+            .control-group input[type="url"],
+            .control-group textarea,
+            .control-group select {
+                padding: 14px;
+                font-size: 1rem;
+                border-radius: 8px;
+            }
+            .control-group input[type="color"] {
+                height: 48px;
+                width: 70px;
+                border-radius: 8px;
+            }
+            .control-group input[type="color"]::-webkit-color-swatch-wrapper { padding: 5px; }
+            .control-group input[type="color"]::-webkit-color-swatch { border-radius: 4px; }
+            .control-group textarea {
+                min-height: 80px;
+            }
+            .control-group small {
+                font-size: 0.9em;
+            }
+            .checkbox-group {
+                gap: 10px;
+            }
+            .checkbox-group input[type="checkbox"] {
+                transform: scale(1);
+            }
+            .checkbox-group label {
+                font-size: 1rem;
+            }
+
+            button#generateBtn {
+                padding: 15px 30px;
+                font-size: 1.2rem;
+                border-radius: 8px;
+            }
+            .qr-display-area h2 {
+                font-size: 1.8em;
+            }
+            #barcodeContainer {
+                padding: 20px;
+                max-width: 300px; /* Restore max-width */
+                min-height: 300px;
+                margin: 0 auto 15px auto; /* Center it */
+            }
+            #barcodeOutput img, #barcodeOutput svg, #barcodeOutput canvas {
+                max-height: 260px;
+            }
+            .arabic-label {
+                font-size: 1.6em;
+            }
+            button#downloadBtn {
+                padding: 12px 25px;
+                font-size: 1.1rem;
+                border-radius: 8px;
+                width: auto; /* Allow button to size based on content on larger screens */
+            }
+            footer {
+                font-size: 0.95em;
+            }
+            #barcodeInfo {
+                font-size: 0.85em;
+            }
+        }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <!-- HTML Structure Remains Unchanged -->
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-barcode"></i> مولد الرموز الاحترافي</h1>
+        </header>
+
+        <div class="main-layout">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="barcodeType"><i class="fas fa-cog"></i>نوع الرمز:</label>
+                    <select id="barcodeType">
+                        <option value="qrcode" selected>مربعات (QR Code)</option>
+                        <option value="CODE128">CODE128 (نصوص وأرقام شامل)</option>
+                        <option value="CODE39">CODE39 (أحرف كبيرة، أرقام، رموز)</option>
+                        <option value="EAN13">EAN-13 (12 أو 13 رقمًا)</option>
+                        <option value="UPCA">UPC-A (11 أو 12 رقمًا)</option>
+                    </select>
+                    <small id="barcodeInfo"></small>
+                </div>
+
+                <div class="control-group">
+                    <label for="dataType"><i class="fas fa-database"></i>نوع البيانات (لـ QR Code):</label>
+                    <select id="dataType">
+                        <option value="text" selected>نص</option>
+                        <option value="url">رابط (URL)</option>
+                        <option value="tel">رقم هاتف</option>
+                        <option value="sms">رسالة SMS</option>
+                        <option value="email">بريد إلكتروني</option>
+                        <option value="wifi">شبكة Wi-Fi</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="textInputGroup">
+                    <label for="barcodeData"><i class="fas fa-keyboard"></i>البيانات (نص، رابط، أرقام ... حسب نوع الرمز):</label>
+                    <textarea id="barcodeData" rows="4" maxlength="250" placeholder="أدخل البيانات هنا..."></textarea>
+                    <small id="charCount">0/250</small>
+                </div>
+
+                <div class="control-group">
+                    <label for="barcodeLabel"><i class="fas fa-tag"></i>اسم تحت الرمز (حتى 20 حرف):</label>
+                    <input type="text" id="barcodeLabel" maxlength="20" placeholder="اسم وصفي للرمز">
+                    <small id="labelCharCount">0/20</small>
+                </div>
+                
+                <div class="control-group">
+                    <label for="barcodeColor"><i class="fas fa-palette"></i>لون الرمز:</label>
+                    <input type="color" id="barcodeColor" value="#121212">
+                </div>
+                 <div class="control-group">
+                    <label for="backgroundColor"><i class="fas fa-fill-drip"></i>لون الخلفية:</label>
+                    <input type="color" id="backgroundColor" value="#FFFFFF">
+                </div>
+
+                <div class="control-group checkbox-group">
+                    <input type="checkbox" id="transparentBg">
+                    <label for="transparentBg">خلفية شفافة (للتحميل)</label>
+                </div>
+                 <div class="control-group checkbox-group">
+                    <input type="checkbox" id="downloadHighRes">
+                    <label for="downloadHighRes">تنزيل بدقة عالية (2000x2000)</label>
+                </div>
+                
+                <button id="generateBtn"><i class="fas fa-cogs"></i> إنشاء الرمز</button>
+            </div>
+
+            <div class="qr-display-area">
+                <h2>الرمز المولد:</h2>
+                <div id="barcodeContainer">
+                    <div id="barcodeOutput"></div> 
+                </div>
+                <p id="displayedLabel" class="arabic-label"></p>
+                <button id="downloadBtn" style="display: none;" disabled><i class="fas fa-download"></i> تحميل الرمز</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>
+                <i class="fas fa-copyright footer-icon"></i> <span id="currentYear"></span> 
+                <a href="#" target="_blank" title="اسم موقعك أو اسمك">مولد الرموز الاحترافي</a>. 
+                جميع الحقوق محفوظة.
+            </p>
+            <p>
+                تصميم وتطوير بواسطة: <a href="#" target="_blank">المعلم المرشد</a> 
+                <i class="fas fa-paint-brush footer-icon"></i> 
+                <i class="fas fa-code footer-icon"></i>
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+    <script>
+        // JavaScript remains unchanged from the previous version
+        document.addEventListener('DOMContentLoaded', () => {
+            const barcodeTypeSelect = document.getElementById('barcodeType');
+            const dataTypeSelect = document.getElementById('dataType');
+            const barcodeDataInput = document.getElementById('barcodeData');
+            const barcodeLabelInput = document.getElementById('barcodeLabel');
+            const barcodeColorInput = document.getElementById('barcodeColor');
+            const backgroundColorInput = document.getElementById('backgroundColor');
+            const transparentBgCheckbox = document.getElementById('transparentBg');
+            const downloadHighResCheckbox = document.getElementById('downloadHighRes');
+            
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            const barcodeOutputDiv = document.getElementById('barcodeOutput');
+            const barcodeContainerDiv = document.getElementById('barcodeContainer');
+            const displayedLabelP = document.getElementById('displayedLabel');
+            
+            const charCountSpan = document.getElementById('charCount');
+            const labelCharCountSpan = document.getElementById('labelCharCount');
+            const barcodeInfoSpan = document.getElementById('barcodeInfo');
+            
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            let generatedBarcodeElement = null; 
+            let currentBarcodeType = 'qrcode'; 
+
+            barcodeDataInput.addEventListener('input', () => {
+                charCountSpan.textContent = `${barcodeDataInput.value.length}/${barcodeDataInput.maxLength}`;
+                validateBarcodeData(); 
+            });
+            barcodeLabelInput.addEventListener('input', () => {
+                labelCharCountSpan.textContent = `${barcodeLabelInput.value.length}/20`;
+            });
+
+            barcodeTypeSelect.addEventListener('change', () => {
+                currentBarcodeType = barcodeTypeSelect.value;
+                updateInputRequirements();
+                validateBarcodeData(); 
+                document.getElementById('dataType').parentElement.style.display = (currentBarcodeType === 'qrcode') ? 'block' : 'none';
+                barcodeOutputDiv.innerHTML = '';
+                displayedLabelP.textContent = '';
+                downloadBtn.style.display = 'none';
+                downloadBtn.disabled = true;
+                generatedBarcodeElement = null;
+            });
+            
+            dataTypeSelect.addEventListener('change', () => {
+                if (currentBarcodeType === 'qrcode') updateInputRequirements();
+            });
+
+            function updateInputRequirements() {
+                let placeholder = "أدخل البيانات هنا...";
+                let info = "";
+                let maxLength = 250; 
+
+                barcodeInfoSpan.style.color = 'var(--accent-color)'; 
+
+                if (currentBarcodeType === 'qrcode') {
+                    const qrDataType = dataTypeSelect.value;
+                    maxLength = 2000; 
+                    switch(qrDataType) {
+                        case 'text': placeholder = "أدخل النص..."; break;
+                        case 'url': placeholder = "https://example.com"; break;
+                        case 'tel': placeholder = "tel:+1234567890"; info="تنسيق: tel:+CCPHONENUMBER"; break;
+                        case 'sms': placeholder = "sms:+1234567890?body=Hello"; info="تنسيق: sms:+NUMBER?body=MESSAGE"; break;
+                        case 'email': placeholder = "mailto:user@example.com?subject=Hi&body=Message"; info="تنسيق: mailto:EMAIL?subject=SUBJECT&body=BODY"; break;
+                        case 'wifi': placeholder = "WIFI:T:WPA;S:MyNetwork;P:MyPassword;H:false;"; info="تنسيق: WIFI:T:[WPA/WEP];S:SSID;P:PASSWORD;H:[true/false];"; break;
+                    }
+                } else if (currentBarcodeType === 'EAN13') {
+                    placeholder = "12 أو 13 رقمًا"; info = "EAN-13 يتطلب 12 رقمًا (يتم حساب الرقم الـ13 تلقائيًا) أو 13 رقمًا (مع رقم تحقق صحيح)."; maxLength = 13;
+                } else if (currentBarcodeType === 'UPCA') {
+                    placeholder = "11 أو 12 رقمًا"; info = "UPC-A يتطلب 11 رقمًا (يتم حساب الرقم الـ12 تلقائيًا) أو 12 رقمًا (مع رقم تحقق صحيح)."; maxLength = 12;
+                } else if (currentBarcodeType === 'CODE128') {
+                    placeholder = "نصوص، أرقام، رموز خاصة"; info = "Code128 يدعم مجموعة واسعة من الأحرف."; maxLength = 70; 
+                } else if (currentBarcodeType === 'CODE39') { 
+                    placeholder = "بيانات Code39"; 
+                    info = "Code39: يدعم الأحرف الإنجليزية الكبيرة (A-Z)، الأرقام (0-9)، والرموز: - . $ / + % ومسافة."; 
+                    maxLength = 50; 
+                }
+                barcodeDataInput.placeholder = placeholder;
+                barcodeInfoSpan.innerHTML = info; 
+                barcodeDataInput.maxLength = maxLength;
+                charCountSpan.textContent = `${barcodeDataInput.value.length}/${barcodeDataInput.maxLength}`; 
+            }
+            updateInputRequirements(); 
+
+            function validateBarcodeData() {
+                const data = barcodeDataInput.value; 
+                let isValid = true;
+                let isDataEmpty = !data.trim(); 
+
+                barcodeInfoSpan.style.color = 'var(--accent-color)'; 
+                let validationMessage = "";
+
+
+                if (!isDataEmpty) {
+                    if (currentBarcodeType === 'EAN13') {
+                        isValid = /^\d{12,13}$/.test(data);
+                        if(!isValid) validationMessage = "EAN-13: يجب أن يكون 12 أو 13 رقمًا.";
+                    } else if (currentBarcodeType === 'UPCA') {
+                        isValid = /^\d{11,12}$/.test(data);
+                         if(!isValid) validationMessage = "UPC-A: يجب أن يكون 11 أو 12 رقمًا.";
+                    } else if (currentBarcodeType === 'CODE39') {
+                        isValid = /^[A-Z0-9\s\-\.\$\/\+\%]*$/.test(data.toUpperCase()); 
+                        if(!isValid) validationMessage = "Code39: أحرف غير صالحة. استخدم A-Z, 0-9, ومسافة, -, ., $, /, +, %";
+                    }
+                }
+                
+                generateBtn.disabled = isDataEmpty || !isValid;
+
+                if (!isValid && !isDataEmpty) {
+                    barcodeDataInput.style.borderColor = 'var(--danger-color)';
+                    barcodeInfoSpan.textContent = validationMessage || "البيانات المدخلة غير صالحة لهذا النوع.";
+                    barcodeInfoSpan.style.color = 'var(--danger-color)'; 
+                } else {
+                    barcodeDataInput.style.borderColor = 'var(--input-border)';
+                    updateInputRequirements(); 
+                }
+                return isValid && !isDataEmpty;
+            }
+            
+            backgroundColorInput.addEventListener('input', () => {
+                if (!transparentBgCheckbox.checked) {
+                    barcodeContainerDiv.style.backgroundColor = backgroundColorInput.value;
+                }
+            });
+            transparentBgCheckbox.addEventListener('change', () => {
+                backgroundColorInput.disabled = transparentBgCheckbox.checked;
+                barcodeContainerDiv.style.backgroundColor = transparentBgCheckbox.checked ? 'white' : backgroundColorInput.value;
+            });
+
+            generateBtn.addEventListener('click', () => {
+                const data = barcodeDataInput.value.trim(); 
+                const labelText = barcodeLabelInput.value.trim();
+                const fgColor = barcodeColorInput.value;
+                
+                if (!validateBarcodeData()) { 
+                     alert("الرجاء إدخال بيانات صالحة لنوع الباركود المحدد!");
+                    return;
+                }
+
+                barcodeOutputDiv.innerHTML = ''; 
+                displayedLabelP.textContent = labelText;
+                downloadBtn.style.display = 'none'; 
+                downloadBtn.disabled = true; 
+                generatedBarcodeElement = null;
+
+                barcodeContainerDiv.style.backgroundColor = transparentBgCheckbox.checked ? 'white' : backgroundColorInput.value;
+
+                try {
+                    if (currentBarcodeType === 'qrcode') {
+                        const qrBgForPreview = backgroundColorInput.value; 
+                        
+                        new QRCode(barcodeOutputDiv, {
+                            text: getQrDataString(), 
+                            width: 256,
+                            height: 256,
+                            colorDark: fgColor,
+                            colorLight: qrBgForPreview, 
+                            correctLevel: QRCode.CorrectLevel.H
+                        });
+                        setTimeout(() => { 
+                            generatedBarcodeElement = barcodeOutputDiv.querySelector('img') || barcodeOutputDiv.querySelector('canvas');
+                            if(generatedBarcodeElement) {
+                                downloadBtn.style.display = 'inline-flex';
+                                downloadBtn.disabled = false;
+                            } else {
+                                console.error("QR Code element not found after generation.");
+                            }
+                        }, 200);
+                    } else { 
+                        const svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                        barcodeOutputDiv.appendChild(svgElement);
+                        
+                        const jsBarcodeBg = transparentBgCheckbox.checked ? 'transparent' : backgroundColorInput.value;
+                        let jsBarcodeData = data;
+                        if (currentBarcodeType === 'CODE39') {
+                            jsBarcodeData = data.toUpperCase(); 
+                        }
+
+                        JsBarcode(svgElement, jsBarcodeData, {
+                            format: currentBarcodeType,
+                            lineColor: fgColor,
+                            background: jsBarcodeBg, 
+                            width: 2,
+                            height: 100,
+                            displayValue: false, 
+                            margin: 10 
+                        });
+                        generatedBarcodeElement = svgElement;
+                        downloadBtn.style.display = 'inline-flex';
+                        downloadBtn.disabled = false;
+                    }
+                } catch (error) {
+                    console.error("خطأ في إنشاء الرمز:", error);
+                    alert(`حدث خطأ: ${error.message}. الرجاء التحقق من البيانات ونوع الباركود.`);
+                    barcodeOutputDiv.innerHTML = `<p style="color:var(--danger-color); text-align:center;">خطأ: ${error.message}</p>`;
+                    downloadBtn.style.display = 'none';
+                    downloadBtn.disabled = true;
+                }
+            });
+            
+            function getQrDataString() {
+                const rawData = barcodeDataInput.value.trim(); 
+                const qrDataType = dataTypeSelect.value;
+                if (currentBarcodeType !== 'qrcode') return rawData;
+
+                switch(qrDataType) {
+                    case 'text': return rawData;
+                    case 'url': return rawData.startsWith('http://') || rawData.startsWith('https://') || rawData.startsWith('//') ? rawData : `http://${rawData}`;
+                    case 'tel': return rawData.startsWith('tel:') ? rawData : `tel:${rawData}`;
+                    case 'sms': return rawData.startsWith('sms:') ? rawData : `sms:${rawData}`;
+                    case 'email': return rawData.startsWith('mailto:') ? rawData : `mailto:${rawData}`;
+                    case 'wifi': return rawData.toUpperCase().startsWith('WIFI:') ? rawData : `WIFI:S:${rawData.split(';')[0]};T:WPA;P:;H:false;`;
+                    default: return rawData;
+                }
+            }
+
+            downloadBtn.addEventListener('click', async () => {
+                if (!generatedBarcodeElement) {
+                    alert("الرجاء إنشاء رمز أولاً!");
+                    return;
+                }
+
+                const labelText = displayedLabelP.textContent || "";
+                const highRes = downloadHighResCheckbox.checked;
+                const isTransparentDownload = transparentBgCheckbox.checked;
+                const downloadBgColor = backgroundColorInput.value;
+
+
+                let baseWidth, baseHeight;
+                if (currentBarcodeType === 'qrcode') {
+                    baseWidth = 256; 
+                    baseHeight = 256;
+                } else { 
+                    const svgBox = generatedBarcodeElement.viewBox?.baseVal || generatedBarcodeElement.getBBox?.();
+                    if (svgBox && svgBox.width > 0 && svgBox.height > 0) {
+                        baseWidth = svgBox.width;
+                        baseHeight = svgBox.height;
+                    } else { 
+                        baseWidth = 300; 
+                        baseHeight = 100; 
+                    }
+                }
+                
+                const scaleFactor = highRes ? (2000 / Math.max(baseWidth, baseHeight)) : (currentBarcodeType === 'qrcode' ? 2 : 2.5); 
+                const barcodeDrawWidth = baseWidth * scaleFactor;
+                const barcodeDrawHeight = baseHeight * scaleFactor;
+
+                const finalCanvas = document.createElement('canvas');
+                const ctx = finalCanvas.getContext('2d');
+                
+                const padding = highRes ? 60 : 30; 
+                
+                let labelHeight = 0;
+                const labelFontFamily = 'Cairo, Tajawal, sans-serif';
+                if (labelText) {
+                    const tempLabelFontSize = Math.max(18 * scaleFactor /2, Math.min(40 * scaleFactor / 2, Math.floor(barcodeDrawWidth / 12)));
+                    const labelFont = `bold ${tempLabelFontSize}px ${labelFontFamily}`;
+                    ctx.font = labelFont; 
+                    const textMetrics = ctx.measureText(labelText);
+                    labelHeight = tempLabelFontSize * 1.8; 
+                }
+
+                finalCanvas.width = barcodeDrawWidth + 2 * padding;
+                finalCanvas.height = barcodeDrawHeight + labelHeight + 2 * padding;
+                
+                if (!isTransparentDownload) {
+                    ctx.fillStyle = downloadBgColor; 
+                    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+                } else {
+                    ctx.clearRect(0, 0, finalCanvas.width, finalCanvas.height); 
+                }
+                
+                const drawX = padding;
+                const drawY = padding;
+
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+
+                if (currentBarcodeType === 'qrcode') {
+                    const tempQrDiv = document.createElement('div');
+                    new QRCode(tempQrDiv, {
+                        text: getQrDataString(),
+                        width: barcodeDrawWidth, 
+                        height: barcodeDrawHeight,
+                        colorDark: barcodeColorInput.value,
+                        colorLight: isTransparentDownload ? 'rgba(0,0,0,0)' : downloadBgColor,
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    
+                    const qrImageToDraw = tempQrDiv.querySelector('img') || tempQrDiv.querySelector('canvas');
+                    if (qrImageToDraw) {
+                        await new Promise(resolve => setTimeout(() => {
+                           ctx.drawImage(qrImageToDraw, drawX, drawY, barcodeDrawWidth, barcodeDrawHeight);
+                           resolve();
+                        }, 50));
+                    } else {
+                        console.error("Failed to re-render QR for download.");
+                        return; 
+                    }
+                } else { 
+                    const tempSvgContainer = document.createElement('div'); 
+                    const svgToDownload = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    tempSvgContainer.appendChild(svgToDownload);
+
+                    let jsBarcodeDataForDownload = barcodeDataInput.value.trim();
+                    if (currentBarcodeType === 'CODE39') {
+                         jsBarcodeDataForDownload = jsBarcodeDataForDownload.toUpperCase();
+                    }
+
+                    JsBarcode(svgToDownload, jsBarcodeDataForDownload, {
+                        format: currentBarcodeType,
+                        lineColor: barcodeColorInput.value,
+                        background: isTransparentDownload ? 'transparent' : downloadBgColor,
+                        width: (barcodeDrawWidth / baseWidth) * 2, 
+                        height: (barcodeDrawHeight / baseHeight) * 100, 
+                        margin: 0 
+                    });
+
+                    const svgXml = new XMLSerializer().serializeToString(svgToDownload);
+                    const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgXml)));
+                    
+                    const tempImg = new Image();
+                    await new Promise((resolve, reject) => {
+                        tempImg.onload = resolve;
+                        tempImg.onerror = (e) => { console.error("SVG to Image load error:", e); reject(e); };
+                        tempImg.src = svgDataUrl;
+                    });
+                    ctx.drawImage(tempImg, drawX, drawY, barcodeDrawWidth, barcodeDrawHeight);
+                }
+
+                if (labelText) {
+                    let labelColor = barcodeColorInput.value;
+                    if (!isTransparentDownload) {
+                        const bgLumR = parseInt(downloadBgColor.substring(1,3), 16);
+                        const bgLumG = parseInt(downloadBgColor.substring(3,5), 16);
+                        const bgLumB = parseInt(downloadBgColor.substring(5,7), 16);
+                        const bgLuminance = (0.299 * bgLumR + 0.587 * bgLumG + 0.114 * bgLumB) / 255;
+                        
+                        const fgLumR = parseInt(labelColor.substring(1,3), 16);
+                        const fgLumG = parseInt(labelColor.substring(3,5), 16);
+                        const fgLumB = parseInt(labelColor.substring(5,7), 16);
+                        const fgLuminance = (0.299 * fgLumR + 0.587 * fgLumG + 0.114 * fgLumB) / 255;
+
+                        if (Math.abs(bgLuminance - fgLuminance) < 0.35) { 
+                           labelColor = bgLuminance < 0.5 ? '#FFFFFF' : '#000000'; 
+                        }
+                    }
+                    ctx.fillStyle = labelColor; 
+                    const tempLabelFontSize = Math.max(18 * scaleFactor / 2, Math.min(40 * scaleFactor / 2, Math.floor(barcodeDrawWidth / 12)));
+                    ctx.font = `bold ${tempLabelFontSize}px ${labelFontFamily}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    const labelDrawY = drawY + barcodeDrawHeight + (labelHeight / 2) + (padding / (highRes ? 3:2) ); 
+                    ctx.fillText(labelText, finalCanvas.width / 2, labelDrawY);
+                }
+
+                const link = document.createElement('a');
+                link.href = finalCanvas.toDataURL('image/png'); 
+                const filenameBase = (barcodeLabelInput.value.replace(/[^\u0600-\u06FFa-zA-Z0-9_-\s]/g, '').trim().replace(/\s+/g, '_') || currentBarcodeType) + (highRes ? '_2000px' : '') + (isTransparentDownload ? '_transparent':'');
+                link.download = `${filenameBase}.png`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+    </script>
+</body>
+</html>

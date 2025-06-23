@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ضاغط الملفات إلى ZIP الاحترافي</title>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #9c27b0; /* Purple */
+            --secondary-color: #2196f3; /* Blue */
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: #4caf50; /* Green */
+            --danger-color: #f44336; /* Red */
+            --warning-color: #ff9800; /* Orange */
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #424242;
+            --progress-bg: #555;
+            --progress-value-bg: var(--success-color);
+            --file-item-bg: #3c3c3c;
+            --file-item-border: #505050;
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+            /* Removed overflow: hidden; as loading overlay is gone */
+        }
+
+        /* Removed all .loading-overlay styles */
+
+        .converter-container {
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 800px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease, opacity 0.5s ease;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Removed initial opacity and pointer-events as no loading overlay */
+        }
+        .converter-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+
+        #fileInput { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #7b1fa2, #1976d2); box-shadow: 0 8px 20px rgba(41, 128, 185, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfo {
+            display: block; margin-top: 10px; margin-bottom: 20px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #previewContainer {
+            display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 10px;
+            margin-top: 20px; margin-bottom: 25px; padding: 15px; border: 2px dashed var(--preview-border);
+            border-radius: var(--border-radius); min-height: 80px; background-color: var(--preview-bg);
+            text-align: center; font-size: 0.95em; color: #e0e0e0;
+        }
+        #previewContainer i { font-size: 2em; color: var(--secondary-color); margin-bottom: 5px; }
+        .limit-text {
+            font-size: 0.8em;
+            color: #b0b0b0;
+            margin-top: 5px;
+        }
+
+        #selectedFilesList {
+            list-style: none; padding: 0; margin: 15px 0; max-height: 200px; overflow-y: auto;
+            border: 1px solid var(--input-border); border-radius: var(--border-radius);
+            background-color: var(--input-bg);
+            display: none; /* Hidden by default */
+        }
+        #selectedFilesList.active { display: block; } /* Show when files are selected */
+
+        .file-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px 15px;
+            border-bottom: 1px solid var(--file-item-border);
+            color: var(--text-color); font-size: 0.9em;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .file-item-name { flex-grow: 1; text-align: right; word-break: break-all; }
+        .file-item-size { margin-left: 10px; opacity: 0.8; font-size: 0.85em; }
+        .remove-file {
+            background: none; border: none; color: var(--danger-color); font-size: 1.1em;
+            cursor: pointer; margin-right: 10px; transition: color 0.2s ease;
+        }
+        .remove-file:hover { color: #e57373; }
+
+
+        .options-group {
+            margin-bottom: 20px;
+            padding: 15px; border: 1px solid var(--input-border);
+            border-radius: var(--border-radius); background-color: var(--input-bg); text-align: right;
+        }
+        .options-group legend {
+            font-weight: 700; color: var(--primary-color); padding: 0 8px;
+            margin-right: -8px; font-size: 1.05rem;
+        }
+        /* Adjusted for single option item */
+        .options-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-top: 10px; }
+        .option-item {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+            flex: 1 1 auto; min-width: 250px; /* Make it wider for single item */
+            max-width: 400px; /* Limit max width */
+        }
+        .options-group label { cursor: pointer; color: var(--text-color); transition: color 0.3s ease; display: block; font-size: 0.9em; margin-bottom: 3px; }
+        .options-group label:hover { color: var(--secondary-color); }
+
+        .options-group select, .options-group input[type="text"], .options-group input[type="password"] {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--input-border); border-radius: 6px;
+            font-size: 0.9rem; font-family: 'Cairo', sans-serif; background-color: var(--input-bg);
+            color: var(--input-text); box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            direction: rtl; /* Ensure input text is RTL */
+            text-align: right;
+        }
+        .options-group option { background-color: var(--container-bg); color: var(--text-color); direction: rtl; text-align: right;}
+
+        .options-group select:focus, .options-group input[type="text"]:focus, .options-group input[type="password"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(156, 39, 176, 0.3); outline: none;
+        }
+
+        .checkbox-container {
+            display: flex; align-items: center; gap: 8px; margin-top: 5px;
+            width: 100%;
+        }
+        .checkbox-container input[type="checkbox"] {
+            -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+            border: 2px solid var(--primary-color); border-radius: 4px; cursor: pointer;
+            background-color: var(--input-bg); position: relative; flex-shrink: 0;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .checkbox-container input[type="checkbox"]:checked {
+            background-color: var(--primary-color); border-color: var(--primary-color);
+        }
+        .checkbox-container input[type="checkbox"]:checked::after {
+            content: '\2713'; /* Checkmark character */
+            display: block; color: white; font-size: 12px;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .checkbox-container label { margin-bottom: 0; }
+
+        #passwordInput { margin-top: 10px; display: none; }
+
+
+        #outputFilename {
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
+            background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #outputFilename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--success-color), #2e7d32); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin-bottom: 15px;
+            box-shadow: 0 6px 18px rgba(76, 175, 80, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+            background: linear-gradient(135deg, #388e3c, #1b5e20);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+
+        #status { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #download-options { margin-top: 25px; display: none; flex-direction: column; align-items: center; gap: 15px; }
+        .download-button {
+            display: inline-block; color: var(--button-text-color); padding: 12px 25px; text-decoration: none; border-radius: 8px;
+            font-size: 1rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 80%; max-width: 300px;
+        }
+        #downloadLinkDirect { background-color: var(--success-color); }
+        #downloadLinkDirect:hover { background-color: #388e3c; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5); }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+         .options-group small {
+             font-size: 0.8em;
+             opacity: 0.7;
+             display: block;
+             text-align: right;
+             margin-top: 5px;
+         }
+
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .converter-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfo { font-size: 0.95em; }
+            #previewContainer { min-height: 90px; padding: 20px; font-size: 1em; }
+            /* Adjusted for single option item */
+            .options-grid { gap: 20px; justify-content: center; }
+            .option-item { min-width: 300px; } /* Even wider */
+            .options-group { padding: 20px; text-align: right; }
+            #outputFilename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #status { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            #download-options { flex-direction: row; justify-content: center; gap: 20px; }
+            .download-button { padding: 14px 30px; font-size: 1.05rem; width: auto; max-width: none; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            .options-group small { font-size: 0.85em;}
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Removed loading-overlay -->
+
+    <div class="converter-container" id="converterContainer">
+        <h1>ضاغط الملفات إلى ZIP الاحترافي</h1>
+
+        <label for="fileInput" class="file-label">
+            <i class="fas fa-folder-open"></i> اختر الملفات
+        </label>
+        <!-- Added .txt to accept attribute -->
+        <input type="file" id="fileInput" accept=".pdf, .doc, .docx, .xls, .xlsx, .jpg, .jpeg, .png, .gif, .bmp, .svg, .txt" multiple>
+        <span id="fileInfo">لم يتم اختيار أي ملفات.</span>
+
+        <!-- Preview/Drag & Drop Area -->
+        <div id="previewContainer">
+             <i class="fas fa-file-upload"></i>
+             <span id="previewPlaceholder">اسحب الملفات هنا أو انقر لاختيارها</span>
+             <small class="limit-text">الحد الأقصى للملفات: 10</small>
+        </div>
+
+        <!-- Selected Files List -->
+        <ul id="selectedFilesList">
+            <!-- Files will be added here dynamically -->
+        </ul>
+
+        <!-- Archiving Options -->
+        <fieldset class="options-group">
+            <legend>خيارات الأرشفة</legend>
+            <div class="options-grid">
+                <!-- Removed select for archive format as it's always ZIP -->
+                <!-- Password Protection Option -->
+                <div class="option-item">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="passwordProtect">
+                        <label for="passwordProtect">حماية بكلمة مرور</label>
+                    </div>
+                    <input type="password" id="passwordInput" placeholder="أدخل كلمة المرور" minlength="1" autocomplete="new-password">
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Output Filename Input -->
+        <input type="text" id="outputFilename" placeholder="اسم ملف الأرشيف الناتج (اختياري)">
+
+        <button id="processBtn" disabled>بدء الأرشفة</button>
+
+        <!-- Progress Bar Container -->
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="status"></div>
+
+        <!-- Download Options -->
+        <div id="download-options">
+            <a id="downloadLinkDirect" href="#" download="archive.zip" class="download-button">تحميل الأرشيف</a>
+        </div>
+    </div>
+
+    <!-- Load JS Libraries at the END of the body for faster page rendering -->
+    <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+
+    <script>
+        // Wrap all JavaScript code inside DOMContentLoaded to ensure elements are ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Content Loaded. Initializing script...");
+
+            // Removed loadingOverlay and converterContainer from here, as they are no longer needed for initial loading animation.
+            // The converterContainer element itself is now directly visible due to CSS removal.
+
+            // Function to check if libraries are loaded
+            const checkJSZipLoaded = () => {
+                const isJSZipLoaded = typeof window.JSZip !== 'undefined';
+                console.log(`JSZip loaded: ${isJSZipLoaded}`);
+                return isJSZipLoaded;
+            };
+
+            // Safely get DOM elements
+            const getDomElements = () => {
+                return {
+                    fileInput: document.getElementById('fileInput'),
+                    fileInfoDisplay: document.getElementById('fileInfo'),
+                    previewContainer: document.getElementById('previewContainer'),
+                    previewPlaceholder: document.getElementById('previewPlaceholder'),
+                    selectedFilesList: document.getElementById('selectedFilesList'),
+                    // archiveFormatSelect is removed from HTML, no need to get it
+                    passwordProtectCheckbox: document.getElementById('passwordProtect'),
+                    passwordInput: document.getElementById('passwordInput'),
+                    outputFilenameInput: document.getElementById('outputFilename'),
+                    processBtn: document.getElementById('processBtn'),
+                    progressBarContainer: document.getElementById('progressBarContainer'),
+                    progressBar: document.getElementById('progressBar'),
+                    statusDiv: document.getElementById('status'),
+                    downloadOptionsDiv: document.getElementById('download-options'),
+                    downloadLinkDirect: document.getElementById('downloadLinkDirect')
+                };
+            };
+
+            // This setTimeout is no longer strictly necessary for UI visibility,
+            // but kept as a small debounce to ensure JSZip is fully parsed before
+            // trying to access its functions, though placing script at body end usually suffices.
+            setTimeout(() => {
+                if (!checkJSZipLoaded()) {
+                    console.error("Required JSZip library is not loaded!");
+                    alert("خطأ: لم يتم تحميل مكتبة JSZip اللازمة. لا يمكن المتابعة.");
+                    // Ensure processing is disabled
+                    const elements = getDomElements();
+                    if (elements.processBtn) elements.processBtn.disabled = true;
+                    if (elements.fileInput) elements.fileInput.disabled = true;
+                    return; // Stop execution if libraries are missing
+                }
+
+                console.log("JSZip library loaded successfully. Starting main script logic.");
+
+                // --- DOM Elements (now safely accessed) ---
+                const {
+                    fileInput, fileInfoDisplay, previewContainer, previewPlaceholder,
+                    selectedFilesList, passwordProtectCheckbox,
+                    passwordInput, outputFilenameInput, processBtn,
+                    progressBarContainer, progressBar, statusDiv,
+                    downloadOptionsDiv, downloadLinkDirect
+                } = getDomElements();
+
+                // --- State ---
+                let selectedFilesMap = new Map();
+                let isProcessing = false;
+                let archiveBlobUrl = null;
+                const MAX_FILES = 10; // Maximum number of files allowed
+
+                // --- Utility Functions ---
+                function cleanupBlobUrl() {
+                    if (archiveBlobUrl) {
+                        URL.revokeObjectURL(archiveBlobUrl);
+                        archiveBlobUrl = null;
+                        console.log("Previous Blob URL revoked.");
+                    }
+                }
+
+                function formatBytes(bytes, decimals = 2) {
+                    if (bytes === 0) return '0 بايت';
+                    const k = 1024;
+                    const dm = decimals < 0 ? 0 : decimals;
+                    const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                }
+
+                function getFileUniqueKey(file) {
+                    // Creates a unique key for the file to prevent duplicates
+                    return `${file.name}-${file.size}-${file.lastModified}`;
+                }
+
+                function updateUIState() {
+                    const hasFiles = selectedFilesMap.size > 0;
+                    processBtn.disabled = !hasFiles || isProcessing;
+                    previewPlaceholder.style.display = hasFiles ? 'none' : 'block';
+                    selectedFilesList.classList.toggle('active', hasFiles);
+
+                    if (hasFiles) {
+                        fileInfoDisplay.textContent = `تم اختيار ${selectedFilesMap.size} ملف${selectedFilesMap.size === 1 ? '' : 'ات'}.`;
+                        fileInfoDisplay.style.color = 'var(--success-color)';
+                        if (!outputFilenameInput.value.trim()) { // Only suggest if empty
+                            outputFilenameInput.value = `archive.zip`; // Always suggest .zip
+                        }
+                    } else {
+                        fileInfoDisplay.textContent = 'لم يتم اختيار أي ملفات.';
+                        fileInfoDisplay.style.color = 'var(--text-color)';
+                        outputFilenameInput.value = '';
+                        downloadOptionsDiv.style.display = 'none';
+                        if (!isProcessing) { // Only clear status if not actively processing
+                            statusDiv.textContent = '';
+                        }
+                    }
+                    progressBarContainer.style.display = isProcessing ? 'block' : 'none';
+
+                    // Password input visibility is only controlled by the checkbox now
+                    passwordInput.style.display = passwordProtectCheckbox.checked ? 'block' : 'none';
+                }
+
+                function displaySelectedFiles() {
+                    selectedFilesList.innerHTML = '';
+                    if (selectedFilesMap.size === 0) {
+                        selectedFilesList.classList.remove('active');
+                        return;
+                    }
+                    selectedFilesList.classList.add('active');
+                    Array.from(selectedFilesMap.values()).forEach((fileData, index) => {
+                        const li = document.createElement('li');
+                        li.classList.add('file-item');
+                        li.dataset.key = getFileUniqueKey(fileData.file); // Store key for removal
+                        li.innerHTML = `
+                            <button type="button" class="remove-file" title="إزالة الملف"><i class="fas fa-times-circle"></i></button>
+                            <span class="file-item-name">${fileData.file.name}</span>
+                            <span class="file-item-size">(${formatBytes(fileData.file.size)})</span>
+                        `;
+                        selectedFilesList.appendChild(li);
+                    });
+                }
+
+                async function addFiles(files) {
+                    if (isProcessing) {
+                        statusDiv.textContent = 'جاري المعالجة، يرجى الانتظار أو تحديث الصفحة.';
+                        statusDiv.style.color = 'var(--warning-color)';
+                        return;
+                    }
+
+                    statusDiv.innerHTML = ''; // Clear previous status
+                    downloadOptionsDiv.style.display = 'none';
+                    progressBar.value = 0;
+                    cleanupBlobUrl();
+
+                    const filesToAdd = Array.from(files);
+                    
+                    if (filesToAdd.length + selectedFilesMap.size > MAX_FILES) {
+                        statusDiv.textContent = `خطأ: الحد الأقصى للملفات هو ${MAX_FILES}. لديك ${selectedFilesMap.size} ملفات مختارة بالفعل، وستتجاوز الإضافة الجديدة هذا الحد.`;
+                        statusDiv.style.color = 'var(--danger-color)';
+                        return;
+                    }
+
+                    const allowedMimeTypes = [
+                        'application/pdf',
+                        'application/msword', // .doc
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+                        'application/vnd.ms-excel', // .xls
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+                        'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/svg+xml',
+                        'text/plain' // Added .txt
+                    ];
+
+                    let filesSuccessfullyAdded = 0;
+                    let ignoredCount = 0;
+
+                    for (const file of filesToAdd) {
+                        const uniqueKey = getFileUniqueKey(file);
+                        if (selectedFilesMap.has(uniqueKey)) {
+                            console.log(`Duplicate file ignored: ${file.name}`);
+                            ignoredCount++;
+                            continue;
+                        }
+
+                        // Check MIME type, also consider file extension for safety if MIME type is generic/missing
+                        const fileExtension = file.name.split('.').pop().toLowerCase();
+                        const isAllowedByMime = allowedMimeTypes.includes(file.type);
+                        const isAllowedByExtension = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.txt'].includes(`.${fileExtension}`);
+
+                        if (!isAllowedByMime && !isAllowedByExtension) { // If neither MIME nor extension is explicitly allowed
+                            console.warn(`Unsupported file type ignored: ${file.name} (MIME: ${file.type}, Ext: ${fileExtension})`);
+                            statusDiv.textContent = `تحذير: تم تجاهل ملف غير مدعوم "${file.name}".`;
+                            statusDiv.style.color = 'var(--warning-color)';
+                            ignoredCount++;
+                            continue;
+                        }
+
+                        try {
+                            statusDiv.textContent = `جاري قراءة الملف: ${file.name}...`;
+                            statusDiv.style.color = 'var(--secondary-color)';
+                            const arrayBuffer = await new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+                                reader.readAsArrayBuffer(file);
+                            });
+                            selectedFilesMap.set(uniqueKey, { file: file, arrayBuffer: arrayBuffer });
+                            filesSuccessfullyAdded++;
+                        } catch (error) {
+                            console.error(`Error reading file ${file.name}:`, error);
+                            statusDiv.textContent = `خطأ في قراءة الملف "${file.name}". تم تجاهله.`;
+                            statusDiv.style.color = 'var(--danger-color)';
+                            ignoredCount++;
+                        }
+                    }
+
+                    if (filesSuccessfullyAdded > 0) {
+                        statusDiv.textContent = `تم إضافة ${filesSuccessfullyAdded} ملف${filesSuccessfullyAdded === 1 ? '' : 'ات'} بنجاح.`;
+                        statusDiv.style.color = 'var(--success-color)';
+                    } else if (ignoredCount === filesToAdd.length && filesToAdd.length > 0) {
+                        statusDiv.textContent = `لم يتم إضافة أي ملفات. إما أنها مكررة أو غير مدعومة.`;
+                        statusDiv.style.color = 'var(--warning-color)';
+                    } else {
+                        // Clear if no files added and no specific message
+                        if (!statusDiv.textContent.includes('تحذير') && !statusDiv.textContent.includes('خطأ')) {
+                           statusDiv.textContent = '';
+                        }
+                    }
+
+                    displaySelectedFiles();
+                    updateUIState();
+                }
+
+
+                // --- Event Listeners ---
+                fileInput.addEventListener("change", function(e) {
+                    console.log("File input changed.");
+                    addFiles(e.target.files);
+                    e.target.value = null; // Clear the input for re-selection
+                });
+
+                selectedFilesList.addEventListener('click', (e) => {
+                    const removeButton = e.target.closest('.remove-file');
+                    if (removeButton) {
+                        const listItem = removeButton.closest('.file-item');
+                        const keyToRemove = listItem.dataset.key;
+                        if (selectedFilesMap.has(keyToRemove)) {
+                            selectedFilesMap.delete(keyToRemove);
+                            displaySelectedFiles();
+                            updateUIState();
+                            statusDiv.textContent = 'تمت إزالة الملف.';
+                            statusDiv.style.color = 'var(--warning-color)';
+                        }
+                    }
+                });
+
+                passwordProtectCheckbox.addEventListener('change', function() {
+                    passwordInput.style.display = this.checked ? 'block' : 'none';
+                    if (!this.checked) {
+                        passwordInput.value = ''; // Clear password if unchecked
+                    }
+                });
+
+
+                // --- Processing Logic ---
+                processBtn.addEventListener('click', async function() {
+                    console.log("Process button clicked.");
+                    if (isProcessing || selectedFilesMap.size === 0) {
+                        console.warn("Processing click rejected. State:", { isProcessing, selectedFilesMap });
+                        statusDiv.textContent = 'الرجاء اختيار ملفات صالحة أولاً!';
+                        statusDiv.style.color = 'var(--danger-color)';
+                        return;
+                    }
+
+                    isProcessing = true;
+                    updateUIState();
+                    cleanupBlobUrl();
+                    statusDiv.innerHTML = 'جاري التحضير للأرشفة... <div class="spinner"></div>';
+                    statusDiv.style.color = 'var(--secondary-color)';
+                    downloadOptionsDiv.style.display = 'none';
+                    progressBar.value = 0;
+                    progressBarContainer.style.display = 'block';
+                    console.log("Archiving processing started.");
+
+                    try {
+                        const enablePassword = passwordProtectCheckbox.checked; // Always for ZIP
+                        const password = enablePassword ? passwordInput.value : '';
+
+                        if (enablePassword && !password) {
+                            statusDiv.textContent = 'الرجاء إدخال كلمة مرور للأرشيف المحمي!';
+                            statusDiv.style.color = 'var(--danger-color)';
+                            isProcessing = false;
+                            updateUIState();
+                            return;
+                        }
+
+                        const filesToArchive = Array.from(selectedFilesMap.values()); // Get array of {file, arrayBuffer} objects
+
+                        statusDiv.innerHTML = 'جاري إنشاء ملف ZIP... <div class="spinner"></div>';
+                        const zip = new JSZip();
+                        filesToArchive.forEach(item => {
+                            zip.file(item.file.name, item.arrayBuffer);
+                        });
+
+                        const zipOptions = {
+                            type: 'blob',
+                            compression: 'DEFLATE',
+                            compressionOptions: { level: 9 } // 1 (fastest) to 9 (best compression)
+                        };
+                        if (enablePassword) {
+                            zipOptions.password = password; // JSZip handles AES-256 if supported
+                            console.log("Password protection enabled for ZIP (AES-256 will be used if supported by browser/jszip).");
+                        }
+
+                        const outputBlob = await zip.generateAsync(zipOptions, function updateCallback(metadata) {
+                            // Scale progress from 0-100 to 10-90
+                            const progress = Math.min(10 + (metadata.percent / 100) * 80, 90);
+                            progressBar.value = progress;
+                            statusDiv.innerHTML = `جاري الضغط: ${metadata.percent.toFixed(2)}% <div class="spinner"></div>`;
+                        });
+
+                        // --- Final Filename Logic ---
+                        let outputFilename = outputFilenameInput.value.trim();
+                        if (!outputFilename) {
+                            outputFilename = `archive.zip`;
+                        } else {
+                            // Sanitize filename to remove invalid characters for various OS
+                            outputFilename = outputFilename.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+                            // Ensure it ends with .zip
+                            if (!outputFilename.toLowerCase().endsWith('.zip')) {
+                                outputFilename += '.zip';
+                            }
+                        }
+                        console.log(`Output filename: ${outputFilename}`);
+
+                        archiveBlobUrl = URL.createObjectURL(outputBlob);
+                        const totalOriginalSize = filesToArchive.reduce((sum, item) => sum + item.file.size, 0);
+                        const compressedSize = outputBlob.size;
+                        const reduction = totalOriginalSize > 0 ? Math.round(((totalOriginalSize - compressedSize) / totalOriginalSize) * 100) : 0;
+
+                        // --- SUCCESS UI UPDATE ---
+                        downloadLinkDirect.href = archiveBlobUrl;
+                        downloadLinkDirect.download = outputFilename;
+
+                        statusDiv.textContent = `اكتملت الأرشفة بنجاح! الحجم الجديد: ${formatBytes(compressedSize)} (تم تقليل الحجم بنسبة ${reduction}%)`;
+                        statusDiv.style.color = 'var(--success-color)';
+                        progressBar.value = 100;
+                        setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
+                        downloadOptionsDiv.style.display = 'flex';
+                        console.log("Archiving successful!");
+
+                    } catch (error) {
+                        console.error("Error during archiving:", error);
+                        statusDiv.textContent = `حدث خطأ أثناء الأرشفة: ${error.message || 'خطأ غير معروف. قد يكون الملف معطوباً أو هناك مشكلة في الذاكرة.'}`;
+                        statusDiv.style.color = 'var(--danger-color)';
+                        progressBarContainer.style.display = 'none';
+                        downloadOptionsDiv.style.display = 'none';
+                        cleanupBlobUrl();
+                    } finally {
+                        console.log("Processing finished (finally block).");
+                        isProcessing = false;
+                        const spinner = statusDiv.querySelector('.spinner');
+                        if (spinner) spinner.remove();
+                        updateUIState();
+                    }
+                });
+
+                // --- Drag and Drop ---
+                previewContainer.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    previewContainer.style.borderColor = 'var(--primary-color)';
+                    previewContainer.style.backgroundColor = 'rgba(156, 39, 176, 0.1)';
+                });
+
+                previewContainer.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    previewContainer.style.borderColor = 'var(--preview-border)';
+                    previewContainer.style.backgroundColor = 'var(--preview-bg)';
+                });
+
+                previewContainer.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    previewContainer.style.borderColor = 'var(--preview-border)';
+                    previewContainer.style.backgroundColor = 'var(--preview-bg)';
+                    addFiles(e.dataTransfer.files);
+                });
+
+
+                // --- Initial UI Setup ---
+                console.log("Setting initial UI state for archiver.");
+                updateUIState();
+                window.addEventListener('beforeunload', cleanupBlobUrl);
+                console.log("Archiver script initialization complete.");
+            }, 100); // Small timeout to ensure JSZip is fully parsed
+        }); // End of DOMContentLoaded
+    </script>
+
+</body>
+</html>

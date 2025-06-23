@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مقسم PDF الاحترافي</title>
+    <!-- Load pdf-lib Library -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Load fontkit (needed for reading/writing PDFs with various fonts) -->
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <!-- Load JSZip for creating ZIP archives -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007bff; /* Changed to blue for differentiation */
+            --secondary-color: #17a2b8; /* Changed to a teal */
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #424242;
+            --progress-bg: #555;
+            --progress-value-bg: var(--success-color);
+            --footer-bg: #222;
+            --footer-text: #aaa;
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+        }
+
+        .converter-container {
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 750px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .converter-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+
+        #pdfInput { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #0056b3, #117a8b); box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfoDisplay { /* Renamed from fileInfo for clarity */
+            display: block; margin-top: 10px; margin-bottom: 20px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #previewContainer {
+            display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 10px;
+            margin-top: 20px; margin-bottom: 25px; padding: 15px; border: 2px dashed var(--preview-border);
+            border-radius: var(--border-radius); min-height: 80px; background-color: var(--preview-bg);
+            text-align: center; font-size: 0.95em; color: #e0e0e0;
+        }
+         #previewContainer i { font-size: 2em; color: var(--secondary-color); margin-bottom: 5px; }
+
+        .options-group {
+            margin-bottom: 20px;
+            padding: 15px; border: 1px solid var(--input-border);
+            border-radius: var(--border-radius); background-color: var(--input-bg); text-align: right;
+        }
+        .options-group legend {
+            font-weight: 700; color: var(--primary-color); padding: 0 8px;
+            margin-right: -8px; font-size: 1.05rem;
+        }
+        .options-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; margin-top: 10px; }
+        .option-item {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+            flex: 1 1 auto; min-width: 150px;
+        }
+        .options-group label { cursor: pointer; color: var(--text-color); transition: color 0.3s ease; display: block; font-size: 0.9em; margin-bottom: 3px; }
+        .options-group label:hover { color: var(--secondary-color); }
+
+        .options-group input[type="number"], .options-group select {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--input-border); border-radius: 6px;
+            font-size: 0.9rem; font-family: 'Cairo', sans-serif; background-color: var(--input-bg) !important;
+            color: var(--input-text) !important; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; direction: ltr; text-align: left;
+            text-align-last: right;
+            -moz-text-align-last: right;
+            direction: rtl;
+        }
+        .options-group input[type="number"] { text-align: right; } /* For number input specifically */
+        .options-group option { background-color: var(--container-bg); color: var(--text-color); direction: rtl; text-align: right;}
+
+        .options-group input[type="number"]:focus, .options-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(0, 123, 255, 0.3); outline: none;
+        }
+
+        #outputBaseFilename {
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
+            background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #outputBaseFilename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--success-color), #1e7e34); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin-bottom: 15px;
+            box-shadow: 0 6px 18px rgba(40, 167, 69, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(40, 167, 69, 0.4);
+            background: linear-gradient(135deg, #218838, #155724);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+
+        #statusDiv { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #download-options { margin-top: 25px; display: none; flex-direction: column; align-items: center; gap: 15px; }
+        .download-button {
+            display: inline-block; color: var(--button-text-color); padding: 12px 25px; text-decoration: none; border-radius: 8px;
+            font-size: 1rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 80%; max-width: 300px;
+        }
+        #downloadLinkZip { background-color: var(--primary-color); }
+        #downloadLinkZip:hover { background-color: #0056b3; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(0, 123, 255, 0.5); }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+         .options-group small {
+             font-size: 0.8em;
+             opacity: 0.7;
+             display: block;
+             text-align: right;
+             margin-top: 5px;
+         }
+
+        footer {
+            width: 100%;
+            padding: 15px 0;
+            text-align: center;
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
+            font-size: 0.85em;
+            margin-top: 40px; /* Ensure some space from content */
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        footer a:hover {
+            color: var(--secondary-color);
+        }
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .converter-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfoDisplay { font-size: 0.95em; }
+            #previewContainer { min-height: 90px; padding: 20px; font-size: 1em; }
+            .options-grid { gap: 20px; justify-content: center; }
+            .option-item { min-width: 200px; }
+            .options-group { padding: 20px; text-align: right; }
+            #outputBaseFilename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #statusDiv { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            #download-options { flex-direction: row; justify-content: center; gap: 20px; }
+            .download-button { padding: 14px 30px; font-size: 1.05rem; width: auto; max-width: none; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            .options-group small { font-size: 0.85em;}
+            footer { font-size: 0.9em; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 19px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="converter-container">
+        <h1>مقسم PDF الاحترافي</h1>
+
+        <label for="pdfInput" class="file-label">اختر ملف PDF</label>
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <span id="fileInfoDisplay">لم يتم اختيار ملف.</span>
+
+        <div id="previewContainer">
+             <span id="previewPlaceholder">اسحب ملف PDF هنا أو انقر لاختياره</span>
+             <span id="previewFilename" style="display: none;"></span>
+             <span id="previewFileInfo" style="display: none;"></span>
+        </div>
+
+        <fieldset class="options-group">
+            <legend>خيارات التقسيم</legend>
+            <div class="options-grid">
+                <div class="option-item">
+                    <label for="pagesPerSplitInput">عدد الصفحات لكل قسم:</label>
+                    <input type="number" id="pagesPerSplitInput" name="pagesPerSplitInput" value="1" min="1">
+                    <small>سيتم تقسيم الملف إلى عدة ملفات، كل ملف يحتوي على هذا العدد من الصفحات.</small>
+                </div>
+            </div>
+        </fieldset>
+
+        <input type="text" id="outputBaseFilename" placeholder="الاسم الأساسي للملفات الناتجة (اختياري)">
+
+        <button id="processBtn" disabled>بدء التقسيم</button>
+
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="statusDiv"></div>
+
+        <div id="download-options">
+            <a id="downloadLinkZip" href="#" download="split_files.zip" class="download-button">تحميل الملفات المقسمة (ZIP)</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+
+    <script>
+        console.log("Splitter Script start.");
+
+        // Check if libraries are loaded
+        if (typeof window.PDFLib === 'undefined' || typeof window.fontkit === 'undefined' || typeof window.JSZip === 'undefined') {
+            console.error("pdf-lib, fontkit, or JSZip is not loaded!");
+            alert("خطأ: لم يتم تحميل المكتبات اللازمة (pdf-lib, fontkit, JSZip). لا يمكن المتابعة.");
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('pdfInput').disabled = true;
+        } else {
+            console.log("pdf-lib, fontkit, and JSZip loaded successfully.");
+            const { PDFDocument } = window.PDFLib;
+
+            // --- DOM Elements ---
+            const pdfInput = document.getElementById('pdfInput');
+            const fileInfoDisplay = document.getElementById('fileInfoDisplay');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewPlaceholder = document.getElementById('previewPlaceholder');
+            const previewFilename = document.getElementById('previewFilename');
+            const previewFileInfo = document.getElementById('previewFileInfo');
+            const pagesPerSplitInput = document.getElementById('pagesPerSplitInput');
+            const outputBaseFilenameInput = document.getElementById('outputBaseFilename');
+            const processBtn = document.getElementById('processBtn');
+            const progressBarContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusDiv = document.getElementById('statusDiv');
+            const downloadOptionsDiv = document.getElementById('download-options');
+            const downloadLinkZip = document.getElementById('downloadLinkZip');
+
+            // --- State ---
+            let selectedPdfFile = null;
+            let pdfArrayBuffer = null;
+            let zipBlobUrl = null;
+            let isProcessing = false;
+            let originalFileSize = 0;
+            let totalPages = 0;
+
+            // --- Utility Functions ---
+            function cleanupBlobUrl() {
+                if (zipBlobUrl) {
+                    URL.revokeObjectURL(zipBlobUrl);
+                    zipBlobUrl = null;
+                    console.log("ZIP Blob URL revoked.");
+                }
+            }
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 بايت';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            function sanitizeFilename(filename) {
+                return filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_');
+            }
+
+            function updateUIState(processing = isProcessing) {
+                const fileSelected = !!selectedPdfFile;
+                processBtn.disabled = !fileSelected || processing || !pdfArrayBuffer || totalPages === 0;
+                previewPlaceholder.style.display = fileSelected ? 'none' : 'block';
+                previewFilename.style.display = fileSelected ? 'block' : 'none';
+                previewFileInfo.style.display = fileSelected ? 'block' : 'none';
+
+                if (fileSelected) {
+                    previewFilename.textContent = `الملف: ${selectedPdfFile.name}`;
+                    previewFileInfo.textContent = `الحجم: ${formatBytes(originalFileSize)} | الصفحات: ${totalPages > 0 ? totalPages : 'جارٍ القراءة...'}`;
+                    
+                    if (!processing && !statusDiv.textContent.includes('اكتمل') && !statusDiv.style.color.includes('danger')) {
+                         fileInfoDisplay.textContent = `تم اختيار الملف. جاهز للتقسيم.`;
+                         fileInfoDisplay.style.color = 'var(--success-color)';
+                        if (!outputBaseFilenameInput.value) {
+                            const baseName = selectedPdfFile.name.replace(/\.pdf$/i, '');
+                            outputBaseFilenameInput.value = sanitizeFilename(baseName);
+                        }
+                    }
+                } else {
+                    previewFilename.textContent = '';
+                    previewFileInfo.textContent = '';
+                    fileInfoDisplay.textContent = `لم يتم اختيار ملف.`;
+                    fileInfoDisplay.style.color = 'var(--text-color)';
+                    outputBaseFilenameInput.value = '';
+                    downloadOptionsDiv.style.display = 'none';
+                    originalFileSize = 0;
+                    totalPages = 0;
+                }
+                progressBarContainer.style.display = processing ? 'block' : 'none';
+                processBtn.disabled = !fileSelected || processing || !pdfArrayBuffer || totalPages === 0;
+            }
+
+
+            // --- File Input Handler ---
+            pdfInput.addEventListener("change", async function(e) {
+                console.log("File input changed.");
+                if (isProcessing) {
+                    console.warn("Processing in progress, ignoring new file selection.");
+                    e.target.value = null;
+                    return;
+                }
+                // Reset state
+                selectedPdfFile = null;
+                pdfArrayBuffer = null;
+                originalFileSize = 0;
+                totalPages = 0;
+                previewFileInfo.textContent = '';
+                statusDiv.innerHTML = '';
+                downloadOptionsDiv.style.display = 'none';
+                progressBarContainer.style.display = 'none';
+                progressBar.value = 0;
+                cleanupBlobUrl();
+                outputBaseFilenameInput.value = '';
+                updateUIState();
+
+                const file = e.target.files[0];
+                if (!file) {
+                    console.log("No file selected.");
+                    updateUIState();
+                    return;
+                }
+
+                if (file.type !== 'application/pdf') {
+                    fileInfoDisplay.textContent = 'خطأ: الملف المختار ليس بصيغة PDF.';
+                    fileInfoDisplay.style.color = 'var(--danger-color)';
+                    selectedPdfFile = null;
+                    e.target.value = null;
+                    updateUIState();
+                    return;
+                }
+
+                selectedPdfFile = file;
+                originalFileSize = file.size;
+                fileInfoDisplay.textContent = 'جاري قراءة الملف...';
+                fileInfoDisplay.style.color = 'var(--secondary-color)';
+                updateUIState();
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    pdfArrayBuffer = event.target.result;
+                    statusDiv.textContent = 'جاري تحليل معلومات الملف...';
+                    try {
+                        const tempDoc = await PDFDocument.load(pdfArrayBuffer, {
+                             updateMetadata: false,
+                             ignoreEncryption: true, // Try to get page count even if encrypted
+                             fontkit: window.fontkit
+                        });
+                        totalPages = tempDoc.getPageCount();
+                        statusDiv.innerHTML = '';
+                        isProcessing = false;
+                        console.log(`File loaded: ${totalPages} pages, ${formatBytes(originalFileSize)}`);
+                        pagesPerSplitInput.max = totalPages; // Set max for pages per split
+                        updateUIState();
+                    } catch (loadError) {
+                         console.error("Error parsing PDF:", loadError);
+                         statusDiv.textContent = `خطأ في قراءة الملف: ${loadError.message || 'ملف تالف أو محمي بكلمة مرور؟'}`;
+                         statusDiv.style.color = 'var(--danger-color)';
+                         selectedPdfFile = null;
+                         pdfArrayBuffer = null;
+                         originalFileSize = 0;
+                         totalPages = 0;
+                         isProcessing = false;
+                         updateUIState();
+                    }
+                };
+                reader.onerror = (err) => {
+                    console.error("FileReader error:", err);
+                    fileInfoDisplay.textContent = 'حدث خطأ أثناء قراءة الملف.';
+                    fileInfoDisplay.style.color = 'var(--danger-color)';
+                    selectedPdfFile = null;
+                    pdfArrayBuffer = null;
+                    originalFileSize = 0;
+                    totalPages = 0;
+                    isProcessing = false;
+                    updateUIState();
+                };
+                reader.readAsArrayBuffer(file);
+                e.target.value = null;
+            });
+
+
+            // --- Processing Logic ---
+            processBtn.addEventListener('click', async function() {
+                console.log("Process button clicked.");
+                if (isProcessing || !selectedPdfFile || !pdfArrayBuffer || totalPages === 0) {
+                    console.warn("Processing click rejected. State:", { isProcessing, selectedPdfFile, pdfArrayBuffer, totalPages });
+                    statusDiv.textContent = 'الرجاء اختيار ملف PDF صالح أولاً والتأكد من قراءة عدد الصفحات!';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+
+                const pagesPerSplit = parseInt(pagesPerSplitInput.value, 10);
+                if (isNaN(pagesPerSplit) || pagesPerSplit < 1) {
+                    statusDiv.textContent = 'الرجاء إدخال عدد صحيح موجب لعدد الصفحات لكل قسم.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+
+                isProcessing = true;
+                updateUIState();
+                cleanupBlobUrl();
+                statusDiv.innerHTML = 'جاري التحضير للتقسيم... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBar.value = 0;
+                progressBarContainer.style.display = 'block';
+                console.log("Splitting process started.");
+
+                try {
+                    statusDiv.innerHTML = 'جاري تحميل ملف PDF للمعالجة... <div class="spinner"></div>';
+                    progressBar.value = 5;
+
+                    // Load the original PDF document, ensuring fontkit is registered for complex fonts
+                    const originalPdfDoc = await PDFDocument.load(pdfArrayBuffer, {
+                        fontkit: window.fontkit
+                    });
+                    progressBar.value = 15;
+
+                    const zip = new JSZip();
+                    let baseOutputName = outputBaseFilenameInput.value.trim();
+                    if (!baseOutputName) {
+                        baseOutputName = sanitizeFilename(selectedPdfFile.name.replace(/\.pdf$/i, ''));
+                    } else {
+                        baseOutputName = sanitizeFilename(baseOutputName.replace(/\.pdf$/i, ''));
+                    }
+
+                    let numParts = 0;
+                    const totalSplittingOperations = Math.ceil(totalPages / pagesPerSplit);
+                    
+                    statusDiv.innerHTML = `جاري تقسيم الملف (${numParts}/${totalSplittingOperations})... <div class="spinner"></div>`;
+
+                    for (let i = 0; i < totalPages; i += pagesPerSplit) {
+                        numParts++;
+                        const newPdfDoc = await PDFDocument.create();
+                        // Register fontkit with the new document as well if needed, though copying pages should handle this.
+                        newPdfDoc.registerFontkit(window.fontkit);
+
+
+                        const startPage = i;
+                        const endPage = Math.min(i + pagesPerSplit, totalPages);
+                        
+                        const pageIndicesToCopy = [];
+                        for(let k = startPage; k < endPage; k++) {
+                            pageIndicesToCopy.push(k);
+                        }
+                        
+                        const copiedPages = await newPdfDoc.copyPages(originalPdfDoc, pageIndicesToCopy);
+                        copiedPages.forEach(page => newPdfDoc.addPage(page));
+
+                        // Save with default options to preserve quality.
+                        // pdf-lib doesn't have explicit "quality" settings like image compressors,
+                        // it aims for lossless page copying.
+                        const newPdfBytes = await newPdfDoc.save({ useObjectStreams: true }); // useObjectStreams can help reduce size a bit
+
+                        // Professional numbering: part_1, part_2, ...
+                        const partFilename = `${baseOutputName}_part_${numParts}.pdf`;
+                        zip.file(partFilename, newPdfBytes);
+                        
+                        // Update progress: 15% for loading, 70% for splitting loop, 15% for zipping/final
+                        progressBar.value = 15 + Math.round((numParts / totalSplittingOperations) * 70);
+                        statusDiv.innerHTML = `جاري تقسيم الملف (${numParts}/${totalSplittingOperations})... <div class="spinner"></div>`;
+                        console.log(`Created part ${numParts}: ${partFilename} with pages ${startPage + 1}-${endPage}`);
+                        
+                        // Yield to the event loop occasionally for very large files to keep UI responsive
+                        if (numParts % 5 === 0) { // e.g., every 5 parts
+                            await new Promise(resolve => setTimeout(resolve, 0));
+                        }
+                    }
+
+                    statusDiv.innerHTML = 'جاري ضغط الملفات المقسمة... <div class="spinner"></div>';
+                    progressBar.value = 90;
+                    
+                    const zipBlob = await zip.generateAsync({
+                        type: "blob",
+                        compression: "DEFLATE",
+                        compressionOptions: {
+                            level: 6 // Good balance of speed and compression
+                        }
+                    }, (metadata) => { // Progress callback for zipping
+                        if (metadata.percent) {
+                            progressBar.value = 90 + Math.round(metadata.percent * 0.09); // Last 9% for zipping
+                        }
+                    });
+
+                    zipBlobUrl = URL.createObjectURL(zipBlob);
+                    const zipFilename = `${baseOutputName}_split_files.zip`;
+
+                    downloadLinkZip.href = zipBlobUrl;
+                    downloadLinkZip.download = zipFilename;
+
+                    statusDiv.textContent = `اكتمل التقسيم بنجاح! تم إنشاء ${numParts} جزء/أجزاء.`;
+                    statusDiv.style.color = 'var(--success-color)';
+                    progressBar.value = 100;
+                    setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
+                    downloadOptionsDiv.style.display = 'flex';
+                    console.log("Splitting and zipping successful!");
+
+                } catch (error) {
+                    console.error("Error during PDF splitting:", error);
+                    statusDiv.textContent = `حدث خطأ أثناء التقسيم: ${error.message || 'خطأ غير معروف.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    progressBarContainer.style.display = 'none';
+                    downloadOptionsDiv.style.display = 'none';
+                    cleanupBlobUrl();
+                } finally {
+                    console.log("Processing finished (finally block).");
+                    isProcessing = false;
+                    const spinner = statusDiv.querySelector('.spinner');
+                    if (spinner) spinner.remove();
+                    updateUIState();
+                }
+            });
+
+            // --- Drag and Drop ---
+            previewContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isProcessing) previewContainer.style.borderColor = 'var(--primary-color)';
+            });
+
+            previewContainer.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewContainer.style.borderColor = 'var(--preview-border)';
+            });
+
+            previewContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewContainer.style.borderColor = 'var(--preview-border)';
+                if (isProcessing) return;
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    pdfInput.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    pdfInput.dispatchEvent(event);
+                }
+            });
+
+            // --- Initial UI Setup ---
+            console.log("Setting initial UI state for splitter.");
+            updateUIState();
+            window.addEventListener('beforeunload', cleanupBlobUrl);
+            console.log("Splitter script initialization complete.");
+        }
+    </script>
+
+</body>
+</html>

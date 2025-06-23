@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول الامتحانات النهائية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- إضافة خط Cairo بالإضافة إلى Tajawal -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- Embedded CSS -->
+    <style>
+        /* --- General Styles & Variables --- */
+        :root {
+            --primary-purple: #4b0082; /* Indigo */
+            --secondary-purple: #6a1b9a; /* Purple */
+            --header-bg: #fffacd; /* LemonChiffon */
+            --date-bg: #90ee90; /* LightGreen */
+            --border-color: var(--primary-purple);
+            --text-color: #333;
+            --white: #fff;
+            /* --arabic-font: 'Tajawal', sans-serif; */
+            /* --- NEW: Prioritize Cairo Font --- */
+            --arabic-font: 'Cairo', 'Tajawal', sans-serif;
+            --editable-focus-outline: 1px dashed var(--primary-purple);
+            --editable-focus-bg: rgba(230, 230, 250, 0.4); /* Lavender with transparency */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+             height: 100%;
+        }
+
+        body {
+            /* --- Font applied globally via variable --- */
+            font-family: var(--arabic-font);
+            direction: rtl;
+            background-color: #362643;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 95%;
+            margin: 20px;
+            background-color: var(--white);
+            border: 3px solid var(--primary-purple); border-radius: 15px; padding: 25px;
+            position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: visible;
+        }
+
+        /* --- Header Styles --- */
+        header {
+            text-align: center; margin-bottom: 25px; position: relative;
+            padding-top: 50px; /* Increased padding to make space for school name */
+            border-bottom: 1px dashed var(--secondary-purple); /* Optional separator */
+            padding-bottom: 15px;
+        }
+        /* --- NEW: School Name Style --- */
+        .school-name-container {
+             position: absolute;
+             top: 10px;
+             right: 20px;
+             text-align: right;
+        }
+        .school-name-label {
+             font-size: 0.9em;
+             color: var(--primary-purple);
+             display: block;
+             margin-bottom: 2px;
+        }
+        #schoolName {
+             font-size: 1.1em;
+             font-weight: bold;
+             color: var(--primary-purple);
+             cursor: text;
+             padding: 2px 5px;
+             display: inline-block; /* For focus outline */
+             min-width: 150px; /* Give it some initial width */
+             border-bottom: 1px dotted var(--primary-purple);
+        }
+        #schoolName:focus {
+             outline: var(--editable-focus-outline);
+             background-color: var(--editable-focus-bg);
+             border-radius: 3px;
+             border-bottom-style: solid;
+        }
+
+        .admin-text {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-weight: bold;
+            color: var(--primary-purple);
+        }
+        .date-input {
+            font-size: 1em;
+            font-weight: bold;
+            color: var(--primary-purple);
+            cursor: text;
+            padding: 2px 5px;
+            display: inline-block;
+            min-width: 150px;
+            border-bottom: 1px dotted var(--primary-purple);
+        }
+        .date-input:focus {
+            outline: var(--editable-focus-outline);
+            background-color: var(--editable-focus-bg);
+            border-radius: 3px;
+            border-bottom-style: solid;
+        }
+        .logo { max-width: 100px; height: auto; margin-bottom: 10px; width: }
+        .deco-img-top { position: absolute; top: 5px; left: 50%; transform: translateX(-50%); max-width: 80px; height: auto; }
+        header h1, header h2 { color: var(--primary-purple); margin-bottom: 5px; cursor: text; }
+        header h1 { font-weight: bold; font-size: 1.7em; }
+        header h2 { font-weight: normal; font-size: 1.3em; margin-bottom: 15px; }
+        header h1:focus, header h2:focus { outline: var(--editable-focus-outline); background-color: var(--editable-focus-bg); border-radius: 3px; }
+
+        /* --- Table Styles --- */
+        .table-controls { text-align: left; margin-bottom: 15px; }
+        .control-btn {
+            font-family: var(--arabic-font); padding: 8px 15px; margin-left: 10px;
+            background-color: var(--primary-purple); color: var(--white); border: none;
+            border-radius: 5px; cursor: pointer; font-size: 0.9em; transition: background-color 0.3s ease;
+            user-select: none;
+        }
+        .control-btn:hover { background-color: var(--secondary-purple); }
+        .control-btn i { margin-left: 5px; }
+        .table-wrapper { overflow-x: auto; margin-bottom: 20px; }
+        #examScheduleTable { width: 100%; border-collapse: collapse; border: 2px solid var(--border-color); }
+        #examScheduleTable th, #examScheduleTable td {
+            border: 1px solid var(--border-color); padding: 8px; text-align: center;
+            vertical-align: middle; font-size: 0.95em; min-width: 100px;
+        }
+        #examScheduleTable th { background-color: var(--header-bg); font-weight: bold; position: relative; }
+        #examScheduleTable th.day-date-col { background-color: var(--date-bg); min-width: 160px; font-weight: bold; }
+        #examScheduleTable td.day-date-cell { background-color: var(--date-bg); font-weight: bold; }
+
+        /* Editable Input Cell */
+        .editable-cell {
+            width: 100%; border: none; background-color: transparent; text-align: center;
+            font-family: inherit; font-size: inherit; padding: 5px;
+        }
+        .editable-cell:focus { outline: var(--editable-focus-outline); background-color: var(--editable-focus-bg); }
+
+        /* Select Dropdown - Enlarged */
+        .subject-select {
+            width: 100%;
+            padding: 8px 5px;
+            border: 1px solid #ccc; border-radius: 4px;
+            /* --- Ensure font is applied --- */
+            font-family: var(--arabic-font); cursor: pointer;
+            background-color: var(--white);
+            font-size: 1em;
+            min-height: 38px;
+            min-width: 150px;
+            max-width: 200px;
+        }
+
+        /* Remove Buttons */
+        .remove-row-btn, .remove-col-btn {
+            background-color: #e74c3c; color: white; border: none; border-radius: 50%;
+            width: 22px; height: 22px; font-size: 12px; line-height: 20px;
+            cursor: pointer; text-align: center; font-weight: bold; transition: background-color 0.2s ease;
+            margin: 0 5px;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .remove-row-btn:hover, .remove-col-btn:hover { background-color: #c0392b; }
+        .header-remove-btn { position: absolute; top: 2px; left: 2px; opacity: 0.5; }
+        .header-remove-btn:hover{ opacity: 1; }
+        #examScheduleTable th:first-child .remove-col-btn { display: none; }
+        td.actions-cell { min-width: 50px; padding: 2px; }
+
+        /* --- Notes Section --- */
+        .notes { margin-bottom: 30px; padding-right: 15px; position: relative; }
+        .notes h3 { color: var(--primary-purple); margin-bottom: 10px; display: inline-block; }
+        .notes ul { list-style: none; padding-right: 0; }
+        .notes li { margin-bottom: 5px; }
+        .editable-note-item, .editable-time {
+            display: inline-block; min-width: 50px; border-bottom: 1px dotted var(--primary-purple);
+            cursor: text; padding: 0 5px;
+        }
+        .editable-note-item:focus, .editable-time:focus {
+             outline: var(--editable-focus-outline); background-color: var(--editable-focus-bg);
+             border-bottom-style: solid; border-radius: 2px;
+        }
+        .add-note-btn {
+            background-color: var(--primary-purple);
+            color: white; border: none; border-radius: 50%;
+            width: 25px; height: 25px; font-size: 14px;
+            cursor: pointer; margin-right: 10px; vertical-align: middle;
+        }
+        .add-note-btn:hover { background-color: var(--secondary-purple); }
+
+        .date-input-ltr { direction: ltr; text-align: right; }
+
+        /* --- Footer Styles --- */
+        footer {
+            margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;
+            position: relative; min-height: 120px; display: flex;
+            justify-content: space-between; align-items: flex-end; padding-bottom: 20px;
+        }
+        .principal-signature {
+            text-align: center; color: var(--primary-purple); font-weight: bold;
+            align-self: center;
+        }
+        .principal-label {
+            display: block; margin-bottom: 10px; font-weight: bold;
+            text-decoration: underline;
+        }
+        .deco-img-bottom { position: absolute; bottom: 40px; left: 20px; max-width: 200px; height: auto; }
+        .wishes-box {
+            border: 2px dashed var(--primary-purple); border-radius: 50px / 30px; padding: 15px 40px;
+            text-align: center; position: relative; margin: 0 auto; align-self: center; background-color: #fdf5e6;
+        }
+        .wishes-box p.editable-wishes {
+             margin: 0; font-weight: bold; color: var(--primary-purple);
+             cursor: text; padding: 3px 5px; min-width: 150px; display: inline-block;
+        }
+        .wishes-box p.editable-wishes:focus {
+             outline: var(--editable-focus-outline); background-color: var(--editable-focus-bg);
+             border-radius: 3px;
+        }
+        .wish-deco { position: absolute; top: 50%; transform: translateY(-50%); max-width: 35px; height: auto; }
+        .wish-deco-left { left: -15px; }
+        .wish-deco-right { right: -15px; }
+        .footer-signature { position: absolute; bottom: 5px; left: 10px; font-size: 0.8em; color: #777; user-select: none; }
+
+         .editable-principal {
+             display: inline-block; cursor: text; padding: 0 3px;
+             border-bottom: 1px dotted var(--primary-purple);
+         }
+         .editable-principal:focus {
+             outline: var(--editable-focus-outline); background-color: var(--editable-focus-bg);
+             border-radius: 3px; border-bottom-style: solid;
+         }
+
+
+        /* --- Action Buttons (PDF/JPG/Clear) --- */
+        .action-buttons { margin-top: 25px; text-align: center; padding-top: 15px; border-top: 1px solid #eee; }
+        .action-buttons .control-btn { margin: 5px 10px; }
+        .pdf-btn { background-color: #27ae60; } .pdf-btn:hover { background-color: #229954; }
+        .jpg-btn { background-color: #f39c12; } .jpg-btn:hover { background-color: #e67e22; }
+        .clear-btn { background-color: #e74c3c; } .clear-btn:hover { background-color: #c0392b; }
+
+        /* --- Responsiveness --- */
+        @media (max-width: 768px) {
+            body { padding: 10px 0; }
+            .container { padding: 15px; margin: 10px; width: 98%; }
+             header { padding-top: 80px; }
+             .school-name-container { top: 5px; right: 10px; left: 10px; text-align: center; position: absolute;}
+             .admin-text { top: 45px; left: 10px; font-size: 0.9em;}
+             .logo { max-width: 100px; margin-top: 5px;}
+             header h1 { font-size: 1.4em; } header h2 { font-size: 1.1em; }
+            .deco-img-top { max-width: 60px; top: 40px; }
+            #examScheduleTable th, #examScheduleTable td { font-size: 0.85em; min-width: 80px; padding: 5px; }
+            #examScheduleTable th.day-date-col { min-width: 120px; }
+            .control-btn { padding: 6px 10px; font-size: 0.8em; margin-bottom: 5px; }
+            footer { flex-direction: column; align-items: center; text-align: center; }
+            .deco-img-bottom { position: static; margin-top: 15px; margin-bottom: 15px; }
+            .principal-signature { margin-bottom: 15px; align-self: auto; }
+            .wishes-box { margin-bottom: 40px; align-self: auto; width: 90%; }
+            .footer-signature { position: relative; bottom: auto; left: auto; margin-top: 10px; }
+        }
+        @media (max-width: 480px) {
+             body { padding: 5px 0; }
+             .container { margin: 5px; padding: 10px; }
+             header { padding-top: 70px; }
+             .school-name-container { top: 5px; }
+             #schoolName { font-size: 1em; }
+             .admin-text { top: 35px; font-size: 0.8em;}
+             .logo { max-width: 100px; }
+             header h1 { font-size: 1.2em; } header h2 { font-size: 1.0em; }
+             .deco-img-top { max-width: 50px; top: 30px;}
+            .table-controls, .action-buttons { text-align: center; }
+            .control-btn { display: block; width: 80%; margin: 5px auto; }
+            .action-buttons .control-btn { display: inline-block; width: auto; margin: 5px; }
+            .subject-select { min-width: 100px; max-width: 130px; font-size: 0.9em;}
+            #examScheduleTable th, #examScheduleTable td { font-size: 0.8em; min-width: 70px;}
+            #examScheduleTable th.day-date-col { min-width: 100px; }
+             .wishes-box { padding: 10px 20px; }
+             .wishes-box p.editable-wishes { font-size: 0.9em; }
+             .wish-deco { max-width: 25px; }
+             .wish-deco-left { left: -10px; }
+             .wish-deco-right { right: -10px; }
+        }
+
+        /* Styles for Print/Export - Ensure content appearance */
+        @media print {
+            body { background-color: var(--white); padding: 0; margin: 0;}
+            .container { border: none !important; box-shadow: none !important; margin: 0 !important; max-width: 100% !important; width: 100% !important; padding: 10px !important; border-radius: 0 !important; }
+            /* Hide all control/action elements */
+            .table-controls, .action-buttons, .remove-row-btn, .remove-col-btn, .admin-text, .footer-signature, .header-remove-btn, .add-note-btn { display: none !important; visibility: hidden !important; }
+
+             [contenteditable="true"] { border-bottom: none !important; outline: none !important; background-color: transparent !important; }
+             /* --- Ensure font applies in print/export replacements --- */
+             input.editable-cell, select.subject-select {
+                border: none !important; background-color: transparent !important;
+                appearance: none; -webkit-appearance: none; -moz-appearance: none;
+                padding: 5px; display: inline-block !important; width: 100%;
+                text-align: center; color: var(--text-color);
+                /* --- Apply font here too --- */
+                font-family: var(--arabic-font) !important;
+                font-size: inherit; vertical-align: middle;
+             }
+             input.editable-cell[style*="display: none"],
+             select.subject-select[style*="display: none"] { display: none !important; }
+             /* --- Ensure font applies in print/export replacements --- */
+             span[data-export-replacement="true"] {
+                 display: inline-block !important; width: 100%; padding: 5px;
+                 text-align: center;
+                 /* --- Apply font here too --- */
+                 font-family: var(--arabic-font) !important;
+                 font-size: inherit; color: var(--text-color); vertical-align: middle;
+             }
+
+             /* --- SPECIFICALLY HIDE THE ACTIONS COLUMN CELL IN BODY --- */
+             #examScheduleTable tbody td.actions-cell {
+                 display: none !important; visibility: hidden !important;
+                 padding: 0 !important; border: none !important;
+                 width: 0 !important; min-width: 0 !important;
+             }
+
+             /* Page break control */
+             #examScheduleTable { page-break-inside: auto; }
+             #examScheduleTable tr { page-break-inside: avoid; page-break-after: auto; }
+             #examScheduleTable thead { display: table-header-group; }
+             footer { page-break-before: always; }
+        }
+
+        /* Specific styles for html2canvas rendering */
+        .html2canvas-container { width: 3000px !important; height: 3000px !important; }
+
+    </style>
+
+    <!-- PDF & Image Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <!-- Container div remains the primary target for content structure and export -->
+    <div class="container" id="scheduleContainer">
+        <header>
+            <!-- NEW: School Name -->
+            <div class="school-name-container">
+                 <span class="school-name-label">المدرسة:</span>
+                 <span id="schoolName" contenteditable="true">اسم المدرسة هنا</span>
+            </div>
+
+            <!-- حقل التاريخ المعدل -->
+            <div class="admin-text">
+                <span class="school-name-label">التاريخ:</span>
+                <span id="currentDate" class="date-input" contenteditable="true">ضع التاريخ هنا</span>
+            </div>
+
+            <img src="images/trbia.png" alt="الشعار" class="logo">
+            <!-- Decoration image moved to center top -->
+            <!-- <img src="images/pencil-girl.png" alt="زخرفة" class="deco-img-top"> -->
+
+            <!-- Editable Titles -->
+            <h1 id="mainTitle" contenteditable="true">جدول الامتحانات النهائية للعام الدراسي ٢٠٢٣-٢٠٢٤</h1>
+            <h2 id="subTitle" contenteditable="true">{ الدور الثاني }</h2>
+        </header>
+
+        <div class="table-controls">
+            <button id="addColumnBtn" class="control-btn"><i class="fas fa-plus"></i> إضافة صف</button>
+            <button id="addRowBtn" class="control-btn"><i class="fas fa-plus"></i> إضافة يوم</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="examScheduleTable">
+                <thead>
+                    <tr>
+                        <th class="day-date-col">اليوم والتاريخ <button class="remove-col-btn header-remove-btn" style="visibility: hidden;">X</button></th>
+                        <th class="grade-col">الصف الأول <button class="remove-col-btn header-remove-btn" title="حذف الصف الأول">X</button></th>
+                        <th class="grade-col">الصف الثاني <button class="remove-col-btn header-remove-btn" title="حذف الصف الثاني">X</button></th>
+                        <th class="grade-col">الصف الثالث <button class="remove-col-btn header-remove-btn" title="حذف الصف الثالث">X</button></th>
+                        <th class="grade-col">الصف الرابع <button class="remove-col-btn header-remove-btn" title="حذف الصف الرابع">X</button></th>
+                        <th class="grade-col">الصف الخامس <button class="remove-col-btn header-remove-btn" title="حذف الصف الخامس">X</button></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows generated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="notes">
+            <h3>الملاحظات:</h3>
+            <button id="addNoteBtn" class="add-note-btn" title="إضافة ملاحظة جديدة">+</button>
+            <ul id="notesList">
+                 <li>* <span class="editable-note-item" id="noteItem1" contenteditable="true">يبدأ الامتحان الساعة ( <span class="editable-time" id="examTime" contenteditable="true">.......</span> ) صباحاً.</span></li>
+                 <li>* <span class="editable-note-item" id="noteItem2" contenteditable="true">على جميع التلميذات جلب المستلزمات الامتحانية أثناء الامتحان.</span></li>
+                 <li>* <span class="editable-note-item" id="noteItem3" contenteditable="true">إذا صادف يوم الامتحان عطلة ينقل الامتحان إلى اليوم الذي يليه.</span></li>
+                 <li>* <span class="editable-note-item" id="noteItem4" contenteditable="true">يعتبر يوم السبت ضمن أيام الامتحان.</span></li>
+            </ul>
+        </div>
+
+        <footer>
+            <div class="principal-signature">
+                <span class="principal-label">مدير المدرسة</span>
+                ......................... <br>
+                <span class="editable-principal" id="principalName" contenteditable="true">ابراهيم المدير الافتراضي *انقر للتعديل*</span>
+            </div>
+            <img src="images/1747052314326.jpg" alt="تلميذة" class="deco-img-bottom">
+            <div class="wishes-box">
+                 <img src="images/footer-girl1.png" alt="" class="wish-deco wish-deco-left">
+                 <p id="wishesText" class="editable-wishes" contenteditable="true">مع الأمنيات<br>لتلميذاتنا العزيزات بالنجاح والتفوق</p>
+                 <img src="images/footer-girl2.png" alt="" class="wish-deco wish-deco-right">
+            </div>
+             <span class="footer-signature"> تـ.أ.ابراهيم</span>
+        </footer>
+
+        <div class="action-buttons">
+            <button id="exportPdfBtn" class="control-btn pdf-btn"><i class="fas fa-file-pdf"></i> تصدير PDF</button>
+            <button id="exportJpgBtn" class="control-btn jpg-btn"><i class="fas fa-file-image"></i> تصدير JPG</button>
+            <button id="clearDataBtn" class="control-btn clear-btn"><i class="fas fa-trash"></i> إفراغ الجدول</button>
+        </div>
+
+    </div> <!-- End of container -->
+
+    <!-- Embedded JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Get DOM Elements ---
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            const table = document.getElementById('examScheduleTable');
+            const tableBody = table.querySelector('tbody');
+            const addRowBtn = document.getElementById('addRowBtn');
+            const addColumnBtn = document.getElementById('addColumnBtn');
+            const clearDataBtn = document.getElementById('clearDataBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportJpgBtn = document.getElementById('exportJpgBtn');
+            const addNoteBtn = document.getElementById('addNoteBtn');
+
+            // Editable elements
+            const schoolNameEl = document.getElementById('schoolName');
+            const currentDateEl = document.getElementById('currentDate');
+            const mainTitleEl = document.getElementById('mainTitle');
+            const subTitleEl = document.getElementById('subTitle');
+            const notesListEl = document.getElementById('notesList');
+            const principalNameEl = document.getElementById('principalName');
+            const wishesTextEl = document.getElementById('wishesText');
+            const examTimeEl = document.getElementById('examTime'); // Direct access is still possible
+
+            const storageKey = 'examScheduleData_v5'; // Keep key consistent unless structure changes drastically
+
+            // --- Subject Options ---
+            const subjects = [
+                "التربية الاسلامية", "اللغة العربية", "اللغة الانكليزية", "الرياضيات",
+                "العلوم", "الاجتماعيات", "الاخلاقية", "النشيد والفنية", "التربية الرياضية", ""
+            ];
+
+             // --- Default Values ---
+            const defaultData = {
+                 schoolName: "اسم المدرسة هنا",
+                 currentDate: "ضع التاريخ هنا",
+                 mainTitle: "جدول الامتحانات النهائية للعام الدراسي ٢٠٢٣-٢٠٢٤",
+                 subTitle: "{ الدور الثاني }",
+                 principalName: "مديرة المدرسة",
+                 wishesText: "مع الأمنيات<br>لتلميذاتنا العزيزات بالنجاح والتفوق",
+                 notes: {
+                     items: [
+                        "يبدأ الامتحان الساعة ( <span class=\"editable-time\" id=\"examTime\" contenteditable=\"true\">.......</span> ) صباحاً.",
+                        "على جميع التلميذات جلب المستلزمات الامتحانية أثناء الامتحان.",
+                        "إذا صادف يوم الامتحان عطلة ينقل الامتحان إلى اليوم الذي يليه.",
+                        "يعتبر يوم السبت ضمن أيام الامتحان."
+                     ]
+                 },
+                 headers: ["الصف الأول", "الصف الثاني", "الصف الثالث", "الصف الرابع", "الصف الخامس"],
+                 rows: [
+                     { date: "الأربعاء ٢٠٢٤/٩/١٨", subjects: ["","","","",""] },
+                     { date: "الخميس ٢٠٢٤/٩/١٩", subjects: ["","","","",""] },
+                     { date: "السبت ٢٠٢٤/٩/٢١", subjects: ["","","","",""] },
+                     { date: "الاحد ٢٠٢٤/٩/٢٢", subjects: ["","","","",""] },
+                     { date: "الإثنين ٢٠٢٤/٩/٢٣", subjects: ["","","","",""] },
+                     { date: "الثلاثاء ٢٠٢٤/٩/٢٤", subjects: ["","","","",""] }
+                 ]
+            };
+
+            // --- Core Functions (Table Manipulation) ---
+            function createSubjectDropdown(selectedValue = '') {
+                const select = document.createElement('select');
+                select.classList.add('subject-select');
+                const defaultOption = document.createElement('option');
+                defaultOption.value = ""; defaultOption.textContent = "اختر المادة...";
+                select.appendChild(defaultOption);
+                subjects.forEach(subject => {
+                     if (subject) {
+                         const option = document.createElement('option');
+                         option.value = subject; option.textContent = subject;
+                         if (subject === selectedValue) option.selected = true;
+                         select.appendChild(option);
+                     }
+                });
+                const clearOption = document.createElement('option');
+                clearOption.value = ""; clearOption.textContent = "--- إفراغ ---";
+                select.appendChild(clearOption);
+                select.addEventListener('change', saveData);
+                return select;
+            }
+
+            function createNewRow(rowData = {}) {
+                const row = document.createElement('tr');
+                const headerRow = table.querySelector('thead tr');
+                const numGradeCols = headerRow.querySelectorAll('th.grade-col').length;
+
+                // 1. Day/Date Cell
+                const dateCell = document.createElement('td');
+                dateCell.classList.add('day-date-cell');
+                const dateInput = document.createElement('input');
+                dateInput.type = 'text';
+                dateInput.classList.add('editable-cell', 'date-input-ltr');
+                dateInput.value = rowData.date || `يوم جديد ${tableBody.rows.length + 1}`;
+                dateInput.addEventListener('input', saveData);
+                dateCell.appendChild(dateInput);
+                row.appendChild(dateCell);
+
+                // 2. Subject Cells
+                for (let i = 0; i < numGradeCols; i++) {
+                    const subjectCell = document.createElement('td');
+                    subjectCell.classList.add('subject-cell');
+                    const selectValue = rowData.subjects ? rowData.subjects[i] || '' : '';
+                    subjectCell.appendChild(createSubjectDropdown(selectValue));
+                    row.appendChild(subjectCell);
+                }
+
+                // 3. Actions Cell
+                const actionsCell = document.createElement('td');
+                actionsCell.classList.add('actions-cell');
+                const removeBtn = document.createElement('button');
+                removeBtn.classList.add('remove-row-btn'); removeBtn.innerHTML = 'X';
+                removeBtn.title = 'حذف اليوم';
+                actionsCell.appendChild(removeBtn);
+                row.appendChild(actionsCell);
+                return row;
+            }
+
+            function addRow() {
+                const newRow = createNewRow();
+                tableBody.appendChild(newRow);
+                saveData();
+            }
+
+            function addColumn() {
+                const gradeName = prompt("ادخل اسم الصف الجديد:", `الصف ${table.querySelectorAll('thead th.grade-col').length + 1}`);
+                if (!gradeName || gradeName.trim() === '') return;
+
+                const headerRow = table.querySelector('thead tr');
+                const newTh = document.createElement('th');
+                newTh.classList.add('grade-col');
+                newTh.appendChild(document.createTextNode(gradeName.trim()));
+
+                const removeColBtn = document.createElement('button');
+                removeColBtn.classList.add('remove-col-btn', 'header-remove-btn');
+                removeColBtn.innerHTML = 'X'; removeColBtn.title = `حذف ${gradeName.trim()}`;
+                newTh.appendChild(removeColBtn);
+
+                headerRow.appendChild(newTh);
+
+                Array.from(tableBody.rows).forEach(row => {
+                    const newTd = document.createElement('td');
+                    newTd.classList.add('subject-cell');
+                    newTd.appendChild(createSubjectDropdown());
+                    row.insertBefore(newTd, row.cells[row.cells.length - 1]);
+                });
+                saveData();
+            }
+
+            function removeRow(button) {
+                const row = button.closest('tr');
+                if (row && confirm('هل أنت متأكد من حذف هذا اليوم؟')) {
+                    row.remove();
+                    saveData();
+                }
+            }
+
+            function removeColumn(button) {
+                const th = button.closest('th');
+                if (!th) return;
+                const colIndex = th.cellIndex;
+                if (colIndex <= 0) {
+                    alert("لا يمكن حذف عمود اليوم والتاريخ.");
+                    return;
+                }
+
+                const headerTextNode = Array.from(th.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+                const headerText = headerTextNode ? headerTextNode.textContent.trim() : `العمود ${colIndex}`;
+
+                if (!confirm(`هل أنت متأكد من حذف عمود "${headerText}"؟`)) return;
+
+                th.remove();
+                Array.from(tableBody.rows).forEach(row => {
+                    if (row.cells[colIndex]) {
+                        row.deleteCell(colIndex);
+                    }
+                });
+                saveData();
+            }
+
+            function addNote() {
+                const newNoteText = prompt("ادخل نص الملاحظة الجديدة:", "ملاحظة جديدة");
+                if (newNoteText && newNoteText.trim()) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `* <span class="editable-note-item" contenteditable="true">${newNoteText.trim()}</span>`;
+                    notesListEl.appendChild(li);
+                    saveData();
+                }
+            }
+
+            // --- Data Persistence (LocalStorage) ---
+            function saveData() {
+                const data = {
+                    schoolName: schoolNameEl.textContent.trim(),
+                    currentDate: currentDateEl.textContent.trim(),
+                    mainTitle: mainTitleEl.textContent.trim(),
+                    subTitle: subTitleEl.textContent.trim(),
+                    principalName: principalNameEl.textContent.trim(),
+                    wishesText: wishesTextEl.innerHTML.trim(),
+                    notes: { items: [] },
+                    headers: [],
+                    rows: []
+                };
+
+                table.querySelectorAll('thead th.grade-col').forEach(th => {
+                    const headerText = Array.from(th.childNodes)
+                        .filter(node => node.nodeType === Node.TEXT_NODE)
+                        .map(node => node.textContent.trim()).join('');
+                    if(headerText) data.headers.push(headerText);
+                });
+
+                Array.from(tableBody.rows).forEach(row => {
+                    const dateInput = row.querySelector('.date-input-ltr');
+                    if (!dateInput) return;
+                    const rowData = { date: dateInput.value || '', subjects: [] };
+                    row.querySelectorAll('.subject-cell .subject-select').forEach(select => {
+                        rowData.subjects.push(select.value);
+                    });
+                    if (rowData.subjects.length === data.headers.length) {
+                         data.rows.push(rowData);
+                    } else {
+                         console.warn("Skipping row save due to mismatch in subject count vs header count.", row);
+                    }
+                });
+
+                 notesListEl.querySelectorAll('li .editable-note-item').forEach((itemSpan) => {
+                     data.notes.items.push(itemSpan.innerHTML.trim());
+                 });
+
+                try {
+                    localStorage.setItem(storageKey, JSON.stringify(data));
+                } catch (e) {
+                    console.error("Error saving data to localStorage:", e);
+                    alert("حدث خطأ أثناء حفظ البيانات. قد تكون المساحة ممتلئة.");
+                }
+            }
+
+             function loadData() {
+                const savedData = localStorage.getItem(storageKey);
+                let data;
+
+                try {
+                    data = savedData ? JSON.parse(savedData) : JSON.parse(JSON.stringify(defaultData));
+                    if (!data || typeof data !== 'object') throw new Error("Invalid data format");
+
+                    const deepMerge = (target, source) => {
+                         for (const key in source) {
+                             if (source.hasOwnProperty(key)) {
+                                 if (source[key] instanceof Object && key in target && target[key] instanceof Object) {
+                                     deepMerge(target[key], source[key]);
+                                 } else if (!(key in target)) {
+                                     target[key] = source[key];
+                                 }
+                             }
+                         } return target;
+                     };
+                     let mergedData = JSON.parse(JSON.stringify(defaultData));
+                     Object.assign(mergedData, data);
+                     data = deepMerge(mergedData, defaultData);
+                } catch (e) {
+                    console.error("Error loading/parsing saved data:", e);
+                    alert("لم يتم العثور على بيانات محفوظة أو البيانات تالفة. سيتم تحميل الإعدادات الافتراضية.");
+                    localStorage.removeItem(storageKey);
+                    data = JSON.parse(JSON.stringify(defaultData));
+                }
+
+                 // Restore UI
+                 schoolNameEl.textContent = data.schoolName;
+                 currentDateEl.textContent = data.currentDate;
+                 mainTitleEl.textContent = data.mainTitle;
+                 subTitleEl.textContent = data.subTitle;
+                 principalNameEl.textContent = data.principalName;
+                 wishesTextEl.innerHTML = data.wishesText;
+
+                 const notesToLoad = data.notes?.items || defaultData.notes.items;
+                 notesListEl.innerHTML = '';
+                 notesToLoad.forEach((noteHTML, index) => {
+                     const li = document.createElement('li');
+                     // Ensure existing IDs are not duplicated if default notes have them
+                     const noteId = `noteItem${Date.now()}${index}`; // More unique ID
+                     li.innerHTML = `* <span class="editable-note-item" id="${noteId}" contenteditable="true">${noteHTML}</span>`;
+                      // Check if the note contains the exam time span specifically
+                      if (noteHTML.includes('id="examTime"')) {
+                          // Re-find the exam time element after adding to DOM if needed
+                          // However, direct access via `examTimeEl` should work if only one exists
+                      }
+                     notesListEl.appendChild(li);
+                 });
+
+                 const headerRow = table.querySelector('thead tr');
+                 headerRow.querySelectorAll('th.grade-col').forEach(th => th.remove());
+                 const headersToLoad = (data.headers && data.headers.length > 0) ? data.headers : defaultData.headers;
+                 headersToLoad.forEach(headerText => {
+                     const newTh = document.createElement('th');
+                     newTh.classList.add('grade-col');
+                     newTh.appendChild(document.createTextNode(headerText));
+                     const removeColBtn = document.createElement('button');
+                     removeColBtn.classList.add('remove-col-btn', 'header-remove-btn');
+                     removeColBtn.innerHTML = 'X'; removeColBtn.title = `حذف ${headerText}`;
+                     newTh.appendChild(removeColBtn);
+                     headerRow.appendChild(newTh);
+                 });
+
+                 tableBody.innerHTML = '';
+                 const rowsToLoad = (data.rows && data.rows.length > 0) ? data.rows : defaultData.rows;
+                 rowsToLoad.forEach(rowData => {
+                     const expectedSubjectCount = headersToLoad.length;
+                     rowData.subjects = rowData.subjects || [];
+                     while (rowData.subjects.length < expectedSubjectCount) rowData.subjects.push('');
+                     rowData.subjects = rowData.subjects.slice(0, expectedSubjectCount);
+                     const newRow = createNewRow(rowData);
+                     tableBody.appendChild(newRow);
+                 });
+            }
+
+            function clearData() {
+                if (confirm('هل أنت متأكد من رغبتك في إفراغ جميع بيانات الجدول والعناوين والملاحظات والعودة للإعدادات الافتراضية؟')) {
+                    localStorage.removeItem(storageKey);
+                    loadData();
+                    alert("تمت إعادة الجدول إلى الإعدادات الافتراضية.");
+                }
+            }
+
+            // --- Export Helpers ---
+             function prepareElementForExport(element) {
+                 const elementsToHide = element.querySelectorAll('.control-btn, .remove-row-btn, .remove-col-btn, .action-buttons, .admin-text, .footer-signature, .header-remove-btn, .add-note-btn');
+                 elementsToHide.forEach(el => el.style.visibility = 'hidden');
+
+                 const inputsAndSelects = element.querySelectorAll('input.editable-cell, select.subject-select');
+                 const originalElements = new Map();
+
+                 inputsAndSelects.forEach((el, index) => {
+                     const parent = el.parentNode;
+                     if (!parent) return;
+                     const replacement = document.createElement('span');
+                     let value = (el.tagName === 'SELECT')
+                         ? (el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : '')
+                         : el.value;
+                     if (value === "اختر المادة..." || value === "--- إفراغ ---") value = '';
+                     replacement.textContent = value || '\u00A0'; // Non-breaking space
+                     // --- Apply styles including font ---
+                     replacement.style.fontFamily = 'var(--arabic-font)'; // Use CSS var
+                     replacement.style.fontSize = 'inherit';
+                     replacement.style.textAlign = getComputedStyle(el).textAlign || 'center';
+                     replacement.style.display = 'inline-block';
+                     replacement.style.padding = '5px';
+                     replacement.style.width = '100%';
+                     replacement.style.verticalAlign = 'middle';
+                     replacement.dataset.exportReplacement = 'true';
+                     replacement.id = `export-replacement-${index}`;
+                     parent.insertBefore(replacement, el);
+                     el.style.display = 'none';
+                     originalElements.set(replacement.id, { replacementEl: replacement, originalEl: el });
+                 });
+
+                 element.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                     el.style.outline = 'none';
+                     el.style.borderBottom = 'none';
+                     el.style.backgroundColor = 'transparent';
+                 });
+
+                  // Apply explicit styles for better rendering
+                  element.style.backgroundColor = 'var(--white)';
+                  element.querySelectorAll('*').forEach(child => {
+                      child.style.color = getComputedStyle(child).color;
+                      // --- Apply font explicitly for export ---
+                      child.style.fontFamily = 'var(--arabic-font)'; // Use CSS var
+                  });
+
+                 // Actions cell (td.actions-cell) is hidden via @media print CSS
+
+                 return originalElements;
+             }
+
+             function restoreElementAfterExport(element, originalElementsMap) {
+                 const elementsToRestore = element.querySelectorAll('.control-btn, .remove-row-btn, .remove-col-btn, .action-buttons, .admin-text, .footer-signature, .header-remove-btn, .add-note-btn');
+                 elementsToRestore.forEach(el => el.style.visibility = 'visible');
+
+                 originalElementsMap.forEach((mapEntry) => {
+                     const { replacementEl, originalEl } = mapEntry;
+                     originalEl.style.display = '';
+                     if (replacementEl?.parentNode) replacementEl.remove();
+                 });
+
+                 element.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                     el.style.outline = ''; el.style.borderBottom = ''; el.style.backgroundColor = '';
+                 });
+                 element.style.backgroundColor = '';
+                 element.querySelectorAll('*').forEach(child => {
+                    child.style.color = ''; child.style.fontFamily = ''; // Reset forced styles
+                 });
+             }
+
+
+            // --- PDF Export - Refined Options ---
+             function exportToPdf() {
+                if (typeof html2pdf === 'undefined') {
+                    alert('خطأ: لم يتم تحميل مكتبة PDF (html2pdf).'); console.error('html2pdf function is not defined.'); return;
+                }
+                 const elementToExport = scheduleContainer;
+                 const cleanText = (text) => text.replace(/[\\/*?:"<>|]/g, '').replace(/\s+/g, '_');
+                 const filenameBase = `${cleanText(schoolNameEl.textContent.trim())}_${cleanText(mainTitleEl.textContent.trim())}`;
+                 const filename = `${filenameBase || 'جدول_الامتحانات'}.pdf`;
+
+                 alert("جاري تحضير ملف PDF... يرجى الانتظار.");
+
+                 const originalElementsMap = prepareElementForExport(elementToExport);
+
+                 // --- Adjusted PDF Options ---
+                const pdfOptions = {
+                    margin: [10, 5, 10, 5], // Margins: top, left, bottom, right (mm)
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2.5, // Good balance of quality and performance
+                        useCORS: true,
+                        letterRendering: true,
+                        backgroundColor: '#ffffff',
+                        logging: false, // Disable verbose logging
+                        // width: elementToExport.scrollWidth, // Avoid forcing width/height unless necessary
+                        // height: elementToExport.scrollHeight,
+                         onclone: (doc) => {
+                            const clonedContainer = doc.getElementById(elementToExport.id);
+                             if (clonedContainer) {
+                                 clonedContainer.style.direction = 'rtl';
+                                 // Apply fonts robustly in clone
+                                 clonedContainer.style.fontFamily = 'Cairo, Tajawal, sans-serif';
+                                 clonedContainer.querySelectorAll('*').forEach(node => {
+                                     node.style.fontFamily = 'Cairo, Tajawal, sans-serif';
+                                     // Preserve specific alignments if needed, otherwise default to inherit/center
+                                     node.style.textAlign = getComputedStyle(node).textAlign || 'center';
+                                 });
+                                 // Hide actions cell in clone as fallback
+                                 clonedContainer.querySelectorAll('#examScheduleTable tbody td.actions-cell').forEach(td => {
+                                     td.style.display = 'none';
+                                     td.style.visibility = 'hidden';
+                                 });
+                             }
+                         }
+                    },
+                    jsPDF: {
+                        unit: 'mm',
+                        format: 'a4',
+                        orientation: 'landscape',
+                        putOnlyUsedFonts: true,
+                        floatPrecision: 16
+                    },
+                    pagebreak: { mode: ['css', 'avoid-all'], avoid: 'td' }, // Keep avoid-all for table rows
+                    enableLinks: false // Disable links just in case
+                };
+
+                 // --- Increased Delay before generation ---
+                 setTimeout(() => {
+                     html2pdf().from(elementToExport).set(pdfOptions).save()
+                         .then(() => {
+                             console.log("PDF generated successfully.");
+                             // Restore only after successful save or catch
+                             restoreElementAfterExport(elementToExport, originalElementsMap);
+                         })
+                         .catch(err => {
+                             console.error("PDF generation failed:", err);
+                             // Provide more informative error message
+                             alert("حدث خطأ أثناء إنشاء ملف PDF.\n"
+                                + "قد تكون المشكلة بسبب تعقيد الجدول أو الخطوط.\n"
+                                + "يرجى التأكد من اتصال الإنترنت والمحاولة مرة أخرى.\n"
+                                + "تفاصيل الخطأ (للمطورين): " + err.message);
+                             restoreElementAfterExport(elementToExport, originalElementsMap);
+                         });
+                 }, 500); // Increased delay to 500ms
+            }
+
+             // --- JPG Export ---
+            function exportToJpg() {
+                 if (typeof html2canvas === 'undefined') {
+                     alert('خطأ: لم يتم تحميل مكتبة تحويل الصورة (html2canvas).'); console.error('html2canvas function is not defined.'); return;
+                 }
+                 const elementToExport = scheduleContainer;
+                 const cleanText = (text) => text.replace(/[\\/*?:"<>|]/g, '').replace(/\s+/g, '_');
+                 const filenameBase = `${cleanText(schoolNameEl.textContent.trim())}_${cleanText(mainTitleEl.textContent.trim())}`;
+                 const filename = `${filenameBase || 'جدول_الامتحانات'}.jpg`;
+
+                 alert("جاري تحضير الصورة JPG... يرجى الانتظار.");
+
+                 const originalElementsMap = prepareElementForExport(elementToExport);
+
+                 const canvasOptions = {
+                     scale: 3, // High scale for JPG quality
+                     useCORS: true,
+                     backgroundColor: '#ffffff',
+                     logging: false,
+                     letterRendering: true,
+                     onclone: (doc) => {
+                         const clonedContainer = doc.getElementById(elementToExport.id);
+                         if (clonedContainer) {
+                             clonedContainer.style.direction = 'rtl';
+                             // Apply fonts robustly in clone for JPG
+                             clonedContainer.style.fontFamily = 'Cairo, Tajawal, sans-serif';
+                             clonedContainer.querySelectorAll('*').forEach(node => {
+                                 node.style.fontFamily = 'Cairo, Tajawal, sans-serif';
+                             });
+                             // Hide actions cell in clone as fallback
+                              clonedContainer.querySelectorAll('#examScheduleTable tbody td.actions-cell').forEach(td => {
+                                 td.style.display = 'none';
+                                 td.style.visibility = 'hidden';
+                              });
+                         }
+                     }
+                 };
+
+                 // Increased Delay before canvas capture
+                 setTimeout(() => {
+                     html2canvas(elementToExport, canvasOptions)
+                         .then(canvas => {
+                             const imgData = canvas.toDataURL('image/jpeg', 0.95); // High quality JPEG
+                             const link = document.createElement('a');
+                             link.href = imgData;
+                             link.download = filename;
+                             document.body.appendChild(link);
+                             link.click();
+                             document.body.removeChild(link);
+                             console.log("JPG generated successfully.");
+                             restoreElementAfterExport(elementToExport, originalElementsMap);
+                         })
+                         .catch(err => {
+                             console.error("JPG generation failed:", err);
+                             alert("حدث خطأ أثناء إنشاء ملف JPG. يرجى المحاولة مرة أخرى.\nتفاصيل الخطأ: " + err.message);
+                             restoreElementAfterExport(elementToExport, originalElementsMap);
+                         });
+                     }, 500); // Increased delay to 500ms
+            }
+
+
+            // --- Event Listeners ---
+            addRowBtn.addEventListener('click', addRow);
+            addColumnBtn.addEventListener('click', addColumn);
+            clearDataBtn.addEventListener('click', clearData);
+            exportPdfBtn.addEventListener('click', exportToPdf);
+            exportJpgBtn.addEventListener('click', exportToJpg);
+            addNoteBtn.addEventListener('click', addNote);
+
+            table.addEventListener('click', (event) => {
+                if (event.target?.classList.contains('remove-row-btn')) removeRow(event.target);
+                else if (event.target?.classList.contains('header-remove-btn')) removeColumn(event.target);
+            });
+
+             const saveOnBlurOrInput = (event) => {
+                 if (event.target && document.contains(event.target)) {
+                      // Debounce save slightly
+                      clearTimeout(event.target.saveTimeout);
+                      event.target.saveTimeout = setTimeout(saveData, 300);
+                 }
+             };
+
+            // Add listeners to all editable elements
+            [schoolNameEl, currentDateEl, mainTitleEl, subTitleEl, principalNameEl, wishesTextEl].forEach(el => {
+                if(el) el.addEventListener('input', saveOnBlurOrInput);
+            });
+
+             notesListEl.addEventListener('input', (event) => {
+                 if (event.target?.classList.contains('editable-note-item') || event.target?.classList.contains('editable-time')) {
+                     saveOnBlurOrInput(event);
+                 }
+             });
+             notesListEl.addEventListener('blur', (event) => { // Also save on blur
+                 if (event.target?.classList.contains('editable-note-item') || event.target?.classList.contains('editable-time')) {
+                     saveOnBlurOrInput(event); // Use same debounced save
+                 }
+             }, true);
+
+            // --- Initial Load ---
+            loadData();
+
+        });
+    </script>
+
+</body>
+</html>

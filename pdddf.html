@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ضاغط PDF الاحترافي</title>
+    <!-- Load pdf-lib Library -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Load fontkit (might be needed for reading complex PDFs) -->
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #9c27b0;
+            --secondary-color: #2196f3;
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: #4caf50;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #424242;
+            --progress-bg: #555;
+            --progress-value-bg: var(--success-color);
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+        }
+
+        .converter-container {
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 750px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .converter-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+
+        #pdfInput { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #7b1fa2, #1976d2); box-shadow: 0 8px 20px rgba(41, 128, 185, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfo {
+            display: block; margin-top: 10px; margin-bottom: 20px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #previewContainer {
+            display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 10px;
+            margin-top: 20px; margin-bottom: 25px; padding: 15px; border: 2px dashed var(--preview-border);
+            border-radius: var(--border-radius); min-height: 80px; background-color: var(--preview-bg);
+            text-align: center; font-size: 0.95em; color: #e0e0e0;
+        }
+         #previewContainer i { font-size: 2em; color: var(--secondary-color); margin-bottom: 5px; }
+
+        .options-group {
+            margin-bottom: 20px;
+            padding: 15px; border: 1px solid var(--input-border);
+            border-radius: var(--border-radius); background-color: var(--input-bg); text-align: right;
+        }
+        .options-group legend {
+            font-weight: 700; color: var(--primary-color); padding: 0 8px;
+            margin-right: -8px; font-size: 1.05rem;
+        }
+        .options-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: flex-start; margin-top: 10px; }
+        .option-item {
+            display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+            flex: 1 1 auto; min-width: 150px; /* Adjusted min-width */
+        }
+        .options-group label { cursor: pointer; color: var(--text-color); transition: color 0.3s ease; display: block; font-size: 0.9em; margin-bottom: 3px; }
+        .options-group label:hover { color: var(--secondary-color); }
+
+        .options-group select {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--input-border); border-radius: 6px;
+            font-size: 0.9rem; font-family: 'Cairo', sans-serif; background-color: var(--input-bg) !important; /* Use !important cautiously */
+            color: var(--input-text) !important; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease; direction: ltr; text-align: left;
+            text-align-last: right; /* Try to align text right in dropdown */
+            -moz-text-align-last: right; /* Firefox */
+            direction: rtl; /* Ensure dropdown flows right */
+        }
+        .options-group option { background-color: var(--container-bg); color: var(--text-color); direction: rtl; text-align: right;}
+
+        .options-group select:focus {
+            border-color: var(--primary-color);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(156, 39, 176, 0.3); outline: none;
+        }
+
+        #pdfOutputFilename {
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
+            background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #pdfOutputFilename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--success-color), #2e7d32); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin-bottom: 15px;
+            box-shadow: 0 6px 18px rgba(76, 175, 80, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+            background: linear-gradient(135deg, #388e3c, #1b5e20);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+
+        #status { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #download-options { margin-top: 25px; display: none; flex-direction: column; align-items: center; gap: 15px; }
+        .download-button {
+            display: inline-block; color: var(--button-text-color); padding: 12px 25px; text-decoration: none; border-radius: 8px;
+            font-size: 1rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 80%; max-width: 300px;
+        }
+        #downloadLinkDirect { background-color: var(--success-color); }
+        #downloadLinkDirect:hover { background-color: #388e3c; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(76, 175, 80, 0.5); }
+        #downloadLinkOpen { background-color: var(--secondary-color); }
+        #downloadLinkOpen:hover { background-color: #1976d2; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(33, 150, 243, 0.5); }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+         .options-group small {
+             font-size: 0.8em;
+             opacity: 0.7;
+             display: block;
+             text-align: right;
+             margin-top: 5px;
+         }
+
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .converter-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfo { font-size: 0.95em; }
+            #previewContainer { min-height: 90px; padding: 20px; font-size: 1em; }
+            .options-grid { gap: 20px; justify-content: center; } /* Centered options */
+            .option-item { min-width: 200px; } /* Wider option item */
+            .options-group { padding: 20px; text-align: right; }
+            #pdfOutputFilename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #status { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            #download-options { flex-direction: row; justify-content: center; gap: 20px; }
+            .download-button { padding: 14px 30px; font-size: 1.05rem; width: auto; max-width: none; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            .options-group small { font-size: 0.85em;}
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="converter-container">
+        <h1>ضاغط PDF الاحترافي</h1>
+
+        <label for="pdfInput" class="file-label">اختر ملف PDF</label>
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <span id="fileInfo">لم يتم اختيار ملف.</span>
+
+        <!-- Preview Area -->
+        <div id="previewContainer">
+             <span id="previewPlaceholder">اسحب ملف PDF هنا أو انقر لاختياره</span>
+             <span id="previewFilename" style="display: none;"></span>
+             <span id="previewInfo" style="display: none;"></span> <!-- Combined info -->
+        </div>
+
+        <!-- Compression Options -->
+        <fieldset class="options-group">
+            <legend>خيارات الضغط</legend>
+            <div class="options-grid">
+                <div class="option-item">
+                    <label for="compressionLevel">مستوى الضغط:</label>
+                    <select id="compressionLevel" name="compressionLevel">
+                        <option value="basic" selected>ضغط أساسي (مُوصى به)</option>
+                        <option value="high">ضغط عالي (قد يؤثر على الجودة)</option>
+                        <option value="none">بدون ضغط (إعادة حفظ)</option>
+                    </select>
+                    <small>ملاحظة: الضغط العالي في المتصفح قد يكون تأثيره محدوداً.</small>
+                </div>
+            </div>
+        </fieldset>
+
+        <!-- Output Filename Input -->
+        <input type="text" id="pdfOutputFilename" placeholder="اسم ملف PDF الناتج (اختياري)">
+
+        <button id="processBtn" disabled>بدء الضغط</button>
+
+        <!-- Progress Bar Container -->
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="status"></div>
+
+        <!-- Download Options -->
+        <div id="download-options">
+            <a id="downloadLinkDirect" href="#" download="compressed_document.pdf" class="download-button">تحميل مباشر</a>
+            <a id="downloadLinkOpen" href="#" target="_blank" class="download-button">فتح في المتصفح</a>
+        </div>
+        
+        
+        <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+        
+        
+    </div>
+
+    <script>
+        console.log("Compressor Script start.");
+
+        // Check if pdf-lib is loaded
+        if (typeof window.PDFLib === 'undefined' || typeof window.fontkit === 'undefined') {
+            console.error("pdf-lib or fontkit is not loaded!");
+            alert("خطأ: لم يتم تحميل المكتبات اللازمة (pdf-lib, fontkit). لا يمكن المتابعة.");
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('pdfInput').disabled = true;
+        } else {
+            console.log("pdf-lib and fontkit loaded successfully.");
+            const { PDFDocument, rgb } = window.PDFLib; // rgb might not be needed unless we add annotations
+
+            // --- DOM Elements ---
+            const pdfInput = document.getElementById('pdfInput');
+            const fileInfoDisplay = document.getElementById('fileInfo');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewPlaceholder = document.getElementById('previewPlaceholder');
+            const previewFilename = document.getElementById('previewFilename');
+            const previewInfo = document.getElementById('previewInfo'); // Page count and size
+            const compressionLevelSelect = document.getElementById('compressionLevel');
+            const pdfOutputFilenameInput = document.getElementById('pdfOutputFilename');
+            const processBtn = document.getElementById('processBtn');
+            const progressBarContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusDiv = document.getElementById('status');
+            const downloadOptionsDiv = document.getElementById('download-options');
+            const downloadLinkDirect = document.getElementById('downloadLinkDirect');
+            const downloadLinkOpen = document.getElementById('downloadLinkOpen');
+
+            // --- State ---
+            let selectedPdfFile = null;
+            let pdfArrayBuffer = null;
+            let pdfBlobUrl = null;
+            let isProcessing = false;
+            let originalFileSize = 0;
+            let pageCount = 0;
+
+            // --- Utility Functions ---
+            function cleanupBlobUrl() {
+                if (pdfBlobUrl) {
+                    URL.revokeObjectURL(pdfBlobUrl);
+                    pdfBlobUrl = null;
+                    console.log("Blob URL revoked.");
+                }
+            }
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 بايت';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            function updateUIState(processing = isProcessing) {
+                const fileSelected = !!selectedPdfFile;
+                processBtn.disabled = !fileSelected || processing || !pdfArrayBuffer;
+                previewPlaceholder.style.display = fileSelected ? 'none' : 'block';
+                previewFilename.style.display = fileSelected ? 'block' : 'none';
+                previewInfo.style.display = fileSelected ? 'block' : 'none';
+
+                if (fileSelected) {
+                    previewFilename.textContent = `الملف: ${selectedPdfFile.name}`;
+                     previewInfo.textContent = `الحجم الأصلي: ${formatBytes(originalFileSize)} (${pageCount > 0 ? pageCount + ' صفحة' : 'جارٍ القراءة...'})`;
+                    if (!processing && !statusDiv.textContent.includes('اكتمل') && !statusDiv.style.color.includes('danger')) {
+                         fileInfoDisplay.textContent = `تم اختيار الملف. جاهز للضغط.`;
+                         fileInfoDisplay.style.color = 'var(--success-color)';
+                        if (!pdfOutputFilenameInput.value) {
+                            const baseName = selectedPdfFile.name.replace(/\.pdf$/i, '');
+                            pdfOutputFilenameInput.value = `${baseName}_compressed.pdf`;
+                        }
+                    }
+                } else {
+                    previewFilename.textContent = '';
+                    previewInfo.textContent = '';
+                    fileInfoDisplay.textContent = `لم يتم اختيار ملف.`;
+                    fileInfoDisplay.style.color = 'var(--text-color)'; // Reset color
+                    pdfOutputFilenameInput.value = '';
+                    downloadOptionsDiv.style.display = 'none';
+                    originalFileSize = 0;
+                    pageCount = 0;
+                }
+                progressBarContainer.style.display = processing ? 'block' : 'none';
+
+                 // If processing starts or stops, ensure button state is updated
+                processBtn.disabled = !fileSelected || processing || !pdfArrayBuffer;
+            }
+
+
+            // --- Event Listeners ---
+            // No specific listeners needed for compression options right now
+
+            // --- File Input Handler ---
+            pdfInput.addEventListener("change", async function(e) {
+                console.log("File input changed.");
+                if (isProcessing) {
+                    console.warn("Processing in progress, ignoring new file selection.");
+                    e.target.value = null; // Clear the input so the same file can be re-selected
+                    return;
+                }
+                // Reset state
+                selectedPdfFile = null;
+                pdfArrayBuffer = null;
+                originalFileSize = 0;
+                pageCount = 0;
+                previewInfo.textContent = '';
+                statusDiv.innerHTML = '';
+                downloadOptionsDiv.style.display = 'none';
+                progressBarContainer.style.display = 'none';
+                progressBar.value = 0;
+                cleanupBlobUrl();
+                pdfOutputFilenameInput.value = ''; // Clear output name on new file select
+                updateUIState(); // Update UI to "no file selected" state initially
+
+                const file = e.target.files[0];
+                if (!file) {
+                    console.log("No file selected.");
+                    updateUIState();
+                    return;
+                }
+
+                if (file.type !== 'application/pdf') {
+                    fileInfoDisplay.textContent = 'خطأ: الملف المختار ليس بصيغة PDF.';
+                    fileInfoDisplay.style.color = 'var(--danger-color)';
+                    selectedPdfFile = null; // Ensure no file is considered selected
+                    e.target.value = null;
+                    updateUIState();
+                    return;
+                }
+
+                selectedPdfFile = file;
+                originalFileSize = file.size;
+                fileInfoDisplay.textContent = 'جاري قراءة الملف...';
+                fileInfoDisplay.style.color = 'var(--secondary-color)';
+                updateUIState(); // Update UI to show filename and size
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    pdfArrayBuffer = event.target.result;
+                    statusDiv.textContent = 'جاري تحليل معلومات الملف...';
+                    try {
+                        // Try loading with fontkit registered, ignoring encryption issues for page count
+                        const tempDoc = await PDFDocument.load(pdfArrayBuffer, {
+                             updateMetadata: false, // Don't modify metadata just for reading
+                             ignoreEncryption: true, // Try to get page count even if encrypted
+                             fontkit: window.fontkit // Register fontkit
+                        });
+                        pageCount = tempDoc.getPageCount();
+                        statusDiv.innerHTML = ''; // Clear status
+                        isProcessing = false; // Ensure processing state is false
+                        console.log(`File loaded: ${pageCount} pages, ${formatBytes(originalFileSize)}`);
+                        updateUIState(); // Update UI with page count and enable button
+                    } catch (loadError) {
+                         console.error("Error parsing PDF:", loadError);
+                         statusDiv.textContent = `خطأ في قراءة الملف: ${loadError.message || 'ملف تالف أو محمي بكلمة مرور؟'}`;
+                         statusDiv.style.color = 'var(--danger-color)';
+                         selectedPdfFile = null;
+                         pdfArrayBuffer = null;
+                         originalFileSize = 0;
+                         pageCount = 0;
+                         isProcessing = false;
+                         updateUIState(); // Update UI to reflect error state
+                    }
+                };
+                reader.onerror = (err) => {
+                    console.error("FileReader error:", err);
+                    fileInfoDisplay.textContent = 'حدث خطأ أثناء قراءة الملف.';
+                    fileInfoDisplay.style.color = 'var(--danger-color)';
+                    selectedPdfFile = null;
+                    pdfArrayBuffer = null;
+                    originalFileSize = 0;
+                    pageCount = 0;
+                    isProcessing = false;
+                    updateUIState();
+                };
+                reader.readAsArrayBuffer(file);
+                e.target.value = null; // Clear the input
+            });
+
+
+            // --- Processing Logic ---
+            processBtn.addEventListener('click', async function() {
+                console.log("Process button clicked.");
+                if (isProcessing || !selectedPdfFile || !pdfArrayBuffer) {
+                    console.warn("Processing click rejected. State:", { isProcessing, selectedPdfFile, pdfArrayBuffer });
+                    statusDiv.textContent = 'الرجاء اختيار ملف PDF صالح أولاً!';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+
+                isProcessing = true;
+                updateUIState(); // Disable button, show progress bar
+                cleanupBlobUrl(); // Clean up any previous result
+                statusDiv.innerHTML = 'جاري التحضير للضغط... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBar.value = 0; // Reset progress
+                progressBarContainer.style.display = 'block';
+                console.log("Compression processing started.");
+
+                let pdfDoc;
+
+                try {
+                    const compressionLevel = compressionLevelSelect.value;
+                    console.log(`Selected compression level: ${compressionLevel}`);
+
+                    statusDiv.innerHTML = 'جاري تحميل ملف PDF للمعالجة... <div class="spinner"></div>';
+                    progressBar.value = 10; // Indicate loading started
+
+                    // Load the PDF document - Register fontkit in case the source PDF needs it
+                    pdfDoc = await PDFDocument.load(pdfArrayBuffer, {
+                        // updateMetadata: false, // Keep metadata by default unless high compression demands removal
+                        fontkit: window.fontkit // Important for handling various fonts in the source PDF
+                    });
+                    progressBar.value = 30; // Indicate loading finished
+
+                    // **Compression Logic (using pdf-lib save options)**
+                    statusDiv.innerHTML = 'جاري ضغط وحفظ الملف... <div class="spinner"></div>';
+                    progressBar.value = 50; // Indicate saving process started
+
+                    let saveOptions = { useObjectStreams: false }; // Default for "none"
+
+                    if (compressionLevel === 'basic') {
+                        saveOptions.useObjectStreams = true; // Basic optimization
+                        console.log("Using basic compression (useObjectStreams: true)");
+                    } else if (compressionLevel === 'high') {
+                        saveOptions.useObjectStreams = true; // Same as basic for pdf-lib
+                        // We could potentially try removing metadata here, but it's destructive
+                        // pdfDoc.setTitle(''); pdfDoc.setAuthor(''); etc. - Decided against for quality.
+                        console.log("Using high compression (useObjectStreams: true - limited effect in browser)");
+                    } else {
+                        console.log("Using no compression (useObjectStreams: false)");
+                    }
+
+                    // The save() operation itself performs the optimization/structure changes
+                    const pdfBytes = await pdfDoc.save(saveOptions);
+                    progressBar.value = 90; // Indicate saving almost done
+
+                    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    pdfBlobUrl = URL.createObjectURL(pdfBlob);
+                    const compressedSize = pdfBlob.size;
+                    console.log(`Original size: ${originalFileSize}, Compressed size: ${compressedSize}`);
+
+                    // --- Filename Logic ---
+                    let filename = pdfOutputFilenameInput.value.trim();
+                    if (!filename) {
+                        const baseName = selectedPdfFile.name.replace(/\.pdf$/i, '');
+                        filename = `${baseName}_compressed.pdf`;
+                    } else {
+                        // Ensure it ends with .pdf
+                        if (!filename.toLowerCase().endsWith('.pdf')) {
+                            filename += '.pdf';
+                        }
+                        // Sanitize filename
+                        filename = filename.replace(/[/\\?%*:|"<>]/g, '-'); // Replace invalid chars
+                    }
+                    console.log(`Output filename: ${filename}`);
+
+                    // --- SUCCESS UI UPDATE ---
+                    downloadLinkDirect.href = pdfBlobUrl;
+                    downloadLinkDirect.download = filename;
+                    downloadLinkOpen.href = pdfBlobUrl; // Allow opening in a new tab
+
+                    const reduction = originalFileSize > 0 ? Math.round(((originalFileSize - compressedSize) / originalFileSize) * 100) : 0;
+                    statusDiv.textContent = `اكتمل الضغط بنجاح! الحجم الجديد: ${formatBytes(compressedSize)} (تم تقليل الحجم بنسبة ${reduction}%)`;
+                    statusDiv.style.color = 'var(--success-color)';
+                    progressBar.value = 100; // Complete progress bar
+                    // Hide progress bar after a short delay
+                    setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
+                    downloadOptionsDiv.style.display = 'flex';
+                    console.log("Compression successful!");
+
+                } catch (error) {
+                    console.error("Error during PDF compression:", error);
+                    statusDiv.textContent = `حدث خطأ أثناء الضغط: ${error.message || 'خطأ غير معروف. قد يكون الملف معطوباً أو محمياً.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    progressBarContainer.style.display = 'none'; // Hide progress on error
+                    downloadOptionsDiv.style.display = 'none';
+                    cleanupBlobUrl();
+
+                } finally {
+                    console.log("Processing finished (finally block).");
+                    isProcessing = false; // Re-enable processing
+                    // Ensure spinner is removed even if errors occurred before final success message
+                    const spinner = statusDiv.querySelector('.spinner');
+                    if (spinner) spinner.remove();
+                    updateUIState(); // Update UI state (re-enable button etc.)
+                }
+            });
+
+            // --- Drag and Drop ---
+            previewContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewContainer.style.borderColor = 'var(--primary-color)';
+            });
+
+            previewContainer.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewContainer.style.borderColor = 'var(--preview-border)';
+            });
+
+            previewContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                previewContainer.style.borderColor = 'var(--preview-border)';
+                if (isProcessing) return;
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    // Simulate file input change event
+                    pdfInput.files = files;
+                    const event = new Event('change', { bubbles: true });
+                    pdfInput.dispatchEvent(event);
+                }
+            });
+
+
+            // --- Initial UI Setup ---
+            console.log("Setting initial UI state for compressor.");
+            updateUIState(); // Set initial state (button disabled, etc.)
+            window.addEventListener('beforeunload', cleanupBlobUrl); // Cleanup on page close
+            console.log("Compressor script initialization complete.");
+        }
+    </script>
+
+</body>
+</html>

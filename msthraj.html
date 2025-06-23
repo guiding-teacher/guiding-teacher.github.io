@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محلل النصوص والصور والصوت المتقدم</title>
+    <style>
+        /* --- Updated CSS with Dark Elegant Colors & Modern Design --- */
+        :root {
+            /* Deep Dark Blue/Charcoal Palette */
+            --bg-color: #1f2833; /* Dark background */
+            --container-bg: #2c3e50; /* Slightly lighter container background */
+            --card-bg: #34495e; /* Card background */
+            --primary-color: #66fcf1; /* Bright Cyan accent */
+            --secondary-color: #45a29e; /* Darker Cyan/Teal */
+            --text-color: #c5c6c7; /* Light Gray text */
+            --text-light: #f8f9fa; /* Lighter text for headings */
+            --border-color: #4b5a6a; /* Subtle border color */
+            --input-bg: #27323e; /* Input field background */
+            --input-border: #4b5a6a;
+            --input-focus-border: var(--primary-color);
+
+            /* Functional Colors (Adjusted for Dark Theme) */
+            --success-color: #2ecc71; /* Green */
+            --success-hover: #27ae60;
+            --danger-color: #e74c3c; /* Red */
+            --danger-hover: #c0392b;
+            --warning-color: #f39c12; /* Yellow/Orange */
+            --warning-hover: #e67e22;
+            --info-color: #3498db; /* Blue */
+
+            --border-radius: 10px; /* Slightly larger radius */
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            --box-shadow-light: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            padding: 25px;
+        }
+
+        .container {
+            max-width: 950px;
+            width: 100%;
+            background: var(--container-bg);
+            padding: 35px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        h1, h2, h3 {
+            color: var(--text-light);
+            margin-bottom: 1.2rem;
+            text-align: center;
+            font-weight: 700;
+        }
+        h1 {
+             border-bottom: 3px solid var(--primary-color);
+             padding-bottom: 10px;
+             display: inline-block; /* To make border fit text */
+             margin-left: auto;
+             margin-right: auto;
+             display: block; /* Back to block for centering */
+        }
+        h1 .fa-solid { /* Style icon in H1 */
+            margin-left: 10px;
+            color: var(--primary-color);
+            vertical-align: middle; /* Align icon better */
+        }
+
+        h2 {
+            color: var(--secondary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 8px;
+            margin-top: 2rem;
+            text-align: right; /* Align section headers to the right */
+        }
+        h2 .fa-solid, h3 .fas {
+             margin-left: 8px; /* Space between icon and text */
+             color: var(--secondary-color);
+        }
+         h3 .fas { color: var(--text-color); }
+
+
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--box-shadow-light);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        input[type="file"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            margin-bottom: 18px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="file"] {
+             padding: 10px;
+             cursor: pointer;
+         }
+        input[type="file"]::-webkit-file-upload-button { /* Style file input button */
+            background: var(--secondary-color);
+            color: var(--text-light);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: background-color 0.3s ease;
+        }
+        input[type="file"]::-webkit-file-upload-button:hover {
+             background: var(--primary-color);
+             color: var(--bg-color);
+        }
+
+        input[type="file"]:hover,
+        select:hover,
+        textarea:hover {
+            border-color: var(--secondary-color);
+        }
+        input[type="file"]:focus,
+        select:focus,
+        textarea:focus {
+             border-color: var(--input-focus-border);
+             box-shadow: 0 0 0 3px rgba(102, 252, 241, 0.2); /* Subtle glow on focus */
+             outline: none;
+        }
+
+        textarea {
+            min-height: 220px;
+            resize: vertical; /* Only allow vertical resizing */
+            font-family: 'Courier New', Courier, monospace; /* Monospace for code/text */
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        /* Modern Button Styles */
+        button {
+            background: linear-gradient(145deg, var(--secondary-color), var(--primary-color));
+            color: var(--bg-color);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px; /* Pill shape */
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px; /* Space between icon and text */
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+            text-transform: uppercase; /* Optional: Uppercase text */
+            letter-spacing: 0.5px; /* Optional: Spacing */
+        }
+        button:hover {
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 6px 12px rgba(102, 252, 241, 0.3); /* Enhanced shadow on hover */
+            filter: brightness(1.1); /* Slightly brighter */
+        }
+        button:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        button:disabled {
+            background: #5a6a7a; /* Muted background for disabled */
+            color: #9aabad;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            filter: none;
+        }
+
+        /* Specific Button Colors */
+        button.secondary { background: linear-gradient(145deg, #4b5a6a, #5e7285); color: var(--text-light); }
+        button.secondary:hover { box-shadow: 0 6px 12px rgba(94, 114, 133, 0.3); filter: brightness(1.1); }
+        button.danger { background: linear-gradient(145deg, var(--danger-hover), var(--danger-color)); color: var(--text-light); }
+        button.danger:hover { box-shadow: 0 6px 12px rgba(231, 76, 60, 0.3); filter: brightness(1.1); }
+        button.success { background: linear-gradient(145deg, var(--success-hover), var(--success-color)); color: var(--text-light); }
+        button.success:hover { box-shadow: 0 6px 12px rgba(46, 204, 113, 0.3); filter: brightness(1.1); }
+        button.warning { background: linear-gradient(145deg, var(--warning-hover), var(--warning-color)); color: #333; }
+        button.warning:hover { box-shadow: 0 6px 12px rgba(243, 156, 18, 0.3); filter: brightness(1.1); }
+
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background-color: var(--input-bg); /* Use input bg for contrast */
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border-left: 6px solid var(--primary-color);
+            box-shadow: var(--box-shadow-light);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .result-item:hover {
+             transform: translateY(-3px);
+             box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+        }
+        .result-item p {
+            margin: 0 0 8px 0;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+        .result-item span {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            display: block;
+            font-family: monospace; /* Numbers look good in monospace */
+        }
+        footer {
+            width: 100%; padding: 15px 0; text-align: center;  
+            color: Teal; font-size: 1.0em; margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+        .status-message {
+            margin-top: 20px;
+            font-weight: bold;
+            padding: 12px 18px;
+            border-radius: 6px;
+            display: none;
+            text-align: center;
+            border: 1px solid transparent;
+            font-size: 0.95rem;
+            box-shadow: var(--box-shadow-light);
+        }
+        .status-message.show { display: block; }
+        /* Status colors adjusted for dark theme */
+        .status-message.success { background-color: rgba(46, 204, 113, 0.2); color: #68ffaf; border-color: var(--success-color); }
+        .status-message.error { background-color: rgba(231, 76, 60, 0.2); color: #ff8a80; border-color: var(--danger-color); }
+        .status-message.info { background-color: rgba(52, 152, 219, 0.2); color: #7cc0ff; border-color: var(--info-color); }
+        .status-message.warning { background-color: rgba(243, 156, 18, 0.2); color: #ffd16a; border-color: var(--warning-color); }
+
+        #ocrProgressContainer {
+            width: 100%;
+            background-color: #4b5a6a; /* Darker background for progress */
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 15px;
+            height: 28px;
+            display: none;
+            border: 1px solid var(--border-color);
+        }
+        #ocrProgressBar {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            text-align: center; line-height: 28px; color: var(--bg-color);
+            font-size: 0.9em; font-weight: bold; transition: width 0.4s ease-out;
+        }
+        #ocrProgressBar.error {
+            background: linear-gradient(90deg, var(--danger-hover), var(--danger-color));
+             color: var(--text-light);
+        }
+
+        .image-preview-container { margin-top: 20px; text-align: center; }
+        #imagePreview {
+            max-width: 100%; max-height: 250px; border-radius: var(--border-radius);
+            border: 2px solid var(--border-color);
+            display: none; margin-top: 15px;
+            background-color: var(--input-bg);
+            padding: 5px; /* Padding around image */
+        }
+
+        .input-methods {
+             display: flex;
+             flex-wrap: wrap;
+             gap: 15px;
+             margin-top: 15px;
+             align-items: center;
+             justify-content: space-between; /* Space out elements */
+         }
+         .input-methods > label { margin-bottom: 0; flex-shrink: 0;} /* Prevent label from shrinking */
+         .input-methods > select { flex-grow: 1; min-width: 150px; }
+         .input-methods > input[type="file"] { flex-grow: 2; }
+         .input-methods > button { flex-shrink: 0; }
+
+        .button-group { margin-top: 25px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+
+        /* Recording animation */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } /* Use danger color */
+            70% { box-shadow: 0 0 0 12px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        button.recording {
+            background: linear-gradient(145deg, #c0392b, #e74c3c); /* Recording uses danger gradient */
+            animation: pulse 1.5s infinite;
+        }
+         button.recording:hover {
+             box-shadow: 0 6px 12px rgba(231, 76, 60, 0.4); /* Red glow on hover when recording */
+         }
+
+        /* Responsive Adjustments */
+         @media (max-width: 768px) {
+             .container { padding: 20px; }
+             h1 { font-size: 1.8rem; }
+             h2 { font-size: 1.4rem; }
+             .button-group { justify-content: stretch; } /* Stack buttons */
+             .button-group button { width: 100%; margin-right: 0; }
+             .input-methods { flex-direction: column; align-items: stretch; }
+             .results-grid { grid-template-columns: 1fr 1fr; }
+             .result-item span { font-size: 1.5rem; }
+         }
+          @media (max-width: 480px) {
+              .results-grid { grid-template-columns: 1fr; }
+              h1 { font-size: 1.6rem; }
+          }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tesseract.js -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="container">
+        <h1><i class="fa-solid fa-microchip"></i> محلل النصوص والصور والصوت المتقدم</h1>
+
+        <!-- Input Methods Card -->
+        <div class="card input-card">
+            <h2><i class="fa-solid fa-arrow-down-wide-short"></i> طرق الإدخال</h2>
+
+            <!-- OCR Section -->
+            <div class="ocr-section">
+                <h3><i class="fas fa-image"></i> 1. من صورة (OCR)</h3>
+                 <p><small>ملاحظة هامة: سيتم استخراج النص المكتشف. قد لا يتم الحفاظ على التنسيق المعقد (مثل الجداول والأعمدة) للصورة الأصلية بدقة تامة باستخدام هذه الأداة المدمجة في المتصفح (Tesseract.js). للحصول على دقة تنسيق أعلى، قد تكون هناك حاجة لأدوات OCR متخصصة أو خدمات سحابية.</small></p>
+
+                 <div class="input-methods">
+                    <label for="ocrLanguage">لغة النص:</label>
+                    <select id="ocrLanguage">
+                        <option value="ara">العربية (Arabic)</option>
+                        <option value="eng">الإنجليزية (English)</option>
+                        <option value="ara+eng">العربية + الإنجليزية</option>
+                        <option value="fra">الفرنسية (French)</option>
+                        <option value="deu">الألمانية (German)</option>
+                        <option value="spa">الإسبانية (Spanish)</option>
+                        <option value="chi_sim">الصينية المبسطة (Simplified Chinese)</option>
+                        <option value="rus">الروسية (Russian)</option>
+                        <!-- Add more languages as needed by Tesseract -->
+                    </select>
+                 </div>
+
+                <div class="input-methods" style="margin-top: 15px;">
+                     <label for="imageInput">اختر ملف صورة:</label>
+                     <input type="file" id="imageInput" accept="image/*" style="flex-grow: 1;">
+                     <button id="processImageButton" onclick="processImage()" disabled><i class="fas fa-cogs"></i> معالجة الصورة</button>
+                </div>
+
+
+                <div class="image-preview-container">
+                    <img id="imagePreview" alt="معاينة الصورة المختارة">
+                </div>
+                 <div id="ocrProgressContainer">
+                     <div id="ocrProgressBar">0%</div>
+                 </div>
+            </div>
+
+            <!-- Speech Recognition Section -->
+            <div class="speech-section" style="margin-top: 30px;">
+                <h3><i class="fas fa-microphone-alt"></i> 2. من الصوت (Speech-to-Text)</h3>
+                 <p><small>ملاحظة: هذه الميزة تعتمد على واجهة برمجة تطبيقات الويب للتعرف على الكلام (Web Speech API) المدمجة في المتصفح. قد يختلف الدعم والدقة بين المتصفحات (أفضل أداء غالباً في Chrome و Edge). لتحويل صوتي أكثر دقة وقوة (خاصة للملفات الطويلة أو الضوضاء العالية)، عادةً ما تُستخدم خدمات سحابية متخصصة تتطلب إعدادًا من جانب الخادم.</small></p>
+                 <div class="input-methods" style="justify-content: center;"> <!-- Center button -->
+                    <button id="recordButton" onclick="toggleRecording()" class="success"><i class="fas fa-microphone"></i> بدء التسجيل الصوتي</button>
+                 </div>
+            </div>
+             <!-- Status Message Area -->
+             <div id="statusMessage" class="status-message" aria-live="polite"></div>
+        </div>
+
+        <!-- Text Analysis Section -->
+        <div class="card text-card">
+            <h2><i class="fas fa-pen-to-square"></i> النص والتحليل</h2>
+            <label for="textInput">النص المدخل أو المستخرج:</label>
+            <textarea id="textInput" placeholder="سيظهر النص المستخرج من الصورة أو الصوت هنا، أو يمكنك لصق/كتابة النص مباشرة..."></textarea>
+
+            <div class="button-group">
+                <button id="countButton" onclick="analyzeText()" disabled><i class="fas fa-calculator"></i> حساب الإحصائيات</button>
+                <button id="copyButton" class="secondary" onclick="copyText()" disabled><i class="fas fa-copy"></i> نسخ النص</button>
+                <button id="sortButton" class="secondary" onclick="sortText()" disabled><i class="fas fa-sort-alpha-down"></i> ترتيب أسطر النص</button>
+                <button id="clearTextButton" class="danger" onclick="clearText()" disabled><i class="fas fa-trash-alt"></i> حذف النص</button>
+                <button id="resetButton" class="danger" onclick="resetAll()"><i class="fas fa-undo"></i> إعادة تعيين الكل</button>
+            </div>
+
+            <div class="results">
+                <h2><i class="fas fa-chart-pie"></i> نتائج التحليل:</h2>
+                <div class="results-grid">
+                    <div class="result-item"><p>الأحرف (مع المسافات)</p><span id="charCount">0</span></div>
+                    <div class="result-item"><p>الأحرف (بدون المسافات)</p><span id="charCountNoSpace">0</span></div>
+                    <div class="result-item"><p>الكلمات</p><span id="wordCount">0</span></div>
+                    <div class="result-item"><p>الأرقام المكتشفة</p><span id="numberCount">0</span></div>
+                </div>
+            </div>
+        </div>
+        
+        
+        
+        <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+        
+        
+    </div>
+
+    
+    <script>
+        // --- DOM Elements ---
+        const textInput = document.getElementById('textInput');
+        const imageInput = document.getElementById('imageInput');
+        const ocrLanguageSelect = document.getElementById('ocrLanguage');
+        const imagePreview = document.getElementById('imagePreview');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressContainer = document.getElementById('ocrProgressContainer');
+        const progressBar = document.getElementById('ocrProgressBar');
+        const processImageButton = document.getElementById('processImageButton');
+        const recordButton = document.getElementById('recordButton');
+        const countButton = document.getElementById('countButton');
+        const copyButton = document.getElementById('copyButton');
+        const sortButton = document.getElementById('sortButton');
+        const clearTextButton = document.getElementById('clearTextButton');
+        const resetButton = document.getElementById('resetButton');
+        // Result spans
+        const charCountSpan = document.getElementById('charCount');
+        const charCountNoSpaceSpan = document.getElementById('charCountNoSpace');
+        const wordCountSpan = document.getElementById('wordCount');
+        const numberCountSpan = document.getElementById('numberCount');
+
+        // --- State Variables ---
+        let currentWorker = null;
+        let recognition = null;
+        let isRecording = false;
+        let fullTranscript = ''; // Store the full transcript from speech
+
+        // --- Web Speech API Setup ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        function setupSpeechRecognition() {
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = true; // Keep listening
+                recognition.interimResults = true; // Show results as they come
+                recognition.lang = 'ar-SA'; // Default to Arabic, can be changed if needed
+
+                recognition.onstart = () => {
+                    isRecording = true;
+                    recordButton.innerHTML = '<i class="fas fa-stop-circle"></i> إيقاف التسجيل';
+                    recordButton.classList.add('recording', 'danger'); // Use danger class for recording
+                    recordButton.classList.remove('success');
+                    showStatus('🎤 بدأ التسجيل الصوتي، تحدث الآن...', 'info');
+                    setProcessingState(true, 'speech');
+
+                    // Initialize fullTranscript with current text area content WHEN starting
+                    fullTranscript = textInput.value;
+                    // Add a space if needed before new speech starts
+                    if (fullTranscript.length > 0 && !fullTranscript.endsWith(' ') && !fullTranscript.endsWith('\n')) {
+                         fullTranscript += ' ';
+                    }
+                };
+
+                // *** MODIFIED onresult handler to prevent duplication ***
+                recognition.onresult = (event) => {
+                    let interim_transcript = ''; // Stores the interim part OF THE CURRENT EVENT
+                    let final_transcript_piece = ''; // Stores final parts received IN THIS EVENT
+
+                    // Iterate through results received in this event
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            // Append only the FINALIZED parts to our persistent transcript piece
+                            final_transcript_piece += transcript + ' '; // Add space after each final piece
+                        } else {
+                            // Collect the CURRENT interim transcript
+                            interim_transcript += transcript;
+                        }
+                    }
+
+                    // Update the persistent fullTranscript ONLY with newly finalized parts
+                    if (final_transcript_piece) {
+                        fullTranscript += final_transcript_piece;
+                        analyzeText(); // Analyze text whenever something final is added
+                    }
+
+                    // Update the TEXTAREA content:
+                    // Show everything confirmed so far (fullTranscript) PLUS the current interim part
+                    textInput.value = fullTranscript + interim_transcript;
+
+                    // Update status message with interim feedback
+                    if (interim_transcript.trim()) {
+                        showStatus(`👂 جاري الاستماع: ${interim_transcript}...`, 'info', false); // Don't auto-hide interim status
+                    }
+                };
+                // *** END OF MODIFIED onresult handler ***
+
+
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error:", event.error, event.message);
+                    let errorMsg = 'حدث خطأ غير معروف في التعرف على الصوت.';
+                    if (event.error === 'no-speech') {
+                        errorMsg = '🔇 لم يتم اكتشاف أي كلام. هل الميكروفون يعمل ومسموح به؟';
+                    } else if (event.error === 'audio-capture') {
+                        errorMsg = '🎤 فشل التقاط الصوت. تأكد من أن الميكروفون متصل ويعمل بشكل صحيح.';
+                    } else if (event.error === 'not-allowed') {
+                        errorMsg = '🚫 تم رفض الإذن باستخدام الميكروفون. يرجى السماح بالوصول للميكروفون في إعدادات المتصفح.';
+                    } else if (event.error === 'network') {
+                         errorMsg = '🌐 حدث خطأ في الشبكة أثناء محاولة التعرف على الكلام. تحقق من اتصال الإنترنت.';
+                    } else if (event.error === 'aborted') {
+                         if (isRecording) {
+                             stopRecording();
+                             showStatus('🛑 تم إيقاف التسجيل الصوتي.', 'warning');
+                         }
+                         return;
+                    } else if (event.error === 'service-not-allowed') {
+                         errorMsg = '🔒 خدمة التعرف على الكلام غير مسموح بها أو غير متوفرة. قد تحتاج لتفعيلها أو أن المتصفح لا يدعمها بشكل كامل.';
+                    }
+                     showStatus(errorMsg, 'error');
+                     if (isRecording) stopRecording();
+                };
+
+                recognition.onend = () => {
+                     if (isRecording) {
+                        console.log("Speech recognition service ended unexpectedly.");
+                        stopRecording();
+                        showStatus('انتهى التسجيل الصوتي أو توقف بشكل غير متوقع.', 'warning');
+                     }
+                };
+
+            } else {
+                recordButton.disabled = true;
+                showStatus('⚠️ عذرًا، متصفحك لا يدعم واجهة برمجة تطبيقات التعرف على الصوت (Web Speech API).', 'warning');
+            }
+        }
+
+        // Make sure toggleRecording correctly initializes fullTranscript if starting fresh
+        function toggleRecording() {
+            if (!recognition) {
+                 showStatus('❌ التعرف على الصوت غير مدعوم أو لم يتم تهيئته.', 'error');
+                return;
+            }
+            if (isRecording) {
+                recognition.stop();
+                // onend/onerror will handle UI update via stopRecording()
+            } else {
+                // Reset/initialize fullTranscript from textarea *before* starting recognition
+                fullTranscript = textInput.value;
+                 if (fullTranscript.length > 0 && !fullTranscript.endsWith(' ') && !fullTranscript.endsWith('\n')) {
+                     fullTranscript += ' ';
+                 }
+                try {
+                    recognition.lang = 'ar-SA'; // Set language each time, could be dynamic later
+                    recognition.start();
+                    // onstart will update UI
+                } catch (e) {
+                     console.error("Error starting speech recognition:", e);
+                     if (e.name === 'InvalidStateError') {
+                         showStatus('⚠️ التسجيل نشط بالفعل أو في حالة غير صالحة. جاري محاولة الإيقاف...', 'warning');
+                         try { recognition.stop(); } catch(stopErr) {}
+                         stopRecording();
+                     } else {
+                         showStatus('❌ لم يتمكن من بدء التسجيل: ' + e.message, 'error');
+                         stopRecording();
+                     }
+                }
+            }
+        }
+
+        function stopRecording() {
+             // recognition.stop(); // No need to call stop again here, onend/onerror handles it
+             isRecording = false;
+             recordButton.innerHTML = '<i class="fas fa-microphone"></i> بدء التسجيل الصوتي';
+             recordButton.classList.remove('recording', 'danger');
+             recordButton.classList.add('success');
+             setProcessingState(false); // Re-enable controls after stopping
+        }
+
+
+        // --- OCR Functions ---
+        async function processImage() {
+            const file = imageInput.files[0];
+            if (!file) {
+                showStatus('⚠️ الرجاء اختيار ملف صورة أولاً.', 'warning');
+                return;
+            }
+            setProcessingState(true, 'ocr');
+            resetCounts();
+            // Append OCR result with separator
+            if (textInput.value.length > 0 && !textInput.value.endsWith('\n')) {
+                textInput.value += '\n\n--- OCR RESULT ---\n';
+            } else if (textInput.value.length === 0) {
+                 // No separator needed if text area is empty
+            } else {
+                textInput.value += '--- OCR RESULT ---\n';
+            }
+            const ocrStartTextValue = textInput.value; // Store the value before adding OCR text
+
+            copyButton.disabled = true;
+            sortButton.disabled = true;
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            progressBar.classList.remove('error');
+
+            const selectedLang = ocrLanguageSelect.value;
+            showStatus(`⏳ جاري تهيئة محرك التعرف الضوئي (Tesseract) للغة (${selectedLang})...`, 'info');
+
+            try {
+                if (currentWorker) {
+                    showStatus('⏳ إنهاء المحرك السابق...', 'info');
+                    await currentWorker.terminate();
+                    currentWorker = null;
+                    console.log('Previous Tesseract worker terminated.');
+                }
+
+                showStatus(`⏳ تحميل بيانات اللغة (${selectedLang})...`, 'info');
+                currentWorker = await Tesseract.createWorker(selectedLang, 1, {
+                    logger: m => updateProgress(m)
+                 });
+
+                 showStatus('🔄 جاري التعرف على النص في الصورة (قد يستغرق بعض الوقت)...', 'info');
+                const { data: { text } } = await currentWorker.recognize(file);
+
+                textInput.value = ocrStartTextValue + text; // Append the recognized text
+                showStatus('✅ اكتمل التعرف على النص من الصورة بنجاح!', 'success');
+                analyzeText();
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+
+                await currentWorker.terminate();
+                currentWorker = null;
+                console.log('Tesseract worker terminated after successful recognition.');
+
+            } catch (error) {
+                console.error('خطأ أثناء التعرف على النص (OCR Error):', error);
+                showStatus('❌ حدث خطأ أثناء معالجة الصورة. تحقق من اختيار اللغة ومن أن الصورة واضحة. التفاصيل في الكونسول.', 'error');
+                progressBar.style.width = '100%';
+                progressBar.textContent = 'خطأ';
+                progressBar.classList.add('error');
+                if (currentWorker) {
+                    try {
+                       await currentWorker.terminate();
+                       currentWorker = null;
+                       console.log('Tesseract worker terminated after error.');
+                    } catch (termError) {
+                        console.error('Error terminating worker after OCR error:', termError);
+                    }
+                }
+            } finally {
+                 setTimeout(() => {
+                    setProcessingState(false);
+                    progressContainer.style.display = 'none';
+                    progressBar.classList.remove('error');
+                 }, 2500);
+            }
+        }
+
+        function updateProgress(message) {
+             let statusText = message.status.replace(/_/g, ' ');
+             let progress = 0;
+
+             if (message.status === 'recognizing text' && message.progress) {
+                progress = Math.min(100, Math.max(0, Math.round(message.progress * 100)));
+                statusText = `🔎 جاري التعرف: ${progress}%`;
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+                progressBar.classList.remove('error');
+             } else if (message.status === 'loading language model') {
+                  progressBar.style.width = '10%'; progressBar.textContent = ''; statusText = 'تحميل نموذج اللغة';
+             } else if (message.status === 'initializing tesseract') {
+                  progressBar.style.width = '20%'; progressBar.textContent = ''; statusText = 'تهيئة Tesseract';
+             } else if (message.status === 'initialized tesseract') {
+                  progressBar.style.width = '30%'; progressBar.textContent = ''; statusText = 'تمت التهيئة';
+             } else if (message.status === 'loading') {
+                 progressBar.style.width = '40%'; progressBar.textContent = ''; statusText = 'تحميل الصورة';
+             } else if (message.status === 'loaded') {
+                  progressBar.style.width = '50%'; progressBar.textContent = ''; statusText = 'تم تحميل الصورة';
+             }
+
+             showStatus(`⏳ ${statusText}`, 'info', false);
+             progressContainer.style.display = 'block';
+        }
+
+        // --- Text Analysis Function ---
+        function analyzeText() {
+            const text = textInput.value;
+            const isEmpty = !text || text.trim() === '';
+
+            copyButton.disabled = isEmpty;
+            countButton.disabled = isEmpty;
+            sortButton.disabled = isEmpty;
+            clearTextButton.disabled = isEmpty;
+
+            if (isEmpty) {
+                resetCounts();
+                return;
+            }
+
+            const charCount = text.length;
+            const charCountNoSpace = text.replace(/\s/g, '').length;
+            const words = text.match(/[\p{L}\p{N}_]+/gu) || [];
+            const wordCount = words.length;
+            const numbers = text.match(/\b\d+(\.\d+)?\b/g);
+            const numberCount = numbers ? numbers.length : 0;
+
+            charCountSpan.textContent = charCount.toLocaleString('ar');
+            charCountNoSpaceSpan.textContent = charCountNoSpace.toLocaleString('ar');
+            wordCountSpan.textContent = wordCount.toLocaleString('ar');
+            numberCountSpan.textContent = numberCount.toLocaleString('ar');
+        }
+
+        // --- Text Manipulation Functions ---
+        function sortText() {
+            const text = textInput.value;
+            if (!text || !text.trim()) {
+                showStatus('⚠️ لا يوجد نص لترتيبه.', 'warning');
+                return;
+            }
+            const sortedText = text.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .sort((a, b) => a.localeCompare(b, 'ar', { sensitivity: 'base' }))
+                .join('\n');
+
+            textInput.value = sortedText;
+            analyzeText();
+            showStatus('✅ تم ترتيب أسطر النص أبجديًا بنجاح!', 'success');
+        }
+
+        function clearText() {
+            textInput.value = '';
+            analyzeText();
+            showStatus('🗑️ تم حذف النص بنجاح.', 'success');
+        }
+
+        // --- UI Helper Functions ---
+        function showStatus(message, type = 'info', autoHide = true) {
+            statusMessage.textContent = message;
+            statusMessage.className = 'status-message show';
+            statusMessage.classList.add(type);
+
+            if (showStatus.timeoutId) {
+                 clearTimeout(showStatus.timeoutId);
+                 showStatus.timeoutId = null;
+            }
+
+             if (autoHide && (type === 'info' || type === 'success' || type === 'warning')) {
+                 showStatus.timeoutId = setTimeout(() => {
+                      if (statusMessage.textContent === message) {
+                          statusMessage.classList.remove('show');
+                      }
+                      showStatus.timeoutId = null;
+                 }, 4000);
+             }
+        }
+        showStatus.timeoutId = null;
+
+        function setProcessingState(isProcessing, source = null) {
+            textInput.disabled = isProcessing;
+            resetButton.disabled = isProcessing;
+
+            ocrLanguageSelect.disabled = isProcessing;
+            imageInput.disabled = isProcessing;
+            processImageButton.disabled = isProcessing || !imageInput.files[0];
+
+            recordButton.disabled = isProcessing && !isRecording;
+
+            if (!isProcessing) {
+                analyzeText(); // Re-run analysis to set button states correctly
+            } else {
+                countButton.disabled = true;
+                copyButton.disabled = true;
+                sortButton.disabled = true;
+                // clearTextButton.disabled = true; // Keep enabled unless text is empty
+            }
+            if (!isProcessing) {
+                ocrLanguageSelect.disabled = false;
+                imageInput.disabled = false;
+                processImageButton.disabled = !imageInput.files[0];
+                recordButton.disabled = !recognition;
+                resetButton.disabled = false;
+                textInput.disabled = false;
+            }
+        }
+
+
+        function resetCounts() {
+            charCountSpan.textContent = '0';
+            charCountNoSpaceSpan.textContent = '0';
+            wordCountSpan.textContent = '0';
+            numberCountSpan.textContent = '0';
+        }
+
+        function copyText() {
+            if (!textInput.value) {
+                showStatus('⚠️ لا يوجد نص لنسخه.', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(textInput.value).then(() => {
+                const originalText = copyButton.innerHTML;
+                copyButton.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                showStatus('📄 تم نسخ النص إلى الحافظة بنجاح!', 'success');
+                setTimeout(() => {
+                    if (!copyButton.disabled) {
+                        copyButton.innerHTML = '<i class="fas fa-copy"></i> نسخ النص';
+                    }
+                }, 2000);
+            }).catch(err => {
+                showStatus('❌ فشل نسخ النص. قد تكون الحافظة غير متاحة.', 'error');
+                console.error('Clipboard copy failed:', err);
+            });
+        }
+
+        function resetAll() {
+             if (isRecording) {
+                 try { recognition.abort(); } catch(e) { console.error("Error aborting speech:", e);}
+                 stopRecording();
+             }
+             if (currentWorker) {
+                 currentWorker.terminate().then(() => {
+                     currentWorker = null;
+                     console.log("Tesseract worker terminated on reset.");
+                     setProcessingState(false);
+                 }).catch(e => {
+                    console.error("Error terminating worker on reset:", e);
+                    setProcessingState(false);
+                 });
+             } else {
+                 setProcessingState(false);
+             }
+
+            imageInput.value = null;
+            imagePreview.style.display = 'none';
+            imagePreview.src = '';
+            textInput.value = '';
+            fullTranscript = ''; // Clear speech buffer too
+            resetCounts();
+            statusMessage.className = 'status-message';
+            if (showStatus.timeoutId) clearTimeout(showStatus.timeoutId);
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%'; progressBar.textContent = '0%';
+            progressBar.classList.remove('error');
+
+            analyzeText();
+            processImageButton.disabled = true;
+            recordButton.disabled = !recognition;
+
+            showStatus('🔄 تم إعادة تعيين الواجهة.', 'info');
+        }
+
+        function updateImagePreview() {
+            const file = imageInput.files[0];
+            processImageButton.disabled = !file || textInput.disabled;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+                showStatus(`🖼️ تم اختيار الصورة: ${file.name}`, 'info');
+            } else {
+                imagePreview.style.display = 'none';
+                imagePreview.src = '';
+            }
+        }
+
+        // --- Event Listeners ---
+        imageInput.addEventListener('change', updateImagePreview);
+        textInput.addEventListener('input', analyzeText);
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+             console.log("Page loaded, setting up...");
+             setupSpeechRecognition();
+             resetAll();
+             console.log("Setup complete.");
+        });
+
+    </script>
+</body>
+</html>​

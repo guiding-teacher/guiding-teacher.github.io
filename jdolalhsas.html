@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>جدول الحصص الدراسي</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Load html2canvas library for image generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root {
+            --primary-color: #6a8ec8;
+            --secondary-color: #A1B6DC;
+            --accent-color: #4a69bd;
+            --bg-soft-1: #eaf2ff;
+            --bg-soft-2: #f0f4f9;
+            --cell-bg: #ffffff;
+            --border-color: var(--accent-color);
+            --text-color: #1c2b4e;
+            --header-bg: var(--cell-bg);
+            --border-radius: 10px;
+            --cell-padding: 8px;
+            --table-spacing: 4px;
+            --button-bg: var(--primary-color);
+            --button-hover-bg: var(--accent-color);
+            --button-text: white;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #0b0a0e;
+            background-image:
+                radial-gradient(at 20% 15%, hsla(216, 60%, 85%, 0.4) 0px, transparent 50%),
+                radial-gradient(at 80% 25%, hsla(190, 55%, 80%, 0.3) 0px, transparent 50%),
+                radial-gradient(at 15% 80%, hsla(210, 65%, 75%, 0.4) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, hsla(200, 70%, 88%, 0.5) 0px, transparent 50%);
+            background-size: 100% 100%;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .timetable-container {
+            width: 100%;
+            max-width: 1100px;
+            background-color: rgba(234, 242, 255, 0.92);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 6px 20px rgba(74, 105, 189, 0.15);
+            overflow-x: auto;
+        }
+
+        .timetable-title {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--text-color);
+            background-color: var(--cell-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: var(--table-spacing);
+            table-layout: fixed;
+        }
+
+        th, td {
+            background-color: var(--cell-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0; /* Remove padding here, add to inner element */
+            text-align: center;
+            vertical-align: middle;
+            height: 60px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(74, 105, 189, 0.07);
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+
+        th {
+            font-weight: 700;
+            font-size: 0.9em;
+            color: var(--text-color);
+            padding: var(--cell-padding);
+            box-sizing: border-box;
+        }
+
+        td {
+           padding: 0;
+        }
+
+        /* Style a div inside the TD for capturing content (used by image/print) */
+        td > div.content-display {
+            width: 100%;
+            height: 100%;
+            padding: 5px; /* Padding inside the div */
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9em;
+            text-align: center;
+            color: #260087;
+            overflow-wrap: break-word;
+            word-wrap: break-word; /* Ensure word wrap */
+            white-space: pre-wrap; /* Respect line breaks from textarea */
+            display: flex; /* Center vertically */
+            justify-content: center;
+            align-items: center;
+        }
+
+        td textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: transparent;
+            resize: none;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1.0em;
+            text-align: center;
+            color: #260087;
+            overflow: auto;
+            outline: none;
+            display: block; /* Ensure textarea is displayed normally */
+        }
+
+        /* Hide the content-display div by default */
+        td > div.content-display {
+            display: none;
+        }
+
+        /* Style for the temporary clone used for image generation */
+        .image-export-clone {
+            position: absolute !important;
+            left: -9999px !important;
+            top: auto !important; /* Position off-screen */
+            width: 1100px !important; /* Set a fixed width matching max-width */
+            background-color: #ffffff !important; /* Force white background */
+            padding: 15px !important; /* Match original padding */
+            z-index: -1;
+            overflow: visible !important; /* Prevent internal scrollbars in capture */
+        }
+
+        .image-export-clone textarea {
+            display: none !important; /* Hide textarea in clone */
+        }
+        .image-export-clone td > div.content-display {
+            display: flex !important; /* Show the div in clone */
+            height: 60px; /* Ensure fixed height matches original TD */
+            min-height: 60px;
+            box-sizing: border-box;
+        }
+        .image-export-clone .action-buttons,
+        .image-export-clone .notes-input-area,
+        .image-export-clone .delete-note {
+             display: none !important; /* Hide buttons in clone */
+        }
+        .image-export-clone .notes-section {
+             background-color: var(--cell-bg) !important; /* Ensure background color */
+        }
+
+
+        .corner-cell {
+            background: linear-gradient(to bottom left,
+                transparent calc(50% - 1px),
+                var(--accent-color) calc(50% - 1px),
+                var(--accent-color) calc(50% + 1px),
+                transparent calc(50% + 1px)
+            ), var(--header-bg);
+             position: relative;
+             padding: 0;
+             font-size: 0.9em;
+             line-height: 1.2;
+        }
+
+        .corner-cell .corner-text-top {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+
+        .corner-cell .corner-text-bottom {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+        }
+
+        .action-buttons {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            padding: 8px 15px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9em;
+            font-weight: 700;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
+        }
+
+        .action-button:hover {
+            background-color: var(--button-hover-bg);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Style for the notes section */
+        .notes-section {
+            margin-top: 20px;
+            background-color: var(--cell-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(74, 105, 189, 0.07);
+        }
+
+        .notes-title {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .notes-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .note-item {
+            display: flex;
+            align-items: flex-start; /* Align item content to start */
+            justify-content: space-between; /* Space out text and button */
+            margin-bottom: 8px;
+            font-size: 0.9em; /* Match input font size */
+            line-height: 1.4; /* Improve readability */
+            word-break: break-word; /* Break long words */
+        }
+
+        .note-item::before {
+            content: "•";
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-left: 5px; /* Keep margin */
+            margin-top: 2px; /* Adjust vertical alignment */
+        }
+
+        .note-item span {
+            flex-grow: 1; /* Allow text to take available space */
+            margin-right: 5px; /* Space between bullet and text */
+        }
+
+        .delete-note {
+            background: none;
+            border: none;
+            color: red;
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 0 5px; /* Add some padding for easier clicking */
+            margin-right: auto; /* Push delete button to the end */
+            line-height: 1; /* Align delete 'x' better */
+        }
+
+        .notes-input-area {
+             display: flex;
+             gap: 10px;
+             margin-top: 10px;
+        }
+
+        .note-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 8px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9em;
+            outline: none;
+        }
+
+        .note-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .add-note-btn {
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-family: 'Tajawal', sans-serif;
+            transition: background-color 0.3s;
+            white-space: nowrap; /* Prevent button text wrapping */
+        }
+
+        .add-note-btn:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            .timetable-container { padding: 10px; max-width: 95%; /* Adjust max-width */ }
+            .timetable-title { font-size: 1.3em; margin-bottom: 10px;}
+            .timetable { table-layout: auto; } /* Revert to auto for smaller screens if fixed causes issues */
+
+            th, td {
+                 height: 50px; /* Adjust height */
+            }
+            .image-export-clone td > div.content-display {
+                height: 50px !important; /* Match adjusted height in clone */
+                min-height: 50px !important;
+            }
+            th { font-size: 0.8em; padding: 5px; }
+            td textarea, td > div.content-display { font-size: 0.8em; padding: 4px; } /* Adjust padding/font */
+            .corner-cell { font-size: 0.8em; }
+            .corner-cell .corner-text-top { top: 3px; right: 3px; }
+            .corner-cell .corner-text-bottom { bottom: 3px; left: 3px; }
+            .action-buttons { margin-top: 10px; gap: 8px;}
+            .action-button { padding: 6px 12px; font-size: 0.85em; min-width: 100px;}
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 5px; }
+            .timetable-container { padding: 8px; max-width: 100%; }
+            .timetable-title { font-size: 1.2em; padding: 8px; margin-bottom: 8px;}
+            .timetable { font-size: 0.9em; } /* Adjust base font size for table */
+
+            th, td {
+                 height: 45px; /* Adjust height */
+            }
+             .image-export-clone td > div.content-display {
+                 height: 45px !important; /* Match adjusted height in clone */
+                 min-height: 45px !important;
+             }
+            th { font-size: 0.75em; } /* Adjust font size relative to table */
+            td textarea, td > div.content-display {
+                font-size: 0.75em; /* Adjust font size relative to table */
+                padding: 3px;
+                line-height: 1.3;
+            }
+            .corner-cell { font-size: 0.7em; }
+            .action-buttons { gap: 5px; flex-direction: column; align-items: stretch; } /* Stack buttons vertically */
+            .action-button {
+                padding: 8px 10px; /* Slightly larger padding for touch */
+                font-size: 0.85em; /* Keep font size readable */
+                min-width: unset; /* Remove min-width */
+                max-width: 100%; /* Allow full width */
+            }
+            .notes-input-area { flex-direction: column; } /* Stack note input and button */
+            .add-note-btn { margin-top: 5px; }
+        }
+
+
+        /* Print styles (for browser print functionality) */
+        @media print {
+            body {
+                background-image: none;
+                background-color: #fff;
+                padding: 0;
+                margin: 0;
+                color: #000;
+                -webkit-print-color-adjust: exact !important; /* Ensure colors/backgrounds print */
+                 print-color-adjust: exact !important;
+            }
+            .timetable-container { /* Target the main container */
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                padding: 5mm !important;
+                max-width: 100% !important;
+                background-color: #fff !important;
+                backdrop-filter: none !important;
+                width: 100% !important;
+                overflow: visible !important;
+                margin: 0 auto !important;
+            }
+            .timetable-title {
+                font-size: 14pt !important;
+                border: 1px solid #ccc !important;
+                margin-bottom: 5mm !important;
+                color: #000 !important;
+                 background-color: #fff !important;
+                 box-shadow: none !important;
+            }
+            .timetable {
+                border-spacing: 1px !important;
+                width: 100% !important;
+                table-layout: fixed !important;
+                font-size: 10pt !important;
+            }
+            th, td {
+                border: 1px solid #999 !important;
+                box-shadow: none !important;
+                height: auto !important; /* Auto height */
+                padding: 0 !important; /* Reset padding */
+                background-color: #fff !important;
+                color: #000 !important;
+                overflow: hidden !important;
+                word-wrap: break-word !important;
+                font-size: 9pt !important;
+                vertical-align: middle !important;
+                border-radius: 0 !important;
+            }
+            th { /* Specific padding for TH */
+                padding: 2mm !important;
+            }
+
+            /* Replace textarea with its content using the div */
+            td textarea {
+                display: none !important; /* Hide textarea */
+            }
+            td > div.content-display {
+                 display: flex !important; /* Show the div */
+                 padding: 2mm !important;
+                 font-size: 9pt !important;
+                 color: #000 !important;
+                 height: auto !important; /* Let content determine height */
+                 min-height: 10mm; /* Minimum row height for print */
+                 box-sizing: border-box;
+                 text-align: center;
+                 align-items: center;
+                 justify-content: center;
+                 white-space: pre-wrap !important;
+            }
+
+            .corner-cell {
+                background: none !important;
+                position: relative;
+                font-size: 9pt !important;
+                text-align: center;
+                 padding: 2mm !important;
+            }
+             /* Simple text for corner cell in print */
+            .corner-cell .corner-text-top,
+            .corner-cell .corner-text-bottom {
+                position: static !important;
+                display: inline !important;
+                font-size: 8pt !important;
+                line-height: 1.1;
+                color: #000 !important;
+            }
+            .corner-cell .corner-text-top::after {
+                content: " / ";
+            }
+            .action-buttons, .notes-input-area, .delete-note {
+                display: none !important; /* Hide buttons/input in print */
+            }
+            .notes-section {
+                page-break-inside: avoid;
+                border: 1px solid #999 !important;
+                background-color: #fff !important;
+                box-shadow: none !important;
+                margin-top: 5mm;
+            }
+            .notes-title {
+                color: #000 !important;
+                font-size: 11pt;
+            }
+            .note-item {
+                color: #000 !important;
+                font-size: 9pt;
+                page-break-inside: avoid;
+            }
+             .note-item::before {
+                  color: #000 !important;
+             }
+        }
+        
+        footer {
+            width: 100%; padding: 15px 0; text-align: center;
+            color: Teal; font-size: 0.90em; margin-top: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+        
+        
+        
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+ <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="timetable-container" id="timetable-to-print">
+        <div class="timetable-title">جدول الحصص</div>
+
+        <table class="timetable">
+            <thead>
+                <tr>
+                    <th class="corner-cell">
+                       <span class="corner-text-top">اليوم</span>
+                       <span class="corner-text-bottom">الحصة</span>
+                    </th>
+                    <th>الأولى</th>
+                    <th>الثانية</th>
+                    <th>الثالثة</th>
+                    <th>الرابعة</th>
+                    <th>الخامسة</th>
+                    <th>السادسة</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows dynamically generated or static like before -->
+                 <tr>
+                    <th>السبت</th>
+                    <td><textarea placeholder="..." aria-label="السبت - الحصة الأولى"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="السبت - الحصة الثانية"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="السبت - الحصة الثالثة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="السبت - الحصة الرابعة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="السبت - الحصة الخامسة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="السبت - الحصة السادسة"></textarea><div class="content-display"></div></td>
+                </tr>
+                <tr>
+                    <th>الأحد</th>
+                    <td><textarea placeholder="..." aria-label="الأحد - الحصة الأولى"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأحد - الحصة الثانية"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأحد - الحصة الثالثة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأحد - الحصة الرابعة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأحد - الحصة الخامسة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأحد - الحصة السادسة"></textarea><div class="content-display"></div></td>
+                </tr>
+                <tr>
+                    <th>الإثنين</th>
+                     <td><textarea placeholder="..." aria-label="الإثنين - الحصة الأولى"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الإثنين - الحصة الثانية"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الإثنين - الحصة الثالثة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الإثنين - الحصة الرابعة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الإثنين - الحصة الخامسة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الإثنين - الحصة السادسة"></textarea><div class="content-display"></div></td>
+                </tr>
+                <tr>
+                    <th>الثلاثاء</th>
+                     <td><textarea placeholder="..." aria-label="الثلاثاء - الحصة الأولى"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الثلاثاء - الحصة الثانية"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الثلاثاء - الحصة الثالثة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الثلاثاء - الحصة الرابعة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الثلاثاء - الحصة الخامسة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الثلاثاء - الحصة السادسة"></textarea><div class="content-display"></div></td>
+                </tr>
+                <tr>
+                    <th>الأربعاء</th>
+                     <td><textarea placeholder="..." aria-label="الأربعاء - الحصة الأولى"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأربعاء - الحصة الثانية"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأربعاء - الحصة الثالثة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأربعاء - الحصة الرابعة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأربعاء - الحصة الخامسة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الأربعاء - الحصة السادسة"></textarea><div class="content-display"></div></td>
+                </tr>
+                <tr>
+                    <th>الخميس</th>
+                     <td><textarea placeholder="..." aria-label="الخميس - الحصة الأولى"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الخميس - الحصة الثانية"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الخميس - الحصة الثالثة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الخميس - الحصة الرابعة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الخميس - الحصة الخامسة"></textarea><div class="content-display"></div></td>
+                    <td><textarea placeholder="..." aria-label="الخميس - الحصة السادسة"></textarea><div class="content-display"></div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Notes Section -->
+        <div class="notes-section">
+            <div class="notes-title">ملاحظات:</div>
+            <ul class="notes-list" id="notes-list">
+                <!-- Notes will be added here dynamically -->
+            </ul>
+             <!-- Input area for new notes -->
+            <div class="notes-input-area">
+                <input type="text" class="note-input" id="new-note" placeholder="أضف ملاحظة جديدة...">
+                <button class="add-note-btn" id="add-note-btn">إضافة ملاحظة</button>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button id="print-btn" class="action-button">طباعة الجدول</button>
+            <button id="image-btn" class="action-button">تنزيل كصورة</button> <!-- Changed Button -->
+            <button id="clear-btn" class="action-button">مسح الجدول</button>
+        </div>
+        
+        <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DOM References ---
+            const textareas = document.querySelectorAll('.timetable textarea');
+            const notesList = document.getElementById('notes-list');
+            const newNoteInput = document.getElementById('new-note');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const clearButton = document.getElementById('clear-btn');
+            const printButton = document.getElementById('print-btn');
+            const imageButton = document.getElementById('image-btn'); // Get the image button
+            const timetableContainer = document.getElementById('timetable-to-print');
+
+            // --- LocalStorage Functionality ---
+
+            // Load saved data for timetable
+            function loadTimetableData() {
+                textareas.forEach(textarea => {
+                    const storageKey = `timetable_data_${textarea.getAttribute('aria-label')}`;
+                    const savedValue = localStorage.getItem(storageKey);
+                    if (savedValue) {
+                        textarea.value = savedValue;
+                        updateContentDisplay(textarea); // Update display div on load
+                    }
+                     // Add input listener to save and update display div
+                    textarea.addEventListener('input', function() {
+                        saveTimetableData(this);
+                        updateContentDisplay(this);
+                    });
+                });
+            }
+
+             // Update the content display div associated with a textarea
+            function updateContentDisplay(textarea) {
+                const parentTd = textarea.closest('td');
+                if (parentTd) {
+                    const displayDiv = parentTd.querySelector('.content-display');
+                    if(displayDiv) {
+                        displayDiv.textContent = textarea.value;
+                    }
+                }
+            }
+
+            // Save data for a specific textarea
+            function saveTimetableData(textarea) {
+                 const storageKey = `timetable_data_${textarea.getAttribute('aria-label')}`;
+                 localStorage.setItem(storageKey, textarea.value);
+            }
+
+            // Load saved notes
+            function loadNotes() {
+                const savedNotes = localStorage.getItem('timetable_notes');
+                 notesList.innerHTML = ''; // Clear existing list first
+                if (savedNotes) {
+                    const notesArray = JSON.parse(savedNotes);
+                    notesArray.forEach(noteText => createNoteElement(noteText));
+                }
+            }
+
+            // Save notes to localStorage
+            function saveNotes() {
+                const notesElements = notesList.querySelectorAll('.note-item span');
+                const notesArray = Array.from(notesElements).map(span => span.textContent);
+                localStorage.setItem('timetable_notes', JSON.stringify(notesArray));
+            }
+
+            // Create and append note list item
+            function createNoteElement(noteText) {
+                 const noteItem = document.createElement('li');
+                 noteItem.className = 'note-item';
+
+                 const noteSpan = document.createElement('span');
+                 noteSpan.textContent = noteText;
+
+                 const deleteBtn = document.createElement('button');
+                 deleteBtn.className = 'delete-note';
+                 deleteBtn.innerHTML = '×'; // Use HTML entity for 'x'
+                 deleteBtn.setAttribute('aria-label', 'حذف الملاحظة');
+                 deleteBtn.addEventListener('click', deleteNote);
+
+                 noteItem.appendChild(noteSpan);
+                 noteItem.appendChild(deleteBtn);
+                 notesList.appendChild(noteItem);
+            }
+
+            // Add new note handler
+            function handleAddNote() {
+                const noteText = newNoteInput.value.trim();
+                if (noteText) {
+                    createNoteElement(noteText);
+                    newNoteInput.value = ''; // Clear input
+                    saveNotes(); // Save updated notes list
+                }
+            }
+
+            // Delete note handler
+            function deleteNote(e) {
+                 const noteItem = e.target.closest('li.note-item');
+                 if(noteItem) {
+                     noteItem.remove();
+                     saveNotes(); // Save updated notes list
+                 }
+            }
+
+            // Clear all timetable data and notes
+            function clearTimetable() {
+                if (confirm('هل أنت متأكد أنك تريد مسح جميع بيانات الجدول والملاحظات؟')) {
+                    // Clear textareas and their storage
+                    textareas.forEach(textarea => {
+                        textarea.value = '';
+                        updateContentDisplay(textarea); // Clear display div
+                        const storageKey = `timetable_data_${textarea.getAttribute('aria-label')}`;
+                        localStorage.removeItem(storageKey);
+                    });
+
+                    // Clear notes list and storage
+                    notesList.innerHTML = '';
+                    localStorage.removeItem('timetable_notes');
+                }
+            }
+
+            // --- Button Functionality ---
+
+            // Print Button
+            printButton.addEventListener('click', function() {
+                 // Ensure display divs are up-to-date before printing
+                 textareas.forEach(updateContentDisplay);
+                 window.print();
+            });
+
+             // Image Download Button
+            imageButton.addEventListener('click', function() {
+                console.log("Image button clicked");
+                const elementToCapture = timetableContainer;
+
+                // 1. Clone the element to modify for capture without affecting the screen
+                const clonedElement = elementToCapture.cloneNode(true);
+                clonedElement.classList.add('image-export-clone'); // Add class for image-specific styles
+
+                // 2. Ensure display divs are updated in the clone (redundant if updateContentDisplay called on input, but safe)
+                const clonedTextareas = clonedElement.querySelectorAll('textarea');
+                 clonedTextareas.forEach(textarea => {
+                     const parentTd = textarea.closest('td');
+                     if (parentTd) {
+                         const displayDiv = parentTd.querySelector('.content-display');
+                         if (displayDiv) {
+                             // Use the original textarea's value to set the clone's display div content
+                             const originalTextarea = document.querySelector(`textarea[aria-label="${textarea.getAttribute('aria-label')}"]`);
+                             displayDiv.textContent = originalTextarea ? originalTextarea.value : '';
+                         }
+                     }
+                 });
+
+
+                // 3. Temporarily append the clone to the body (off-screen)
+                // This is crucial for html2canvas to correctly calculate styles and layout
+                document.body.appendChild(clonedElement);
+                console.log("Cloned element appended for capture.");
+
+                // 4. Configure html2canvas options
+                 const options = {
+                     scale: 2, // Increase scale for better resolution
+                     useCORS: true, // Important for external fonts/images if any
+                     backgroundColor: '#ffffff', // Explicit white background for the canvas
+                     logging: true, // Enable logging for debugging
+                     // Ensure rendering starts from top left
+                     scrollX: 0,
+                     scrollY: 0,
+                     // Capture the entire width/height of the *cloned* element
+                     width: clonedElement.offsetWidth,
+                     height: clonedElement.offsetHeight,
+                     windowWidth: clonedElement.scrollWidth,
+                     windowHeight: clonedElement.scrollHeight
+                 };
+
+
+                console.log("Generating image with html2canvas...");
+                // 5. Generate the canvas from the *cloned* element
+                html2canvas(clonedElement, options).then(canvas => {
+                    console.log("Canvas generated successfully.");
+                    // 6. Convert canvas to PNG image data URL
+                    const imageData = canvas.toDataURL('image/png');
+
+                    // 7. Create a temporary link to trigger the download
+                    const link = document.createElement('a');
+                    link.href = imageData;
+                    link.download = 'جدول_الحصص.png'; // Set desired filename
+
+                    // 8. Append link, click it, and remove it
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    console.log("Image download triggered.");
+
+                    // 9. Remove the clone from the DOM
+                    document.body.removeChild(clonedElement);
+                    console.log("Cloned element removed.");
+
+                }).catch((error) => {
+                    console.error("Image generation failed:", error);
+                    // 9. Ensure clone is removed even if there's an error
+                    if (document.body.contains(clonedElement)) {
+                         document.body.removeChild(clonedElement);
+                         console.log("Cloned element removed after error.");
+                    }
+                    alert("حدث خطأ أثناء إنشاء الصورة. يرجى المحاولة مرة أخرى.");
+                });
+            });
+
+
+             // --- Event Listeners Setup ---
+             addNoteBtn.addEventListener('click', handleAddNote);
+             newNoteInput.addEventListener('keypress', function(e) {
+                 if (e.key === 'Enter') {
+                     handleAddNote();
+                 }
+             });
+             clearButton.addEventListener('click', clearTimetable);
+
+
+            // --- Initial Load ---
+            loadTimetableData();
+            loadNotes();
+
+        });
+    </script>
+    
+</body>
+</html>
