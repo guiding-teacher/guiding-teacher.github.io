@@ -44,6 +44,27 @@
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" /> <!-- Animate On Scroll Library -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" /> <!-- Swiper JS for Testimonials -->
 
+    
+    
+     <script>
+  // نغير أو نضيف meta viewport لعرض واسع (desktop like)
+  function setDesktopViewport() {
+    let viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) {
+      viewport = document.createElement('meta');
+      viewport.name = "viewport";
+      document.head.appendChild(viewport);
+    }
+    viewport.content = "width=1200, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+  }
+  
+  setDesktopViewport();
+</script>
+    
+    
+    
+    
+    
     <style>
         :root {
             /* Define color themes */
@@ -990,6 +1011,12 @@ background-color: transparent;
         
         
     </style>
+    
+    
+    
+   
+    
+    
 </head>
   
 <!-- Add theme class to body for JS targeting -->
@@ -1017,8 +1044,9 @@ background-color: transparent;
   <a href="">قرأتي</a>
    <a href="ntaeja/index.html">النتائج</a>
     <a href="amthanat/index.html">الامتحانات</a>
-     <a href="amthanat/index.html">الجداول</a>
+     <a href="">الجداول</a>
   <a href="#about" class="active">من نحن</a>
+    <a href="mpiaate/index.html" class="active">البرامج</a>
   <a href="#faq">الاقسام</a>
 </nav>
    
