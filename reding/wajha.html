@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مملكة الحروف والمرح الساحرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Changa:wght@300;400;600;700&family=Katibeh&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --font-primary: 'Changa', sans-serif;
+            --font-display: 'Katibeh', cursive;
+
+            --color-bg: #FDF0E7;
+            --color-text: #4A3F35;
+            --color-primary: #FF8C69; 
+            --color-secondary: #6ECDC4; 
+            --color-accent1: #FFD166; 
+            --color-accent2: #A084E8; 
+            --color-accent3: #8E7AB5; 
+            --color-accent4: #F48B29; 
+            --color-white: #ffffff;
+            --color-shadow: rgba(74, 63, 53, 0.15);
+            --color-shadow-strong: rgba(74, 63, 53, 0.25);
+
+            --transition-smooth: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --border-radius-main: 25px;
+            --border-radius-small: 15px;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body { 
+            overflow-x: hidden;
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.7;
+            text-rendering: optimizeLegibility;
+            cursor: none; 
+        }
+
+        /* --- مؤشر الفأرة المخصص (كما هو) --- */
+        .custom-cursor { position: fixed; left: 0; top: 0; width: 30px; height: 30px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="%23FFD166" d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.966-7.417 3.966 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>'); background-size: contain; background-repeat: no-repeat; pointer-events: none; z-index: 9999; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s; transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        .custom-cursor.hidden { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+        .custom-cursor.hovering-link { transform: translate(-50%, -50%) scale(1.4); }
+        .custom-cursor.clicking { transform: translate(-50%, -50%) scale(0.8); }
+        .cursor-trail { position: fixed; width: 10px; height: 10px; background-color: var(--color-accent1); border-radius: 50%; pointer-events: none; z-index: 9998; opacity: 0; transform: translate(-50%, -50%) scale(1); transition: transform 0.4s ease-out, opacity 0.4s ease-out; }
+        .cursor-trail.active { opacity: 0.6; }
+
+        /* --- شريط تقدم التمرير (كما هو) --- */
+        .scroll-progress-container { position: fixed; top: 0; left: 0; width: 100%; height: 8px; background-color: rgba(255, 255, 255, 0.2); z-index: 1001; pointer-events: none; opacity: 0; transition: opacity 0.3s ease; }
+        .scroll-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--color-accent1) 0%, var(--color-primary) 50%, var(--color-secondary) 100%); border-radius: 0 4px 4px 0; transition: width 0.05s linear; position: relative; overflow: hidden; }
+        .scroll-progress-rocket { position: absolute; right: 0px; top: 50%; transform: translateY(-50%) translateX(0%) rotate(90deg); font-size: 18px; color: var(--color-white); text-shadow: 0 0 5px var(--color-text); opacity: 0; transition: opacity 0.3s ease, transform 0.1s linear; }
+        .scroll-progress-bar.show-rocket .scroll-progress-rocket { opacity: 1; }
+
+        /* --- زر العودة للأعلى (كما هو) --- */
+        .back-to-top-button { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; background: linear-gradient(135deg, var(--color-accent2), lighten(var(--color-accent2), 10%)); color: var(--color-white); border: none; border-radius: 50%; font-size: 1.6rem; cursor: pointer; box-shadow: 0 6px 18px var(--color-shadow-strong); display: flex; align-items: center; justify-content: center; z-index: 999; opacity: 0; visibility: hidden; transform: translateY(120px) scale(0.8); transition: opacity 0.4s ease, visibility 0.4s ease, transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        .back-to-top-button.visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+        .back-to-top-button:hover { background: linear-gradient(135deg, var(--color-primary), lighten(var(--color-primary), 10%)); transform: translateY(-5px) scale(1.1); }
+        .back-to-top-button:active { transform: scale(0.95); }
+        .back-to-top-button i { transition: transform 0.3s ease-in-out; }
+        .back-to-top-button:hover i { transform: rotate(-15deg) translateY(-2px); }
+
+        /* --- قسم الهيرو (كما هو) --- */
+        .hero { height: 65vh; min-height: 400px; position: relative; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--color-white); overflow: hidden; }
+        .hero__background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.6) saturate(1.2); z-index: -2; transform: scale(1.1); animation: heroBgZoom 20s infinite alternate ease-in-out; }
+        @keyframes heroBgZoom { from { transform: scale(1.1); } to { transform: scale(1.25); } }
+        .hero__overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255, 140, 105, 0.4), rgba(110, 205, 196, 0.4), rgba(160, 132, 232, 0.3)); z-index: -1; }
+        .hero__content { padding: 20px; animation: fadeInSlideUp 1s 0.3s ease-out backwards; }
+        .hero__title { font-family: var(--font-display); font-size: clamp(2.8rem, 7vw, 6rem); margin-bottom: 0.4em; color: var(--color-accent1); text-shadow: 3px 3px 0px rgba(0,0,0,0.25), 0 0 20px rgba(255,209,102,0.6); letter-spacing: 1.5px; }
+        .hero__subtitle { font-size: clamp(1rem, 2.8vw, 1.6rem); margin-bottom: 1.8em; font-weight: 300; max-width: 650px; margin-left: auto; margin-right: auto; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .hero__cta-button { font-family: var(--font-primary); font-weight: 600; background: linear-gradient(45deg, var(--color-accent1), darken(var(--color-accent1),10%)); color: var(--color-text); padding: 0.9em 2.2em; border-radius: 50px; text-decoration: none; font-size: clamp(1rem, 2.2vw, 1.3rem); transition: var(--transition-smooth), box-shadow 0.3s ease; box-shadow: 0 5px 15px var(--color-shadow), inset 0 -2px 5px rgba(0,0,0,0.1); display: inline-block; position: relative; overflow: hidden; }
+        .hero__cta-button::before { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%); transform: scale(0); transition: transform 0.5s ease-out; }
+        .hero__cta-button:hover::before { transform: scale(1); }
+        .hero__cta-button:hover { background: linear-gradient(45deg, var(--color-white), darken(var(--color-white),5%)); color: var(--color-primary); transform: translateY(-6px) scale(1.07); box-shadow: 0 10px 25px var(--color-shadow-strong), inset 0 -1px 3px rgba(0,0,0,0.05); }
+
+        /* --- القائمة السحرية (كما هي) --- */
+        .magic-nav { background: linear-gradient(to right, var(--color-primary), var(--color-secondary), var(--color-accent2)); padding: 12px 0; box-shadow: 0 6px 12px var(--color-shadow); position: sticky; top: 0; z-index: 1000; animation: slideInDownNav 0.8s ease-out; }
+        .magic-nav__list { list-style: none; display: flex; justify-content: center; align-items: stretch; flex-wrap: nowrap; gap: 10px; padding: 0 15px; }
+        .magic-nav__link { color: var(--color-white); text-decoration: none; font-size: clamp(0.9rem, 2vw, 1.1rem); font-weight: 600; padding: 10px 20px; border-radius: var(--border-radius-main); transition: var(--transition-smooth); display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); height: 100%; }
+        .magic-nav__link::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.15); transition: left 0.4s ease-out; z-index: 0; }
+        .magic-nav__link > * { position: relative; z-index: 1; }
+        .magic-nav__link:hover::before { left: 0; }
+        .magic-nav__link:hover { transform: translateY(-4px) scale(1.03); text-shadow: 0 0 8px rgba(255,255,255,0.6); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+        .magic-nav__icon { font-size: 1.3em; transition: transform 0.3s ease; line-height: 1; }
+        .magic-nav__link span { line-height: 1.2; }
+        .magic-nav__link:hover .magic-nav__icon { transform: rotate(12deg) scale(1.25); }
+        .magic-nav__link.active-link { background-color: rgba(255, 255, 255, 0.25); box-shadow: inset 0 0 10px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+        /* --- حاوية المحتوى الرئيسي (كما هي) --- */
+        .main-content { padding: 40px 15px; display: flex; flex-direction: column; gap: 60px; max-width: 100%; }
+        .content-section { opacity: 0; transform: translateY(50px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; max-width: 100%; }
+        .content-section.is-visible { opacity: 1; transform: translateY(0); }
+        .content-section__title { font-family: var(--font-display); font-size: clamp(2.2rem, 5.5vw, 3.8rem); text-align: center; color: var(--color-primary); margin-bottom: 40px; position: relative; padding-bottom: 20px; }
+        .content-section__title .sparkle-deco { position: absolute; font-size: clamp(0.6em, 2vw, 0.9em); color: var(--color-accent1); opacity: 0; animation: titleDecoSparkle 2s infinite ease-in-out; transition: opacity 0.5s ease-out; }
+        .content-section.is-visible .content-section__title .sparkle-deco { opacity: 0.7; }
+        .content-section__title .sparkle-deco:nth-of-type(1) { top: -15%; left: 10%; animation-delay: 0.2s; transform: rotate(-15deg); }
+        .content-section__title .sparkle-deco:nth-of-type(2) { top: 0%; right: 8%; animation-delay: 0.7s; transform: rotate(20deg) scale(0.8); }
+        .content-section__title .sparkle-deco:nth-of-type(3) { bottom: 5%; left: 20%; animation-delay: 1.2s; transform: rotate(5deg) scale(1.1); }
+        .content-section__title .sparkle-deco:nth-of-type(4) { bottom: 10%; right: 25%; animation-delay: 0.5s; transform: rotate(-5deg) scale(0.9); }
+        @keyframes titleDecoSparkle { 0%, 100% { transform: scale(1) rotate(var(--initial-rotate, 0deg)); opacity: 0.7; } 50% { transform: scale(1.3) rotate(calc(var(--initial-rotate, 0deg) + 15deg)); opacity: 1; } }
+        .content-section__title::before { content: ''; position: absolute; height: 4px; width: 0; background: linear-gradient(to right, var(--color-accent1), var(--color-secondary), var(--color-accent2)); border-radius: 3px; bottom: 0; left: 50%; transform: translateX(-50%); transition: width 0.8s ease-out 0.3s; }
+        .content-section.is-visible .content-section__title::before { width: clamp(80px, 25vw, 120px); }
+        .content-section__title::after { content: '✨'; font-size: 0.7em; position: absolute; background: none; left: 50%; transform: translateX(calc(-50% + clamp(45px, 13vw, 75px))) scale(0); bottom: -8px; transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) 0.8s, opacity 0.5s ease-out 0.8s; opacity: 0; }
+        .content-section.is-visible .content-section__title::after { transform: translateX(calc(-50% + clamp(45px, 13vw, 75px))) scale(1); opacity: 1; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 35px; perspective: 1200px; max-width: 100%; }
+
+        .magic-card {
+            background-color: var(--color-white);
+            border-radius: var(--border-radius-main);
+            box-shadow: 0 10px 30px var(--color-shadow);
+            overflow: visible;
+            transition: var(--transition-smooth);
+            border-top: 7px solid var(--card-theme-color); /* سيتم تحديدها في HTML */
+            display: flex;
+            flex-direction: column;
+            transform-style: preserve-3d;
+            position: relative;
+            width: 100%; 
+        }
+        .magic-card.is-featured::after { content: "مميز!"; position: absolute; top: 15px; right: -8px; background-color: var(--color-accent2); color: white; padding: 6px 20px 6px 12px; font-size: 0.85rem; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 2; clip-path: polygon(0% 0%, 100% 0%, calc(100% - 15px) 50%, 100% 100%, 0% 100%); }
+        .magic-card:hover { transform: translateY(-12px) rotateX(4deg) rotateY(-2deg) scale(1.04); box-shadow: 0 18px 40px var(--color-shadow-strong); }
+        .magic-card__image-wrapper { height: 210px; overflow: hidden; position: relative; border-radius: calc(var(--border-radius-main) - 7px) calc(var(--border-radius-main) - 7px) 0 0; }
+        .magic-card__image { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .magic-card:hover .magic-card__image { transform: scale(1.12) rotate(1deg); }
+        .magic-card__content { padding: 25px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; }
+        .magic-card__title { font-size: clamp(1.3rem, 3.2vw, 1.7rem); color: var(--card-theme-color); margin-bottom: 12px; font-weight: 600; }
+        .magic-card__description { font-size: clamp(0.85rem, 2.2vw, 0.98rem); color: #5f534b; margin-bottom: 22px; flex-grow: 1; }
+        
+        /* --- أنماط أزرار البطاقات المعدلة --- */
+        .magic-card__button {
+            background: linear-gradient(45deg, var(--color-secondary), var(--color-accent2)); 
+            color: var(--color-white);
+            border: none;
+            padding: 13px 32px;
+            border-radius: 50px;
+            font-family: var(--font-primary);
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2.1vw, 1.05rem);
+            cursor: pointer;
+            transition: var(--transition-smooth), box-shadow 0.3s ease, background 0.3s ease; 
+            box-shadow: 0 5px 12px rgba(0,0,0,0.15), 0 0 0 2px rgba(255,255,255,0.3) inset; 
+            align-self: center;
+            position: relative;
+            overflow: hidden;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+        }
+         .magic-card__button::before { 
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.25); 
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), height 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 0;
+        }
+        .magic-card__button:hover::before {
+            width: 300px; 
+            height: 300px;
+        }
+        .magic-card__button span {
+            position: relative;
+            z-index: 1;
+            display: flex; 
+            align-items: center;
+            gap: 8px;
+        }
+        .magic-card__button .button-icon {
+            font-size: 1.1em;
+            transition: transform 0.3s ease;
+        }
+        .magic-card__button:hover {
+            background: linear-gradient(45deg, var(--color-primary), var(--color-accent1)); 
+            transform: scale(1.08) translateY(-4px); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25), 0 0 0 2px rgba(255,255,255,0.4) inset;
+        }
+        .magic-card__button:hover .button-icon {
+            transform: translateX(5px) rotate(15deg); 
+        }
+        .magic-card__button:active {
+            transform: scale(1.02) translateY(-1px); 
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.2) inset;
+            background: linear-gradient(45deg, darken(var(--color-primary), 5%), darken(var(--color-accent1), 5%)); 
+        }
+
+        /* --- الفوتر (كما هو، مع إعادة الحقوق) --- */
+        .site-footer { background: linear-gradient(to bottom, var(--color-text), darken(var(--color-text), 5%)); color: var(--color-bg); text-align: center; padding: 35px 15px; margin-top: 50px; position: relative; overflow: hidden; }
+        .footer-bubble { position: absolute; background-color: rgba(255, 255, 255, 0.1); border-radius: 50%; animation: bubbleRise 10s infinite ease-in-out; pointer-events: none; }
+        .footer-bubble:nth-child(1) { width: 60px; height: 60px; left: 10%; bottom: -60px; animation-duration: 12s; }
+        .footer-bubble:nth-child(2) { width: 30px; height: 30px; left: 30%; bottom: -30px; animation-duration: 8s; animation-delay: 2s; }
+        .footer-bubble:nth-child(3) { width: 80px; height: 80px; left: 50%; bottom: -80px; animation-duration: 15s; animation-delay: 1s; }
+        .footer-bubble:nth-child(4) { width: 40px; height: 40px; left: 75%; bottom: -40px; animation-duration: 9s; animation-delay: 3s; }
+        .footer-bubble:nth-child(5) { width: 50px; height: 50px; left: 90%; bottom: -50px; animation-duration: 11s; }
+        @keyframes bubbleRise { 0% { transform: translateY(0) scale(1); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(-200px) scale(1.2); opacity: 0; } }
+        .site-footer__text { margin-bottom: 10px; position: relative; z-index: 1; }
+        .site-footer__sparkles { font-size: 1.5rem; position: relative; z-index: 1; }
+        .site-footer__sparkles span { margin: 0 5px; display: inline-block; animation: footerShine 2s infinite ease-in-out; }
+        .site-footer__sparkles span:nth-child(1) { animation-delay: 0s; }
+        .site-footer__sparkles span:nth-child(2) { animation-delay: 0.2s; }
+        .site-footer__sparkles span:nth-child(3) { animation-delay: 0.4s; }
+        .site-footer__sparkles span:nth-child(4) { animation-delay: 0.6s; }
+        @keyframes footerShine { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; } 50% { transform: translateY(-6px) scale(1.25); opacity: 1; } }
+        
+        @keyframes fadeInSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInDownNav { from { transform: translateY(-100%); opacity: 0.8; } to { transform: translateY(0); opacity: 1; } }
+
+        /* --- استجابة للشاشات --- */
+        @media (max-width: 992px) { 
+            .cards-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; }
+            .magic-nav__link { padding: 10px 15px; font-size: clamp(0.85rem, 1.8vw, 1rem); }
+        }
+
+        @media (max-width: 768px) { 
+            body { cursor: auto !important; } 
+            .custom-cursor, .cursor-trail { display: none !important; }
+
+            .hero { height: 60vh; min-height: 320px; }
+            .main-content { padding: 30px 10px; }
+            
+            .magic-nav { padding: 10px 0; }
+            .magic-nav__list { flex-wrap: wrap; justify-content: center; gap: 6px; padding: 0 5px; }
+            .magic-nav__item { flex-grow: 0; flex-shrink: 0; flex-basis: calc(33.333% - 4px); max-width: calc(33.333% - 4px); }
+            .magic-nav__link { padding: 8px 5px; font-size: clamp(0.7rem, 2.5vw, 0.8rem); flex-direction: column; gap: 3px; min-height: 50px; text-align: center; word-break: break-word; }
+            .magic-nav__icon { font-size: 1.2em; margin-bottom: 0; }
+            .magic-nav__link span { font-size: 0.9em; line-height: 1.1; }
+
+            .cards-grid { grid-template-columns: 1fr; gap: 25px; padding: 0; } 
+            .content-section__title { font-size: clamp(1.8rem, 6vw, 2.8rem); padding-bottom: 15px; }
+            .content-section__title::before { width: 0; }
+            .content-section.is-visible .content-section__title::before { width: clamp(80px, 25vw, 100px); }
+            .content-section__title::after { transform: translateX(calc(-50% + clamp(40px, 13vw, 60px))) scale(0); bottom: -6px; }
+            .content-section.is-visible .content-section__title::after {  transform: translateX(calc(-50% + clamp(40px, 13vw, 60px))) scale(1); }
+            
+            .magic-card { border-radius: var(--border-radius-small); width: 100%; }
+            .magic-card__image-wrapper { height: 180px; /* تم تقليل ارتفاع الصورة */ }
+            .magic-card__content { padding: 20px 15px; /* تقليل الحشوة */ }
+            .magic-card__title { font-size: clamp(1.1rem, 3.8vw, 1.4rem); }
+            .magic-card__description { font-size: clamp(0.75rem, 2.8vw, 0.85rem); margin-bottom: 18px;}
+            .magic-card__button { padding: 12px 22px; font-size: clamp(0.8rem, 2.5vw, 0.9rem); } /* تصغير طفيف للزر */
+
+            .back-to-top-button { width: 50px; height: 50px; font-size: 1.4rem; bottom: 20px; right: 20px;}
+        }
+
+        @media (max-width: 370px) { 
+            .hero__title { font-size: clamp(2rem, 9vw, 3.2rem); }
+            .hero__subtitle { font-size: clamp(0.8rem, 4.5vw, 1rem); }
+            .main-content { padding: 25px 8px; }
+
+            .magic-nav__item { flex-basis: calc(50% - 3px); max-width: calc(50% - 3px); }
+            .magic-nav__link { font-size: clamp(0.65rem, 2.8vw, 0.75rem); min-height: 45px; }
+            .magic-nav__icon { font-size: 1.1em; }
+            .magic-nav__link span { font-size: 0.85em; }
+            .magic-card__image-wrapper { height: 150px; } /* تقليل أكثر للصورة في أصغر الشاشات */
+            .magic-card__content { padding: 15px 10px; }
+            .magic-card__title { font-size: clamp(1rem, 4vw, 1.3rem); }
+            .magic-card__button { padding: 10px 18px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- مؤشر الفأرة المخصص -->
+    <div class="custom-cursor"></div>
+
+    <!-- شريط تقدم التمرير -->
+    <div class="scroll-progress-container">
+        <div class="scroll-progress-bar">
+            <span class="scroll-progress-rocket">🚀</span>
+        </div>
+    </div>
+
+    <header class="hero">
+        <img src="https://images.unsplash.com/photo-1484807352052-23338990c6c6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGNoaWxkJTIwZHJlYW18ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=1000&q=80" alt="خيال طفل واسع" class="hero__background-image">
+        <div class="hero__overlay"></div>
+        <div class="hero__content">
+            <h1 class="hero__title">مملكة الحروف والمرح</h1>
+            <p class="hero__subtitle">انطلق في مغامرة شيقة لاكتشاف سحر القراءة والكتابة بطرق مبتكرة وملهمة!</p>
+            <a href="#letters-section" class="hero__cta-button"><span>ابدأ رحلتك الآن!</span></a>
+        </div>
+    </header>
+
+    <nav class="magic-nav">
+        <ul class="magic-nav__list">
+            <li class="magic-nav__item"><a href="#letters-section" class="magic-nav__link" data-section-id="letters-section"><i class="fas fa-spell-check magic-nav__icon"></i><span>عالم الحروف</span></a></li>
+            <li class="magic-nav__item"><a href="#numbers-section" class="magic-nav__link" data-section-id="numbers-section"><i class="fas fa-sort-numeric-down magic-nav__icon"></i><span>أصدقاء الأرقام</span></a></li>
+            <li class="magic-nav__item"><a href="#stories-section" class="magic-nav__link" data-section-id="stories-section"><i class="fas fa-book-open-reader magic-nav__icon"></i><span>حكايات ملهمة</span></a></li>
+            <li class="magic-nav__item"><a href="#games-section" class="magic-nav__link" data-section-id="games-section"><i class="fas fa-gamepad magic-nav__icon"></i><span>ألعاب وتحديات</span></a></li>
+            <li class="magic-nav__item"><a href="#parents-section" class="magic-nav__link" data-section-id="parents-section"><i class="fas fa-users magic-nav__icon"></i><span>ركن الآباء</span></a></li>
+            <li class="magic-nav__item"><a href="#contact-section" class="magic-nav__link" data-section-id="contact-section"><i class="fas fa-envelope magic-nav__icon"></i><span>تواصل معنا</span></a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <section id="letters-section" class="content-section">
+            <h2 class="content-section__title">
+                اكتشف أسرار الحروف
+                <span class="sparkle-deco" style="--initial-rotate: -10deg;">✨</span>
+                <span class="sparkle-deco" style="--initial-rotate: 15deg;">🌟</span>
+                <span class="sparkle-deco" style="--initial-rotate: 5deg;">💖</span>
+                <span class="sparkle-deco" style="--initial-rotate: -5deg;">🎉</span>
+            </h2>
+            <div class="cards-grid">
+                <article class="magic-card is-featured" style="--card-theme-color: var(--color-primary);">
+                    <div class="magic-card__image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1550355291-bbee04a92027?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y29sb3JmdWwlMjBhbHBoYWJldHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="مكعبات حروف ملونة بشكل جذاب">
+                    </div>
+                    <div class="magic-card__content">
+                        <h3 class="magic-card__title">رحلة الأبجدية المذهلة</h3>
+                        <p class="magic-card__description">انضم إلينا لتعلم أشكال الحروف وأصواتها الساحرة مع رسوم متحركة مرحة وأناشيد لا تُنسى.</p>
+                        <button class="magic-card__button"><span>ابدأ التعلم <i class="fas fa-chevron-left button-icon"></i></span></button>
+                    </div>
+                </article>
+                <article class="magic-card" style="--card-theme-color: var(--color-secondary);">
+                    <div class="magic-card__image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1516979187457-637abb4f9353?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y2hpbGQlMjB3cml0aW5nJTIwbGV0dGVyc3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="طفل يرسم حروفًا كبيرة على سبورة">
+                    </div>
+                    <div class="magic-card__content">
+                        <h3 class="magic-card__title">سحر تكوين الكلمات</h3>
+                        <p class="magic-card__description">اجمع الحروف لتكوّن كلماتك الأولى، وشاهدها تنبض بالحياة في قصص مصورة تفاعلية وممتعة!</p>
+                        <button class="magic-card__button"><span>كوّن كلمتك <i class="fas fa-pencil-alt button-icon"></i></span></button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="numbers-section" class="content-section">
+            <h2 class="content-section__title">
+                مغامرات الأرقام العجيبة
+                <span class="sparkle-deco" style="--initial-rotate: 10deg;">🎈</span>
+                <span class="sparkle-deco" style="--initial-rotate: -5deg;">🔢</span>
+                <span class="sparkle-deco" style="--initial-rotate: 20deg;">🎊</span>
+                <span class="sparkle-deco" style="--initial-rotate: 0deg;">🌟</span>
+            </h2>
+            <div class="cards-grid">
+                <article class="magic-card" style="--card-theme-color: var(--color-accent1);">
+                     <div class="magic-card__image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1587130093260-735101608d0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Y29sb3JmdWwlMjBudW1iZXJzfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="أرقام ملونة ومرحة">
+                    </div>
+                    <div class="magic-card__content">
+                        <h3 class="magic-card__title">أصدقاؤنا الأرقام الودودة</h3>
+                        <p class="magic-card__description">عدّ والعب وتعرف على الأرقام من خلال ألعاب تفاعلية شيقة ورسوم كرتونية محببة تجعل التعلم متعة.</p>
+                        <button class="magic-card__button"><span>هيا نعد! <i class="fas fa-hand-point-up button-icon"></i></span></button>
+                    </div>
+                </article>
+                <article class="magic-card is-featured" style="--card-theme-color: var(--color-accent2);">
+                     <div class="magic-card__image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1576789404447-9064003a7913?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Y2hpbGQlMjBtYXRoJTIwZ2FtZXxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="أطفال يلعبون ألعابًا حسابية بأشكال ملونة">
+                    </div>
+                    <div class="magic-card__content">
+                        <h3 class="magic-card__title">أبطال الرياضيات الصغار</h3>
+                        <p class="magic-card__description">ألعاب ذكاء بسيطة ومسلية لتعلم الجمع والطرح بطرق مبتكرة وحل الألغاز الرقمية المثيرة.</p>
+                        <button class="magic-card__button"><span>تحدي الأبطال <i class="fas fa-brain button-icon"></i></span></button>
+                    </div>
+                </article>
+            </div>
+        </section>
+        
+        <section id="stories-section" class="content-section">
+             <h2 class="content-section__title">
+                في عالم القصص الخيالية
+                <span class="sparkle-deco" style="--initial-rotate: -12deg;">📚</span>
+                <span class="sparkle-deco" style="--initial-rotate: 8deg;">🌈</span>
+                <span class="sparkle-deco" style="--initial-rotate: 3deg;">🧚</span>
+                <span class="sparkle-deco" style="--initial-rotate: -18deg;">🏰</span>
+            </h2>
+            <div class="cards-grid">
+                 <article class="magic-card" style="--card-theme-color: var(--color-accent3);"> 
+                     <div class="magic-card__image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1509343256512-d77a5cb3791b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZmFpcnl0YWxlJTIwaWxsdXN0cmF0aW9ufGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="رسم توضيحي لكتاب قصص خيالية مفتوح">
+                    </div>
+                    <div class="magic-card__content">
+                        <h3 class="magic-card__title">حكايات قبل النوم المسلية</h3>
+                        <p class="magic-card__description">استمع وشاهد قصصًا مصورة هادفة وممتعة تنمي خيالك وتعلمك قيماً جميلة وأخلاقًا حميدة.</p>
+                        <button class="magic-card__button"><span>اقرأ لي قصة <i class="fas fa-book-reader button-icon"></i></span></button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="games-section" class="content-section">
+             <h2 class="content-section__title">
+                ساحة الألعاب والمرح
+                <span class="sparkle-deco" style="--initial-rotate: 15deg;">🎲</span>
+                <span class="sparkle-deco" style="--initial-rotate: -10deg;">🧩</span>
+                <span class="sparkle-deco" style="--initial-rotate: 5deg;">🎮</span>
+                <span class="sparkle-deco" style="--initial-rotate: -20deg;">🏆</span>
+            </h2>
+            <div class="cards-grid">
+                <article class="magic-card" style="--card-theme-color: var(--color-accent4);"> 
+                    <div class="magic-card__image-wrapper">
+                        <img src="https://images.unsplash.com/photo-1606880108312-604a43190976?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Y2hpbGRyZW4lMjBlZHVjYXRpb25hbCUyMGdhbWVzfGVufDB8fDB8fHww&auto=format&fit=crop&w=500&q=60" alt="أطفال يلعبون لعبة تعليمية على جهاز لوحي">
+                    </div>
+                    <div class="magic-card__content">
+                        <h3 class="magic-card__title">ألعاب الذكاء والتحدي</h3>
+                        <p class="magic-card__description">قوّي ذاكرتك وتركيزك مع ألعاب مطابقة الصور، توصيل النقاط، والألغاز الممتعة التي تنمي مهاراتك.</p>
+                        <button class="magic-card__button"><span>العب وتعلم <i class="fas fa-puzzle-piece button-icon"></i></span></button>
+                    </div>
+                </article>
+            </div>
+        </section>
+        
+        <section id="parents-section" class="content-section">
+            <h2 class="content-section__title">
+                ركن الآباء والمعلمين
+                <span class="sparkle-deco" style="--initial-rotate: 0deg;">👨‍👩‍👧‍👦</span>
+                <span class="sparkle-deco" style="--initial-rotate: 10deg;">💡</span>
+            </h2>
+            <p style="text-align:center; font-size: 1.2rem; padding: 0 10px;">محتوى مفيد للآباء والمعلمين لدعم رحلة تعلم الأطفال.</p>
+        </section>
+        <section id="contact-section" class="content-section">
+            <h2 class="content-section__title">
+                تواصل معنا
+                <span class="sparkle-deco" style="--initial-rotate: -5deg;">📬</span>
+                <span class="sparkle-deco" style="--initial-rotate: 5deg;">💬</span>
+            </h2>
+            <p style="text-align:center; font-size: 1.2rem; padding: 0 10px;">نحن هنا للاستماع إلى اقتراحاتكم وأسئلتكم!</p>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-bubble"></div>
+        <div class="footer-bubble"></div>
+        <div class="footer-bubble"></div>
+        <div class="footer-bubble"></div>
+        <div class="footer-bubble"></div>
+        <p class="site-footer__text">© 2024 مملكة الحروف والمرح. جميع الحقوق محفوظة للصغار الأبطال.</p>
+        <div class="site-footer__sparkles">
+            <span>🌟</span><span>✨</span><span>💖</span><span>🎉</span>
+        </div>
+    </footer>
+
+    <button class="back-to-top-button" title="العودة للأعلى">
+        <i class="fas fa-rocket"></i>
+    </button>
+
+    <script>
+        // (JavaScript كما هو في الرد السابق)
+        document.addEventListener('DOMContentLoaded', () => {
+            const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+
+            // --- مؤشر الفأرة المخصص ودرب النجوم ---
+            const cursor = document.querySelector('.custom-cursor');
+            const trailElements = [];
+            const MAX_TRAIL_NODES = 10;
+            let trailNodeIndex = 0;
+            let lastTrailTime = 0;
+            const TRAIL_INTERVAL = 30;
+
+            if (!isTouchDevice() && cursor) {
+                document.body.style.cursor = 'none'; 
+
+                for (let i = 0; i < MAX_TRAIL_NODES; i++) {
+                    const el = document.createElement('div');
+                    el.classList.add('cursor-trail');
+                    document.body.appendChild(el);
+                    trailElements.push(el);
+                }
+
+                document.addEventListener('mousemove', (e) => {
+                    cursor.style.transform = `translate(${e.clientX - cursor.offsetWidth / 2}px, ${e.clientY - cursor.offsetHeight / 2}px) scale(1)`;
+                    
+                    const now = performance.now();
+                    if (now - lastTrailTime > TRAIL_INTERVAL) {
+                        const currentTrailNode = trailElements[trailNodeIndex];
+                        currentTrailNode.style.left = e.clientX + 'px';
+                        currentTrailNode.style.top = e.clientY + 'px';
+                        currentTrailNode.classList.add('active');
+                        
+                        setTimeout(() => {
+                            currentTrailNode.classList.remove('active');
+                        }, 400);
+                        
+                        trailNodeIndex = (trailNodeIndex + 1) % MAX_TRAIL_NODES;
+                        lastTrailTime = now;
+                    }
+                });
+
+                document.addEventListener('mouseleave', () => cursor.classList.add('hidden'));
+                document.addEventListener('mouseenter', () => cursor.classList.remove('hidden'));
+                
+                document.querySelectorAll('a, button, .magic-card').forEach(el => {
+                    el.addEventListener('mouseenter', () => cursor.classList.add('hovering-link'));
+                    el.addEventListener('mouseleave', () => cursor.classList.remove('hovering-link'));
+                });
+                document.addEventListener('mousedown', () => cursor.classList.add('clicking'));
+                document.addEventListener('mouseup', () => cursor.classList.remove('clicking'));
+
+            } else if (cursor) {
+                cursor.style.display = 'none';
+                document.querySelectorAll('.cursor-trail').forEach(el => el.style.display = 'none');
+                document.body.style.cursor = 'auto';
+            }
+
+
+            // --- شريط تقدم التمرير ---
+            const progressBarContainer = document.querySelector('.scroll-progress-container');
+            const progressBar = document.querySelector('.scroll-progress-bar');
+            const rocket = document.querySelector('.scroll-progress-rocket');
+
+            function updateScrollProgress() {
+                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+                const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                
+                if (scrollHeight <= 0) {
+                    if(progressBarContainer) progressBarContainer.style.opacity = '0';
+                    if(progressBar) progressBar.style.width = '0%';
+                    return;
+                }
+                if(progressBarContainer) progressBarContainer.style.opacity = '1';
+
+                const scrollPercentage = (scrollTop / scrollHeight) * 100;
+
+                if (progressBar) {
+                    progressBar.style.width = scrollPercentage + '%';
+                    if (rocket) {
+                        if (scrollPercentage > 2 && scrollPercentage < 99) { 
+                             progressBar.classList.add('show-rocket');
+                        } else {
+                            progressBar.classList.remove('show-rocket');
+                        }
+                    }
+                }
+            }
+            window.addEventListener('scroll', updateScrollProgress, { passive: true });
+            window.addEventListener('resize', updateScrollProgress);
+            updateScrollProgress();
+
+
+            // --- زر العودة إلى الأعلى ---
+            const backToTopButton = document.querySelector('.back-to-top-button');
+            if (backToTopButton) {
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTopButton.classList.add('visible');
+                    } else {
+                        backToTopButton.classList.remove('visible');
+                    }
+                }, { passive: true });
+
+                backToTopButton.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+            
+
+            // --- Intersection Observer لتشغيل الأنيميشن عند التمرير ---
+            const sections = document.querySelectorAll('.content-section');
+            const navLinks = document.querySelectorAll('.magic-nav__link');
+
+            const sectionObserverOptions = {
+                rootMargin: "0px 0px -20% 0px", 
+                threshold: 0.01 
+            };
+
+            const sectionObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const correspondingLink = document.querySelector(`.magic-nav__link[data-section-id="${id}"]`);
+
+                    if (entry.isIntersecting && entry.intersectionRatio > 0.01) {
+                        entry.target.classList.add('is-visible');
+                        if (correspondingLink) {
+                             navLinks.forEach(link => link.classList.remove('active-link')); 
+                             correspondingLink.classList.add('active-link');
+                        }
+                    } 
+                });
+            }, sectionObserverOptions);
+
+            sections.forEach(section => {
+                sectionObserver.observe(section);
+            });
+
+
+            // --- تفاعلات الأزرار (Hero و Card Buttons) ---
+            const buttons = document.querySelectorAll('.magic-card__button, .hero__cta-button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                         if (this.matches(':hover')) {
+                           this.style.transform = this.classList.contains('hero__cta-button') ? 'translateY(-6px) scale(1.07)' : 'scale(1.08) translateY(-4px)'; // تعديل لزر البطاقة
+                        } else {
+                           this.style.transform = 'scale(1)';
+                        }
+                    }, 150);
+                    
+                    if (this.classList.contains('hero__cta-button')) {
+                        e.preventDefault();
+                        const firstSectionId = this.getAttribute('href'); 
+                        const firstSection = document.querySelector(firstSectionId);
+                        if (firstSection) {
+                            firstSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }
+                });
+            });
+            
+
+            // --- تأثير النجوم المتطايرة على قائمة التنقل (إذا لم يكن جهاز لمس) ---
+            if (!isTouchDevice()) {
+                const magicNavLinks = document.querySelectorAll('.magic-nav__link');
+                magicNavLinks.forEach(link => {
+                    link.addEventListener('mouseenter', (e) => {
+                        for (let i = 0; i < 2; i++) {
+                            const sparkle = document.createElement('span');
+                            sparkle.innerHTML = ['✨', '⭐', '💖'][Math.floor(Math.random() * 3)];
+                            sparkle.style.position = 'absolute';
+                            sparkle.style.fontSize = `${Math.random() * 0.7 + 0.4}em`;
+                            sparkle.style.opacity = '0';
+                            sparkle.style.pointerEvents = 'none';
+                            
+                            const rect = link.getBoundingClientRect();
+                            const x = e.clientX - rect.left; 
+                            const y = e.clientY - rect.top;
+
+                            sparkle.style.left = `${x + (Math.random() - 0.5) * 20}px`;
+                            sparkle.style.top = `${y + (Math.random() - 0.5) * 20}px`;
+                            
+                            sparkle.animate([
+                                { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
+                                { opacity: 0, transform: `translate(${(Math.random() - 0.5) * 40}px, ${-20 - Math.random() * 20}px) scale(${Math.random() * 0.5 + 0.5}) rotate(${ (Math.random() - 0.5) * 60}deg)` }
+                            ], {
+                                duration: 500 + Math.random() * 300,
+                                easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
+                                fill: 'forwards'
+                            });
+
+                            link.appendChild(sparkle);
+                            setTimeout(() => sparkle.remove(), 800);
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
