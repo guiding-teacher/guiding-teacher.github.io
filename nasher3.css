@@ -1,3 +1,4 @@
+<<<<<<< HEAD
  :root {
             --primary-color: #D4AF37;
             --secondary-color: #F4D03F;
@@ -126,3 +127,133 @@
 
 
 
+=======
+ :root {
+            --primary-color: #D4AF37;
+            --secondary-color: #F4D03F;
+            --dark-bg: #121212;
+            --card-bg: #1E1E1E;
+            --text-primary: #F5F5F5;
+            --text-secondary: #BDBDBD;
+            --divider-color: rgba(212, 175, 55, 0.3);
+            --like-color: #FF4757;
+            --link-color: #4DA6FF;
+        }
+
+       
+        /* أنماط Quill لعرض المحتوى المنسق */
+        .ql-snow .ql-editor.ql-blank::before { display: none; }
+        .ql-editor { 
+            padding: 0; 
+            line-height: 1.8; 
+            font-size: 1rem; 
+            color: var(--text-secondary); 
+            text-align: right; 
+        }
+        .ql-editor p, .ql-editor ol, .ql-editor ul, .ql-editor pre, .ql-editor blockquote, .ql-editor h1, .ql-editor h2, .ql-editor h3 { margin: 0 0 1em; padding: 0; color: var(--text-secondary); }
+        .ql-editor strong { color: var(--text-primary); }
+        
+        /* --- تعديل: تمت إضافة إطار منقط للروابط --- */
+        .ql-editor a { 
+            color: var(--link-color); 
+            text-decoration: none; 
+            font-weight: bold;
+            border-bottom: 1px dotted var(--link-color);
+            padding-bottom: 2px;
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .ql-editor a:hover { 
+            text-decoration: none;
+            color: var(--secondary-color);
+            border-bottom-color: var(--secondary-color);
+        }
+        .ql-editor blockquote { border-right: 4px solid var(--primary-color); margin-right: 20px; padding-right: 15px; color: #ccc; font-style: italic; }
+        .ql-editor .ql-align-center { text-align: center; }
+        .ql-editor .ql-align-left { text-align: left; }
+        .ql-editor .ql-indent-1 { padding-right: 3em; }
+        .ql-editor .ql-indent-2 { padding-right: 6em; }
+        .ql-editor .ql-font-Amiri { font-family: 'Amiri', serif; }
+
+        /* --- تعديل: تم تعديل الهامش ليلائم النص الذي يسبق الرابط --- */
+        .link-helper-text {
+            color: var(--primary-color);
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 6px; /* هامش أيسر لوضع مسافة بعد النص وقبل الرابط */
+        }
+
+        .video-gallery-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(30, 30, 30, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.1);
+        }
+
+        .page-header { text-align: center; margin-bottom: 40px; position: relative; }
+        .page-title { font-size: 2.2rem; color: var(--primary-color); margin: 0; padding-bottom: 15px; display: inline-block; position: relative; font-weight: 700; text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+        .page-title::after { content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 80%; height: 2px; background: linear-gradient(to right, transparent, var(--primary-color), transparent); }
+        .page-subtitle { color: var(--text-secondary); font-size: 1rem; margin-top: 10px; }
+
+        #video-posts-list { display: grid; grid-template-columns: 1fr; gap: 40px; }
+        .video-post-item { background: #85764422; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); border-right: 3px solid var(--primary-color); opacity: 0; transform: translateY(30px); animation: fadeInPost 0.5s cubic-bezier(0, 0, .51, 1.23) forwards; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        @keyframes fadeInPost { to { opacity: 1; transform: translateY(0); } }
+        .video-post-item:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(179, 218, 41, 0.5);  }
+        
+        .video-header { padding: 20px 20px 10px; }
+        .video-title { font-size: 1.6rem; color: var(--text-primary); margin: 0 0 10px 0; font-weight: 600; line-height: 1.4; }
+        .video-meta { display: flex; justify-content: space-between; align-items: center; color: var(--text-secondary); font-size: 0.8rem; }
+        .video-meta span {   align-items: center; gap: 8px;}
+        .video-meta i { color: var(--secondary-color); }
+        .updated-label { color: var(--secondary-color); font-size: 0.7em; font-weight: bold; }
+        
+        .media-container { background-color: #000; }
+        .video-player-wrapper, .video-image-preview-wrapper { position: relative; width: 100%; }
+        .video-player-wrapper { padding-bottom: 56.25%; height: 0; }
+        .video-player-wrapper iframe, .video-player-wrapper video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .video-image-preview { width: 100%; display: block; cursor: zoom-in; max-height: 70vh; object-fit: contain; }
+        
+        .video-content { padding: 15px 20px; }
+        .video-description { line-height: 1.7; font-size: 1rem; }
+        
+        .video-actions { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: rgba(0, 0, 0, 0.1); }
+        .like-btn, .download-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--text-primary); padding: 8px 20px; border-radius: 20px; cursor: pointer; font-family: 'Tajawal', sans-serif; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
+        .like-btn:hover { background: rgba(255, 71, 87, 0.1); border-color: var(--like-color); }
+        .like-btn.liked { background: rgba(255, 71, 87, 0.2); border-color: var(--like-color); color: var(--like-color); }
+        .download-btn:hover { background: rgba(212, 175, 55, 0.1); border-color: var(--primary-color); color: var(--primary-color); }
+        
+        .golden-divider { border: none; height: 1px; background: linear-gradient(to right, transparent, var(--divider-color), transparent); margin: 20px 0; }
+        .status-message { text-align: center; color: var(--text-secondary); padding: 40px 20px; font-size: 1.1rem; grid-column: 1 / -1; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--primary-color); animation: spin 1s ease-in-out infinite; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .pagination { display: flex; justify-content: center; margin-top: 15px; gap: 10px; align-items: center; flex-wrap: wrap;  }
+        .pagination button { background: rgba(212, 175, 55, 0.1); border: 1px solid var(--primary-color); color: var(--primary-color); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: 553; transition: all 0.3s ease; display: flex; align-items: center; gap: 5px; font-size: 12px;}
+        .pagination button:hover:not(:disabled) { background: rgba(212, 175, 55, 0.2); }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; background: rgba(255, 255, 255, 0.05); }
+        #page-indicator { padding: 8px 15px; color: var(--text-secondary); font-weight: bold; }
+        
+        .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center; cursor: zoom-out; }
+        .lightbox.active { display: flex; }
+        .lightbox img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        .lightbox-close, .lightbox-download { position: absolute; color: white; background: rgba(0, 0, 0, 0.5); padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background 0.3s; }
+        .lightbox-close { top: 20px; right: 20px; }
+        .lightbox-download { top: 20px; left: 20px; text-decoration: none; }
+        .lightbox-close:hover, .lightbox-download:hover { background: var(--primary-color); }
+
+    
+     
+    
+     
+}
+
+
+
+
+
+
+
+>>>>>>> 4a5ee2634d86443af2d9f90fe270814fbe63e1fa

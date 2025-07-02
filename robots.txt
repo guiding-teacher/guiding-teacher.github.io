@@ -1,3 +1,9 @@
+<<<<<<< HEAD
 User-agent: *
 Allow: /
 Sitemap: https://guiding-teacher.web.app/sitemap.xml
+=======
+User-agent: *
+Allow: /
+Sitemap: https://guiding-teacher.github.io/sitemap.xml
+>>>>>>> 4a5ee2634d86443af2d9f90fe270814fbe63e1fa
