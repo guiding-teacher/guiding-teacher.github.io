@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حساب نسبة النجاح</title>
+    <style>
+        /* ... (نفس الـ CSS الموجود) ... */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif; /* الخط قد لا يكون مثالياً للعربية */
+            direction: rtl;
+            text-align: center;
+            background: #393838;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 18px;
+            display: block;
+            margin: 10px 0 5px;
+            text-align: right; /* أفضل للقراءة باللغة العربية */
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            text-align: center; /* مناسب للأرقام */
+            margin-bottom: 10px; /* إضافة مسافة أسفل المدخلات */
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background: #FFC107;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background-color 0.3s; /* تعديل بسيط */
+            font-weight: bold;
+            color: black;
+        }
+
+        button:hover {
+            background: #FFB300;
+        }
+
+        #result {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 20px; /* زيادة المسافة */
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            min-height: 40px; /* لضمان وجود مساحة حتى عند الخطأ */
+            line-height: 1.5; /* تحسين قراءة النص */
+        }
+
+        .error {
+            color: #FFCDD2; /* لون خطأ أفتح للتباين الأفضل */
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+       footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: rgb(37, 43, 45);
+            color: Teal; font-size: 1.0em; margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: #859475; text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); } 
+        
+        
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="container">
+        <h2>حساب نسبة النجاح</h2>
+
+        <label for="successful">عدد الناجحين:</label>
+        <input type="number" id="successful" placeholder="أدخل عدد الناجحين" min="0"> <!-- إضافة min="0" -->
+
+        <label for="total">العدد الكلي:</label>
+        <input type="number" id="total" placeholder="أدخل العدد الكلي" min="0"> <!-- إضافة min="0" -->
+
+        <button id="calculateBtn">احسب النسبة</button> <!-- إزالة onclick وإضافة id -->
+
+        <!-- إضافة aria-live لتحسين إمكانية الوصول -->
+        <div id="result" aria-live="polite"></div>
+        
+        
+        
+        
+        <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+        
+        
+        
+        
+    </div>
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+    <script>
+        // انتظار تحميل محتوى الصفحة بالكامل قبل تشغيل السكربت
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // الحصول على العناصر بعد تحميل الصفحة
+            const successfulInput = document.getElementById("successful");
+            const totalInput = document.getElementById("total");
+            const calculateButton = document.getElementById("calculateBtn");
+            const resultDiv = document.getElementById("result");
+
+            // إضافة مستمع حدث للزر بدلاً من onclick في HTML
+            calculateButton.addEventListener('click', calculatePercentage);
+
+            // السماح بالضغط على Enter في حقول الإدخال لتشغيل الحساب
+            successfulInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    calculatePercentage();
+                }
+            });
+            totalInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    calculatePercentage();
+                }
+            });
+
+
+            function calculatePercentage() {
+                // الحصول على القيم وتحويلها إلى أرقام
+                // استخدام parseFloat للسماح بالأرقام العشرية إذا لزم الأمر (على الرغم من أن العدد عادة صحيح)
+                // وإعطاء قيمة افتراضية 0 إذا كان الحقل فارغًا لتجنب NaN المباشر
+                const successful = parseInt(successfulInput.value, 10);
+                const total = parseInt(totalInput.value, 10);
+
+                // مسح النتيجة السابقة
+                resultDiv.innerHTML = "";
+                resultDiv.classList.remove('error'); // إزالة كلاس الخطأ إن وجد
+
+                // --- التحقق المحسن من الإدخال ---
+
+                // التحقق من أن القيم هي أرقام صالحة وأنها ليست سالبة
+                if (isNaN(successful) || isNaN(total) || successful < 0 || total < 0) {
+                    resultDiv.innerHTML = "يرجى إدخال أرقام موجبة وصحيحة في كلا الحقلين.";
+                    resultDiv.classList.add('error'); // إضافة كلاس الخطأ
+                    return;
+                }
+
+                 // التحقق من أن العدد الكلي أكبر من صفر
+                 if (total === 0) {
+                    // إذا كان عدد الناجحين أيضاً صفراً، فالنسبة 0% منطقية
+                    if (successful === 0) {
+                         resultDiv.innerHTML = "نسبة النجاح: 0%";
+                         return;
+                    } else {
+                        // أما إذا كان عدد الناجحين أكبر من صفر والإجمالي صفر، فهذا خطأ
+                        resultDiv.innerHTML = "لا يمكن أن يكون العدد الكلي صفرًا إذا كان هناك ناجحون.";
+                        resultDiv.classList.add('error');
+                        return;
+                    }
+                }
+
+                // التحقق من أن عدد الناجحين لا يتجاوز العدد الكلي
+                if (successful > total) {
+                    resultDiv.innerHTML = "لا يمكن أن يكون عدد الناجحين أكبر من العدد الكلي.";
+                    resultDiv.classList.add('error');
+                    return;
+                }
+
+                // --- حساب النسبة المئوية ---
+                const percentage = (successful / total) * 100;
+
+                // تقريب النسبة لأقرب عدد صحيح (يمكن تغييرها إلى toFixed(1) أو toFixed(2) لعلامة عشرية)
+                // const roundedPercentage = percentage.toFixed(1); // مثال لعلامة عشرية واحدة
+                const roundedPercentage = Math.round(percentage); // التقريب الحالي
+
+                // عرض النتيجة
+                resultDiv.innerHTML = "نسبة النجاح: " + roundedPercentage + "%";
+            }
+        });
+    </script>
+
+</body>
+</html>

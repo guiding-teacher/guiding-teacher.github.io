@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حساب معدل السعي السنوي</title>
+    <style>
+        :root {
+            --primary-color: #0072ff;
+            --secondary-color: #00c6ff;
+            --danger-color: #ff5733;
+            --danger-hover: #c70039;
+            --success-color: #28a745;
+            --success-hover: #218838;
+            --warning-color: #ffc107;
+            --warning-hover: #e0a800;
+            --light-text: white;
+            --dark-text: #333;
+            --border-color: #ddd;
+            --background-light: white;
+            --low-grade-bg: #ffcccc;
+            --low-grade-text: #a00;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background:  #393838;
+            color: var(--light-text);
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+        h2 {
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .controls-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        .controls-container label {
+            margin-left: 5px;
+            font-weight: 500;
+        }
+        .controls-container input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            color: var(--dark-text);
+            min-width: 150px;
+        }
+        .action-buttons button {
+            margin-top: 20px;
+            margin-left: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: var(--light-text);
+            transition: background-color 0.3s ease;
+        }
+        .print-btn {
+            background-color: var(--success-color);
+        }
+        .print-btn:hover {
+            background-color: var(--success-hover);
+        }
+        .clear-btn {
+            background: var(--warning-color);
+            color: var(--dark-text); /* نص داكن للزر الأصفر */
+        }
+        .clear-btn:hover {
+            background: var(--warning-hover);
+        }
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            background: var(--background-light);
+            color: var(--dark-text);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            /* table-layout: fixed; हटा दिया गया ताकि सामग्री को समायोजित करने के लिए चौड़ाई अनुकूल हो सके */
+        }
+        th, td {
+            padding: 10px 8px; /* Slightly reduced padding */
+            text-align: center;
+            border: 1px solid var(--border-color);
+            word-wrap: break-word;
+            font-size: 13px; /* Slightly reduced font size for better fit */
+        }
+        th {
+            background: var(--primary-color);
+            color: var(--light-text);
+            font-weight: 600;
+            font-size: 14px; /* Header font size */
+        }
+        td input[type="number"], td input[type="text"] {
+            width: 95%; /* Adjust width as needed */
+            padding: 5px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 13px; /* Match cell font size */
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+
+        .low-grade {
+            background-color: var(--low-grade-bg) !important;
+            color: var(--low-grade-text) !important;
+            font-weight: bold;
+        }
+
+        /* Area to be printed */
+        #printableArea {
+            background: var(--background-light);
+            color: var(--dark-text);
+             /* Padding will be controlled by PDF margins */
+        }
+        #pdfHeader {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16px; /* Header size in PDF */
+            font-weight: bold;
+            color: var(--dark-text); /* Ensure header is black */
+        }
+        #pdfFooter {
+             display: none; /* Initially hidden, handled by html2pdf */
+             position: fixed;
+             bottom: 0;
+             width: 100%;
+             text-align: center;
+             font-size: 10px;
+             color: #555;
+        }
+
+
+        /* Print-specific styles (applied by html2pdf internally mostly) */
+        @media print {
+            body {
+                background: none;
+                color: black;
+                 -webkit-print-color-adjust: exact !important; /* Ensure background colors print */
+                 print-color-adjust: exact !important;
+            }
+            .controls-container, .action-buttons, h2 {
+                display: none !important; /* Hide non-printable elements */
+            }
+            .table-container {
+                box-shadow: none;
+                border-radius: 0;
+                overflow: visible; /* Show full table */
+                border: none; /* Remove container border for print */
+            }
+            #printableArea {
+                 padding: 0; /* Remove padding for print */
+            }
+            table {
+                 width: 100% !important; /* Ensure full width */
+                 table-layout: auto; /* Let table adjust columns */
+                 font-size: 10pt; /* Smaller font for PDF */
+            }
+             th, td {
+                border: 1px solid #666; /* Slightly lighter border for print */
+                padding: 5px; /* Reduce padding for print */
+                font-size: 9pt; /* Smaller font for PDF */
+             }
+             th {
+                 font-size: 10pt;
+                 background-color: #e0e0e0 !important; /* Light grey background for header in print */
+                 color: black !important; /* Black text for header */
+             }
+             td input {
+                 display: none; /* Hide input fields */
+             }
+             td:has(input[type="text"]) {
+                 /* Display the input's value if needed, otherwise handled by prepopulating */
+             }
+            .low-grade {
+                 background-color: #f0f0f0 !important; /* Very light grey for low grades in print */
+                 color: black !important;
+                 font-weight: normal;
+            }
+             /* Page break control */
+             thead { display: table-header-group; } /* Repeat header */
+             tr { page-break-inside: avoid; } /* Try to keep rows together */
+             /* Avoid breaking inside cells, although less critical */
+             /* td, th { page-break-inside: avoid; } */
+        }
+
+    </style>
+    <!-- jsPDF and html2pdf -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <h2>حساب معدل السعي السنوي</h2>
+
+    <div class="controls-container">
+        <label for="schoolName">اسم المدرسة:</label>
+        <input type="text" id="schoolName" placeholder="أدخل اسم المدرسة" oninput="saveMetadata()">
+        <label for="subjectName">المادة:</label>
+        <input type="text" id="subjectName" placeholder="أدخل اسم المادة" oninput="saveMetadata()">
+        <label for="grade">الصف:</label>
+        <input type="text" id="grade" placeholder="أدخل الصف والشعبة" oninput="saveMetadata()">
+    </div>
+
+    <!-- Area to be printed -->
+    <div id="printableArea">
+        <div id="pdfHeader" style="display: none;"></div>
+        <div class="table-container" id="tableWrapper">
+            <table id="studentsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 28%;">الاسم الثلاثي</th>
+                        <th style="width: 15%;">النصف الأول (من 100)</th>
+                        <th style="width: 15%;">نصف السنة (من 100)</th>
+                        <th style="width: 15%;">النصف الثاني (من 100)</th>
+                        <th style="width: 22%;">السعي السنوي (المعدل)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows added via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+         <!-- Footer placeholder for page numbers -->
+         <div id="pdfFooter"></div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="print-btn" onclick="downloadPDF()">تنزيل كـ PDF</button>
+        <button class="clear-btn" onclick="confirmClearData()">مسح كافة البيانات</button>
+    </div>
+
+<script>
+  const MAX_STUDENTS = 50;
+  const STORAGE_KEY_DATA = "studentGradeData_v2"; // Use versioning if structure changes
+  const STORAGE_KEY_META = "schoolMetaData_v2";
+
+  document.addEventListener("DOMContentLoaded", function() {
+    createTable(MAX_STUDENTS);
+    loadMetadata();
+    loadSavedData();
+
+    window.addEventListener("beforeunload", function(event) {
+        if (hasData()) {
+            const message = "قد يتم فقدان البيانات المدخلة إذا غادرت الصفحة!";
+            event.preventDefault();
+            event.returnValue = message;
+            return message;
+        }
+    });
+  });
+
+  function createTable(numRows) {
+    const tableBody = document.querySelector("#studentsTable tbody");
+    tableBody.innerHTML = '';
+
+    for (let i = 1; i <= numRows; i++) {
+      const row = document.createElement("tr");
+      row.setAttribute('data-row-index', i);
+
+      // Seq Num
+      const cellIndex = document.createElement("td");
+      cellIndex.textContent = i;
+      row.appendChild(cellIndex);
+
+      // Name
+      const cellName = document.createElement("td");
+      const inputName = document.createElement("input");
+      inputName.type = "text";
+      inputName.placeholder = "اسم الطالب";
+      inputName.setAttribute('data-index', `${i}-name`);
+      inputName.oninput = saveData;
+      // Add span to display value for PDF
+      const spanName = document.createElement("span");
+      spanName.className = 'pdf-only-value';
+      spanName.style.display = 'none'; // Hidden by default
+      cellName.appendChild(inputName);
+      cellName.appendChild(spanName);
+      row.appendChild(cellName);
+
+
+      // Grades
+      for (let j = 1; j <= 3; j++) {
+        const cellGrade = document.createElement("td");
+        const inputGrade = document.createElement("input");
+        inputGrade.type = "number";
+        inputGrade.min = "0";
+        inputGrade.max = "100";
+        inputGrade.placeholder = "0-100";
+        inputGrade.setAttribute('data-index', `${i}-${j}`);
+        inputGrade.oninput = handleGradeInput;
+         // Add span to display value for PDF
+        const spanGrade = document.createElement("span");
+        spanGrade.className = 'pdf-only-value';
+        spanGrade.style.display = 'none'; // Hidden by default
+        cellGrade.appendChild(inputGrade);
+        cellGrade.appendChild(spanGrade);
+        row.appendChild(cellGrade);
+      }
+
+      // Average
+      const cellAverage = document.createElement("td");
+      cellAverage.textContent = "--";
+      cellAverage.setAttribute('data-index', `${i}-avg`);
+      cellAverage.style.fontWeight = "bold";
+      row.appendChild(cellAverage);
+
+      tableBody.appendChild(row);
+    }
+  }
+
+ function handleGradeInput() {
+    validateGradeInput(this);
+    calculateAverage(this);
+    // Update span for PDF
+    const span = this.nextElementSibling; // Get the span next to the input
+    if (span && span.classList.contains('pdf-only-value')) {
+        span.textContent = this.value;
+    }
+    saveData(); // Save data includes span updates implicitly via calculateAverage
+}
+
+
+  function validateGradeInput(inputElement) {
+      let value = inputElement.value; // Keep as string for potential empty check
+      if (value === "") return; // Allow empty
+
+      let numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+          inputElement.value = ""; // Clear if not a number
+          return;
+      }
+      if (numValue < 0) {
+          inputElement.value = 0;
+      } else if (numValue > 100) {
+          inputElement.value = 100;
+      }
+       // Update corresponding span
+        const span = inputElement.nextElementSibling;
+        if (span && span.classList.contains('pdf-only-value')) {
+            span.textContent = inputElement.value;
+        }
+  }
+
+
+  function calculateAverage(inputElement) {
+    const rowIndex = inputElement.getAttribute('data-index').split('-')[0];
+
+    const firstHalfInput = document.querySelector(`input[data-index='${rowIndex}-1']`);
+    const midYearInput = document.querySelector(`input[data-index='${rowIndex}-2']`);
+    const secondHalfInput = document.querySelector(`input[data-index='${rowIndex}-3']`);
+
+    // Use values only if they are not empty strings, otherwise treat as 0
+    const firstHalf = firstHalfInput.value !== "" ? parseFloat(firstHalfInput.value) : 0;
+    const midYear = midYearInput.value !== "" ? parseFloat(midYearInput.value) : 0;
+    const secondHalf = secondHalfInput.value !== "" ? parseFloat(secondHalfInput.value) : 0;
+
+    // Check if all inputs are actually empty (not just evaluating to 0)
+    const allEmpty = firstHalfInput.value === "" && midYearInput.value === "" && secondHalfInput.value === "";
+
+    const avgCell = document.querySelector(`td[data-index='${rowIndex}-avg']`);
+
+    if (allEmpty) {
+        avgCell.textContent = "--";
+        avgCell.classList.remove("low-grade");
+    } else {
+        const avg = (firstHalf + midYear + secondHalf) / 3;
+        const formattedAvg = Math.round(avg);
+        avgCell.textContent = formattedAvg;
+
+        if (formattedAvg < 50) {
+          avgCell.classList.add("low-grade");
+        } else {
+          avgCell.classList.remove("low-grade");
+        }
+    }
+    // No need to call saveData() here, handleGradeInput already calls it
+  }
+
+  function saveData() {
+    const data = {};
+    document.querySelectorAll('#studentsTable input').forEach(input => {
+      const value = input.value.trim();
+      if (value !== "") {
+          data[input.getAttribute('data-index')] = value;
+           // Update corresponding span's text content as well for consistency
+           const span = input.nextElementSibling;
+           if (span && span.classList.contains('pdf-only-value')) {
+               span.textContent = value;
+           }
+      } else {
+           // Clear span if input is cleared
+           const span = input.nextElementSibling;
+            if (span && span.classList.contains('pdf-only-value')) {
+                span.textContent = '';
+            }
+      }
+    });
+    document.querySelectorAll("td[data-index$='-avg']").forEach(td => {
+      if (td.textContent !== "--") {
+          data[td.getAttribute('data-index')] = td.textContent;
+      }
+    });
+
+    if (Object.keys(data).length > 0) {
+        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(data));
+    } else {
+        localStorage.removeItem(STORAGE_KEY_DATA);
+    }
+     saveMetadata(); // Save metadata along with table data changes
+  }
+
+  function saveMetadata() {
+      const metadata = {
+          schoolName: document.getElementById("schoolName").value.trim(),
+          subjectName: document.getElementById("subjectName").value.trim(),
+          grade: document.getElementById("grade").value.trim(),
+      };
+      if (metadata.schoolName || metadata.subjectName || metadata.grade) {
+        localStorage.setItem(STORAGE_KEY_META, JSON.stringify(metadata));
+      } else {
+        localStorage.removeItem(STORAGE_KEY_META);
+      }
+  }
+
+
+    function loadSavedData() {
+        const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY_DATA));
+        if (savedData) {
+            Object.keys(savedData).forEach(key => {
+                const element = document.querySelector(`[data-index='${key}']`);
+                if (element) {
+                    if (element.tagName === "INPUT") {
+                        element.value = savedData[key];
+                        // Also update the corresponding span
+                        const span = element.nextElementSibling;
+                        if (span && span.classList.contains('pdf-only-value')) {
+                            span.textContent = savedData[key];
+                        }
+                    } else if (element.tagName === "TD" && key.endsWith('-avg')) {
+                        element.textContent = savedData[key];
+                        const avgValue = parseFloat(savedData[key]);
+                        if (!isNaN(avgValue)) {
+                            element.classList.toggle("low-grade", avgValue < 50);
+                        } else {
+                            element.textContent = '--';
+                            element.classList.remove("low-grade");
+                        }
+                    }
+                }
+            });
+        }
+        // Recalculate averages after loading, in case only some grades were saved for a row
+        // This might be redundant if saveData always updates averages correctly, but safe to include
+        // document.querySelectorAll('#studentsTable tbody tr').forEach(row => {
+        //     const firstInput = row.querySelector('input[type="number"]');
+        //     if(firstInput) calculateAverage(firstInput);
+        // });
+    }
+
+
+  function loadMetadata() {
+    const savedMeta = JSON.parse(localStorage.getItem(STORAGE_KEY_META));
+    if (savedMeta) {
+        document.getElementById("schoolName").value = savedMeta.schoolName || "";
+        document.getElementById("subjectName").value = savedMeta.subjectName || "";
+        document.getElementById("grade").value = savedMeta.grade || "";
+    }
+  }
+
+  function hasData() {
+      // Check if any input has value or metadata exists
+      let tableHasData = false;
+      document.querySelectorAll('#studentsTable input').forEach(input => {
+          if (input.value.trim() !== '') {
+              tableHasData = true;
+          }
+      });
+      return tableHasData || localStorage.getItem(STORAGE_KEY_META) !== null;
+  }
+
+
+  function confirmClearData() {
+      if (hasData()) {
+          if (confirm("هل أنت متأكد أنك تريد مسح كافة البيانات المدخلة؟ لا يمكن التراجع عن هذا الإجراء.")) {
+              clearData();
+          }
+      } else {
+          alert("لا توجد بيانات لمسحها.");
+      }
+  }
+
+  function clearData() {
+    localStorage.removeItem(STORAGE_KEY_DATA);
+    localStorage.removeItem(STORAGE_KEY_META);
+
+    document.querySelectorAll('#studentsTable input').forEach(input => {
+        input.value = "";
+         // Clear spans as well
+        const span = input.nextElementSibling;
+        if (span && span.classList.contains('pdf-only-value')) {
+            span.textContent = '';
+        }
+    });
+
+    document.querySelectorAll("td[data-index$='-avg']").forEach(td => {
+      td.textContent = "--";
+      td.classList.remove("low-grade");
+    });
+
+    document.getElementById("schoolName").value = "";
+    document.getElementById("subjectName").value = "";
+    document.getElementById("grade").value = "";
+
+    // alert("تم مسح جميع البيانات بنجاح."); // Optional confirmation
+  }
+
+  // --- PDF Generation Function ---
+  function downloadPDF() {
+    const schoolName = document.getElementById("schoolName").value.trim() || "اسم المدرسة غير محدد";
+    const subjectName = document.getElementById("subjectName").value.trim() || "المادة غير محددة";
+    const grade = document.getElementById("grade").value.trim() || "الصف غير محدد";
+
+    const filename = `سعي سنوي - ${schoolName} - ${subjectName} - ${grade}.pdf`;
+
+    // Prepare header
+    const pdfHeader = document.getElementById("pdfHeader");
+    pdfHeader.textContent = `كشف السعي السنوي - المدرسة: ${schoolName} - المادة: ${subjectName} - الصف: ${grade}`;
+    pdfHeader.style.display = 'block'; // Show header for capture
+
+    // Prepare table for PDF: Show spans, hide inputs
+    const table = document.getElementById('studentsTable');
+    table.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+        input.style.display = 'none'; // Hide input
+        const span = input.nextElementSibling;
+        if (span && span.classList.contains('pdf-only-value')) {
+            span.style.display = 'inline'; // Show span
+            span.textContent = input.value; // Ensure span has current value
+        }
+    });
+
+
+    // Get the element to print (includes header and table container)
+    const element = document.getElementById('printableArea');
+    const tableWrapper = document.getElementById('tableWrapper'); // Get the container for styling
+
+    // Temporarily apply print-specific styles for better html2pdf rendering
+    // tableWrapper.style.boxShadow = 'none';
+    // tableWrapper.style.borderRadius = '0';
+    // tableWrapper.style.border = 'none';
+    // document.body.style.fontSize = '10pt'; // Reduce base font size for PDF attempt
+
+    const opt = {
+      margin:       [0.6, 0.4, 0.8, 0.4], // Margins: [top, left, bottom, right] in inches (increased bottom for footer)
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  {
+          scale: 2, // Good quality
+          useCORS: true,
+          letterRendering: true,
+          // Adjust window width to influence layout if needed, but often better to use CSS/orientation
+          // windowWidth: 1122 // A4 landscape width in pixels approx at 96dpi
+      },
+      jsPDF:        {
+          unit: 'in',
+          format: 'a4',
+          orientation: 'landscape' // Landscape is better for this table layout
+        },
+      pagebreak:    {
+          mode: ['css', 'avoid-all'], // Use CSS rules and try to avoid breaking elements
+        //   avoid: 'tr', // Already in CSS, but can reinforce here
+          before: '#studentsTable thead' // Try to ensure header repeats correctly
+        },
+      // Add page numbers
+      set: {
+             Fútbol: function ( pdf ) {
+                let header = function ( data ) {
+                    // Nothing needed here as header is part of HTML
+                };
+                let footer = function ( data ) {
+                    pdf.setFontSize( 8 );
+                    pdf.setTextColor( 150 );
+                    pdf.text( 'صفحة ' + data.pageCount, data.settings.margin.left, pdf.internal.pageSize.height - 0.5 ); // Position at bottom left
+                };
+                // jsPDF's addPageContent is deprecated, html2pdf handles this differently.
+                // We rely on the margin and potentially a footer element if html2pdf supported it directly.
+                // Let's try a simpler approach using the `putTotalPages` method after generation.
+            }
+       }
+    };
+
+
+    // Generate PDF
+    html2pdf().from(element).set(opt).toPdf().get('pdf').then(function (pdf) {
+        // Add page numbers manually after generation
+        const totalPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setFontSize(9);
+            pdf.setTextColor(100);
+            // Position bottom center: (pageSize width / 2)
+             const text = "صفحة " + i + " من " + totalPages;
+             const textWidth = pdf.getStringUnitWidth(text) * pdf.internal.getFontSize() / pdf.internal.scaleFactor;
+             const x = (pdf.internal.pageSize.getWidth() - textWidth) / 2;
+             // Position near bottom margin: (pageSize height - margin)
+             const y = pdf.internal.pageSize.getHeight() - (opt.margin[2] / 2); // Place it halfway into the bottom margin
+            pdf.text(text, x, y);
+        }
+        // Save the PDF with page numbers
+        pdf.save(filename);
+
+         // --- Cleanup after PDF generation ---
+         pdfHeader.style.display = 'none'; // Hide header again
+         // Restore table view: Hide spans, show inputs
+         table.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+             input.style.display = ''; // Restore default display
+             const span = input.nextElementSibling;
+             if (span && span.classList.contains('pdf-only-value')) {
+                 span.style.display = 'none'; // Hide span again
+             }
+         });
+        // Restore any temporary styles
+        // tableWrapper.style.boxShadow = '';
+        // tableWrapper.style.borderRadius = '';
+        // tableWrapper.style.border = '';
+        // document.body.style.fontSize = '';
+
+
+    }).catch(err => {
+        console.error("Error generating PDF:", err);
+        alert("حدث خطأ أثناء إنشاء ملف PDF. الرجاء التأكد من أن جميع البيانات صحيحة والمحاولة مرة أخرى.");
+        // --- Ensure cleanup even if error occurs ---
+         pdfHeader.style.display = 'none';
+         table.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+             input.style.display = '';
+             const span = input.nextElementSibling;
+             if (span && span.classList.contains('pdf-only-value')) {
+                 span.style.display = 'none';
+             }
+         });
+         // Restore temporary styles on error too
+         // tableWrapper.style.boxShadow = '';
+        // tableWrapper.style.borderRadius = '';
+        // tableWrapper.style.border = '';
+         // document.body.style.fontSize = '';
+    });
+  }
+
+
+</script>
+</body>
+</html>

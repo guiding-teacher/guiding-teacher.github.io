@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة تحويل PDF إلى صور احترافية</title>
+    <!-- pdf.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";</script>
+    <!-- JSZip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #007bff; /* Blue for conversion tool */
+            --secondary-color: #17a2b8; /* Info blue */
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: #28a745; /* Green for success */
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #424242;
+            --progress-bg: #555;
+            --progress-value-bg: var(--primary-color); /* Progress bar uses primary */
+            --footer-bg: #222;
+            --footer-text: #aaa;
+            --list-item-bg: #3a3a3a;
+            --list-item-hover-bg: #4a4a4a;
+            --list-item-border: #505050;
+            --control-label-color: #bdc3c7;
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+        }
+
+        .converter-container {
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 750px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .converter-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+
+        #pdfInput { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #0069d9, #138496); box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfoDisplay {
+            display: block; margin-top: 10px; margin-bottom: 20px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #filePreviewContainer {
+            margin-top: 20px; margin-bottom: 25px; padding: 15px; border: 2px dashed var(--preview-border);
+            border-radius: var(--border-radius); min-height: 60px; background-color: var(--preview-bg);
+            text-align: right; font-size: 0.95em; color: #e0e0e0;
+        }
+        .file-preview-placeholder { text-align: center; color: #aaa; padding: 10px 0; }
+        .file-item-preview {
+            background-color: var(--list-item-bg); border: 1px solid var(--list-item-border);
+            padding: 10px 15px; border-radius: 6px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .file-item-details { flex-grow: 1; text-align: right; }
+        .file-item-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em; }
+        .file-item-info { display: block; font-size: 0.8em; color: #bdc3c7; }
+        .remove-file-btn {
+            background-color: var(--danger-color); color: white; border: none;
+            border-radius: 4px; padding: 4px 8px; font-size: 0.8em; cursor: pointer;
+            transition: background-color 0.2s; margin-right: 10px; /* RTL */
+        }
+        
+        .conversion-options {
+            display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;
+            padding: 15px; border: 1px solid var(--input-border); border-radius: 8px;
+            background-color: var(--input-bg);
+        }
+        .option-group { display: flex; align-items: center; justify-content: space-between; }
+        .option-group label { color: var(--control-label-color); font-size: 0.95rem; }
+        .option-group select, .option-group input[type="number"] {
+            background-color: #555; color: var(--input-text); border: 1px solid var(--input-border);
+            padding: 8px 10px; border-radius: 6px; font-family: 'Cairo', sans-serif;
+            width: 120px; text-align: center;
+        }
+         .option-group input[type="number"] { direction: ltr; }
+
+        #outputBasename {
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
+            background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #outputBasename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--primary-color), #005cbf); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin-bottom: 15px;
+            box-shadow: 0 6px 18px rgba(0, 123, 255, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(0, 123, 255, 0.4);
+            background: linear-gradient(135deg, #0069d9, #004085);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+
+        #statusDiv { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #download-options { margin-top: 25px; display: none; flex-direction: column; align-items: center; gap: 15px; }
+        .download-button {
+            display: inline-block; background-color: var(--success-color); color: var(--button-text-color); padding: 12px 25px; text-decoration: none; border-radius: 8px;
+            font-size: 1rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 80%; max-width: 300px;
+        }
+        .download-button:hover { background-color: #218838; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(40, 167, 69, 0.5); }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: var(--footer-bg);
+            color: var(--footer-text); font-size: 0.85em; margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .converter-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfoDisplay { font-size: 0.95em; }
+            .file-item-name { font-size: 0.95em; }
+            .file-item-info { font-size: 0.85em; }
+            .conversion-options { flex-direction: row; justify-content: space-around; align-items: center; }
+            .option-group { flex-direction: column; gap: 5px; align-items: center;}
+            .option-group label { margin-bottom: 5px; }
+            #outputBasename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #statusDiv { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            .download-button { padding: 14px 30px; font-size: 1.05rem; width: auto; max-width: none; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            footer { font-size: 0.9em; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="converter-container">
+        <h1>أداة تحويل PDF إلى صور</h1>
+
+        <label for="pdfInput" class="file-label">اختر ملف PDF</label>
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <span id="fileInfoDisplay">لم يتم اختيار أي ملف.</span>
+
+        <div id="filePreviewContainer">
+             <div class="file-preview-placeholder">اسحب ملف PDF هنا أو انقر لاختياره. تفاصيل الملف ستظهر هنا.</div>
+        </div>
+        
+        <div class="conversion-options">
+            <div class="option-group">
+                <label for="imageFormat">صيغة الصورة:</label>
+                <select id="imageFormat">
+                    <option value="jpeg" data-ext="jpg">JPG</option>
+                    <option value="jpeg" data-ext="jpeg">JPEG</option>
+                    <option value="png" data-ext="png">PNG</option>
+                </select>
+            </div>
+            <div class="option-group" id="jpgQualityGroup">
+                <label for="jpgQuality">جودة JPG/JPEG (0-100):</label>
+                <input type="number" id="jpgQuality" value="100" min="0" max="100" step="1">
+            </div>
+             <div class="option-group">
+                <label for="imageScale">دقة الصورة (مقياس):</label>
+                <input type="number" id="imageScale" value="3.0" min="0.5" max="5.0" step="0.1">
+            </div>
+        </div>
+
+        <input type="text" id="outputBasename" placeholder="الاسم الأساسي لملفات الصور (اختياري)">
+
+        <button id="processBtn" disabled>بدء التحويل</button>
+
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="statusDiv"></div>
+
+        <div id="download-options">
+            <a id="downloadLinkZip" href="#" download="converted_images.zip" class="download-button">تحميل الصور (ملف ZIP)</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+
+    <script>
+        if (typeof window.pdfjsLib === 'undefined' || typeof window.JSZip === 'undefined') {
+            console.error("pdf.js or JSZip is not loaded!");
+            alert("خطأ: لم يتم تحميل المكتبات اللازمة (pdf.js, JSZip). لا يمكن المتابعة.");
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('pdfInput').disabled = true;
+        } else {
+            const pdfInput = document.getElementById('pdfInput');
+            const fileInfoDisplay = document.getElementById('fileInfoDisplay');
+            const filePreviewContainer = document.getElementById('filePreviewContainer');
+            const outputBasenameInput = document.getElementById('outputBasename');
+            const processBtn = document.getElementById('processBtn');
+            const progressBarContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusDiv = document.getElementById('statusDiv');
+            const downloadOptionsDiv = document.getElementById('download-options');
+            const downloadLinkZip = document.getElementById('downloadLinkZip');
+            const imageFormatSelect = document.getElementById('imageFormat');
+            const jpgQualityGroup = document.getElementById('jpgQualityGroup');
+            const jpgQualityInput = document.getElementById('jpgQuality');
+            const imageScaleInput = document.getElementById('imageScale');
+
+            let selectedFileDetail = null; 
+            let convertedImagesZipBlobUrl = null;
+            let isProcessing = false;
+            const MAX_PAGES_WARN = 100; 
+
+            function cleanupBlobUrl() {
+                if (convertedImagesZipBlobUrl) {
+                    URL.revokeObjectURL(convertedImagesZipBlobUrl);
+                    convertedImagesZipBlobUrl = null;
+                }
+            }
+
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 بايت';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            function sanitizeFilename(filename) {
+                return filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_');
+            }
+            
+            function removeSelectedFile() {
+                selectedFileDetail = null;
+                pdfInput.value = null; 
+                filePreviewContainer.innerHTML = '<div class="file-preview-placeholder">اسحب ملف PDF هنا أو انقر لاختياره. تفاصيل الملف ستظهر هنا.</div>';
+                outputBasenameInput.value = '';
+                statusDiv.textContent = '';
+                cleanupBlobUrl(); 
+                downloadOptionsDiv.style.display = 'none'; 
+                updateUIState(); 
+            }
+
+            function renderSelectedFile() {
+                filePreviewContainer.innerHTML = ''; 
+                if (!selectedFileDetail) {
+                    filePreviewContainer.innerHTML = '<div class="file-preview-placeholder">اسحب ملف PDF هنا أو انقر لاختياره. تفاصيل الملف ستظهر هنا.</div>';
+                    return;
+                }
+
+                const file = selectedFileDetail;
+                const previewItem = document.createElement('div');
+                previewItem.classList.add('file-item-preview');
+                previewItem.innerHTML = `
+                    <button class="remove-file-btn" title="إزالة الملف">×</button>
+                    <div class="file-item-details">
+                        <span class="file-item-name" title="${file.name}">${file.name}</span>
+                        <span class="file-item-info">(${file.pageCount} صفحة، ${formatBytes(file.fileObject.size)})</span>
+                    </div>
+                `;
+                filePreviewContainer.appendChild(previewItem);
+                previewItem.querySelector('.remove-file-btn').addEventListener('click', removeSelectedFile);
+            }
+            
+            function updateUIState(processing = isProcessing) {
+                const fileIsValidAndSelected = !!selectedFileDetail && selectedFileDetail.pageCount > 0;
+                processBtn.disabled = !fileIsValidAndSelected || processing;
+
+                if (fileIsValidAndSelected) {
+                    let infoText = `تم اختيار ملف: ${selectedFileDetail.name} (${selectedFileDetail.pageCount} صفحة).`;
+                     if (selectedFileDetail.pageCount > MAX_PAGES_WARN && !processing) {
+                        infoText += ` <span style="color: var(--warning-color);">(تحذير: قد يستغرق تحويل عدد كبير من الصفحات بعض الوقت.)</span>`;
+                    }
+                    fileInfoDisplay.innerHTML = infoText;
+                    fileInfoDisplay.style.color = 'var(--success-color)';
+                    
+                    if (!outputBasenameInput.value && !processing && !statusDiv.textContent.includes('اكتمل') && !statusDiv.style.color.includes('danger')) {
+                        outputBasenameInput.value = sanitizeFilename(selectedFileDetail.name.replace(/\.pdf$/i, ''));
+                    }
+                } else {
+                    if (selectedFileDetail && selectedFileDetail.pageCount === 0 && selectedFileDetail.name) { 
+                        fileInfoDisplay.textContent = `الملف "${selectedFileDetail.name}" لا يحتوي على صفحات أو لا يمكن قراءته.`;
+                        fileInfoDisplay.style.color = 'var(--warning-color)';
+                    } else {
+                        fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
+                        fileInfoDisplay.style.color = 'var(--text-color)';
+                    }
+                    outputBasenameInput.value = '';
+                    downloadOptionsDiv.style.display = 'none';
+                }
+
+                progressBarContainer.style.display = processing ? 'block' : 'none';
+                const selectedFormatValue = imageFormatSelect.value; 
+                jpgQualityGroup.style.display = selectedFormatValue === 'jpeg' ? 'flex' : 'none';
+            }
+
+            async function handleFileSelection(file) {
+                if (isProcessing) return;
+                if (!file) { 
+                    removeSelectedFile(); 
+                    return;
+                }
+
+                if (file.type !== 'application/pdf') {
+                    statusDiv.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF.`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    removeSelectedFile(); 
+                    return;
+                }
+
+                statusDiv.innerHTML = 'جاري قراءة الملف... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBarContainer.style.display = 'none'; 
+                progressBar.value = 0;
+                cleanupBlobUrl();
+                
+                selectedFileDetail = null;
+                
+                // لا نخزن ArrayBuffer هنا بشكل دائم، سنقرأه عند الحاجة
+                const currentFileObject = { name: file.name, pageCount: 0, fileObject: file };
+
+                try {
+                    // نحتاج إلى قراءة ArrayBuffer هنا مؤقتًا فقط للحصول على عدد الصفحات
+                    const tempArrayBuffer = await file.arrayBuffer();
+                    const pdfDoc = await pdfjsLib.getDocument({data: tempArrayBuffer}).promise;
+                    currentFileObject.pageCount = pdfDoc.numPages;
+                    selectedFileDetail = currentFileObject; 
+
+                    if (selectedFileDetail.pageCount === 0) {
+                         statusDiv.textContent = `تحذير: الملف "${file.name}" لا يحتوي على صفحات أو لا يمكن قراءته.`;
+                         statusDiv.style.color = 'var(--warning-color)';
+                    } else {
+                        statusDiv.innerHTML = ''; 
+                    }
+                } catch (loadError) {
+                    console.error(`Error parsing PDF "${file.name}" during page count:`, loadError);
+                    statusDiv.textContent = `خطأ في قراءة الملف "${file.name}" لتحديد عدد الصفحات: ${loadError.message || 'ملف تالف أو محمي؟'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    selectedFileDetail = currentFileObject; 
+                    selectedFileDetail.pageCount = 0; 
+                } finally {
+                    renderSelectedFile(); 
+                    updateUIState();    
+                }
+            }
+
+            pdfInput.addEventListener("change", (e) => handleFileSelection(e.target.files[0]));
+            imageFormatSelect.addEventListener('change', () => updateUIState(isProcessing)); 
+
+            const dropZone = document.body; 
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!isProcessing && e.dataTransfer.types.includes('Files')) {
+                     filePreviewContainer.style.borderColor = 'var(--primary-color)';
+                }
+            });
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                 filePreviewContainer.style.borderColor = 'var(--preview-border)';
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filePreviewContainer.style.borderColor = 'var(--preview-border)';
+                if (isProcessing) return;
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileSelection(e.dataTransfer.files[0]);
+                }
+            });
+            
+            processBtn.addEventListener('click', async function() {
+                if (isProcessing || !selectedFileDetail || selectedFileDetail.pageCount === 0) {
+                    statusDiv.textContent = 'الرجاء اختيار ملف PDF صالح يحتوي على صفحات للتحويل.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                    return;
+                }
+
+                isProcessing = true;
+                updateUIState(); 
+                cleanupBlobUrl();
+                statusDiv.innerHTML = 'جاري التحضير للتحويل... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBar.value = 0;
+                progressBarContainer.style.display = 'block';
+
+                const selectedOptionElement = imageFormatSelect.selectedOptions[0];
+                const outputFormatValue = selectedOptionElement.value; 
+                const fileExtension = selectedOptionElement.dataset.ext; 
+                
+                const quality = outputFormatValue === 'jpeg' ? parseFloat(jpgQualityInput.value) / 100 : undefined;
+                const scale = parseFloat(imageScaleInput.value) || 3.0; 
+                const mimeType = `image/${outputFormatValue}`; 
+                
+                let baseFilename = outputBasenameInput.value.trim();
+                if (!baseFilename) {
+                    baseFilename = sanitizeFilename(selectedFileDetail.name.replace(/\.pdf$/i, ''));
+                } else {
+                    baseFilename = sanitizeFilename(baseFilename);
+                }
+
+                const zip = new JSZip();
+
+                try {
+                    //  <<<--- الإصلاح: اقرأ ArrayBuffer جديدًا هنا ---<<<
+                    const freshArrayBuffer = await selectedFileDetail.fileObject.arrayBuffer();
+                    const loadingTask = pdfjsLib.getDocument({ data: freshArrayBuffer });
+                    //  --- نهاية الإصلاح --->>>
+
+                    const pdfDocument = await loadingTask.promise;
+                    const numPages = pdfDocument.numPages; // يجب أن يتطابق مع selectedFileDetail.pageCount
+                    const pageNumPadding = String(numPages).length; 
+
+                    progressBar.value = 5; 
+
+                    for (let i = 1; i <= numPages; i++) {
+                        statusDiv.innerHTML = `جاري تحويل الصفحة ${i} من ${numPages}... <div class="spinner"></div>`;
+                        
+                        const page = await pdfDocument.getPage(i);
+                        const viewport = page.getViewport({ scale: scale });
+                        
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+
+                        if (outputFormatValue === 'jpeg') { 
+                           context.fillStyle = 'white';
+                           context.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+
+                        const renderContext = {
+                            canvasContext: context,
+                            viewport: viewport
+                        };
+                        await page.render(renderContext).promise;
+                        
+                        const imageDataUrl = canvas.toDataURL(mimeType, quality);
+                        const fetchRes = await fetch(imageDataUrl);
+                        const blob = await fetchRes.blob();
+                        
+                        const pageNumStr = String(i).padStart(pageNumPadding, '0');
+                        const imageFilename = `${baseFilename}_page_${pageNumStr}.${fileExtension}`;
+                        zip.file(imageFilename, blob); 
+                        
+                        progressBar.value = 5 + Math.round(((i) / numPages) * 90); 
+                        await new Promise(resolve => setTimeout(resolve, 0)); 
+                    }
+
+                    statusDiv.innerHTML = 'جاري إنشاء ملف ZIP... <div class="spinner"></div>';
+                    const zipBlob = await zip.generateAsync({ type: "blob" });
+                    progressBar.value = 98; 
+
+                    convertedImagesZipBlobUrl = URL.createObjectURL(zipBlob);
+                    
+                    downloadLinkZip.href = convertedImagesZipBlobUrl;
+                    downloadLinkZip.download = `${baseFilename}_images.zip`;
+
+                    statusDiv.textContent = `اكتمل التحويل بنجاح! تم تحويل ${numPages} صفحة.`;
+                    statusDiv.style.color = 'var(--success-color)';
+                    progressBar.value = 100;
+                    setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
+                    downloadOptionsDiv.style.display = 'flex';
+
+                } catch (error) {
+                    console.error("Error during PDF conversion:", error);
+                    statusDiv.textContent = `حدث خطأ أثناء التحويل: ${error.message || 'خطأ غير معروف.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    progressBarContainer.style.display = 'none';
+                    downloadOptionsDiv.style.display = 'none';
+                    cleanupBlobUrl();
+                } finally {
+                    isProcessing = false;
+                    const spinner = statusDiv.querySelector('.spinner');
+                    if (spinner) spinner.remove();
+                    updateUIState(); 
+                }
+            });
+
+            updateUIState(); 
+            window.addEventListener('beforeunload', cleanupBlobUrl);
+        }
+    </script>
+
+</body>
+</html>

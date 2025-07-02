@@ -1,0 +1,2564 @@
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>محرر الصور والنصوص التفاعلي</title>
+
+    <!-- تضمين مكتبة jsPDF - تأكد من وجود الملف محلياً -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- defer يجعل تحميل الجافاسكربت لا يوقف بناء الـ DOM -->
+
+    <!-- تضمين خطوط Google Fonts العربية (مجموعة موسعة + خطوط كوفية) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Aref+Ruqaa+Ink:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@200..1000&family=Changa:wght@200..800&family=El+Messiri:wght@400..700&family=Harmattan:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@100..700&family=Jomhuria&family=Katibeh&family=Lalezar&family=Lateef:wght@200..800&family=Lemonada:wght@300..700&family=Mada:wght@200..900&family=Markazi+Text:wght@400..700&family=Mirza:wght@400..700&family=Noto+Kufi+Arabic:wght@100..900&family=Noto+Naskh+Arabic:wght@400..700&family=Noto+Sans+Arabic:wght@100..900&family=Readex+Pro:wght@160..700&family=Reem+Kufi+Fun:wght@400..700&family=Reem+Kufi+Ink:wght@400&family=Reem+Kufi:wght@400..700&family=Ruwudu:wght@400..700&family=Scheherazade+New:wght@400;700&family=Tajawal:wght@200..900&family=Vibes&family=Gulzar&family=Alkalami&family=Noto+Nastaliq+Urdu&family=Alkalami&family=Mirza&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- بداية كود CSS --- */
+        :root {
+            --primary-color: #4a6fa5;
+            --secondary-color: #6c757d;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --background-color: #f5f7fa;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+            --info-color: #3498db;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --a4-width-px: 794px; /* A4 width at 96 DPI */
+            --a4-height-px: 1123px; /* A4 height at 96 DPI */
+            --toolbar-bg: #2c3e50;
+            --toolbar-text: #ecf0f1;
+            --toolbar-hover: #34495e;
+            --toolbar-active: #1abc9c;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--background-color);
+            color: var(--dark-color);
+            direction: rtl;
+            text-align: right;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            line-height: 1.6;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            text-align: center;
+            font-family: 'Changa', sans-serif;
+            font-weight: 700;
+            font-size: 2.2rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* --- قسم اختيار الصورة --- */
+        #image-selection-area {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px var(--shadow-color);
+            margin-bottom: 1.5rem;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        #image-selection-area:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        #image-selection-area h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-size: 1.4rem;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 600;
+        }
+
+        #image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1.2rem;
+            max-height: 350px;
+            overflow-y: auto;
+            padding: 0.8rem;
+            border: 1px solid #eee;
+            margin-bottom: 1.2rem;
+            background-color: #fdfdfd;
+            border-radius: 8px;
+        }
+
+        .gallery-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+            border: 1px solid #e0e0e0;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background-color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary-color);
+        }
+
+        .gallery-item img {
+            max-width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .gallery-item img:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.03);
+        }
+
+        .gallery-item button {
+            font-size: 0.9rem;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            width: 100%;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 500;
+        }
+
+        .gallery-item button:hover {
+            background-color: #3a5a8a;
+            transform: translateY(-2px);
+        }
+
+        /* --- قسم التحميل الجديد --- */
+        #upload-section {
+            margin-top: 1.2rem;
+            border-top: 1px dashed #ddd;
+            padding-top: 1.2rem;
+            text-align: center;
+        }
+
+        #large-upload-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.8rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            min-height: 120px;
+            font-size: 1.3rem;
+            border: 2px dashed rgba(255,255,255,0.3);
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 600;
+        }
+
+        #large-upload-button svg {
+            width: 48px;
+            height: 48px;
+            fill: white;
+            margin-bottom: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        #large-upload-button:hover {
+            background-color: #3a5a8a;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        #large-upload-button:hover svg {
+            transform: scale(1.1);
+        }
+
+        #imageLoader {
+            display: none;
+        }
+
+        /* --- شاشة المحرر --- */
+        #editor-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        #canvas-container {
+            width: 100%;
+            max-width: var(--a4-width-px);
+            margin: 0 auto 1.5rem auto;
+            border: 1px solid #d1d8e0;
+            box-shadow: 0 8px 24px var(--shadow-color);
+            background-color: white;
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: var(--a4-width-px) / var(--a4-height-px);
+            height: auto;
+            touch-action: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        #canvas-container:hover {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        #imageCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            background-color: #f1f5f9;
+        }
+
+        #imageCanvas.grabbing { cursor: grabbing; }
+        #imageCanvas.text-hover { cursor: pointer; }
+
+        #loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            display: none;
+            z-index: 100;
+            text-align: center;
+            font-family: 'Tajawal', sans-serif;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* --- شريط الأدوات الجديد --- */
+        #toolbar {
+            background-color: var(--toolbar-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px var(--shadow-color);
+            width: 100%;
+            max-width: var(--a4-width-px);
+            margin: 0 auto 1.5rem auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            align-items: center;
+            color: var(--toolbar-text);
+            transition: all 0.3s ease;
+        }
+
+        #toolbar:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .tool-group label {
+            font-size: 0.85rem;
+            color: var(--toolbar-text);
+            margin-bottom: 0.2rem;
+            white-space: nowrap;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 500;
+        }
+
+        /* حاوية حقل الإدخال الرقمي مع الأزرار */
+        .input-spinner {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            border: 1px solid #3d5166;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #34495e;
+            transition: all 0.3s ease;
+        }
+
+        .input-spinner:hover {
+            border-color: var(--toolbar-active);
+        }
+
+        .input-spinner input[type="number"] {
+            flex-grow: 1;
+            padding: 0.5rem;
+            border: none;
+            font-size: 0.95rem;
+            font-family: 'Tajawal', sans-serif;
+            text-align: center;
+            background-color: #2c3e50;
+            color: var(--toolbar-text);
+            -moz-appearance: textfield;
+            appearance: textfield;
+            transition: all 0.3s ease;
+        }
+
+        .input-spinner input[type="number"]:focus {
+            outline: none;
+            background-color: #34495e;
+        }
+
+        .input-spinner input[type="number"]::-webkit-outer-spin-button,
+        .input-spinner input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-spinner button {
+            background-color: #3d5166;
+            border: none;
+            color: var(--toolbar-text);
+            padding: 0 0.6rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+            height: 100%;
+            transition: all 0.3s ease;
+            align-self: stretch;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 500;
+        }
+
+        .input-spinner button:hover {
+            background-color: var(--toolbar-hover);
+            color: white;
+        }
+
+        .input-spinner button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #3d5166;
+        }
+
+        /* ترتيب الأزرار لـ RTL */
+        .input-spinner button:first-of-type { order: 3; border-right: 1px solid #3d5166; border-left: none; }
+        .input-spinner button:last-of-type { order: 1; border-left: 1px solid #3d5166; border-right: none; }
+        .input-spinner input[type="number"] { order: 2; }
+
+        #toolbar select,
+        #toolbar input[type="color"],
+        #toolbar input[type="range"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #3d5166;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Tajawal', sans-serif;
+            background-color: #2c3e50;
+            color: var(--toolbar-text);
+            transition: all 0.3s ease;
+        }
+
+        #toolbar select:focus,
+        #toolbar input[type="color"]:focus,
+        #toolbar input[type="range"]:focus {
+            outline: none;
+            border-color: var(--toolbar-active);
+        }
+
+        #toolbar input[type="color"] {
+            padding: 0.2rem;
+            height: 36px;
+            min-width: 50px;
+            cursor: pointer;
+        }
+
+        #toolbar input[type="range"] {
+            padding: 0;
+            height: 24px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        #toolbar input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            background: #3d5166;
+            border-radius: 3px;
+        }
+
+        #toolbar input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--toolbar-active);
+            border-radius: 50%;
+            margin-top: -6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #toolbar input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* --- لوحات الألوان المحسنة --- */
+        .color-palette {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(24px, 1fr));
+            gap: 6px;
+            margin-top: 8px;
+            padding: 10px;
+            background: #34495e;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .color-palette.active {
+            display: grid;
+        }
+
+        .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+
+        .color-swatch::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.2);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .color-swatch:hover::after {
+            opacity: 1;
+        }
+
+        /* --- أزرار النمط المحسنة --- */
+        .style-buttons {
+            display: flex;
+            gap: 0.6rem;
+            grid-column: 1 / -1;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .style-button {
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #3d5166;
+            background-color: #34495e;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+            line-height: 1;
+            color: var(--toolbar-text);
+            font-family: 'Tajawal', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .style-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #34495e;
+        }
+
+        .style-button:hover:not(:disabled) {
+            background-color: var(--toolbar-hover);
+            border-color: var(--toolbar-active);
+            transform: translateY(-2px);
+        }
+
+        .style-button.active {
+            background-color: var(--toolbar-active);
+            color: white;
+            border-color: var(--toolbar-active);
+            box-shadow: 0 2px 8px rgba(26, 188, 156, 0.3);
+        }
+
+        .style-button.italic { font-style: italic; }
+        .style-button.underline { text-decoration: underline; }
+
+        /* زر الحذف المحسن */
+        #deleteTextBtn {
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            margin-right: auto;
+            padding: 0.6rem 1.2rem;
+        }
+
+        #deleteTextBtn:hover:not(:disabled) {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        /* أزرار النسخ واللصق الجديدة */
+        #copyTextBtn {
+            background-color: #9b59b6;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+        }
+
+        #copyTextBtn:hover:not(:disabled) {
+            background-color: #8e44ad;
+            transform: translateY(-2px);
+        }
+
+        #pasteTextBtn {
+            background-color: #1abc9c;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+        }
+
+        #pasteTextBtn:hover:not(:disabled) {
+            background-color: #16a085;
+            transform: translateY(-2px);
+        }
+
+        /* --- أزرار الإجراءات المحسنة --- */
+        #action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: var(--a4-width-px);
+            margin: 0 auto;
+        }
+
+        .action-button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px var(--shadow-color);
+            flex-grow: 1;
+            min-width: 150px;
+            text-align: center;
+            font-family: 'Tajawal', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%, -50%);
+            transform-origin: 50% 50%;
+        }
+
+        .action-button:focus:not(:active)::after {
+            animation: ripple 0.6s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: var(--secondary-color);
+            transform: none !important;
+        }
+
+        .action-button:hover:not(:disabled) {
+            background-color: #3a5a8a;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .action-button:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .action-button.secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .action-button.secondary:hover:not(:disabled) {
+            background-color: #5a6268;
+        }
+
+        .action-button.success {
+            background-color: var(--success-color);
+        }
+
+        .action-button.success:hover:not(:disabled) {
+            background-color: #27ae60;
+        }
+
+        .action-button.info {
+            background-color: var(--info-color);
+        }
+
+        .action-button.info:hover:not(:disabled) {
+            background-color: #2980b9;
+        }
+
+        /* --- إعدادات الطباعة --- */
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+                background-color: white;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            h1, #image-selection-area, #toolbar, #action-buttons, #loading-indicator {
+                display: none !important;
+            }
+
+            #editor-screen {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+            }
+
+            #canvas-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: auto !important;
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                page-break-inside: avoid !important;
+                aspect-ratio: unset !important;
+            }
+
+            #imageCanvas {
+                width: 100% !important;
+                height: auto !important;
+                max-width: 100% !important;
+                display: block !important;
+            }
+        }
+
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 850px) {
+            #toolbar {
+                grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+                gap: 0.8rem;
+            }
+
+            .style-buttons {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0.8rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #image-gallery {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            #toolbar {
+                padding: 0.8rem;
+                gap: 0.6rem;
+                grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            }
+
+            .tool-group label {
+                font-size: 0.8rem;
+            }
+
+            #toolbar input, #toolbar select, .style-button {
+                font-size: 0.85rem;
+            }
+
+            /* تعديلات أزرار التكبير والتصغير للهواتف */
+            .input-spinner {
+                position: relative;
+            }
+            
+            .input-spinner input[type="number"] {
+                padding: 0.4rem 2rem; /* زيادة الحشو لاستيعاب الأزرار */
+            }
+            
+            .input-spinner button {
+                position: absolute;
+                width: 30px;
+                height: 100%;
+                padding: 0;
+                z-index: 1;
+            }
+            
+            .input-spinner button.decrease {
+                left: 0;
+                right: auto;
+            }
+            
+            .input-spinner button.increase {
+                right: 0;
+                left: auto;
+            }
+
+            .style-button {
+                min-width: 36px;
+                padding: 0.5rem 0.6rem;
+            }
+
+            .action-button {
+                font-size: 0.9rem;
+                padding: 0.7rem 1rem;
+                min-width: 120px;
+            }
+
+            #action-buttons {
+                gap: 0.8rem;
+            }
+
+            #deleteTextBtn, #copyTextBtn, #pasteTextBtn {
+                font-size: 0.85rem;
+                padding: 0.5rem 0.8rem;
+            }
+
+            #editor-screen, #canvas-container, #toolbar, #action-buttons {
+                max-width: 100%;
+            }
+
+            #large-upload-button {
+                font-size: 1.1rem;
+                padding: 1.2rem;
+                min-height: 100px;
+            }
+
+            #large-upload-button svg {
+                width: 36px;
+                height: 36px;
+            }
+
+            .color-palette {
+                grid-template-columns: repeat(auto-fill, minmax(22px, 1fr));
+                gap: 5px;
+            }
+
+            .color-swatch {
+                width: 22px;
+                height: 22px;
+            }
+        }
+
+        /* --- نهاية كود CSS --- */
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <h1>محرر الصور والنصوص التفاعلي</h1>
+
+    <!-- 1. منطقة اختيار الصورة -->
+    <div id="image-selection-area">
+        <h2>اختر صورة للبدء</h2>
+        <div id="image-gallery">
+            <!-- أمثلة لصور -->
+            <div class="gallery-item">
+                <img src="images/bbr123.png" alt="صورة 1" data-src="images/bbr123.png">
+                <button class="use-gallery-image">استخدام</button>
+            </div>
+            <div class="gallery-item">
+                <img src="images/bbraa.png" alt="صورة 2" data-src="images/bbraa.png">
+                <button class="use-gallery-image">استخدام</button>
+            </div>
+             <div class="gallery-item">
+                <img src="images/bbrdd.png" alt="صورة 3" data-src="images/bbrdd.png">
+                <button class="use-gallery-image">استخدام</button>
+            </div>
+             <div class="gallery-item">
+                <img src="images/bbrff.png" data-src="images/bbrff.png">
+                <button class="use-gallery-image">استخدام</button>
+            </div>
+            <!-- ملاحظة: الصور أعلاه هي أمثلة، وقد لا تعمل بدون انترنت -->
+
+  <!-- أمثلة لصور -->
+  <div class="gallery-item">
+    <img src="images/bbrgg.png" data-src="images/bbrgg.png">
+    <button class="use-gallery-image">استخدام</button>
+  </div>
+            
+<div class="gallery-item">
+  <img src="images/bbrhh.png" data-src="images/bbrhh.png">
+  <!-- الصورة الأصلية بواسطة Sincerely Media on Unsplash -->
+  <button class="use-gallery-image">استخدام</button>
+</div>
+            
+     <div class="gallery-item">
+    <img src="images/bbrjj.png" data-src="images/bbrjj.png">
+    <button class="use-gallery-image">استخدام</button>
+  </div>
+            
+<div class="gallery-item">
+  <img src="images/bbrss.png" data-src="images/bbrss.png">
+  <!-- الصورة الأصلية بواسطة Sincerely Media on Unsplash -->
+  <button class="use-gallery-image">استخدام</button>
+</div>        
+            
+            
+            
+        </div>
+        <!-- قسم التحميل الجديد مع الزر الكبير -->
+        <div id="upload-section">
+             <input type="file" id="imageLoader" accept="image/*"/>
+             <button id="large-upload-button" aria-label="اختر صورة من جهازك">
+                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                 <span>اختر صورة من جهازك</span>
+             </button>
+        </div>
+    </div>
+
+
+    <!-- 2. شاشة المحرر (مخفية افتراضياً) -->
+    <div id="editor-screen">
+        <!-- حاوية Canvas -->
+        <div id="canvas-container">
+            <canvas id="imageCanvas"></canvas>
+            <div id="loading-indicator">جارٍ التحميل...</div>
+        </div>
+
+        <!-- شريط الأدوات -->
+        <div id="toolbar">
+            <!-- حجم الخط -->
+            <div class="tool-group">
+                <label for="fontSize">الحجم:</label>
+                <div class="input-spinner">
+                    <button class="spinner-btn decrease" data-target="fontSize" aria-label="تصغير حجم الخط">-</button>
+                    <input type="number" id="fontSize" value="48" min="8" max="500">
+                    <button class="spinner-btn increase" data-target="fontSize" aria-label="تكبير حجم الخط">+</button>
+                </div>
+            </div>
+
+            <!-- لون الخط -->
+            <div class="tool-group">
+                <label for="fontColor">لون الخط:</label>
+                <input type="color" id="fontColor" value="#000000">
+                <div class="color-palette" id="fontColorPalette">
+                    <!-- سيتم ملء الألوان بواسطة JavaScript -->
+                </div>
+            </div>
+
+             <!-- لون الحد -->
+            <div class="tool-group">
+                <label for="strokeColor">لون الحد:</label>
+                <input type="color" id="strokeColor" value="#ffffff">
+                <!-- يمكن إضافة لوحة ألوان للحد أيضاً إذا رغبت -->
+            </div>
+             <!-- عرض الحد -->
+            <div class="tool-group">
+                <label for="strokeWidth">عرض الحد:</label>
+                 <div class="input-spinner">
+                    <button class="spinner-btn decrease" data-target="strokeWidth" aria-label="تقليل عرض الحد">-</button>
+                    <input type="number" id="strokeWidth" value="0" min="0" max="50"> <!-- زيادة الحد الأقصى -->
+                    <button class="spinner-btn increase" data-target="strokeWidth" aria-label="زيادة عرض الحد">+</button>
+                </div>
+            </div>
+
+             <!-- لون الخلفية -->
+            <div class="tool-group">
+                <label for="bgColor">لون الخلفية:</label>
+                <input type="color" id="bgColor" value="#ffffff">
+                 <div class="color-palette" id="bgColorPalette">
+                    <!-- سيتم ملء الألوان بواسطة JavaScript -->
+                </div>
+            </div>
+            <div class="tool-group">
+                 <label for="bgOpacity">شفافية الخلفية:</label>
+                 <input type="range" id="bgOpacity" min="0" max="1" step="0.1" value="0">
+            </div>
+
+            <!-- نوع الخط -->
+            <div class="tool-group" style="grid-column: span 2;">
+                <label for="fontFamily">نوع الخط:</label>
+                <select id="fontFamily">
+                    <option value="'Cairo', sans-serif" style="font-family: 'Cairo', sans-serif;">Cairo (افتراضي)</option>
+                    <option value="'Noto Kufi Arabic', sans-serif" style="font-family: 'Noto Kufi Arabic', sans-serif;">Noto Kufi Arabic</option>
+                    <option value="'Reem Kufi', sans-serif" style="font-family: 'Reem Kufi', sans-serif;">Reem Kufi</option>
+                    <option value="'Reem Kufi Fun', sans-serif" style="font-family: 'Reem Kufi Fun', sans-serif;">Reem Kufi Fun</option>
+                    <option value="'Reem Kufi Ink', sans-serif" style="font-family: 'Reem Kufi Ink', sans-serif;">Reem Kufi Ink</option>
+                    <option value="'Aref Ruqaa', serif" style="font-family: 'Aref Ruqaa', serif;">Aref Ruqaa</option>
+                     <option value="'Aref Ruqaa Ink', serif" style="font-family: 'Aref Ruqaa Ink', serif;">Aref Ruqaa Ink</option>
+                    <option value="'Amiri', serif" style="font-family: 'Amiri', serif;">Amiri</option>
+                    <option value="'Almarai', sans-serif" style="font-family: 'Almarai', sans-serif;">Almarai</option>
+                    <option value="'Changa', sans-serif" style="font-family: 'Changa', sans-serif;">Changa</option>
+                    <option value="'El Messiri', sans-serif" style="font-family: 'El Messiri', sans-serif;">El Messiri</option>
+                    <option value="'Harmattan', sans-serif" style="font-family: 'Harmattan', sans-serif;">Harmattan</option>
+                    <option value="'IBM Plex Sans Arabic', sans-serif" style="font-family: 'IBM Plex Sans Arabic', sans-serif;">IBM Plex Sans Arabic</option>
+                    <option value="'Jomhuria', cursive" style="font-family: 'Jomhuria', cursive;">Jomhuria</option>
+                    <option value="'Katibeh', cursive" style="font-family: 'Katibeh', cursive;">Katibeh</option>
+                    <option value="'Lalezar', cursive" style="font-family: 'Lalezar', cursive;">Lalezar</option>
+                    <option value="'Lateef', serif" style="font-family: 'Lateef', serif;">Lateef</option>
+                    <option value="'Lemonada', cursive" style="font-family: 'Lemonada', cursive;">Lemonada</option>
+                    <option value="'Mada', sans-serif" style="font-family: 'Mada', sans-serif;">Mada</option>
+                    <option value="'Markazi Text', serif" style="font-family: 'Markazi Text', serif;">Markazi Text</option>
+                    <option value="'Mirza', cursive" style="font-family: 'Mirza', cursive;">Mirza</option>
+                    <option value="'Noto Naskh Arabic', serif" style="font-family: 'Noto Naskh Arabic', serif;">Noto Naskh Arabic</option>
+                    <option value="'Noto Sans Arabic', sans-serif" style="font-family: 'Noto Sans Arabic', sans-serif;">Noto Sans Arabic</option>
+                    <option value="'Readex Pro', sans-serif" style="font-family: 'Readex Pro', sans-serif;">Readex Pro</option>
+                    <option value="'Ruwudu', serif" style="font-family: 'Ruwudu', serif;">Ruwudu</option>
+                    <option value="'Scheherazade New', serif" style="font-family: 'Scheherazade New', serif;">Scheherazade New</option>
+                    <option value="'Tajawal', sans-serif" style="font-family: 'Tajawal', sans-serif;">Tajawal</option>
+                    <option value="'Vibes', cursive" style="font-family: 'Vibes', cursive;">Vibes</option>
+                    <option value="'Gulzar', serif" style="font-family: 'Gulzar', serif;">Gulzar</option>
+                    <option value="'Noto Nastaliq Urdu', serif" style="font-family: 'Noto Nastaliq Urdu', serif;">Noto Nastaliq Urdu</option>
+                    <option value="'Alkalami', serif" style="font-family: 'Alkalami', serif;">Alkalami</option>
+                    <option value="'Alkalami', serif" style="font-family: 'Alkalami', serif;">Alkalami</option>
+                    <option value="'Mirza', cursive" style="font-family: 'Mirza', cursive;">Mirza</option>
+                </select>
+            </div>
+
+            <!-- الشفافية العامة للنص -->
+            <div class="tool-group">
+                <label for="textOpacity">شفافية النص:</label>
+                <input type="range" id="textOpacity" min="0" max="1" step="0.05" value="1">
+            </div>
+
+            <!-- تباعد الأحرف -->
+            <div class="tool-group">
+                <label for="letterSpacing">تباعد الأحرف:</label>
+                 <div class="input-spinner">
+                    <button class="spinner-btn decrease" data-target="letterSpacing" aria-label="تقليل تباعد الأحرف">-</button>
+                    <input type="number" id="letterSpacing" value="0" min="-10" max="50" step="1"> <!-- السماح بقيم سالبة للتقريب -->
+                    <button class="spinner-btn increase" data-target="letterSpacing" aria-label="زيادة تباعد الأحرف">+</button>
+                </div>
+            </div>
+
+            <!-- زاوية الدوران -->
+            <div class="tool-group">
+                <label for="textRotation">زاوية الدوران:</label>
+                <div class="input-spinner">
+                    <button class="spinner-btn decrease" data-target="textRotation" aria-label="تقليل الزاوية">-</button>
+                    <input type="number" id="textRotation" value="0" min="-180" max="180" step="5">
+                    <button class="spinner-btn increase" data-target="textRotation" aria-label="زيادة الزاوية">+</button>
+                </div>
+            </div>
+
+            <!-- تباعد الأسطر -->
+            <div class="tool-group">
+                <label for="lineHeight">تباعد الأسطر:</label>
+                <div class="input-spinner">
+                    <button class="spinner-btn decrease" data-target="lineHeight" aria-label="تقليل تباعد الأسطر">-</button>
+                    <input type="number" id="lineHeight" value="1.2" min="0.8" max="3" step="0.1">
+                    <button class="spinner-btn increase" data-target="lineHeight" aria-label="زيادة تباعد الأسطر">+</button>
+                </div>
+            </div>
+
+            <!-- أزرار التنسيق -->
+            <div class="style-buttons">
+                 <button class="style-button" id="boldBtn" title="تضخيم (Bold)" disabled><b>B</b></button>
+                 <button class="style-button italic" id="italicBtn" title="مائل (Italic)" disabled><i>I</i></button>
+                 <button class="style-button underline" id="underlineBtn" title="تسطير (Underline)" disabled><u>U</u></button>
+                 <button class="style-button" id="shadowBtn" title="تظليل (Shadow)" disabled>ظل</button>
+                 <button class="style-button" id="glowBtn" title="توهج (Glow)" disabled>توهج</button>
+                 <button class="style-button" id="outlineBtn" title="حد خارجي (Outline)" disabled>حد</button>
+                 <button class="style-button" id="gradientBtn" title="تدرج لوني (Gradient)" disabled>تدرج</button>
+                 <button class="style-button" id="copyTextBtn" title="نسخ النص المحدد" disabled>نسخ</button>
+                 <button class="style-button" id="pasteTextBtn" title="لصق النص المنسوخ" disabled>لصق</button>
+                 <button class="style-button" id="deleteTextBtn" title="حذف النص المحدد" disabled>حذف</button>
+            </div>
+
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div id="action-buttons">
+            <button id="saveBtn" class="action-button success" disabled>حفظ الصورة (PNG)</button>
+            <button id="pdfBtn" class="action-button info" disabled>تصدير كـ PDF</button>
+            <button id="printBtn" class="action-button secondary" disabled>طباعة</button>
+            <button id="resetBtn" class="action-button">اختيار صورة أخرى</button>
+        </div>
+    </div>
+
+    <script>
+        // --- بداية كود JavaScript ---
+        (function() { // IIFE
+            'use strict';
+
+            // --- عناصر DOM ---
+            const imageSelectionArea = document.getElementById('image-selection-area');
+            const gallery = document.getElementById('image-gallery');
+            const imageLoader = document.getElementById('imageLoader');
+            const largeUploadButton = document.getElementById('large-upload-button');
+            const editorScreen = document.getElementById('editor-screen');
+            const canvasContainer = document.getElementById('canvas-container');
+            const canvas = document.getElementById('imageCanvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const loadingIndicator = document.getElementById('loading-indicator');
+
+            // عناصر شريط الأدوات
+            const fontSizeInput = document.getElementById('fontSize');
+            const fontColorInput = document.getElementById('fontColor');
+            const fontColorPalette = document.getElementById('fontColorPalette');
+            const strokeColorInput = document.getElementById('strokeColor');
+            const strokeWidthInput = document.getElementById('strokeWidth');
+            const bgColorInput = document.getElementById('bgColor');
+            const bgColorPalette = document.getElementById('bgColorPalette');
+            const bgOpacityInput = document.getElementById('bgOpacity');
+            const fontFamilySelect = document.getElementById('fontFamily');
+            const textOpacityInput = document.getElementById('textOpacity');
+            const letterSpacingInput = document.getElementById('letterSpacing');
+            const textRotationInput = document.getElementById('textRotation');
+            const lineHeightInput = document.getElementById('lineHeight');
+            const boldBtn = document.getElementById('boldBtn');
+            const italicBtn = document.getElementById('italicBtn');
+            const underlineBtn = document.getElementById('underlineBtn');
+            const shadowBtn = document.getElementById('shadowBtn');
+            const glowBtn = document.getElementById('glowBtn');
+            const outlineBtn = document.getElementById('outlineBtn');
+            const gradientBtn = document.getElementById('gradientBtn');
+            const copyTextBtn = document.getElementById('copyTextBtn');
+            const pasteTextBtn = document.getElementById('pasteTextBtn');
+            const deleteTextBtn = document.getElementById('deleteTextBtn');
+            const toolbar = document.getElementById('toolbar');
+
+            const toolbarElements = [
+                fontSizeInput, fontColorInput, strokeColorInput, strokeWidthInput,
+                bgColorInput, bgOpacityInput, fontFamilySelect, textOpacityInput,
+                letterSpacingInput, textRotationInput, lineHeightInput,
+                boldBtn, italicBtn, underlineBtn, shadowBtn, glowBtn,
+                outlineBtn, gradientBtn, copyTextBtn, pasteTextBtn, deleteTextBtn
+            ];
+
+            // أزرار الإجراءات
+            const saveBtn = document.getElementById('saveBtn');
+            const pdfBtn = document.getElementById('pdfBtn');
+            const printBtn = document.getElementById('printBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const actionButtons = [saveBtn, pdfBtn, printBtn];
+
+            // --- متغيرات الحالة ---
+            let currentImage = null;
+            let originalImageWidth = 0;
+            let originalImageHeight = 0;
+            let textObjects = [];
+            let selectedTextIndex = -1;
+            let isDragging = false;
+            let dragStartX = 0;
+            let dragStartY = 0;
+            let lastTapTime = 0;
+            let copiedTextObject = null; // تخزين النص المنسوخ
+            const A4_WIDTH_PX = 794;
+            const A4_HEIGHT_PX = 1123;
+
+            // --- مصفوفات الألوان ---
+            const commonColors = [
+                '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+                '#800000', '#008000', '#000080', '#808000', '#800080', '#008080', '#C0C0C0', '#808080',
+                '#F08080', '#FA8072', '#E9967A', '#FFA07A', '#DC143C', '#FF6347', '#FF4500', '#FF8C00',
+                '#FFA500', '#FFD700', '#FFFFE0', '#FFFACD', '#FAFAD2', '#FFEFD5', '#FFE4B5', '#FFDAB9',
+                '#EEE8AA', '#F0E68C', '#BDB76B', '#ADFF2F', '#7FFF00', '#7CFC00', '#00FF7F', '#98FB98',
+                '#90EE90', '#00FA9A', '#8FBC8F', '#2E8B57', '#3CB371', '#20B2AA', '#008B8B', '#48D1CC',
+                '#AFEEEE', '#E0FFFF', '#5F9EA0', '#4682B4', '#B0C4DE', '#ADD8E6', '#87CEEB', '#87CEFA',
+                '#191970', '#0000CD', '#4169E1', '#6495ED', '#7B68EE', '#6A5ACD', '#483D8B', '#9370DB',
+                '#8A2BE2', '#9400D3', '#9932CC', '#BA55D3', '#8B008B', '#FF00FF', '#EE82EE', '#DA70D6',
+                '#C71585', '#DB7093', '#FF1493', '#FF69B4', '#FFB6C1', '#FFC0CB', '#FAEBD7', '#F5F5DC',
+                '#FFEBCD', '#F5DEB3', '#DEB887', '#D2B48C', '#BC8F8F', '#A0522D', '#8B4513', '#D2691E',
+                '#CD853F', '#F4A460', '#808080', '#A9A9A9', '#D3D3D3', '#696969', '#778899', '#708090',
+                '#2F4F4F'
+            ];
+
+            // --- تهيئة ---
+            populateColorPalettes();
+            setupGalleryListeners();
+            setupCanvasListeners();
+            setupToolbarListeners();
+            setupActionListeners();
+            disableToolbar();
+            disableActionButtons();
+
+            // --- وظائف التهيئة ---
+
+            // ملء لوحات الألوان
+            function populateColorPalettes() {
+                commonColors.slice(0, 50).forEach(color => {
+                    // لوحة لون الخط
+                    const swatchFont = document.createElement('div');
+                    swatchFont.classList.add('color-swatch');
+                    swatchFont.style.backgroundColor = color;
+                    swatchFont.dataset.color = color;
+                    swatchFont.setAttribute('role', 'button');
+                    swatchFont.setAttribute('aria-label', `اختيار اللون ${color}`);
+                    fontColorPalette.appendChild(swatchFont);
+
+                    // لوحة لون الخلفية
+                    const swatchBg = document.createElement('div');
+                    swatchBg.classList.add('color-swatch');
+                    swatchBg.style.backgroundColor = color;
+                    swatchBg.dataset.color = color;
+                    swatchBg.setAttribute('role', 'button');
+                    swatchBg.setAttribute('aria-label', `اختيار اللون ${color}`);
+                    bgColorPalette.appendChild(swatchBg);
+                });
+            }
+
+            // --- معالجات الأحداث ---
+
+            // 1. مستمعي المعرض واختيار الملف
+            function setupGalleryListeners() {
+                 // *** التحسين: جعل مستمع المعرض أكثر مرونة ***
+                 gallery.addEventListener('click', (e) => {
+                    // ابحث عن أقرب عنصر معرض من الهدف الذي تم النقر عليه
+                    const galleryItem = e.target.closest('.gallery-item');
+                    if (galleryItem) {
+                        // ابحث عن عنصر الصورة الذي يحتوي على بيانات المصدر داخل هذا العنصر
+                        const imgElement = galleryItem.querySelector('img[data-src]');
+                        if (imgElement && imgElement.dataset.src) {
+                            // تحقق مما إذا كان النقر على الصورة نفسها أو على زر "استخدام"
+                            // لتجنب التحميل إذا تم النقر على منطقة أخرى من العنصر
+                            if (e.target.tagName === 'IMG' || e.target.classList.contains('use-gallery-image')) {
+                                console.log("Gallery image selected:", imgElement.dataset.src.substring(0, 100) + "..."); // تسجيل لتصحيح الأخطاء
+                                loadImage(imgElement.dataset.src);
+                            }
+                        } else {
+                            console.warn("Gallery item clicked, but no img with data-src found inside.");
+                        }
+                    }
+                 });
+                 largeUploadButton.addEventListener('click', () => {
+                    console.log("Upload button clicked, triggering file input."); // تسجيل لتصحيح الأخطاء
+                    imageLoader.click();
+                 });
+                 imageLoader.addEventListener('change', handleFileUpload);
+            }
+
+            // 2. معالجة رفع الملف
+            function handleFileUpload(e) {
+                const file = e.target.files[0];
+                console.log("File input change detected. File:", file); // تسجيل لتصحيح الأخطاء
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        console.log("File read successfully."); // تسجيل لتصحيح الأخطاء
+                        loadImage(event.target.result);
+                    }
+                     reader.onerror = function(err) {
+                        console.error("FileReader error:", err);
+                        alert("حدث خطأ أثناء قراءة الملف.");
+                        showLoading(false);
+                     }
+                    reader.readAsDataURL(file);
+                     showLoading(true, "جارٍ تحميل الملف...");
+                } else if (file) {
+                     alert('الرجاء اختيار ملف صورة صالح.');
+                     console.warn("Invalid file type selected:", file.type);
+                }
+                 // إعادة تعيين قيمة المدخل للسماح بإعادة تحميل نفس الملف
+                 e.target.value = null;
+            }
+
+            // 3. مستمعي Canvas للتفاعل
+            function setupCanvasListeners() {
+                let interactionStartX = 0;
+                let interactionStartY = 0;
+                let didMove = false;
+
+                const getEventCoords = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    let clientX, clientY;
+                    if (e.changedTouches) {
+                        clientX = e.changedTouches[0].clientX;
+                        clientY = e.changedTouches[0].clientY;
+                    } else {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    }
+                    let x = (clientX - rect.left) * scaleX;
+                    let y = (clientY - rect.top) * scaleY;
+                    x = Math.max(0, Math.min(canvas.width, x));
+                    y = Math.max(0, Math.min(canvas.height, y));
+                    return { x, y };
+                };
+
+                canvas.addEventListener('mousedown', (e) => {
+                    if (!currentImage) return;
+                    const coords = getEventCoords(e);
+                    interactionStartX = coords.x;
+                    interactionStartY = coords.y;
+                    dragStartX = coords.x;
+                    dragStartY = coords.y;
+                    isDragging = false;
+                    didMove = false;
+                    selectedTextIndex = findTextIndexAt(coords.x, coords.y);
+                    if (selectedTextIndex !== -1) {
+                        isDragging = true;
+                        canvas.classList.add('grabbing');
+                        updateToolbarForSelection();
+                    } else { deselectText(); }
+                    drawCanvas();
+                });
+
+                canvas.addEventListener('mousemove', (e) => {
+                    if (!currentImage) return;
+                    const coords = getEventCoords(e);
+                    if (!isDragging) {
+                        const hoverIndex = findTextIndexAt(coords.x, coords.y);
+                        canvas.classList.toggle('text-hover', hoverIndex !== -1);
+                        canvas.classList.remove('grabbing');
+                        return;
+                    }
+                    const dx = coords.x - dragStartX;
+                    const dy = coords.y - dragStartY;
+                    if (selectedTextIndex !== -1 && textObjects[selectedTextIndex]) { // التأكد من وجود الكائن
+                         textObjects[selectedTextIndex].x += dx;
+                         textObjects[selectedTextIndex].y += dy;
+                         didMove = true;
+                         dragStartX = coords.x;
+                         dragStartY = coords.y;
+                         requestAnimationFrame(drawCanvas);
+                    } else {
+                        // حالة نادرة: السحب بدأ لكن النص تم حذفه بطريقة أخرى
+                        isDragging = false;
+                        canvas.classList.remove('grabbing');
+                    }
+                });
+
+                canvas.addEventListener('mouseup', (e) => {
+                    if (!currentImage) return;
+                    if (isDragging) {
+                        isDragging = false;
+                        canvas.classList.remove('grabbing');
+                        // قد لا تحتاج إلى إعادة الرسم هنا إذا كان requestAnimationFrame يتعامل معها
+                        // drawCanvas();
+                    }
+                    // لا تقم بإلغاء التحديد هنا، اسمح للنقرة المنفصلة بالتعامل معها
+                    // didMove = false; // إعادة تعيين didMove هنا مناسبة
+                });
+
+                canvas.addEventListener('mouseleave', (e) => {
+                     if (isDragging) {
+                         isDragging = false;
+                         canvas.classList.remove('grabbing');
+                         drawCanvas(); // الرسم للتأكد من إزالة إطار التحديد المتحرك
+                     }
+                     canvas.classList.remove('text-hover');
+                     didMove = false;
+                });
+
+                canvas.addEventListener('click', (e) => {
+                    if (!currentImage) return;
+                    // إذا لم يتم التحريك والنقر كان على مساحة فارغة، ألغ التحديد
+                    const coords = getEventCoords(e);
+                    const clickedIndex = findTextIndexAt(coords.x, coords.y);
+                    if (!isDragging && !didMove && clickedIndex === -1) {
+                         deselectText();
+                    }
+                    // إعادة تعيين didMove بعد معالجة النقرة
+                    didMove = false;
+                 });
+
+                canvas.addEventListener('dblclick', (e) => {
+                    if (!currentImage) return;
+                    e.preventDefault();
+                    const coords = getEventCoords(e);
+                    const index = findTextIndexAt(coords.x, coords.y);
+                    if (index !== -1) { editSelectedText(); }
+                    else { addNewText(coords.x, coords.y); }
+                });
+
+                // --- Touch Events ---
+                 canvas.addEventListener('touchstart', (e) => {
+                     if (!currentImage) return;
+                     if (e.touches.length === 1) { // تجاهل إيماءات اللمس المتعدد
+                        if (e.target === canvas) e.preventDefault();
+                        const coords = getEventCoords(e);
+                        interactionStartX = coords.x; interactionStartY = coords.y;
+                        dragStartX = coords.x; dragStartY = coords.y;
+                        isDragging = false; didMove = false;
+                        const currentTime = Date.now();
+                        const timeSinceLastTap = currentTime - lastTapTime;
+                        const isDoubleTap = timeSinceLastTap > 0 && timeSinceLastTap < 400;
+                        selectedTextIndex = findTextIndexAt(coords.x, coords.y);
+                        if(isDoubleTap) {
+                            if (selectedTextIndex !== -1) { editSelectedText(); }
+                            else { addNewText(coords.x, coords.y); }
+                            lastTapTime = 0; // Reset after double tap action
+                        } else {
+                            lastTapTime = currentTime;
+                            if (selectedTextIndex !== -1) {
+                                isDragging = true; canvas.classList.add('grabbing');
+                                updateToolbarForSelection();
+                            } else {
+                                // ألغِ التحديد فقط إذا كان النقر في مكان فارغ، وليس استعدادًا للسحب
+                                // deselectText(); <-- تم تأجيل هذا إلى touchend/click
+                            }
+                            // قد تحتاج إلى الرسم هنا لإظهار التحديد فورًا
+                            drawCanvas();
+                        }
+                     } else {
+                        // إذا كان هناك أكثر من لمسة، ألغ السحب الحالي
+                        isDragging = false;
+                        canvas.classList.remove('grabbing');
+                     }
+                 }, { passive: false });
+
+                 canvas.addEventListener('touchmove', (e) => {
+                     if (!currentImage || !isDragging || e.touches.length !== 1) {
+                         if (isDragging) { // إذا تغير عدد اللمسات أثناء السحب
+                             isDragging = false;
+                             canvas.classList.remove('grabbing');
+                         }
+                         return;
+                     }
+                     if (e.target === canvas) e.preventDefault();
+                     const coords = getEventCoords(e);
+                     const dx = coords.x - dragStartX; const dy = coords.y - dragStartY;
+                      if (selectedTextIndex !== -1 && textObjects[selectedTextIndex]) { // التأكد من وجود الكائن
+                          textObjects[selectedTextIndex].x += dx; textObjects[selectedTextIndex].y += dy;
+                          didMove = true; dragStartX = coords.x; dragStartY = coords.y;
+                          requestAnimationFrame(drawCanvas);
+                      } else {
+                         isDragging = false; // فقد الكائن أثناء السحب
+                         canvas.classList.remove('grabbing');
+                      }
+                 }, { passive: false });
+
+                 canvas.addEventListener('touchend', (e) => {
+                     if (!currentImage) return;
+                     // التعامل مع نهاية اللمسة الواحدة
+                     if (e.changedTouches.length === 1) {
+                         if (isDragging) {
+                            isDragging = false; canvas.classList.remove('grabbing');
+                            // لا ترسم هنا، دع requestAnimationFrame يقوم بذلك
+                         }
+
+                         // التحقق من إلغاء التحديد عند النقر (إذا لم يكن هناك سحب)
+                         const coords = getEventCoords(e);
+                         const releasedIndex = findTextIndexAt(coords.x, coords.y);
+                         const currentTime = Date.now();
+                         const timeSinceTapStart = currentTime - lastTapTime; // استخدام وقت بدء اللمسة
+                         // ألغ التحديد إذا انتهت اللمسة في مكان فارغ وكانت لمسة قصيرة (نقرة)
+                         if (!didMove && releasedIndex === -1 && timeSinceTapStart < 300) {
+                             deselectText();
+                             drawCanvas(); // أعد الرسم لإزالة التحديد
+                         }
+                     }
+                     // إعادة تعيين didMove في نهاية اللمسة
+                     didMove = false;
+                 });
+
+                  canvas.addEventListener('touchcancel', (e) => {
+                       if (isDragging) {
+                           isDragging = false; canvas.classList.remove('grabbing');
+                           // ربما استعادة الموضع الأصلي؟ أو فقط إلغاء حالة السحب
+                           drawCanvas(); // رسم لإزالة الحالة المرئية للسحب
+                       }
+                       didMove = false; lastTapTime = 0;
+                  });
+            }
+
+            // 4. مستمعي شريط الأدوات
+            function setupToolbarListeners() {
+                // إظهار/إخفاء لوحات الألوان عند النقر على مدخلات الألوان
+                fontColorInput.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    fontColorPalette.classList.toggle('active');
+                    bgColorPalette.classList.remove('active'); // أغلق اللوحة الأخرى
+                });
+
+                bgColorInput.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    bgColorPalette.classList.toggle('active');
+                    fontColorPalette.classList.remove('active'); // أغلق اللوحة الأخرى
+                });
+
+                // إخفاء لوحات الألوان عند النقر في أي مكان آخر
+                document.addEventListener('click', (e) => {
+                    // تحقق من أن النقر ليس داخل لوحة ألوان أو على زر إدخال اللون نفسه
+                    if (!e.target.closest('.color-palette') && !e.target.matches('input[type="color"]')) {
+                        fontColorPalette.classList.remove('active');
+                        bgColorPalette.classList.remove('active');
+                    }
+                });
+
+                // استخدام التقاط الأحداث ('capture') للتعامل مع المدخلات أولاً
+                toolbar.addEventListener('input', handleToolbarInteraction, true); // استخدم capture
+                toolbar.addEventListener('click', (e) => {
+                    const target = e.target;
+                    // التعامل مع أزرار النمط
+                    if (target.closest('.style-button')) {
+                        handleToolbarInteraction(e); // دع المعالج العام يتعامل معه
+                    }
+                    // التعامل مع أزرار +/-
+                    else if (target.classList.contains('spinner-btn')) {
+                        handleSpinnerButtonClick(e);
+                    }
+                    // التعامل مع لوحات الألوان
+                    else if (target.classList.contains('color-swatch')) {
+                         handleColorSwatchClick(e);
+                    }
+                });
+
+                 // معالجة تغيير القائمة المنسدلة للخطوط
+                 fontFamilySelect.addEventListener('change', handleToolbarInteraction);
+            }
+
+
+            // 4.1 معالج أزرار +/-
+            function handleSpinnerButtonClick(e) {
+                const button = e.target;
+                const targetInputId = button.dataset.target;
+                const inputElement = document.getElementById(targetInputId);
+                if (!inputElement || inputElement.disabled) return;
+
+                const step = parseFloat(inputElement.step) || 1;
+                // تقريب القيم لتجنب مشاكل الفاصلة العائمة مع الخطوات الصغيرة (مثل 0.1)
+                const currentVal = parseFloat(inputElement.value);
+                const min = parseFloat(inputElement.min);
+                const max = parseFloat(inputElement.max);
+                const precision = (inputElement.step && inputElement.step.includes('.')) ? inputElement.step.split('.')[1].length : 0;
+
+                let newVal = currentVal;
+
+                if (button.classList.contains('increase')) {
+                    newVal = currentVal + step;
+                } else if (button.classList.contains('decrease')) {
+                    newVal = currentVal - step;
+                }
+
+                // التحقق من الحدود الدنيا والقصوى
+                if (!isNaN(min) && newVal < min) newVal = min;
+                if (!isNaN(max) && newVal > max) newVal = max;
+
+                // تطبيق التقريب
+                inputElement.value = newVal.toFixed(precision);
+
+                // إطلاق حدث 'input' لمحاكاة الإدخال اليدوي وتحديث النص
+                inputElement.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+            }
+
+            // 4.2 معالج نقرات لوحة الألوان
+            function handleColorSwatchClick(e) {
+                 const swatch = e.target;
+                 const color = swatch.dataset.color;
+                 const palette = swatch.closest('.color-palette');
+                 if (!color || !palette) return;
+
+                 let targetInput;
+                 if (palette.id === 'fontColorPalette') {
+                     targetInput = fontColorInput;
+                 } else if (palette.id === 'bgColorPalette') {
+                     targetInput = bgColorInput;
+                 }
+
+                 if (targetInput && !targetInput.disabled) {
+                     targetInput.value = color;
+                     // إطلاق حدث 'input' لمحاكاة التغيير وتحديث النص
+                     targetInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                     // إخفاء لوحة الألوان بعد الاختيار
+                     palette.classList.remove('active');
+                 }
+            }
+
+            // 5. مستمعي أزرار الإجراءات
+            function setupActionListeners() {
+                saveBtn.addEventListener('click', saveImage);
+                pdfBtn.addEventListener('click', exportToPDF);
+                printBtn.addEventListener('click', printCanvas);
+                resetBtn.addEventListener('click', resetEditor);
+                copyTextBtn.addEventListener('click', copySelectedText);
+                pasteTextBtn.addEventListener('click', pasteCopiedText);
+            }
+
+            // --- وظائف النواة ---
+
+            // تحميل صورة
+            function loadImage(src) {
+  showLoading(true, "جارٍ تحميل الصورة...");
+  
+  // إذا كانت الصورة من مصدر خارجي، استخدم الـ proxy
+  const isExternal = !src.startsWith('data:') && !src.startsWith(window.location.origin);
+  const finalSrc = isExternal ? `https://cors-anywhere.herokuapp.com/${src}` : src;
+  
+  const img = new Image();
+  img.crossOrigin = isExternal ? "Anonymous" : null;
+  
+  img.onload = function() {
+    console.log(`Image loaded: ${img.width}x${img.height}`);
+    currentImage = img;
+    originalImageWidth = img.width;
+    originalImageHeight = img.height;
+    canvas.width = originalImageWidth;
+    canvas.height = originalImageHeight;
+    textObjects = [];
+    selectedTextIndex = -1;
+    deselectText();
+    drawCanvas();
+    switchToEditorView();
+    enableActionButtons();
+    showLoading(false);
+  };
+  
+  img.onerror = function(err) {
+    console.error("Image loading error:", err);
+    alert("حدث خطأ أثناء تحميل الصورة. تأكد من أن الرابط صحيح.");
+    showLoading(false);
+  };
+  
+  img.src = finalSrc;
+}
+
+            // الرسم الرئيسي على Canvas
+            function drawCanvas() {
+                if (!ctx) { console.error("Canvas context is not available."); return; }
+                // مسح الكانفاس
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // رسم الصورة الخلفية إذا كانت موجودة
+                if (currentImage) {
+                    try {
+                        // رسم الصورة لتملأ الكانفاس مع الحفاظ على نسبة العرض إلى الارتفاع
+                        const canvasAspect = canvas.width / canvas.height;
+                        const imageAspect = currentImage.width / currentImage.height;
+                        
+                        let renderWidth, renderHeight, offsetX = 0, offsetY = 0;
+                        
+                        if (imageAspect > canvasAspect) {
+                            // الصورة أوسع من الكانفاس (تحديد حسب العرض)
+                            renderWidth = canvas.width;
+                            renderHeight = canvas.width / imageAspect;
+                            offsetY = (canvas.height - renderHeight) / 2;
+                        } else {
+                            // الصورة أطول من الكانفاس (تحديد حسب الارتفاع)
+                            renderHeight = canvas.height;
+                            renderWidth = canvas.height * imageAspect;
+                            offsetX = (canvas.width - renderWidth) / 2;
+                        }
+                        
+                        ctx.drawImage(currentImage, offsetX, offsetY, renderWidth, renderHeight);
+                    } catch (e) {
+                        console.error("Error during ctx.drawImage:", e);
+                        // رسم خلفية خطأ إذا فشل رسم الصورة
+                        ctx.fillStyle = 'red'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.fillStyle = 'white'; ctx.font = '20px Cairo'; ctx.textAlign = 'center';
+                        ctx.fillText('خطأ في رسم الصورة', canvas.width / 2, canvas.height / 2);
+                        return; // لا ترسم النصوص إذا فشلت الخلفية
+                    }
+                } else {
+                    // رسم خلفية فارغة إذا لم يتم تحميل صورة بعد
+                    ctx.fillStyle = '#f1f5f9'; // لون مطابق لخلفية الكانفاس في CSS
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    return; // لا يوجد نصوص أو صورة لرسمها
+                }
+
+                // رسم كائنات النص
+                textObjects.forEach((textObj, index) => {
+                    drawSingleText(textObj, index === selectedTextIndex);
+                });
+            }
+
+            // رسم كائن نص واحد مع الخصائص الجديدة (لا يتغير بشكل كبير هنا)
+            function drawSingleText(textObj, isSelected) {
+                ctx.save();
+
+                // تطبيق الشفافية العامة
+                ctx.globalAlpha = textObj.opacity;
+
+                // إعدادات الخط والنمط
+                let fontStyle = textObj.italic ? 'italic' : 'normal';
+                let fontWeight = textObj.bold ? 'bold' : 'normal';
+                const fontSize = Number(textObj.fontSize) || 48;
+                // التأكد من أن الخط محاط بعلامات اقتباس إذا لزم الأمر
+                const fontFamily = textObj.fontFamily.includes(' ') && !textObj.fontFamily.startsWith("'") && !textObj.fontFamily.startsWith('"')
+                                    ? `'${textObj.fontFamily}'`
+                                    : textObj.fontFamily;
+                ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+                ctx.fillStyle = textObj.color;
+                ctx.textAlign = 'right'; // مناسب للعربية
+                ctx.textBaseline = 'top';
+
+                // تطبيق تباعد الأحرف (مع التحقق من الدعم)
+                let letterSpacingPx = textObj.letterSpacing || 0;
+                if ('letterSpacing' in ctx) {
+                    ctx.letterSpacing = `${letterSpacingPx}px`;
+                } else if (letterSpacingPx !== 0) {
+                     // محاكاة بسيطة لتباعد الأحرف إذا لم يكن مدعومًا (قد لا تكون دقيقة)
+                     console.warn("CanvasRenderingContext2D.letterSpacing not supported. Trying basic simulation.");
+                     // هذه المحاكاة معقدة، سنتجاهلها الآن للتبسيط
+                }
+
+                // القياس *بعد* تطبيق تباعد الأحرف (إذا كان مدعومًا)
+                const textMetrics = ctx.measureText(textObj.text);
+                let textWidth = textMetrics.width;
+
+                // تقدير ارتفاع النص بناءً على حجم الخط والارتفاع الفعلي إذا كان متاحًا
+                let actualAscent = textMetrics.actualBoundingBoxAscent || fontSize * 0.8; // تقدير
+                let actualDescent = textMetrics.actualBoundingBoxDescent || fontSize * 0.2; // تقدير
+                let textHeight = actualAscent + actualDescent;
+                if (!textHeight || textHeight <= 0) textHeight = fontSize * (textObj.lineHeight || 1.2); // استخدام lineHeight كاحتياطي
+
+                const startX = textObj.x;
+                const startY = textObj.y;
+                const padding = 5; // ثابت أو نسبي؟ لنبقيه ثابتًا حاليًا
+                // حساب حدود النص (Bounding Box) مع الحشو
+                const bounds = {
+                    x1: startX - textWidth - padding, // بما أن المحاذاة لليمين، فالبداية هي textObj.x
+                    y1: startY - padding,
+                    x2: startX + padding,
+                    y2: startY + textHeight + padding,
+                    width: textWidth + (padding * 2),
+                    height: textHeight + (padding * 2)
+                };
+                // تخزين الحدود مع الكائن للاستخدام في findTextIndexAt
+                textObj.bounds = bounds; // تخزين الحدود المحسوبة
+
+                // تطبيق الدوران إذا كان موجودًا
+                if (textObj.rotation && textObj.rotation !== 0) {
+                    // الدوران حول مركز النص التقديري
+                    const centerX = startX - textWidth / 2;
+                    const centerY = startY + textHeight / 2;
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(textObj.rotation * Math.PI / 180);
+                    ctx.translate(-centerX, -centerY);
+                }
+
+                // الخلفية (مع الأخذ في الاعتبار الشفافية)
+                if (textObj.bgOpacity > 0) {
+                    const bgPadding = fontSize * 0.1; // حشوة الخلفية
+                    ctx.fillStyle = textObj.bgColor;
+                    const tempAlpha = ctx.globalAlpha; // حفظ الشفافية العامة
+                    // تطبيق شفافية الخلفية مضروبة في الشفافية العامة
+                    ctx.globalAlpha = textObj.bgOpacity * textObj.opacity;
+                    ctx.fillRect(startX - textWidth - bgPadding, startY - bgPadding, textWidth + (bgPadding * 2), textHeight + (bgPadding * 2));
+                    ctx.fillStyle = textObj.color; // إعادة لون التعبئة للنص
+                    ctx.globalAlpha = tempAlpha; // استعادة الشفافية العامة
+                }
+
+                // --- التأثيرات البصرية (قبل رسم النص الرئيسي) ---
+                // ملاحظة: الظل والتوهج قد يؤثران على بعضهما البعض
+                if (textObj.glow) {
+                    ctx.shadowColor = textObj.color; // توهج بنفس لون النص
+                    ctx.shadowBlur = 15;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                } else if (textObj.shadow) {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+                    ctx.shadowBlur = 7;
+                    ctx.shadowOffsetX = 3; // تعديل حسب الحاجة
+                    ctx.shadowOffsetY = 3; // تعديل حسب الحاجة
+                } else {
+                    // التأكد من عدم وجود ظل إذا لم يكن مطلوبًا
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }
+
+                // الحد (Stroke) أو المخطط التفصيلي (Outline)
+                 // Outline هو مجرد stroke أعرض
+                 const strokeWidthToUse = textObj.outline ? Math.max(2, textObj.strokeWidth) : textObj.strokeWidth;
+                 if (strokeWidthToUse > 0) {
+                    ctx.strokeStyle = textObj.strokeColor;
+                    ctx.lineWidth = strokeWidthToUse;
+                    ctx.strokeText(textObj.text, startX, startY);
+                 }
+
+
+                // التدرج اللوني (يجب أن يسبق fillText)
+                if (textObj.gradient) {
+                    // إنشاء التدرج بناءً على عرض النص
+                    const gradient = ctx.createLinearGradient(startX - textWidth, startY, startX, startY);
+                    gradient.addColorStop(0, textObj.color);
+                    gradient.addColorStop(1, textObj.gradientColor || '#ffffff'); // استخدم لون التدرج أو الأبيض كافتراضي
+                    ctx.fillStyle = gradient;
+                } else {
+                    ctx.fillStyle = textObj.color; // استخدام لون التعبئة العادي
+                }
+
+                // النص الرئيسي (Fill) - يرسم فوق الظل والحد
+                ctx.fillText(textObj.text, startX, startY);
+
+                // --- الرسم بعد النص الرئيسي (لا يتأثر بالظل/التوهج/التدرج) ---
+                // إزالة تأثير الظل قبل ��سم التسطير وإطار التحديد
+                const oldShadowColor = ctx.shadowColor; // لا حاجة للحفظ والاستعادة إذا تم تعيينه دائمًا
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+
+
+                // التسطير (Underline)
+                if (textObj.underline) {
+                    // تحديد موضع وسمك الخط
+                    const underlineY = startY + textHeight + 2; // أسفل النص بقليل
+                    ctx.strokeStyle = textObj.color; // بنفس لون النص (أو يمكن تخصيصه)
+                    ctx.lineWidth = Math.max(1, Math.floor(fontSize / 15)); // سمك نسبي لحجم الخط
+                    ctx.beginPath();
+                    ctx.moveTo(startX - textWidth, underlineY); // من بداية النص (يمين) إلى نهايته (يسار)
+                    ctx.lineTo(startX, underlineY);
+                    ctx.stroke();
+                }
+
+                // إطار التحديد للمستخدم (إذا كان النص محددًا)
+                if (isSelected) {
+                    ctx.strokeStyle = 'rgba(0, 123, 255, 0.9)'; // لون مميز للإطار
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 4]); // خط متقطع
+                    // استخدام الحدود المحسوبة مسبقًا
+                    ctx.strokeRect(bounds.x1, bounds.y1, bounds.width, bounds.height);
+                    ctx.setLineDash([]); // إعادة الخط إلى صلب
+                }
+
+                // استعادة إعدادات الظل الأصلية (غير ضروري إذا تم تعيينها دائمًا أعلاه)
+                // ctx.shadowColor = oldShadowColor; ...
+
+                // إعادة تباعد الأحرف إلى قيمته الافتراضية (إذا كان مدعومًا وتم تغييره)
+                if ('letterSpacing' in ctx && letterSpacingPx !== 0) {
+                    ctx.letterSpacing = '0px';
+                }
+
+                ctx.restore(); // استعادة حالة السياق (بما في ذلك الدوران والشفافية)
+            }
+
+            // البحث عن مؤشر النص باستخدام الحدود المخزنة
+             function findTextIndexAt(clickX, clickY) {
+                 // البحث من الأعلى (آخر نص تم رسمه) إلى الأسفل
+                 for (let i = textObjects.length - 1; i >= 0; i--) {
+                     const textObj = textObjects[i];
+                     // التحقق مما إذا كانت الحدود المحسوبة موجودة ومخزنة
+                     if (textObj.bounds) {
+                         const bounds = textObj.bounds;
+                         // التحقق مما إذا كانت نقطة النقر داخل الحدود
+                         if (clickX >= bounds.x1 && clickX <= bounds.x2 && clickY >= bounds.y1 && clickY <= bounds.y2) {
+                             return i; // تم العثور على النص
+                         }
+                     } else {
+                         // إذا لم تكن الحدود محسوبة (حالة نادرة)، حاول حسابها بشكل تقريبي
+                         // هذا القسم يمكن تبسيطه أو إزالته إذا ضمنت أن drawSingleText تحسب الحدود دائمًا
+                         console.warn(`Bounds not found for text object index ${i}. Recalculating approximately.`);
+                         // ... (الكود التقريبي السابق لحساب الحدود هنا كاحتياطي) ...
+                     }
+                 }
+                 return -1; // لم يتم العثور على نص في هذه النقطة
+             }
+
+            // إضافة نص جديد مع الخصائص الجديدة (لا يتغير)
+            function addNewText(x, y) {
+                const text = prompt("أدخل النص الجديد:", "");
+                if (text === null || text.trim() === "") return;
+
+                const newTextObj = {
+                    text: text.trim(),
+                    x: x,
+                    y: y,
+                    fontSize: parseInt(fontSizeInput.value, 10) || 48,
+                    fontFamily: fontFamilySelect.value || "'Cairo', sans-serif",
+                    color: fontColorInput.value || '#000000',
+                    bold: boldBtn.classList.contains('active'),
+                    italic: italicBtn.classList.contains('active'),
+                    underline: underlineBtn.classList.contains('active'),
+                    shadow: shadowBtn.classList.contains('active'),
+                    glow: glowBtn.classList.contains('active'),
+                    outline: outlineBtn.classList.contains('active'),
+                    gradient: gradientBtn.classList.contains('active'),
+                    gradientColor: '#FFFFFF', // لون التدرج الافتراضي
+                    letterSpacing: parseInt(letterSpacingInput.value, 10) || 0,
+                    rotation: parseInt(textRotationInput.value, 10) || 0,
+                    lineHeight: parseFloat(lineHeightInput.value) || 1.2,
+                    strokeColor: strokeColorInput.value || '#ffffff',
+                    strokeWidth: parseInt(strokeWidthInput.value, 10) || 0,
+                    bgColor: bgColorInput.value || '#ffffff',
+                    bgOpacity: parseFloat(bgOpacityInput.value) || 0,
+                    opacity: parseFloat(textOpacityInput.value) || 1,
+                    bounds: null // سيتم حساب الحدود عند الرسم الأول
+                };
+
+                // التأكد من عدم تفعيل التأثيرات المتعارضة
+                if (newTextObj.shadow && newTextObj.glow) newTextObj.shadow = false; // أعط الأولوية للتوهج؟ أو العكس؟
+                if (newTextObj.outline && (newTextObj.shadow || newTextObj.glow)) {
+                    newTextObj.shadow = false; newTextObj.glow = false; // المخطط يلغي الظل/التوهج؟
+                }
+
+                textObjects.push(newTextObj);
+                selectedTextIndex = textObjects.length - 1;
+                updateToolbarForSelection(); // تحديث شريط الأدوات وتفعيل الأزرار
+                drawCanvas(); // إعادة الرسم لإظهار النص الجديد المحدد
+            }
+
+            // تحرير نص محدد (لا يتغير)
+            function editSelectedText() {
+                if (selectedTextIndex === -1 || !textObjects[selectedTextIndex]) return;
+                const currentText = textObjects[selectedTextIndex].text;
+                const newText = prompt("قم بتعديل النص:", currentText);
+                if (newText !== null && newText.trim() !== "") {
+                    textObjects[selectedTextIndex].text = newText.trim();
+                    textObjects[selectedTextIndex].bounds = null; // إعادة حساب الحدود عند الرسم التالي
+                    drawCanvas();
+                } else if (newText !== null && newText.trim() === "") {
+                    // إذا قام المستخدم بمسح النص، احذفه
+                    deleteSelectedText();
+                }
+            }
+
+            // حذف النص المحدد
+            function deleteSelectedText() {
+                if (selectedTextIndex !== -1 && textObjects[selectedTextIndex]) {
+                    textObjects.splice(selectedTextIndex, 1);
+                    // لم يعد هناك نص محدد
+                    selectedTextIndex = -1; // هام: إعادة التعيين قبل تعطيل شريط الأدوات
+                    disableToolbar(); // تعطيل شريط الأدوات لأن لا شيء محدد
+                    drawCanvas(); // إعادة الرسم لإزالة النص المحذوف
+                }
+            }
+
+            // نسخ النص المحدد
+            function copySelectedText() {
+                if (selectedTextIndex === -1 || !textObjects[selectedTextIndex]) return;
+                
+                // إنشاء نسخة عميقة من كائن النص المحدد
+                copiedTextObject = JSON.parse(JSON.stringify(textObjects[selectedTextIndex]));
+                
+                // تمكين زر اللصق
+                pasteTextBtn.disabled = false;
+                
+                // إظهار رسالة تأكيد
+                alert("تم نسخ النص بنجاح. يمكنك الآن لصقه في أي مكان على الصورة.");
+            }
+
+            // لصق النص المنسوخ
+            function pasteCopiedText() {
+                if (!copiedTextObject) return;
+                
+                // إنشاء نسخة جديدة من النص المنسوخ مع تعديل الإحداثيات
+                const newTextObj = JSON.parse(JSON.stringify(copiedTextObject));
+                
+                // إزاحة النص الجديد قليلاً عن النص الأصلي
+                newTextObj.x += 20;
+                newTextObj.y += 20;
+                
+                // إضافة النص الجديد إلى المصفوفة
+                textObjects.push(newTextObj);
+                
+                // تحديد النص الجديد
+                selectedTextIndex = textObjects.length - 1;
+                
+                // تحديث شريط الأدوات
+                updateToolbarForSelection();
+                
+                // إعادة رسم الكانفاس
+                drawCanvas();
+            }
+
+            // إلغاء تحديد النص
+            function deselectText() {
+                if (selectedTextIndex !== -1) {
+                    const previouslySelectedIndex = selectedTextIndex; // حفظ المؤشر السابق
+                    selectedTextIndex = -1;
+                    disableToolbar(); // تعطيل شريط الأدوات
+                    // أعد رسم النص الذي كان محدداً لإزالة إطار التحديد
+                    // هذا يتطلب التأكد من أن drawCanvas يعيد رسم كل شيء بشكل صحيح
+                     drawCanvas(); // إعادة الرسم بالكامل هي الأبسط والأضمن
+                } else {
+                    // إذا لم يكن هناك شيء محدد بالفعل، فقط تأكد من أن شريط الأدوات معطل
+                    disableToolbar();
+                }
+            }
+
+            // تحديث شريط الأدوات مع الخصائص الجديدة (لا يتغير)
+            function updateToolbarForSelection() {
+                if (selectedTextIndex === -1 || !textObjects[selectedTextIndex]) {
+                    disableToolbar();
+                    return;
+                }
+                enableToolbar(); // تفعيل العناصر أولاً
+
+                const obj = textObjects[selectedTextIndex];
+                fontSizeInput.value = obj.fontSize;
+                fontColorInput.value = obj.color;
+                strokeColorInput.value = obj.strokeColor;
+                strokeWidthInput.value = obj.strokeWidth;
+                bgColorInput.value = obj.bgColor;
+                bgOpacityInput.value = obj.bgOpacity;
+
+                // التحقق من وجود الخط في القائمة المنسدلة
+                const fontFamilyValue = obj.fontFamily.replace(/['"]/g, ''); // إزالة علامات الاقتباس للمقارنة
+                let foundFont = false;
+                for (let option of fontFamilySelect.options) {
+                    if (option.value.replace(/['"]/g, '') === fontFamilyValue) {
+                        fontFamilySelect.value = option.value; // استخدم القيمة الموجودة في الخيار
+                        foundFont = true;
+                        break;
+                    }
+                }
+                if (!foundFont) {
+                    // إذا لم يتم العثور على الخط، استخدم الافتراضي وقم بتحديث الكائن
+                    console.warn(`Font "${obj.fontFamily}" not found in dropdown. Resetting to default.`);
+                    fontFamilySelect.value = "'Cairo', sans-serif";
+                    obj.fontFamily = "'Cairo', sans-serif";
+                }
+
+                textOpacityInput.value = obj.opacity;
+                letterSpacingInput.value = obj.letterSpacing || 0;
+                textRotationInput.value = obj.rotation || 0;
+                lineHeightInput.value = obj.lineHeight || 1.2;
+
+                // تحديث حالة الأزرار
+                boldBtn.classList.toggle('active', !!obj.bold);
+                italicBtn.classList.toggle('active', !!obj.italic);
+                underlineBtn.classList.toggle('active', !!obj.underline);
+                // التأكد من أن التأثيرات المتعارضة لا تكون نشطة في نفس الوقت بصريًا
+                shadowBtn.classList.toggle('active', !!obj.shadow && !obj.glow && !obj.outline);
+                glowBtn.classList.toggle('active', !!obj.glow && !obj.shadow && !obj.outline);
+                 // زر المخطط يعكس خاصية المخطط مباشرة
+                outlineBtn.classList.toggle('active', !!obj.outline);
+                gradientBtn.classList.toggle('active', !!obj.gradient);
+                
+                // تمكين أزرار النسخ والحذف
+                copyTextBtn.disabled = false;
+                deleteTextBtn.disabled = false;
+            }
+
+            // تعطيل أزرار وعناصر شريط الأدوات
+            function disableToolbar() {
+                 toolbarElements.forEach(el => {
+                    if (el) el.disabled = true; // التحقق من وجود العنصر قبل تعطيله
+                 });
+                 toolbar.querySelectorAll('.spinner-btn').forEach(btn => btn.disabled = true);
+                 // التأكد من أن الأزرار لم تعد نشطة بصريًا
+                 toolbar.querySelectorAll('.style-button.active').forEach(btn => btn.classList.remove('active'));
+                 // إخفاء لوحات الألوان إذا كانت مفتوحة
+                 fontColorPalette.classList.remove('active');
+                 bgColorPalette.classList.remove('active');
+            }
+
+            // تمكين أزرار وعناصر شريط الأدوات
+            function enableToolbar() {
+                toolbarElements.forEach(el => {
+                    if (el) el.disabled = false; // التحقق من وجود العنصر قبل تمكينه
+                });
+                toolbar.querySelectorAll('.spinner-btn').forEach(btn => btn.disabled = false);
+                // لا تقم بتغيير حالة .active هنا، دع updateToolbarForSelection يتولى ذلك
+            }
+
+            // تعطيل أزرار الإجراءات (لا يتغير)
+            function disableActionButtons() { actionButtons.forEach(btn => btn.disabled = true); }
+
+            // تمكين أزرار الإجراءات (لا يتغير)
+            function enableActionButtons() { actionButtons.forEach(btn => btn.disabled = false); }
+
+            // التعامل مع تغييرات شريط الأدوات مع الخصائص الجديدة
+            function handleToolbarInteraction(e) {
+                // تجاهل التحديث إذا لم يكن هناك نص محدد
+                if (selectedTextIndex === -1 || !textObjects[selectedTextIndex]) {
+                    console.warn("Toolbar interaction ignored, no text selected.");
+                    return;
+                }
+
+                const obj = textObjects[selectedTextIndex];
+                // تحديد العنصر المستهدف (قد يكون الزر نفسه أو عنصر التحكم داخل مجموعة)
+                let target = e.target;
+                 // إذا كان النقر على أيقونة داخل زر أو ما شابه
+                 if (!target.id && !target.classList.contains('style-button') && !target.classList.contains('spinner-btn') && !target.classList.contains('color-swatch')) {
+                    target = target.closest('input, select, button');
+                 }
+
+                // تجاهل إذا لم يتم العثور على هدف صالح أو كان زر +/- أو swatch (تتم معالجتها بشكل منفصل)
+                if (!target || target.disabled || target.classList.contains('spinner-btn') || target.classList.contains('color-swatch')) {
+                    return;
+                }
+
+                let needsRedraw = true; // الافتراض أن التغيير يتطلب إعادة الرسم
+
+                // التعامل مع أزرار النمط
+                if (target.classList.contains('style-button')) {
+                    const buttonId = target.id;
+                    target.classList.toggle('active'); // تبديل الحالة المرئية فورًا
+
+                    switch (buttonId) {
+                        case 'boldBtn': obj.bold = target.classList.contains('active'); break;
+                        case 'italicBtn': obj.italic = target.classList.contains('active'); break;
+                        case 'underlineBtn': obj.underline = target.classList.contains('active'); break;
+                        case 'shadowBtn':
+                            obj.shadow = target.classList.contains('active');
+                            if (obj.shadow) { // إذا تم تفعيل الظل
+                                obj.glow = false; obj.outline = false; // ألغ التأثيرات الأخرى
+                                glowBtn.classList.remove('active'); outlineBtn.classList.remove('active'); // تحديث أزرارها
+                            }
+                            break;
+                        case 'glowBtn':
+                            obj.glow = target.classList.contains('active');
+                            if (obj.glow) {
+                                obj.shadow = false; obj.outline = false;
+                                shadowBtn.classList.remove('active'); outlineBtn.classList.remove('active');
+                            }
+                            break;
+                        case 'outlineBtn':
+                            obj.outline = target.classList.contains('active');
+                            if (obj.outline) {
+                                obj.shadow = false; obj.glow = false;
+                                shadowBtn.classList.remove('active'); glowBtn.classList.remove('active');
+                            }
+                             // قد تحتاج أيضًا لتمكين/تعطيل strokeWidth/strokeColor هنا
+                             strokeWidthInput.disabled = !obj.outline && obj.strokeWidth <= 0;
+                             strokeColorInput.disabled = !obj.outline && obj.strokeWidth <= 0;
+                            break;
+                        case 'gradientBtn':
+                            obj.gradient = target.classList.contains('active');
+                            if (obj.gradient && !obj.gradientColor) { // اسأل عن اللون فقط عند التفعيل أول مرة
+                                obj.gradientColor = prompt("أدخل لون التدرج الثاني (Hex):", obj.gradientColor || "#ffffff");
+                                if (!obj.gradientColor) obj.gradient = false; // إذا ألغى المستخدم، ألغ التدرج
+                                target.classList.toggle('active', obj.gradient); // تحديث الزر بناءً على الإلغاء المحتمل
+                            }
+                            break;
+                        case 'copyTextBtn':
+                            copySelectedText();
+                            needsRedraw = false; // لا حاجة لإعادة الرسم
+                            return; // الخروج من المعالج
+                        case 'pasteTextBtn':
+                            pasteCopiedText();
+                            needsRedraw = true; // سيتم الرسم في pasteCopiedText
+                            return; // الخروج من المعالج
+                        case 'deleteTextBtn':
+                            deleteSelectedText();
+                            needsRedraw = false; // الرسم يتم بواسطة deleteSelectedText
+                            return; // الخروج من المعالج
+                        default: needsRedraw = false; // زر غير معروف
+                    }
+                }
+                // التعامل مع عناصر الإدخال الأخرى
+                else {
+                    switch (target.id) {
+                        case 'fontSize': obj.fontSize = Math.max(1, parseInt(target.value, 10) || 48); break;
+                        case 'fontColor': obj.color = target.value; break;
+                        case 'strokeColor': obj.strokeColor = target.value; break;
+                        case 'strokeWidth':
+                            obj.strokeWidth = Math.max(0, parseInt(target.value, 10) || 0);
+                            // ربط strokeWidth بـ outline إذا كان outline غير نشط
+                            if (!outlineBtn.classList.contains('active')) {
+                                obj.outline = obj.strokeWidth > 0;
+                                outlineBtn.classList.toggle('active', obj.outline);
+                                if(obj.outline) { // إذا تم تفعيل outline ضمنيًا
+                                     obj.shadow = false; obj.glow = false;
+                                     shadowBtn.classList.remove('active'); glowBtn.classList.remove('active');
+                                }
+                            }
+                            break;
+                        case 'bgColor': obj.bgColor = target.value; break;
+                        case 'bgOpacity': obj.bgOpacity = parseFloat(target.value) || 0; break;
+                        case 'fontFamily': obj.fontFamily = target.value; break;
+                        case 'textOpacity': obj.opacity = parseFloat(target.value) || 0; break;
+                        case 'letterSpacing': obj.letterSpacing = parseInt(target.value, 10) || 0; break;
+                        case 'textRotation': obj.rotation = parseInt(target.value, 10) || 0; break;
+                        case 'lineHeight': obj.lineHeight = parseFloat(target.value) || 1.2; break;
+                        default: needsRedraw = false; // عنصر تحكم غير معروف
+                    }
+                }
+
+                if (needsRedraw) {
+                    obj.bounds = null; // إعادة حساب الحدود عند الرسم التالي لأن الخصائص تغيرت
+                    requestAnimationFrame(drawCanvas); // استخدام requestAnimationFrame لسلاسة التحديث
+                }
+            }
+
+            // --- وظائف الإخراج ---
+
+            // دالة لإنشاء كانفاس مؤقت بجودة أعلى للطباعة/الحفظ
+             function prepareOutputCanvas(targetWidth = A4_WIDTH_PX * 2, targetHeight = A4_HEIGHT_PX * 2, maintainAspectRatio = true) { // زيادة الدقة الافتراضية
+                 if (!currentImage) return null;
+                 console.log(`Preparing output canvas. Target: ${targetWidth}x${targetHeight}, Maintain Aspect Ratio: ${maintainAspectRatio}`);
+
+                 const outputCanvas = document.createElement('canvas');
+                 let outputW = targetWidth;
+                 let outputH = targetHeight;
+
+                 // إذا كنا نحافظ على نسبة العرض إلى الارتفاع الأصلية للصورة
+                 if (maintainAspectRatio) {
+                     const imgAspect = originalImageWidth / originalImageHeight;
+                     // نضبط أبعاد الكانفاس الناتج ليطابق نسبة الصورة الأصلية، ضمن الحدود القصوى
+                     if (imgAspect > 1) { // Landscape image
+                         outputW = Math.min(targetWidth, originalImageWidth); // استخدم العرض الأقصى أو الأصلي
+                         outputH = outputW / imgAspect;
+                     } else { // Portrait or square image
+                         outputH = Math.min(targetHeight, originalImageHeight); // استخدم الارتفاع الأقصى أو الأصلي
+                         outputW = outputH * imgAspect;
+                     }
+                     // تأكد من أن الأبعاد لا تزال ضمن الحدود المستهدفة إذا كانت الصورة صغيرة جدًا
+                     outputW = Math.min(outputW, targetWidth);
+                     outputH = Math.min(outputH, targetHeight);
+
+                 } // إذا كان maintainAspectRatio = false، سيتم استخدام targetWidth و targetHeight كما هي
+
+                 outputCanvas.width = Math.round(outputW); // استخدام أبعاد صحيحة
+                 outputCanvas.height = Math.round(outputH);
+                 console.log(`Actual output canvas size: ${outputCanvas.width}x${outputCanvas.height}`);
+
+                 const outputCtx = outputCanvas.getContext('2d');
+                 // تعبئة بخلفية بيضاء (اختياري، قد ترغب في خلفية شفافة للحفظ كـ PNG)
+                 outputCtx.fillStyle = 'white';
+                 outputCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+                 // رسم الصورة الأصلية على الكانفاس الناتج
+                 // دائمًا ارسم الصورة لتملأ الكانفاس الناتج (لأننا قمنا بضبط حجم الكانفاس ليناسبها)
+                 try {
+                     outputCtx.drawImage(currentImage, 0, 0, outputCanvas.width, outputCanvas.height);
+                 } catch (e) {
+                     console.error("Error drawing image on output canvas:", e);
+                     outputCtx.fillStyle = 'red'; outputCtx.fillRect(0,0, outputCanvas.width, outputCanvas.height);
+                     outputCtx.fillStyle = 'white'; outputCtx.font = '30px Cairo'; outputCtx.textAlign = 'center';
+                     outputCtx.fillText('خطأ في رسم الصورة', outputCanvas.width / 2, outputCanvas.height / 2);
+                 }
+
+                 // حساب مقياس التحويل من الكانفاس الأصلي إلى الكانفاس الناتج
+                 // استخدم الأبعاد الفعلية للكانفاسات
+                 const scaleX = outputCanvas.width / canvas.width;
+                 const scaleY = outputCanvas.height / canvas.height;
+                 // استخدام مقياس موحد لتجنب تشويه النص (عادة الأصغر للحفاظ على التناسب)
+                 const textScale = Math.min(scaleX, scaleY);
+
+                 // رسم النصوص المُقاسة
+                 textObjects.forEach(textObj => {
+                     // إنشاء نسخة من كائن النص لتطبيق القياس
+                     const scaledObj = { ...textObj };
+                     // قياس الإحداثيات
+                     scaledObj.x = textObj.x * scaleX;
+                     scaledObj.y = textObj.y * scaleY;
+                     // قياس حجم الخط، عرض الحد، تباعد الأحرف
+                     scaledObj.fontSize = textObj.fontSize * textScale;
+                     scaledObj.strokeWidth = (textObj.strokeWidth || 0) * textScale;
+                     scaledObj.letterSpacing = (textObj.letterSpacing || 0) * textScale;
+                     // الخصائص الأخرى تبقى كما هي (لون، نمط، دوران...)
+
+                     // رسم النص المُقاس على سياق الكانفاس الناتج
+                     // استخدام الدالة drawSingleTextOnContext (تحتاج إلى التأكد من أنها تعمل بشكل صحيح مع السياق المُمرر)
+                     drawSingleTextOnContext(outputCtx, scaledObj, false); // لا نرسم إطار التحديد في الخرج
+                 });
+
+                 console.log("Output canvas prepared successfully.");
+                 return outputCanvas;
+             }
+
+            // دالة مساعدة لرسم نص واحد على سياق معين (مُحسّنة قليلاً)
+            // تأكد من أنها تعمل بشكل مستقل عن 'ctx' العام وتستخدم 'targetContext'
+            function drawSingleTextOnContext(targetContext, textObj, isSelected) {
+                if (!targetContext || !textObj) return;
+
+                targetContext.save();
+                targetContext.globalAlpha = textObj.opacity;
+
+                let fontStyle = textObj.italic ? 'italic' : 'normal';
+                let fontWeight = textObj.bold ? 'bold' : 'normal';
+                const fontSize = Number(textObj.fontSize) || 10; // حجم خط أدنى معقول
+                const fontFamily = textObj.fontFamily.includes(' ') && !textObj.fontFamily.startsWith("'") && !textObj.fontFamily.startsWith('"')
+                                    ? `'${textObj.fontFamily}'`
+                                    : textObj.fontFamily;
+                targetContext.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
+                targetContext.textAlign = 'right';
+                targetContext.textBaseline = 'top';
+
+                let letterSpacingPx = textObj.letterSpacing || 0;
+                if ('letterSpacing' in targetContext) {
+                    targetContext.letterSpacing = `${letterSpacingPx}px`;
+                }
+
+                const textMetrics = targetContext.measureText(textObj.text);
+                let textWidth = textMetrics.width;
+                let actualAscent = textMetrics.actualBoundingBoxAscent || fontSize * 0.8;
+                let actualDescent = textMetrics.actualBoundingBoxDescent || fontSize * 0.2;
+                let textHeight = actualAscent + actualDescent;
+                if (!textHeight || textHeight <= 0) textHeight = fontSize * (textObj.lineHeight || 1.2);
+
+                const startX = textObj.x;
+                const startY = textObj.y;
+
+                if (textObj.rotation && textObj.rotation !== 0) {
+                    const centerX = startX - textWidth / 2;
+                    const centerY = startY + textHeight / 2;
+                    targetContext.translate(centerX, centerY);
+                    targetContext.rotate(textObj.rotation * Math.PI / 180);
+                    targetContext.translate(-centerX, -centerY);
+                }
+
+                if (textObj.bgOpacity > 0) {
+                    const bgPadding = fontSize * 0.1;
+                    targetContext.fillStyle = textObj.bgColor;
+                    const tempAlpha = targetContext.globalAlpha;
+                    targetContext.globalAlpha = textObj.bgOpacity * textObj.opacity;
+                    targetContext.fillRect(startX - textWidth - bgPadding, startY - bgPadding, textWidth + (bgPadding * 2), textHeight + (bgPadding * 2));
+                    targetContext.globalAlpha = tempAlpha;
+                }
+
+                if (textObj.glow) {
+                    targetContext.shadowColor = textObj.color; targetContext.shadowBlur = 15;
+                    targetContext.shadowOffsetX = 0; targetContext.shadowOffsetY = 0;
+                } else if (textObj.shadow) {
+                    targetContext.shadowColor = 'rgba(0, 0, 0, 0.6)'; targetContext.shadowBlur = 7;
+                    targetContext.shadowOffsetX = 3; targetContext.shadowOffsetY = 3;
+                } else {
+                    targetContext.shadowColor = 'transparent'; targetContext.shadowBlur = 0;
+                    targetContext.shadowOffsetX = 0; targetContext.shadowOffsetY = 0;
+                }
+
+                const strokeWidthToUse = (textObj.outline ? Math.max(2, textObj.strokeWidth) : textObj.strokeWidth) || 0;
+                 if (strokeWidthToUse > 0) {
+                    targetContext.strokeStyle = textObj.strokeColor;
+                    targetContext.lineWidth = strokeWidthToUse;
+                    targetContext.strokeText(textObj.text, startX, startY);
+                 }
+
+                if (textObj.gradient) {
+                    const gradient = targetContext.createLinearGradient(startX - textWidth, startY, startX, startY);
+                    gradient.addColorStop(0, textObj.color);
+                    gradient.addColorStop(1, textObj.gradientColor || '#ffffff');
+                    targetContext.fillStyle = gradient;
+                } else {
+                    targetContext.fillStyle = textObj.color;
+                }
+
+                targetContext.fillText(textObj.text, startX, startY);
+
+                targetContext.shadowColor = 'transparent'; // إزالة الظل قبل التسطير
+                targetContext.shadowBlur = 0; targetContext.shadowOffsetX = 0; targetContext.shadowOffsetY = 0;
+
+                if (textObj.underline) {
+                    const underlineY = startY + textHeight + 2;
+                    targetContext.strokeStyle = textObj.color;
+                    targetContext.lineWidth = Math.max(1, Math.floor(fontSize / 15));
+                    targetContext.beginPath();
+                    targetContext.moveTo(startX - textWidth, underlineY);
+                    targetContext.lineTo(startX, underlineY);
+                    targetContext.stroke();
+                }
+
+                // لا نرسم إطار التحديد في هذه الدالة لأنها للخرج النهائي
+
+                if ('letterSpacing' in targetContext && letterSpacingPx !== 0) {
+                    targetContext.letterSpacing = '0px';
+                }
+                targetContext.restore();
+            }
+
+            // حفظ الصورة (PNG)
+            function saveImage() {
+                if (!currentImage) return;
+                showLoading(true, "جارٍ تحضير الصورة للحفظ...");
+                // استخدام دقة أعلى للحفظ
+                 // الإبقاء على نسبة العرض للارتفاع الأصلية للصورة عند الحفظ
+                const outputCanvas = prepareOutputCanvas(originalImageWidth, originalImageHeight, true);
+
+                if (!outputCanvas) {
+                    showLoading(false);
+                    alert("فشل في إنشاء الصورة النهائية.");
+                    return;
+                }
+                try {
+                    // جودة PNG غير قابلة للتعديل، استخدم toDataURL مباشرة
+                    const dataURL = outputCanvas.toDataURL('image/png');
+                    if (!dataURL || dataURL === 'data:,') throw new Error("Failed to generate data URL.");
+
+                    const link = document.createElement('a');
+                    link.download = `edited-image-${Date.now()}.png`;
+                    link.href = dataURL;
+                    document.body.appendChild(link); // ضروري لـ Firefox
+                    link.click();
+                    document.body.removeChild(link); // تنظيف
+                    showLoading(false);
+                    // لا حاجة لـ alert هنا، التحميل يبدأ تلقائيًا
+                    console.log("Image download initiated.");
+                } catch (error) {
+                    console.error("Error saving image:", error);
+                    showLoading(false);
+                    alert(`حدث خطأ أثناء حفظ الصورة:\n${error.message}\nقد يكون السبب قيود CORS إذا كانت الصورة من مصدر خارجي.`);
+                }
+            }
+
+            // تصدير PDF - محسّن
+            function exportToPDF() {
+                if (!currentImage) return;
+
+                if (typeof window.jspdf === 'undefined' || typeof window.jspdf.jsPDF === 'undefined') {
+                     alert("خطأ: مكتبة PDF (jsPDF) غير محملة بشكل صحيح. يرجى التحقق من الاتصال بالإنترنت أو ملف المكتبة.");
+                     console.error("jsPDF library not loaded correctly.");
+                     return;
+                 }
+
+                showLoading(true, "جارٍ إنشاء PDF...");
+
+                // استخدام setTimeout لمنح المتصفح فرصة لتحديث واجهة المستخدم (إظهار مؤشر التحميل)
+                setTimeout(() => {
+                    try {
+                        // تحضير الكانفاس بجودة مناسبة لـ PDF (A4 dimensions in pixels at ~150 DPI)
+                        const pdfWidthPx = A4_WIDTH_PX * 1.5;
+                        const pdfHeightPx = A4_HEIGHT_PX * 1.5;
+                        // الحفاظ على نسبة A4 للكانفاس المُخرج
+                        const outputCanvas = prepareOutputCanvas(pdfWidthPx, pdfHeightPx, false);
+
+                        if (!outputCanvas) {
+                            throw new Error("فشل في إنشاء الكانفاس لـ PDF.");
+                        }
+
+                        const imgData = outputCanvas.toDataURL('image/png');
+                        if (!imgData || imgData === 'data:,') {
+                            throw new Error("فشل تحويل الكانفاس إلى بيانات صورة (قد تكون مشكلة CORS).");
+                        }
+
+                        const { jsPDF } = window.jspdf;
+                        const pdf = new jsPDF({
+                            orientation: 'portrait',
+                            unit: 'px', // استخدام البكسل كوحدة لتسهيل المطابقة مع الكانفاس
+                            format: [A4_WIDTH_PX, A4_HEIGHT_PX] // تحديد حجم A4 بالبكسل (عند 96 DPI)
+                        });
+
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                        // إضافة الصورة لتملأ الصفحة (لأن الكانفاس أُعد بنسبة A4)
+                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        pdf.save(`edited-image-${Date.now()}.pdf`);
+                        showLoading(false);
+                        console.log("PDF exported successfully.");
+
+                    } catch (error) {
+                        console.error("Error exporting to PDF:", error);
+                        showLoading(false);
+                        alert(`حدث خطأ أثناء تصدير PDF:\n${error.message}\nتأكد من أن الصورة ليست من مصدر خارجي يمنع تصديرها (CORS).`);
+                    }
+                }, 50); // تأخير قصير جدًا
+            }
+
+            // الطباعة
+            function printCanvas() {
+                 if (!currentImage) return;
+                 showLoading(true, "جارٍ تحضير الطباعة...");
+
+                 setTimeout(() => {
+                    try {
+                        // تحضير كانفاس بجودة مناسبة للطباعة (مثل PDF)
+                         const printWidthPx = A4_WIDTH_PX * 2; // دقة أعلى للطباعة
+                         const printHeightPx = A4_HEIGHT_PX * 2;
+                         // الحفاظ على نسبة A4
+                         const outputCanvas = prepareOutputCanvas(printWidthPx, printHeightPx, false);
+
+                         if (!outputCanvas) {
+                             throw new Error("فشل في تحضير الصورة للطباعة.");
+                         }
+
+                         const dataURL = outputCanvas.toDataURL('image/png');
+                         if (!dataURL || dataURL === 'data:,') {
+                            throw new Error("فشل تحويل الكانفاس إلى بيانات صورة للطباعة (قد تكون مشكلة CORS).");
+                         }
+
+                         const printWindow = window.open('', '_blank');
+                         if (!printWindow) {
+                             throw new Error("فشل فتح نافذة الطباعة. قد يكون مانع النوافذ المنبثقة نشطًا.");
+                         }
+                         // استخدام كائن الصورة لضمان تحميله قبل الطباعة
+                         printWindow.document.write(`
+                             <html><head><title>طباعة الصورة</title>
+                             <style>
+                                 @page { size: A4 portrait; margin: 0; }
+                                 body { margin: 0; padding: 0; }
+                                 img { display: block; width: 100%; height: 100%; object-fit: contain; }
+                             </style></head><body>
+                             <img id="printImage" src="${dataURL}">
+                             <script>
+                                 const img = document.getElementById('printImage');
+                                 img.onload = function() {
+                                     window.print();
+                                     setTimeout(function(){ window.close(); }, 200); // إغلاق بعد فترة للسماح بالطباعة
+                                 };
+                                 img.onerror = function() {
+                                     alert('حدث خطأ أثناء تحميل الصورة في نافذة الطباعة.');
+                                     window.close();
+                                 };
+                                 // معالجة حالة عدم استدعاء onload (نادرة)
+                                 setTimeout(function() {
+                                    if (!img.complete || img.naturalWidth === 0) {
+                                        // alert('فشل تحميل الصورة للطباعة.');
+                                        // window.close();
+                                        // بدلاً من الإغلاق، حاول الطباعة على أي حال
+                                         console.warn("Image onload didn't fire, attempting print anyway.");
+                                         window.print();
+                                         setTimeout(function(){ window.close(); }, 500);
+                                    }
+                                 }, 5000); // مهلة 5 ثوان
+                             <\/script>
+                             </body></html>`);
+                         printWindow.document.close(); // ضروري لبدء التحميل
+                         showLoading(false);
+
+                    } catch (error) {
+                         console.error("Error preparing for print:", error);
+                         showLoading(false);
+                         alert(`حدث خطأ أثناء تحضير الطباعة:\n${error.message}`);
+                    }
+                 }, 50);
+             }
+
+            // إعادة تعيين المحرر بالكامل
+            function resetEditor() {
+                console.log("Resetting editor...");
+                currentImage = null;
+                originalImageWidth = 0;
+                originalImageHeight = 0;
+                textObjects = [];
+                selectedTextIndex = -1;
+                copiedTextObject = null; // مسح النص المنسوخ
+
+                // إعادة تعيين حجم الكانفاس إلى حجم A4
+                canvas.width = A4_WIDTH_PX;
+                canvas.height = A4_HEIGHT_PX;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // رسم خلفية فارغة مؤقتة
+                 ctx.fillStyle = '#f1f5f9';
+                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // إظهار منطقة الاختيار وإخفاء المحرر
+                imageSelectionArea.style.display = 'flex'; // يجب أن يكون flex بناءً على CSS
+                editorScreen.style.display = 'none';
+
+                // تعطيل الأدوات والأزرار
+                disableToolbar();
+                disableActionButtons();
+
+                // إخفاء مؤشر التحميل إذا كان ظاهرًا
+                showLoading(false);
+
+                // مسح قيمة مدخل الملف للسماح بإعادة تحديد نفس الملف
+                imageLoader.value = null;
+                console.log("Editor reset complete.");
+            }
+
+            // التبديل إلى عرض المحرر
+            function switchToEditorView() {
+                imageSelectionArea.style.display = 'none';
+                editorScreen.style.display = 'flex'; // يجب أن يكون flex بناءً على CSS
+                // الرسم يجب أن يكون قد حدث بالفعل في loadImage
+                // requestAnimationFrame(drawCanvas); // يمكن إضافته كضمان إضافي
+                console.log("Switched to editor view.");
+            }
+
+            // إظهار/إخفاء مؤشر التحميل
+            function showLoading(show, message = "جارٍ التحميل...") {
+                if (show) {
+                    loadingIndicator.textContent = message;
+                    loadingIndicator.style.display = 'block';
+                } else {
+                    loadingIndicator.style.display = 'none';
+                }
+                console.log("Loading indicator:", show ? "Shown" : "Hidden", show ? `- ${message}` : "");
+            }
+
+             // --- تهيئة أولية إضافية ---
+             // التأكد من أن المحرر مخفي في البداية
+             editorScreen.style.display = 'none';
+             imageSelectionArea.style.display = 'flex'; // إظهار منطقة الاختيار
+
+        })(); // نهاية IIFE
+        // --- نهاية كود JavaScript ---
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة تخطيط الدروس المطورة</title>
+    <!-- Google Fonts (Tajawal - استبدال Cairo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- html2canvas Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSFdfihCRncEZxEqO0EZAnChuYTMRbP3ADTL/VtsEZRPC7AOXYsmKaGiyquSXFVcbYvlNnbRgg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+        /* --- CSS Styles --- */
+        :root {
+            --primary-hue: 210; --secondary-hue: 280; --accent-hue: 160;
+            --primary-color-dark: hsl(var(--primary-hue), 70%, 45%); --primary-color: hsl(var(--primary-hue), 80%, 60%); --primary-color-light: hsl(var(--primary-hue), 90%, 95%);
+            --secondary-color: hsl(var(--secondary-hue), 60%, 60%); --accent-color: hsl(var(--accent-hue), 60%, 45%); --accent-color-light: hsl(var(--accent-hue), 70%, 96%);
+            --text-dark: hsl(var(--primary-hue), 25%, 20%); --text-medium: hsl(var(--primary-hue), 15%, 45%); --text-light: hsl(0, 0%, 100%);
+            --border-color: hsl(var(--primary-hue), 20%, 88%); --shadow-color: hsla(var(--primary-hue), 40%, 50%, 0.15); --shadow-color-light: hsla(var(--primary-hue), 40%, 50%, 0.08);
+            --background-light: #ffffff; --background-alt: hsl(var(--primary-hue), 30%, 97%);
+            --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); --gradient-accent: linear-gradient(135deg, var(--accent-color), hsl(var(--accent-hue), 60%, 60%));
+            --danger-color: #dc3545;
+            --danger-gradient: linear-gradient(135deg, #dc3545, #b02a37);
+            --print-width: 750px; /* Approx A4 content width in pixels */
+            /* ** إضافة: متغير ارتفاع الحقل الموحد ** */
+            --input-field-height: 48px; /* ارتفاع موحد للحقول النصية */
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        /* ** تعديل: استخدام خط Tajawal ** */
+        body { font-family: 'Tajawal', sans-serif; direction: rtl; line-height: 1.8; background-color: #393838; color: var(--text-dark); font-size: 16px; overflow-x: hidden; }
+        header { background: var(--gradient-primary); color: var(--text-light); padding: 2.5rem 1rem; text-align: center; margin-bottom: 2.5rem; box-shadow: 0 4px 15px var(--shadow-color); border-bottom-left-radius: 15px; border-bottom-right-radius: 15px; position: relative; overflow: hidden; }
+        header::before { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background-image: radial-gradient(circle, hsla(0, 0%, 100%, 0.05) 1px, transparent 1px); background-size: 15px 15px; opacity: 0.3; }
+        header h1 { margin-bottom: 0.5rem; font-weight: 700; font-size: 2.3rem; position: relative; }
+        header p { font-size: 1.15rem; opacity: 0.9; position: relative; }
+        .container { max-width: 1100px; margin: 0 auto 3rem auto; padding: 2.5rem; background-color: #fafafa; border-radius: 12px; box-shadow: 0 8px 30px var(--shadow-color-light); transition: box-shadow 0.3s ease; }
+        .container:hover { box-shadow: 0 12px 40px var(--shadow-color); }
+        .tabs { display: flex; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); position: relative; justify-content: center; }
+        .tab-button { padding: 0.9rem 1.8rem; border: none; background-color: transparent; cursor: pointer; font-size: 1.1rem; font-weight: 600; color: var(--text-medium); border-bottom: 4px solid transparent; transition: all 0.3s ease; position: relative; z-index: 1; margin-left: 1rem; font-family: 'Tajawal', sans-serif; } /* تطبيق الخط */
+        .tab-button:hover { color: var(--primary-color); background-color: hsla(var(--primary-hue), 90%, 95%, 0.5); }
+        .tab-button.active { color: var(--primary-color-dark); font-weight: 700; border-bottom-color: var(--primary-color); }
+        .plan-form { display: none; animation: fadeInUp 0.6s ease-out; }
+        .plan-form.active { display: block; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .plan-form h2 { color: var(--primary-color-dark); margin-bottom: 2.5rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 1rem; font-size: 1.8rem; font-weight: 700; text-align: center; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.8rem; /* تقليل المسافة قليلًا */ position: relative; }
+        .form-group label { display: block; font-weight: 700; margin-bottom: 0.7rem; color: var(--text-dark); font-size: 1rem; }
+
+        /* ** تعديل: تنسيق الحقول لتوحيد الحجم ** */
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="number"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem 1.1rem; /* تعديل padding لتناسب الارتفاع */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-family: 'Tajawal', sans-serif; /* تطبيق الخط */
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: var(--background-light);
+            color: var(--text-dark);
+            line-height: 1.6; /* تعديل line-height قليلًا */
+        }
+        /* تطبيق الارتفاع الموحد للحقول ذات السطر الواحد */
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="number"] {
+             height: var(--input-field-height);
+        }
+        /* جعل textarea تبدأ بارتفاع قريب وتبقي قابلة للتغيير */
+        .form-group textarea {
+            resize: vertical;
+            min-height: calc(var(--input-field-height) * 2); /* البدء بارتفاع مضاعف للحقل العادي */
+             /* لا نحدد height هنا للسماح بـ min-height والـ resize */
+        }
+
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #aaa; font-size: 0.95rem; opacity: 0.8; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px hsla(var(--primary-hue), 80%, 60%, 0.25); }
+        .form-group textarea + textarea { margin-top: 1rem; } /* مسافة أقل بين textareas */
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.7rem; border: none; padding: 0.9rem 2rem; border-radius: 8px; cursor: pointer; font-size: 1.05rem; font-weight: 700; transition: all 0.3s ease; text-decoration: none; position: relative; overflow: hidden; z-index: 1; line-height: 1.5; font-family: 'Tajawal', sans-serif; /* تطبيق الخط */ }
+        .btn svg { width: 20px; height: 20px; }
+        .btn-primary { background: var(--gradient-primary); color: var(--text-light); box-shadow: 0 4px 15px hsla(var(--primary-hue), 70%, 50%, 0.3); }
+        .btn-primary:hover { box-shadow: 0 6px 20px hsla(var(--primary-hue), 70%, 50%, 0.4); transform: translateY(-3px); filter: brightness(1.05); }
+        .btn-primary:active { transform: translateY(-1px); box-shadow: 0 2px 10px hsla(var(--primary-hue), 70%, 50%, 0.2); }
+        .btn-secondary { background: var(--gradient-accent); color: var(--text-light); box-shadow: 0 4px 15px hsla(var(--accent-hue), 60%, 50%, 0.25); }
+        .btn-secondary:hover { box-shadow: 0 6px 20px hsla(var(--accent-hue), 60%, 50%, 0.35); transform: translateY(-3px); filter: brightness(1.1); }
+        .btn-secondary:active { transform: translateY(-1px); box-shadow: 0 2px 10px hsla(var(--accent-hue), 60%, 50%, 0.2); }
+        .btn-danger { background: var(--danger-gradient); color: var(--text-light); box-shadow: 0 4px 15px hsla(354, 70%, 50%, 0.3); }
+        .btn-danger:hover { box-shadow: 0 6px 20px hsla(354, 70%, 50%, 0.4); transform: translateY(-3px); filter: brightness(1.1); }
+        .btn-danger:active { transform: translateY(-1px); box-shadow: 0 2px 10px hsla(354, 70%, 50%, 0.2); }
+
+        .generate-btn { margin-top: 1.5rem; width: 100%; max-width: 350px; display: block; margin-left: auto; margin-right: auto; padding: 1rem 2rem; font-size: 1.1rem; }
+        .action-buttons { margin-top: 2.5rem; text-align: center; border-top: 1px solid var(--border-color); padding-top: 2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem; }
+
+        /* Output Area Styling */
+        #plan-output-container { margin-top: 3rem; padding: 0; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 12px; animation: fadeIn 0.5s ease; overflow: hidden; box-shadow: 0 6px 20px var(--shadow-color-light); }
+        #plan-output-container h2 { color: var(--primary-color-dark); margin: 0; padding: 1.5rem 2rem; background-color: var(--primary-color-light); border-bottom: 1px solid var(--border-color); text-align: center; font-size: 1.7rem; font-weight: 700; }
+        /* تطبيق عرض A4 التقريبي للمحتوى الرئيسي */
+        #plan-output { padding: 2.5rem; background-color: var(--background-light); min-height: 150px; line-height: 1.9; color: var(--text-dark); max-width: var(--print-width); margin: 0 auto; font-size: 15px; }
+        #plan-output h3 { color: var(--primary-color-dark); margin-bottom: 1.5rem; padding-bottom: 0.8rem; border-bottom: 2px solid var(--primary-color); font-size: 1.5rem; text-align: center; font-weight: 700; }
+        #plan-output h4 { color: var(--secondary-color); margin-top: 1.8rem; margin-bottom: 1rem; font-size: 1.2rem; font-weight: 700; position: relative; padding-right: 0; padding-bottom: 0.4rem; border-bottom: 1px dashed var(--border-color); }
+        #plan-output p, #plan-output ul, #plan-output div.section-block { margin-bottom: 1.2rem; }
+        #plan-output ul { padding-right: 25px; list-style-type: '–  '; }
+        #plan-output li { margin-bottom: 0.6rem; }
+        #plan-output strong { font-weight: 700; color: var(--primary-color-dark); margin-left: 5px; }
+        #plan-output .section-block { background-color: #fdfdfd; padding: 1rem 1.2rem; border-radius: 6px; border: 1px solid #f0f0f0; margin-top: 0.5rem; line-height: 1.8; }
+        footer { text-align: center; margin-top: 4rem; padding: 1.8rem; font-size: 0.95rem; color: var(--text-medium); background-color: hsl(var(--primary-hue), 10%, 94%); border-top: 1px solid var(--border-color); }
+        .hidden { display: none; }
+        .btn.loading { cursor: not-allowed; opacity: 0.7; position: relative; }
+        .btn.loading svg { opacity: 0.5; }
+        .btn.loading::after { content: ''; width: 16px; height: 16px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); margin-left: -25px; /* قد تحتاج لتعديل */ }
+        @keyframes spin { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* Media Queries (Adjusted) */
+        @media (max-width: 768px) { /* ... (نفس الاستعلامات السابقة مع تعديلات طفيفة إذا لزم الأمر) ... */ }
+        @media (max-width: 480px) { /* ... (نفس الاستعلامات السابقة مع تعديلات طفيفة إذا لزم الأمر) ... */ }
+
+        /* Print Styles (Updated for Tajawal font) */
+        @media print {
+            body { background-color: #fff; color: #000; font-size: 11pt; /* تعديل حجم الخط للطباعة */ line-height: 1.6; font-family: 'Tajawal', serif; /* استخدام الخط المحدد للطباعة */ }
+            header, .tabs, .plan-form, .action-buttons, footer { display: none !important; }
+            main.container { max-width: 100%; margin: 0; padding: 0; border: none; box-shadow: none; }
+            #plan-output-container { margin: 0; padding: 0; border: none; box-shadow: none; display: block !important; background-color: #fff; }
+            #plan-output-container h2 { display: none; /* إخفاء العنوان الرئيسي عند الطباعة */ }
+             /* عرض محتوى الخطة فقط */
+            #plan-output { max-width: 100% !important; padding: 25pt 35pt; /* هوامش الصفحة */ margin: 0; border: none; box-shadow: none; font-size: 11pt; color: #000; }
+            #plan-output h3 { font-size: 14pt; border-bottom: 1pt solid #333; margin-bottom: 12pt; padding-bottom: 6pt; text-align: center; }
+            #plan-output h4 { font-size: 12pt; color: #333; border-bottom: 1pt dashed #999; margin-top: 15pt; margin-bottom: 8pt; padding-bottom: 4pt; font-weight: 700; }
+            #plan-output .section-block { border: 1pt solid #eee; background-color: #fdfdfd; padding: 8pt 10pt; margin-top: 4pt; border-radius: 4px; }
+            #plan-output ul { padding-right: 20pt; }
+            #plan-output a { color: #000; text-decoration: none; }
+            h3, h4 { page-break-after: avoid; }
+            .section-block, li { page-break-inside: avoid; }
+            p, ul, .section-block { margin-bottom: 10pt; }
+        }
+
+        /* ** إضافة: ستايل مؤقت للتحكم بالعنصر أثناء الالتقاط ** */
+        .capture-mode {
+            position: absolute !important;
+            left: -9999px !important; /* إخفاء العنصر خارج الشاشة */
+            top: auto !important;
+            width: var(--print-width) !important; /* تطبيق العرض المحدد */
+            max-width: var(--print-width) !important;
+            height: auto !important; /* السماح للمحتوى بتحديد الارتفاع */
+            overflow: visible !important; /* عرض كل المحتوى */
+            background: white !important; /* خلفية بيضاء للالتقاط */
+            padding: 30px !important; /* هوامش داخلية للالتقاط */
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            font-size: 14px !important; /* حجم خط مناسب للـ PDF */
+            line-height: 1.7 !important;
+        }
+
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: rgb(37, 43, 45);
+            color: Teal; font-size: 1.0em; margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <header>
+        <h1>✨ أداة تخطيط الدروس المطورة ✨</h1>
+        <p>أنشئ خططك اليومية والسنوية باحترافية واحفظ تقدمك تلقائياً</p>
+        
+    </header>
+
+    <main class="container">
+        <div class="tabs">
+            <button class="tab-button active" data-tab="daily">خطة يومية</button>
+            <button class="tab-button" data-tab="annual">خطة سنوية</button>
+        </div>
+
+        <!-- Forms (Daily and Annual) -->
+        <form id="daily-plan-form" class="plan-form active">
+            <h2>خطة درس يومية مفصلة</h2>
+            <div class="form-grid">
+                <div class="form-group"><label for="daily-date">التاريخ:</label><input type="date" id="daily-date" required></div>
+                <div class="form-group"><label for="daily-subject">المادة الدراسية:</label><input type="text" id="daily-subject" placeholder="مثال: علوم، لغة إنجليزية" required></div>
+                <div class="form-group"><label for="daily-grade">الصف/المستوى:</label><input type="text" id="daily-grade" placeholder="مثال: الصف السادس ب" required></div>
+                <div class="form-group"><label for="daily-lesson-title">عنوان الدرس:</label><input type="text" id="daily-lesson-title" placeholder="العنوان الرئيسي للدرس" required></div>
+                <div class="form-group"><label for="daily-duration">مدة الحصة (بالدقائق):</label><input type="number" id="daily-duration" placeholder="مثال: 45" min="10"></div>
+                <div class="form-group"><label for="daily-vocab">المفردات/المصطلحات الأساسية:</label><input type="text" id="daily-vocab" placeholder="المفردات الجديدة أو الهامة في الدرس"></div>
+            </div>
+            <div class="form-group"><label for="daily-prior-knowledge">الربط بالمعرفة السابقة:</label><textarea id="daily-prior-knowledge" placeholder="كيف ستربط هذا الدرس بما يعرفه الطلاب مسبقًا؟"></textarea></div> 
+            <div class="form-group"><label for="daily-objectives">الأهداف التعليمية (Learning Objectives - SMART):</label><textarea id="daily-objectives" placeholder="ماذا يجب أن يعرف الطلاب أو يكونوا قادرين على فعله بنهاية الدرس؟ (محددة، قابلة للقياس، قابلة للتحقيق، ذات صلة، محددة بوقت)" required></textarea></div>
+            <div class="form-group"><label for="daily-materials">المواد والأدوات والمصادر الرقمية:</label><textarea id="daily-materials" placeholder="سبورة تفاعلية، أوراق عمل، روابط لمقاطع فيديو، تطبيقات تعليمية..."></textarea></div>
+            <div class="form-group"><label>سير الدرس وتوقيت الأنشطة (Activities & Timing):</label>
+                <textarea id="daily-intro" placeholder="التمهيد/المقدمة (Warm-up) وجذب الانتباه (Engagement) - (الوقت التقريبي: 5 دقائق)" required></textarea>
+                <textarea id="daily-development" placeholder="العرض/الأنشطة الرئيسية (Main Activities) وشرح المحتوى (Explanation) وممارسة الطلاب (Practice) - (الوقت التقريبي: 25 دقيقة)" required></textarea>
+                <textarea id="daily-conclusion" placeholder="الخاتمة/الغلق (Wrap-up) ومراجعة سريعة (Review) وتلخيص النقاط الهامة - (الوقت التقريبي: 5 دقائق)" required></textarea>
+            </div>
+            <div class="form-group"><label for="daily-differentiation">استراتيجيات التمايز (Differentiation):</label><textarea id="daily-differentiation" placeholder="كيف ستلبي احتياجات المتعلمين المتنوعين؟ (دعم إضافي، تحديات للمتقدمين، أنماط تعلم مختلفة)"></textarea></div>
+            <div class="form-group"><label for="daily-assessment">طرق التقويم (Formative & Summative Assessment):</label><textarea id="daily-assessment" placeholder="كيف ستتحقق من فهم الطلاب أثناء الدرس (تقويم تكويني: ...) وفي نهايته (تقويم ختامي قصير: ...)؟" required></textarea></div>
+            <div class="form-group"><label for="daily-homework">الواجب المنزلي / مهام المتابعة (اختياري):</label><textarea id="daily-homework" placeholder="اذكر الواجب أو مهمة المتابعة إن وجدت، مع توضيح الهدف منها"></textarea></div>
+            <div class="form-group"><label for="daily-reflection">تأملات المعلم بعد الدرس / خطة تطويرية:</label><textarea id="daily-reflection" placeholder="ما الذي سار بشكل جيد؟ ما التحديات؟ ما الذي سأغيره المرة القادمة؟"></textarea></div>
+            <button type="button" class="btn btn-primary generate-btn" onclick="generatePlan('daily')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-magic" viewBox="0 0 16 16"><path d="M9.5 2.672a.5.5 0 1 0 1 0V.843a.5.5 0 0 0-1 0v1.829Zm4.5.035A.5.5 0 0 0 13.293 2L12 3.293a.5.5 0 1 0 .707.707L14 2.707ZM7.293 4A.5.5 0 1 0 8 3.293L6.707 2A.5.5 0 0 0 6 2.707L7.293 4Zm-.62 4.375c-.16.16-.221.402-.161.622l4 1a.5.5 0 0 0 .622-.161l.533-.533a.5.5 0 0 0 0-.708l-.62-.618a.5.5 0 0 0-.708 0l-.533.534-.618-.62a.5.5 0 0 0-.708 0l-.533.533-.618-.62a.5.5 0 0 0-.708 0l-.534.533-.618-.62a.5.5 0 0 0-.708 0L4.11 9.22l-.618-.62a.5.5 0 0 0-.708 0l-.533.534-.618-.62a.5.5 0 0 0-.708 0l-1.5 1.5a.5.5 0 0 0 0 .708l.62.618a.5.5 0 0 0 .708 0l.533-.534.618.62a.5.5 0 0 0 .708 0l.533-.533.618.62a.5.5 0 0 0 .708 0l.534-.533.618.62a.5.5 0 0 0 .707 0l.534-.533.618.62a.5.5 0 0 0 .708 0l.534-.533.618.62a.5.5 0 0 0 .708 0l.534-.533.618.62a.5.5 0 0 0 .708 0l.534-.533a.5.5 0 0 0 .622-.161l1-4a.5.5 0 0 0-.16-.622Zm2.24 1.822.67.67a.5.5 0 0 0 .708 0l.67-.67a.5.5 0 0 0 0-.708l-.67-.67a.5.5 0 0 0-.708 0l-.67.67a.5.5 0 0 0 0 .708Z"/></svg>إنشاء وعرض الخطة اليومية</button>
+        </form>
+
+        <form id="annual-plan-form" class="plan-form">
+             <h2>خطة دراسية سنوية شاملة</h2>
+             <div class="form-grid">
+                 <div class="form-group"><label for="annual-year">العام الدراسي:</label><input type="text" id="annual-year" placeholder="مثال: 2024-2025" required></div>
+                 <div class="form-group"><label for="annual-subject">المادة الدراسية:</label><input type="text" id="annual-subject" required></div>
+                 <div class="form-group"><label for="annual-grade">الصف/المستوى:</label><input type="text" id="annual-grade" required></div>
+                 <div class="form-group"><label for="annual-teacher">اسم المعلم/المعلمين:</label><input type="text" id="annual-teacher"></div>
+             </div>
+             <div class="form-group"><label for="annual-vision">رؤية تدريس المادة:</label><textarea id="annual-vision" placeholder="ما هي رؤيتك الشاملة لتدريس هذه المادة لهذا الصف خلال العام؟"></textarea></div>
+             <div class="form-group"><label for="annual-overall-goals">الأهداف العامة للمادة خلال العام (Overall Goals):</label><textarea id="annual-overall-goals" placeholder="الأهداف الكبرى التي تسعى لتحقيقها بنهاية العام (معرفية، مهارية، وجدانية)" required></textarea></div>
+             <div class="form-group"><label for="annual-units">الوحدات الدراسية وتوزيعها الزمني والمحتوى الرئيسي (Units & Timeline):</label><textarea id="annual-units" placeholder="مثال: 
+الوحدة الأولى: [اسم الوحدة] - (سبتمبر-أكتوبر / 6 أسابيع) - الموضوعات: ... 
+الوحدة الثانية: [اسم الوحدة] - (نوفمبر-ديسمبر / 8 أسابيع) - ..." required></textarea></div>
+             <div class="form-group"><label for="annual-cross-curricular">الروابط مع المواد الأخرى (Cross-Curricular Links):</label><textarea id="annual-cross-curricular" placeholder="كيف يمكن ربط محتوى المادة بمواد دراسية أخرى؟"></textarea></div>
+             <div class="form-group"><label for="annual-teaching-methods">استراتيجيات التدريس والتعلم النشط المحورية:</label><textarea id="annual-teaching-methods" placeholder="تعلم قائم على المشاريع، تعلم تعاوني، تعلم مقلوب، استخدام التكنولوجيا..."></textarea></div>
+             <div class="form-group"><label for="annual-assessment-methods">استراتيجيات التقويم الشاملة (Assessment Strategy):</label><textarea id="annual-assessment-methods" placeholder="توزيع الدرجات، أنواع التقويم (تشخيصي، تكويني، ختامي)، أدوات التقويم..."></textarea></div>
+             <div class="form-group"><label for="annual-resources">المصادر التعليمية والمراجع الأساسية والإثرائية:</label><textarea id="annual-resources" placeholder="الكتاب المدرسي، كتب مرجعية، منصات تعليمية، مواقع ويب موثوقة..."></textarea></div>
+             <div class="form-group"><label for="annual-pd-goals">أهداف التطوير المهني للمعلم المتعلقة بالمادة:</label><textarea id="annual-pd-goals" placeholder="ما هي المهارات أو المعارف التي تخطط لتطويرها هذا العام؟"></textarea></div>
+             <button type="button" class="btn btn-primary generate-btn" onclick="generatePlan('annual')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-calendar-check" viewBox="0 0 16 16"><path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>إنشاء وعرض الخطة السنوية</button>
+         </form>
+
+        <!-- منطقة عرض الخطة -->
+        <div id="plan-output-container" class="hidden">
+            <h2>عرض الخطة</h2>
+            <div id="plan-output">
+                <p style="text-align: center; color: #888;"><i>اضغط على زر "إنشاء الخطة" لعرض النتيجة هنا...</i></p>
+            </div>
+            <!-- Action Buttons Area -->
+            <div class="action-buttons">
+                <button id="print-btn" class="btn btn-secondary" onclick="printPlan()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
+                      <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+                      <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                    </svg>
+                    طباعة الخطة
+                </button>
+                
+                <button id="download-pdf-btn-new" class="btn btn-secondary" onclick="downloadPlanAsPdf()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
+                      {/* SVG path for PDF icon */}
+                       <path d="M5.523 12.424q.21-.124.459-.238a8 8 0 0 1-.45.606q-.24.282-.51.48a.5.5 0 0 1-.635.05q-.341-.214-.574-.487a.5.5 0 0 1 .04-.69zm-.199-2.874a.5.5 0 0 1 .42-.043q.345.121.688.227.343.105.665.147a.5.5 0 0 1 .087.836q-.346.21-.734.362a.5.5 0 0 1-.606-.044q-.27-.24-.4-.5a.5.5 0 0 1 .011-.622zm-.395 4.09a.5.5 0 0 1 .398-.194q.326.048.63.145.302.096.576.212a.5.5 0 0 1 .074.84q-.51.27-.986.465a.5.5 0 0 1-.635-.05q-.375-.277-.668-.63a.5.5 0 0 1 .01-.654zm4.177-2.113a.5.5 0 0 0-.166-.03q-.316.006-.614.03a.5.5 0 0 0-.31.852q.24.147.5.277.26.13.47.282a.5.5 0 0 0 .61-.057q.255-.22.435-.488a.5.5 0 0 0-.051-.64zm-1.9-1.902a.5.5 0 0 0-.188-.085q-.243-.04-.5-.062a.5.5 0 0 0-.431.837q.231.126.49.248.258.123.484.277a.5.5 0 0 0 .58-.063q.17-.19.307-.413a.5.5 0 0 0-.06-.65zm-2.227-2.69a.5.5 0 0 0-.19-.08q-.23-.035-.47-.052a.5.5 0 0 0-.435.84q.215.123.46.25.243.127.453.276a.5.5 0 0 0 .585-.061q.18-.195.315-.41a.5.5 0 0 0-.05-.65zm.999-1.65a.5.5 0 0 0-.015-.664q-.19-.265-.4-.41a.5.5 0 0 0-.614.01q-.25.192-.45.4a.5.5 0 0 0 .015.674q.2.247.435.407a.5.5 0 0 0 .625-.014q.23-.19.39-.412z"/>
+                       <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    </svg>
+                    تنزيل كملف PDF (جديد)
+                </button>
+                <button id="download-img-btn" class="btn btn-secondary" onclick="downloadPlanAsImage()">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-image-fill" viewBox="0 0 16 16">
+                      <path d="M.002 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-12a2 2 0 0 1-2-2V3zm1 9v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12zm5-6.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/>
+                    </svg>
+                    تنزيل كصورة (PNG)
+                </button>
+                 <button id="clear-storage-btn" class="btn btn-danger" onclick="clearLocalStorage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill" viewBox="0 0 16 16">
+                        <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/>
+                    </svg>
+                    مسح البيانات المحفوظة
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <p>© 2024 أداة تخطيط الدروس المطورة للمعلمين. مصممة للعمل دون اتصال بالإنترنت وحفظ البيانات تلقائياً.</p>
+        
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+
+    <script>
+        // --- DOM Element Selection & Variables ---
+        const tabs = document.querySelectorAll('.tab-button');
+        const forms = document.querySelectorAll('.plan-form');
+        const planOutputContainer = document.getElementById('plan-output-container');
+        const planOutputDiv = document.getElementById('plan-output');
+        const planOutputTitle = planOutputContainer.querySelector('h2');
+        const allFormInputs = document.querySelectorAll('.plan-form input, .plan-form textarea');
+
+        let currentPlanType = 'daily';
+        let generatedPlanText = '';
+
+        const localStoragePrefix = 'lessonPlanner_v2_'; // استخدام prefix محدث
+
+        // --- Event Listeners ---
+        tabs.forEach(tab => { tab.addEventListener('click', () => { switchTab(tab); }); });
+        allFormInputs.forEach(input => { input.addEventListener('input', (e) => { try { localStorage.setItem(localStoragePrefix + e.target.id, e.target.value); } catch (error) { console.error("Error saving to Local Storage:", error); } }); });
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFormData();
+            const lastTab = localStorage.getItem(localStoragePrefix + 'activeTab');
+            if (lastTab) {
+                const tabButton = document.querySelector(`.tab-button[data-tab="${lastTab}"]`);
+                if (tabButton) switchTab(tabButton);
+            } else {
+                 const dailyTab = document.querySelector('.tab-button[data-tab="daily"]');
+                 if(dailyTab) switchTab(dailyTab);
+            }
+        });
+
+        // --- Utility Functions ---
+        function switchTab(clickedTab) { /* ... (نفس الكود السابق) ... */
+            tabs.forEach(t => t.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
+            clickedTab.classList.add('active');
+            const targetFormId = clickedTab.getAttribute('data-tab') + '-plan-form';
+            const targetForm = document.getElementById(targetFormId);
+            if (targetForm) targetForm.classList.add('active');
+            currentPlanType = clickedTab.getAttribute('data-tab');
+            try {
+                localStorage.setItem(localStoragePrefix + 'activeTab', currentPlanType);
+            } catch (error) {
+                console.error("Error saving active tab:", error);
+            }
+        }
+        function loadFormData() { /* ... (نفس الكود السابق) ... */
+             allFormInputs.forEach(input => {
+                try {
+                    const savedValue = localStorage.getItem(localStoragePrefix + input.id);
+                    if (savedValue !== null) {
+                        input.value = savedValue;
+                    }
+                } catch (error) {
+                    console.error(`Error loading data for ${input.id}:`, error);
+                }
+            });
+            console.log("Form data loaded.");
+        }
+        function clearLocalStorage() { /* ... (نفس الكود السابق مع التأكيد) ... */
+             if (confirm("هل أنت متأكد أنك تريد مسح جميع البيانات المحفوظة في المتصفح لهذه الأداة؟ لا يمكن التراجع عن هذا الإجراء.")) {
+                let keysToRemove = [];
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith(localStoragePrefix)) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(key => localStorage.removeItem(key));
+                    allFormInputs.forEach(input => input.value = '');
+                    planOutputContainer.classList.add('hidden');
+                    planOutputDiv.innerHTML = '<p style="text-align: center; color: #888;"><i>...</i></p>';
+                    alert("تم مسح جميع البيانات المحفوظة بنجاح.");
+                    console.log("Local Storage data cleared.");
+                    const dailyTab = document.querySelector('.tab-button[data-tab="daily"]');
+                    if(dailyTab) switchTab(dailyTab);
+                } catch (error) {
+                     console.error("Error clearing local storage:", error);
+                     alert("حدث خطأ أثناء محاولة مسح البيانات.");
+                }
+            }
+        }
+        function formatForHtml(text) { /* ... (نفس الكود السابق) ... */
+            const safeText = text ? String(text).replace(/</g, "<").replace(/>/g, ">") : '';
+            // استخدام \n لتوليد <br> في العرض
+            return safeText ? safeText.replace(/\n/g, '<br>') : '<i style="opacity: 0.6;">(لم يُدخل)</i>';
+         }
+        function formatForText(text) { /* ... (نفس الكود السابق) ... */
+             return text ? text.trim() : '(لم يُدخل)';
+        }
+
+        // --- Generate Plan ---
+        function generatePlan(planType) { /* ... (نفس الكود السابق لتوليد HTML داخل planOutputDiv) ... */
+             let htmlOutputContent = '';
+            let titleText = '';
+            let textContentForCheck = '';
+
+            if (planType === 'daily') {
+                const data = { date: document.getElementById('daily-date').value, subject: document.getElementById('daily-subject').value, grade: document.getElementById('daily-grade').value, lessonTitle: document.getElementById('daily-lesson-title').value, duration: document.getElementById('daily-duration').value, vocab: document.getElementById('daily-vocab').value, priorKnowledge: document.getElementById('daily-prior-knowledge').value, objectives: document.getElementById('daily-objectives').value, materials: document.getElementById('daily-materials').value, intro: document.getElementById('daily-intro').value, development: document.getElementById('daily-development').value, conclusion: document.getElementById('daily-conclusion').value, differentiation: document.getElementById('daily-differentiation').value, assessment: document.getElementById('daily-assessment').value, homework: document.getElementById('daily-homework').value, reflection: document.getElementById('daily-reflection').value };
+
+                if (!data.date || !data.subject || !data.grade || !data.lessonTitle || !data.objectives || !data.intro || !data.development || !data.conclusion) {
+                    alert('يرجى ملء الحقول الأساسية المطلوبة (التاريخ، المادة، الصف، العنوان، الأهداف، سير الدرس).');
+                    return;
+                }
+                titleText = `خطة درس يومية: ${data.lessonTitle || 'غير معنون'}`;
+                 // استخدام formatForHtml لتنسيق كل جزء
+                 htmlOutputContent = `
+                    <h3>${formatForHtml(data.lessonTitle)}</h3>
+                    <p style="text-align:center; font-size: 0.95em; color: var(--text-medium); margin-bottom: 1.5rem;">
+                        <strong>التاريخ:</strong> ${formatForHtml(data.date)} |
+                        <strong>المادة:</strong> ${formatForHtml(data.subject)} |
+                        <strong>الصف:</strong> ${formatForHtml(data.grade)}
+                        ${data.duration ? ` | <strong>المدة:</strong> ${formatForHtml(data.duration)} دقيقة` : ''}
+                    </p>
+
+                    <h4>المفردات الأساسية:</h4>
+                    <div class="section-block">${formatForHtml(data.vocab)}</div>
+
+                    <h4>الربط بالمعرفة السابقة:</h4>
+                    <div class="section-block">${formatForHtml(data.priorKnowledge)}</div>
+
+                    <h4>الأهداف التعليمية:</h4>
+                    <div class="section-block">${formatForHtml(data.objectives)}</div>
+
+                    <h4>المواد والأدوات والمصادر:</h4>
+                    <div class="section-block">${formatForHtml(data.materials)}</div>
+
+                    <h4>سير الدرس وتوقيت الأنشطة:</h4>
+                    <ul>
+                        <li><strong>التمهيد والمقدمة:</strong><div class="section-block">${formatForHtml(data.intro)}</div></li>
+                        <li><strong>العرض والأنشطة الرئيسية:</strong><div class="section-block">${formatForHtml(data.development)}</div></li>
+                        <li><strong>الخاتمة والغلق:</strong><div class="section-block">${formatForHtml(data.conclusion)}</div></li>
+                    </ul>
+
+                    <h4>استراتيجيات التمايز:</h4>
+                    <div class="section-block">${formatForHtml(data.differentiation)}</div>
+
+                    <h4>طرق التقويم:</h4>
+                    <div class="section-block">${formatForHtml(data.assessment)}</div>
+
+                    ${data.homework ? `<h4>الواجب المنزلي / المتابعة:</h4><div class="section-block">${formatForHtml(data.homework)}</div>` : ''}
+
+                    <h4>تأملات المعلم / خطة تطويرية:</h4>
+                    <div class="section-block">${formatForHtml(data.reflection)}</div>`;
+                textContentForCheck = data.lessonTitle;
+
+            } else if (planType === 'annual') {
+                 const data = { year: document.getElementById('annual-year').value, subject: document.getElementById('annual-subject').value, grade: document.getElementById('annual-grade').value, teacher: document.getElementById('annual-teacher').value, vision: document.getElementById('annual-vision').value, overallGoals: document.getElementById('annual-overall-goals').value, units: document.getElementById('annual-units').value, crossCurricular: document.getElementById('annual-cross-curricular').value, teachingMethods: document.getElementById('annual-teaching-methods').value, assessmentMethods: document.getElementById('annual-assessment-methods').value, resources: document.getElementById('annual-resources').value, pdGoals: document.getElementById('annual-pd-goals').value };
+
+                 if (!data.year || !data.subject || !data.grade || !data.overallGoals || !data.units) {
+                     alert('يرجى ملء الحقول الأساسية المطلوبة (العام، المادة، الصف، الأهداف العامة، الوحدات).');
+                     return;
+                 }
+                 titleText = `خطة سنوية: ${data.subject || ''} - ${data.grade || ''} (${data.year || ''})`;
+                 htmlOutputContent = `
+                    <h3>خطة دراسية سنوية - ${formatForHtml(data.subject)} - ${formatForHtml(data.grade)}</h3>
+                    <p style="text-align:center; font-size: 0.95em; color: var(--text-medium); margin-bottom: 1.5rem;">
+                        <strong>العام الدراسي:</strong> ${formatForHtml(data.year)}
+                        ${data.teacher ? ` | <strong>المعلم:</strong> ${formatForHtml(data.teacher)}` : ''}
+                    </p>
+
+                    <h4>رؤية تدريس المادة:</h4>
+                    <div class="section-block">${formatForHtml(data.vision)}</div>
+
+                    <h4>الأهداف العامة للمادة:</h4>
+                    <div class="section-block">${formatForHtml(data.overallGoals)}</div>
+
+                    <h4>الوحدات الدراسية وتوزيعها:</h4>
+                    <div class="section-block">${formatForHtml(data.units)}</div>
+
+                    <h4>الروابط مع المواد الأخرى:</h4>
+                    <div class="section-block">${formatForHtml(data.crossCurricular)}</div>
+
+                    <h4>استراتيجيات التدريس:</h4>
+                    <div class="section-block">${formatForHtml(data.teachingMethods)}</div>
+
+                    <h4>استراتيجيات التقويم:</h4>
+                    <div class="section-block">${formatForHtml(data.assessmentMethods)}</div>
+
+                    <h4>المصادر والمراجع:</h4>
+                    <div class="section-block">${formatForHtml(data.resources)}</div>
+
+                    <h4>أهداف التطوير المهني:</h4>
+                    <div class="section-block">${formatForHtml(data.pdGoals)}</div>`;
+                 textContentForCheck = data.subject;
+            }
+
+            planOutputDiv.innerHTML = htmlOutputContent;
+            planOutputTitle.textContent = titleText;
+            planOutputContainer.classList.remove('hidden');
+            generatedPlanText = textContentForCheck;
+
+            planOutputContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // --- Helper: Check if plan exists ---
+        function checkPlanExists() { /* ... (نفس الكود السابق) ... */
+             if (!generatedPlanText || planOutputDiv.innerHTML.includes('اضغط على زر')) {
+                 alert("يرجى إنشاء الخطة أولاً قبل محاولة التصدير أو الطباعة.");
+                 return false;
+             }
+            return true;
+        }
+
+        // --- Helper: Set Button Loading State ---
+        function setButtonLoading(buttonId, isLoading) { /* ... (نفس الكود السابق) ... */
+             const button = document.getElementById(buttonId);
+            if (!button) return;
+
+            if (isLoading) {
+                button.disabled = true;
+                button.classList.add('loading');
+                if (!button.dataset.originalText) {
+                     let textContent = '';
+                     button.childNodes.forEach(node => {
+                         if (node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0) {
+                             textContent = node.textContent.trim();
+                         }
+                     });
+                     button.dataset.originalText = textContent || ' ';
+                }
+                 button.childNodes.forEach(node => {
+                     if (node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0) {
+                         node.textContent = ' جاري العمل...';
+                     }
+                 });
+
+
+            } else {
+                button.disabled = false;
+                button.classList.remove('loading');
+                if (button.dataset.originalText) {
+                     button.childNodes.forEach(node => {
+                         if (node.nodeType === Node.TEXT_NODE) {
+                             node.textContent = ' ' + button.dataset.originalText;
+                         }
+                     });
+                    // delete button.dataset.originalText; // Optional cleanup
+                }
+            }
+        }
+
+        // --- Print Functionality ---
+        function printPlan() {
+            if (!checkPlanExists()) return;
+            window.print();
+        }
+
+        // --- Download Functionality (PDF and Image) ---
+
+        // ** إعادة كتابة دالة PDF **
+        function downloadPlanAsPdf() {
+            if (!checkPlanExists()) return;
+            const buttonId = 'download-pdf-btn-new'; // استخدام المعرف الجديد
+            setButtonLoading(buttonId, true);
+
+            const { jsPDF } = window.jspdf;
+            const sourceElement = document.getElementById('plan-output'); // العنصر المراد التقاطه
+            const pdfFileName = `خطة_${currentPlanType}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+            // --- الخطوة 1: تجهيز العنصر للالتقاط ---
+            // حفظ الأنماط الأصلية إذا لزم الأمر (أبسط: استخدام فئة مؤقتة)
+             sourceElement.classList.add('capture-mode'); // تطبيق الستايل المؤقت
+
+            // --- الخطوة 2: التقاط العنصر باستخدام html2canvas ---
+            html2canvas(sourceElement, {
+                scale: 2, // الدقة
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff', // خلفية بيضاء دائما
+                // استخدام أبعاد العنصر بعد تطبيق الفئة المؤقتة
+                width: sourceElement.offsetWidth,
+                height: sourceElement.offsetHeight,
+                windowWidth: sourceElement.scrollWidth, // لالتقاط كامل العرض
+                windowHeight: sourceElement.scrollHeight // لالتقاط كامل الارتفاع
+            }).then(canvas => {
+                // --- الخطوة 3: إزالة الفئة المؤقتة فوراً بعد الالتقاط ---
+                sourceElement.classList.remove('capture-mode');
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+
+                // --- الخطوة 4: إنشاء وإعداد PDF ---
+                const pdf = new jsPDF({
+                    orientation: 'portrait', // أو landscape حسب الحاجة
+                    unit: 'pt', // استخدام النقاط كوحدة قياس
+                    format: 'a4' // حجم الورق
+                });
+
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const margin = 40; // هوامش الصفحة (بالنقاط)
+
+                const usableWidth = pdfWidth - 2 * margin;
+                const usableHeight = pdfHeight - 2 * margin;
+
+                // حساب أبعاد الصورة داخل الـ PDF مع الحفاظ على النسبة
+                const aspectRatio = imgWidth / imgHeight;
+                let pdfImgWidth = usableWidth;
+                let pdfImgHeight = pdfImgWidth / aspectRatio;
+
+                // إذا كانت الصورة أطول من المساحة المتاحة، اضبط الأبعاد بناءً على الارتفاع
+                if (pdfImgHeight > usableHeight) {
+                    pdfImgHeight = usableHeight;
+                    pdfImgWidth = pdfImgHeight * aspectRatio;
+                }
+
+                // حساب الموضع لـ توسيط الصورة (اختياري)
+                const xPos = margin + (usableWidth - pdfImgWidth) / 2;
+                const yPos = margin;
+
+                // --- الخطوة 5: إضافة الصورة إلى PDF ---
+                // التعامل مع المحتوى الطويل (تقسيم الصفحات)
+                const totalCanvasHeight = imgHeight;
+                const singlePageCanvasHeight = (usableHeight / pdfImgHeight) * totalCanvasHeight; // ارتفاع الكانفاس الذي يمثل صفحة واحدة
+
+                let currentY = 0; // الموضع الرأسي الحالي على الكانفاس
+                while (currentY < totalCanvasHeight) {
+                    // قطع جزء من الكانفاس لصفحة واحدة
+                    const sourceY = currentY;
+                    const sourceHeight = Math.min(singlePageCanvasHeight, totalCanvasHeight - currentY);
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = imgWidth;
+                    pageCanvas.height = sourceHeight * (canvas.height / totalCanvasHeight) ; // Adjust height based on original canvas scale
+
+                    const pageCtx = pageCanvas.getContext('2d');
+                    pageCtx.drawImage(canvas, 0, sourceY * (canvas.height / totalCanvasHeight), imgWidth, pageCanvas.height, 0, 0, imgWidth, pageCanvas.height);
+
+
+                    const pageImgData = pageCanvas.toDataURL('image/png');
+
+                     // Calculate dimensions for this specific page slice
+                    let pagePdfImgHeight = usableHeight;
+                    let pagePdfImgWidth = pagePdfImgHeight * (pageCanvas.width / pageCanvas.height);
+                    if (pagePdfImgWidth > usableWidth) {
+                        pagePdfImgWidth = usableWidth;
+                        pagePdfImgHeight = pagePdfImgWidth / (pageCanvas.width / pageCanvas.height);
+                    }
+                     const pageXPos = margin + (usableWidth - pagePdfImgWidth) / 2;
+
+
+                    if (currentY > 0) {
+                        pdf.addPage();
+                    }
+                    pdf.addImage(pageImgData, 'PNG', pageXPos, yPos, pagePdfImgWidth, pagePdfImgHeight);
+                    currentY += singlePageCanvasHeight * (totalCanvasHeight / canvas.height); // Increment Y based on original canvas scale
+                }
+
+                /* // الكود القديم لإضافة صورة واحدة فقط
+                pdf.addImage(imgData, 'PNG', xPos, yPos, pdfImgWidth, pdfImgHeight);
+                */
+
+                // --- الخطوة 6: حفظ الملف ---
+                try {
+                    pdf.save(pdfFileName);
+                } catch (e) {
+                    console.error("Error saving PDF:", e);
+                    alert("حدث خطأ أثناء حفظ ملف PDF. قد يكون حجم الملف كبيرًا أو هناك مشكلة في المتصفح.");
+                } finally {
+                    setButtonLoading(buttonId, false); // إيقاف التحميل
+                }
+
+            }).catch(err => {
+                console.error("Error generating PDF canvas:", err);
+                alert("حدث خطأ أثناء تجهيز الخطة للتحويل إلى PDF.");
+                // تأكد من إزالة الفئة المؤقتة في حالة الخطأ أيضاً
+                sourceElement.classList.remove('capture-mode');
+                setButtonLoading(buttonId, false); // إيقاف التحميل
+            });
+        }
+
+
+        // ** تنزيل كصورة (PNG) (معدل لاستخدام نفس الأسلوب) **
+        function downloadPlanAsImage() {
+            if (!checkPlanExists()) return;
+            setButtonLoading('download-img-btn', true);
+
+            const sourceElement = document.getElementById('plan-output');
+            const imageName = `خطة_${currentPlanType}_${new Date().toISOString().slice(0, 10)}.png`;
+
+            // تطبيق الستايل المؤقت قبل الالتقاط
+            sourceElement.classList.add('capture-mode');
+
+            html2canvas(sourceElement, {
+                 scale: 2,
+                 useCORS: true,
+                 backgroundColor: '#ffffff',
+                 logging: false,
+                 width: sourceElement.offsetWidth,
+                 height: sourceElement.offsetHeight,
+                 windowWidth: sourceElement.scrollWidth,
+                 windowHeight: sourceElement.scrollHeight
+             }).then(canvas => {
+                // إزالة الستايل المؤقت
+                sourceElement.classList.remove('capture-mode');
+
+                const imageDataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = imageDataUrl;
+                link.download = imageName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setButtonLoading('download-img-btn', false);
+            }).catch(err => {
+                console.error("Error creating image:", err);
+                alert("حدث خطأ أثناء إنشاء الصورة.");
+                 // تأكد من إزالة الفئة المؤقتة
+                sourceElement.classList.remove('capture-mode');
+                setButtonLoading('download-img-btn', false);
+            });
+        }
+
+    </script>
+
+</body>
+</html>

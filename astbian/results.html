@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">نتائج الاستبيان</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+</head>
+<body>
+    <header>
+        <img id="survey-main-logo-results" src="#" alt="شعار الاستبيان" style="display: none; max-height: 80px; margin-bottom: 10px; border-radius: 8px;">
+        <div class="header-text-content">
+            <h1 id="survey-main-title-results">نتائج الاستبيان</h1>
+            <p id="survey-main-description-results" style="font-size: 1rem; color: var(--text-secondary);"></p>
+        </div>
+    </header>
+
+    <main>
+        <div id="loading-spinner" class="loader" style="display: none;"></div>
+        <div id="alert-container" aria-live="polite"></div>
+
+        <div id="results-page-content" class="page-container">
+            <div id="admin-controls-results-page" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); display: none;">
+                <p style="font-size: 1.1rem; color: var(--accent-gold-hover); margin-bottom:15px;">أدوات المشرف:</p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <a href="#" id="edit-survey-link-results" class="button-lookalike secondary">تعديل هيكل هذا الاستبيان</a>
+                    <button id="toggle-results-view-btn-results" class="secondary">...</button>
+                    <button id="export-responses-csv-btn-results" class="secondary">تصدير الإجابات (CSV)</button>
+                    <a href="#" id="back-to-survey-page-link" class="button-lookalike secondary">العودة لصفحة الاستبيان الرئيسية</a>
+                </div>
+            </div>
+
+            <div class="results-summary">
+                <p>إجمالي الإجابات المستلمة: <strong id="total-responses-results">0</strong></p>
+            </div>
+            <div id="questions-results-display-container" class="results-display">
+                <!-- Detailed results for questions will be rendered here -->
+                <p id="loading-results-message">جاري تحميل النتائج...</p>
+            </div>
+        </div>
+         <!-- Modal for Image Full View -->
+        <div id="image-modal" class="modal">
+            <span class="image-modal-close" id="image-modal-close-btn">×</span>
+            <img class="modal-content" id="image-modal-content">
+            <div id="image-modal-caption"></div>
+        </div>
+    </main>
+    <footer>
+        <p>© <span id="current-year"></span> منصة الاستبيانات الفاخرة.</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,2659 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>محرر المستندات الإحترافي</title>
+
+    <!-- 1. Font Awesome للأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- 2. Google Fonts (مجموعة خطوط عربية) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Changa:wght@300;400;600;700&family=Lateef&family=Lemonada:wght@300;400;600&family=Markazi+Text:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@300;400;500;600&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- 3. CSS Styles -->
+    <style>
+        :root {
+            --primary-bg: #ffffff;
+            --secondary-bg: #f8f9fa;
+            --editor-bg: #e9ebee; /* خلفية منطقة المحرر (خارج الصفحة) أفتح قليلاً */
+            --page-bg: #ffffff; /* خلفية الصفحة البيضاء */
+            --border-color: #dee2e6;
+            --text-color: #212529;
+            --muted-color: #6c757d;
+            --accent-color: #007bff;
+            --hover-bg: #e9ecef;
+            --active-bg: #ced4da;
+            --border-radius: 4px;
+            --toolbar-padding: 6px 10px;
+            --button-padding: 5px 8px;
+            --input-padding: 4px 6px;
+            /* A4 Dimensions in pixels (approx at 96 DPI) */
+            --a4-width-base: 794px;
+            --a4-height-base: 1123px; /* Fixed A4 Height */
+            --page-padding: 60px; /* هوامش الصفحة الداخلية */
+            --page-padding-mobile: 25px;
+            --page-gap: 20px; /* المسافة بين الصفحات */
+            --page-border-width: 1px; /* سمك الحدود الافتراضي */
+            --page-border-color: #000000; /* لون الحدود الافتراضي */
+            --page-border-style: solid; /* نمط الحدود الافتراضي */
+            --zoom-level: 1; /* مستوى التكبير الافتراضي */
+            --line-height: 1.5; /* قيمة تباعد الأسطر الافتراضية */
+            --status-bar-height: 30px; /* ارتفاع شريط الحالة */
+            --status-bar-height-mobile: 25px; /* ارتفاع شريط الحالة للهاتف */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif; /* خطوط عربية افتراضية */
+            line-height: var(--line-height); /* استخدام متغير لتباعد الأسطر */
+            background-color: var(--editor-bg); /* Change body background if needed */
+            color: var(--text-color);
+            direction: rtl;
+            touch-action: manipulation; /* منع التكبير/التصغير بالإيماءات على الهاتف */
+            overflow: hidden; /* Prevent body scrolling */
+            height: 100vh; /* Ensure body takes full height */
+            width: 100vw; /* Ensure body takes full width */
+        }
+        .editor-wrapper {
+             width: 100%;
+             height: 100vh; /* Take full viewport height */
+             display: flex;
+             flex-direction: column;
+             overflow: hidden; /* Prevent internal overflow from affecting body */
+        }
+
+        /* --- شريط الأدوات --- */
+        .toolbar {
+            flex-shrink: 0; /* Do not shrink */
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: var(--toolbar-padding);
+            background-color: var(--secondary-bg);
+            border-bottom: 1px solid var(--border-color);
+            gap: 5px;
+            user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+            overflow-x: auto; /* Allow horizontal scroll for toolbar items */
+            overflow-y: hidden;
+            white-space: nowrap;
+            min-height: 45px; /* حد أدنى للارتفاع */
+            z-index: 10; /* Ensure toolbar stays above editor area content */
+        }
+        .toolbar::-webkit-scrollbar { height: 5px; }
+        .toolbar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
+        .toolbar::-webkit-scrollbar-thumb:hover { background: #bbb; }
+
+        .tool-group { display: inline-flex; align-items: center; gap: 4px; padding: 2px 5px; position: relative; border-left: 1px solid var(--border-color); padding-left: 10px; margin-left: 5px; }
+        .tool-group:first-child { border-left: none; margin-left: 0; padding-left: 5px; }
+        html[dir="ltr"] .tool-group { border-left: none; border-right: 1px solid var(--border-color); padding-left: 5px; padding-right: 10px; margin-left: 0; margin-right: 5px; }
+        html[dir="ltr"] .tool-group:first-child { border-right: none; padding-right: 5px; margin-right: 0;}
+
+        .tool-button, .tool-select, .tool-input {
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: var(--border-radius);
+            padding: var(--button-padding);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+            vertical-align: middle;
+            color: #495057;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px; /* زيادة طفيفة للهاتف */
+            height: 32px; /* زيادة طفيفة للهاتف */
+        }
+        .tool-button i { font-size: 1em; margin: 0; line-height: 1; }
+        .tool-button span { margin-right: 4px; font-size: 0.85em; }
+        html[dir="ltr"] .tool-button span { margin-right: 0; margin-left: 4px; }
+
+        .tool-button:hover, .tool-select:hover { background-color: var(--hover-bg); border-color: #d3d9df; }
+        .tool-button:active, .tool-button.active { background-color: #cfe2ff; border-color: #a6c8ff; color: var(--accent-color); }
+        .tool-button:disabled { opacity: 0.5; cursor: not-allowed; background-color: transparent !important; border-color: transparent !important; color: #adb5bd !important; }
+
+        .tool-select {
+            padding: var(--input-padding);
+            min-width: 80px;
+            height: 32px; /* متناسق مع الزر */
+            border: 1px solid #ced4da;
+            background-color: var(--primary-bg);
+            font-family: inherit;
+        }
+        .tool-select.font-size-select { min-width: 60px; padding: var(--input-padding) 4px; } /* حجم أصغر لقائمة الأرقام */
+        .tool-select.line-height-select { min-width: 60px; padding: var(--input-padding) 4px; }
+
+        .color-button-wrapper { position: relative; display: inline-block; }
+        .tool-button.color-picker-btn {
+            padding-right: 25px;
+            position: relative;
+        }
+        html[dir="ltr"] .tool-button.color-picker-btn { padding-right: var(--button-padding); padding-left: 25px; }
+
+        .color-preview {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #888;
+            border-radius: 2px;
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+         html[dir="ltr"] .color-preview { right: auto; left: 5px; }
+
+        .color-input-hidden {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer; z-index: 1;
+        }
+
+        /* --- منطقة المحرر والصفحات --- */
+        .editor-area {
+            flex-grow: 1; /* Take available space */
+            overflow-y: auto; /* Allow VERTICAL scrolling for pages */
+            overflow-x: hidden; /* *** PREVENT HORIZONTAL SCROLLING *** */
+            background-color: var(--editor-bg);
+            padding: var(--page-gap) 0; /* Top/bottom padding around pages */
+            display: flex; /* Use flex to center column */
+            flex-direction: column; /* Stack pages VERTICALLY */
+            align-items: center; /* Center pages horizontally */
+            position: relative; /* For spinner and floating panels */
+            /* Remove fixed height if it exists, let flex-grow handle it */
+        }
+
+        .page-container {
+            /* Width and Height controlled by zoom */
+            width: calc(var(--a4-width-base) * var(--zoom-level));
+            height: calc(var(--a4-height-base) * var(--zoom-level)); /* FIXED HEIGHT */
+            flex-shrink: 0; /* *** PREVENT PAGE FROM SHRINKING *** */
+            margin: 0 auto var(--page-gap) auto; /* Center horizontally, add gap below */
+            background-color: var(--page-bg);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 2px;
+            overflow: hidden; /* Prevent container itself from overflowing */
+            position: relative;
+            transform-origin: top center;
+            transition: transform 0.2s ease, width 0.2s ease, height 0.2s ease;
+
+            /* حدود الصفحة */
+            border: var(--page-border-width) var(--page-border-style) var(--page-border-color);
+            padding: calc(var(--page-padding) * var(--zoom-level)); /* Padding scales with zoom */
+        }
+
+        /* أنماط الحدود */
+        /* ... (border styles unchanged) ... */
+
+        .page-content {
+            height: 100%; /* Fill the padded area of the page container */
+            overflow: hidden; /* Content beyond page boundaries is hidden */
+            outline: none;
+            font-size: 11pt;
+            line-height: inherit;
+            color: var(--text-color);
+            word-wrap: break-word;
+            caret-color: var(--text-color);
+            position: relative; /* Needed for absolute positioning of elements */
+        }
+        .page-content:empty:before { content: attr(data-placeholder); color: var(--muted-color); pointer-events: none; display: block; }
+        /* ... (other page-content styles unchanged) ... */
+        .page-content p { margin-bottom: 0.8em; }
+        .page-content h1, .page-content h2, .page-content h3, .page-content h4, .page-content h5, .page-content h6 { margin-top: 1.2em; margin-bottom: 0.6em; line-height: 1.3; font-weight: 600; }
+        .page-content h1 { font-size: 2em; } .page-content h2 { font-size: 1.6em; } .page-content h3 { font-size: 1.3em; }
+        .page-content a { color: var(--accent-color); text-decoration: underline; }
+        .page-content ul, .page-content ol { margin-right: 2.5em; margin-bottom: 0.8em; padding-right: 0; }
+        html[dir="ltr"] .page-content ul, html[dir="ltr"] .page-content ol { margin-right: 0; margin-left: 2.5em; padding-right: 0; padding-left: 0; }
+        .page-content img { max-width: 100%; height: auto; display: block; margin: 1em 0; border-radius: 2px; }
+        .page-content blockquote {
+            border-right: 4px solid #ccc; padding-right: 1em; margin-right: 0; margin-left: 0; margin-top: 1em; margin-bottom: 1em; font-style: italic; color: #555;
+        }
+         html[dir="ltr"] .page-content blockquote { border-right: none; border-left: 4px solid #ccc; padding-right: 0; padding-left: 1em; }
+
+        /* --- الجداول --- */
+        .page-content table {
+            border-collapse: collapse;
+            margin: 1em 0;
+            border: 1px solid #ccc;
+            table-layout: auto;
+            position: relative; /* Changed to relative for potential dragging */
+            z-index: 2; /* Above normal text flow */
+        }
+        .page-content th, .page-content td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            min-height: 20px;
+            min-width: 30px;
+            vertical-align: top;
+            position: relative; /* Keep relative for cell content */
+        }
+        .page-content th { background-color: #f2f2f2; font-weight: bold; }
+        .page-content td:empty::before { content: ''; display: inline-block; min-width: 1px; min-height: 1em; }
+        .selected-cell { background-color: #d0e3ff !important; }
+        .selected-table {
+            outline: 2px dashed var(--accent-color);
+            outline-offset: 2px;
+            user-select: none; /* Prevent text selection when dragging table */
+        }
+        .draggable-table {
+            cursor: move;
+            /* position: absolute !important;  /* Apply this style via JS when dragging starts */
+        }
+        .dragging-table {
+             opacity: 0.7;
+             z-index: 1001; /* Above other content while dragging */
+             cursor: grabbing;
+        }
+
+        /* --- الأشكال الهندسية --- */
+        .page-content .shape {
+            position: absolute; /* Position relative to the .page-content */
+            border: 1px solid #333;
+            background-color: #eee;
+            cursor: move;
+            user-select: none;
+            display: flex; /* For centering content if needed */
+            align-items: center;
+            justify-content: center;
+            z-index: 5; /* Above regular text and tables (when not dragged) */
+        }
+        .page-content .shape.selected {
+            outline: 1px dashed var(--accent-color);
+            outline-offset: 2px;
+            z-index: 6;
+        }
+        .page-content .shape.dragging, .page-content .shape.resizing {
+             opacity: 0.7;
+             z-index: 1002; /* Above dragged tables */
+        }
+        .page-content .shape.square { border-radius: 0; }
+        .page-content .shape.circle { border-radius: 50%; }
+        .page-content .shape .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-color);
+            border: 1px solid white;
+            border-radius: 2px;
+            z-index: 8;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.2s ease;
+        }
+        .page-content .shape.selected .resize-handle {
+            opacity: 1; /* Show handles when selected */
+        }
+        .resize-handle.tl { top: -5px; left: -5px; cursor: nwse-resize; }
+        .resize-handle.tr { top: -5px; right: -5px; cursor: nesw-resize; }
+        .resize-handle.bl { bottom: -5px; left: -5px; cursor: nesw-resize; }
+        .resize-handle.br { bottom: -5px; right: -5px; cursor: nwse-resize; }
+        /* Add more handles (t, b, l, r) if needed */
+
+        /* --- Absolutely positioned text box --- */
+        .page-content .abs-text-box {
+            position: absolute;
+            border: 1px dashed #ccc; /* Optional: visual cue */
+            padding: 5px;
+            min-width: 50px; /* Minimum size */
+            min-height: 1.5em; /* Minimum height */
+            z-index: 3; /* Above normal text, below shapes */
+            outline: none;
+            line-height: inherit; /* Inherit from page */
+            cursor: text;
+        }
+        .page-content .abs-text-box:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 3px var(--accent-color);
+        }
+
+        /* --- شريط الحالة --- */
+        .status-bar {
+            flex-shrink: 0; /* *** PREVENT SHRINKING *** */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px; /* Vertical padding removed, use height */
+            background-color: var(--secondary-bg);
+            border-top: 1px solid var(--border-color);
+            height: var(--status-bar-height); /* *** FIXED HEIGHT *** */
+            font-size: 0.75rem;
+            color: var(--muted-color);
+            user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
+            line-height: var(--status-bar-height); /* Center text vertically */
+            overflow: hidden; /* Prevent internal elements from causing overflow */
+            white-space: nowrap; /* Prevent wrapping */
+            gap: 10px; /* Add gap between left/right sections */
+            z-index: 10; /* Ensure status bar stays above editor area content */
+        }
+        .status-bar > div {
+            display: flex;
+            align-items: center;
+            gap: 5px; /* Gap between items within each group */
+            overflow: hidden; /* Prevent text overflow */
+            text-overflow: ellipsis; /* Add ellipsis if text overflows */
+        }
+        .status-bar > div:first-child {
+             flex-grow: 1; /* Allow left side (stats) to take more space */
+             min-width: 0; /* Needed for flex-grow + overflow */
+        }
+         .status-bar > div:last-child {
+             flex-shrink: 0; /* Zoom controls should not shrink */
+        }
+        .status-bar span { margin: 0 3px; }
+        .zoom-controls button {
+             background: none; border: none; cursor: pointer; color: var(--muted-color); padding: 0 4px; font-size: 0.9em; line-height: 1; /* Reset line-height */
+             height: calc(var(--status-bar-height) - 4px); /* Fit inside bar */
+             display: inline-flex; align-items: center; justify-content: center;
+         }
+         .zoom-controls button:hover { color: var(--text-color); }
+         .zoom-controls .zoom-level {
+             font-weight: 500; color: var(--text-color); margin: 0 5px; display: inline-block; min-width: 35px; text-align: center;
+             line-height: 1; /* Reset line-height */
+         }
+
+
+         /* --- Spinner للتحميل --- */
+         .loader-overlay {
+             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+             background-color: rgba(255, 255, 255, 0.7);
+             display: flex; justify-content: center; align-items: center;
+             z-index: 5000; display: none; /* Hidden by default */
+         }
+         .loader {
+             border: 5px solid #f3f3f3; border-radius: 50%; border-top: 5px solid var(--accent-color);
+             width: 50px; height: 50px;
+             animation: spin 1s linear infinite;
+         }
+         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- النوافذ العائمة (للجداول والأشكال) --- */
+        /* ... (floating panel styles unchanged) ... */
+        .floating-panel {
+            display: none;
+            position: absolute;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 3000; /* فوق المحتوى ولكن تحت الـ modals */
+            padding: 8px;
+            user-select: none;
+            white-space: normal; /* السماح بالالتفاف داخل اللوحة */
+            min-width: 200px; /* Ensure some minimum width */
+        }
+        .floating-panel h4 {
+            font-size: 0.85rem; margin: 0 0 8px 0; padding-bottom: 5px;
+            border-bottom: 1px solid #eee; color: var(--accent-color);
+        }
+        .floating-panel .panel-content {
+            display: flex; flex-wrap: wrap; gap: 8px; /* Increased gap */
+            align-items: center;
+        }
+        .floating-panel .tool-button { /* استخدام نفس نمط أزرار الشريط ولكن أصغر */
+            min-width: 26px; height: 26px; padding: 3px 5px; font-size: 0.8rem;
+            background-color: #f8f9fa; /* خلفية خفيفة للتمييز */
+            border: 1px solid #ced4da;
+        }
+        .floating-panel .tool-button:hover { background-color: var(--hover-bg); }
+        .floating-panel .tool-button:active { background-color: var(--active-bg); }
+        .floating-panel .tool-button i { font-size: 0.9em; }
+        .floating-panel input[type="color"] {
+            width: 26px; height: 26px; padding: 2px; border: 1px solid #ccc; cursor: pointer; vertical-align: middle;
+        }
+        .floating-panel select.tool-select {
+            height: 26px; font-size: 0.8rem; min-width: 60px; padding: 2px 4px; vertical-align: middle;
+        }
+        .floating-panel label { font-size: 0.8rem; color: var(--muted-color); margin-left: 3px; }
+
+        /* --- نافذة الرموز والحدود (Modal Placeholders) --- */
+        /* ... (modal styles unchanged) ... */
+        .modal-overlay {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 4000; /* Sit on top */
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--primary-bg);
+            margin: auto;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            width: 80%;
+            max-width: 500px; /* Adjust max width */
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+            position: relative;
+        }
+        .modal-close-btn {
+            color: #aaa;
+            position: absolute;
+            left: 10px;
+            top: 5px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        html[dir="rtl"] .modal-close-btn { left: auto; right: 10px; }
+        .modal-close-btn:hover,
+        .modal-close-btn:focus {
+            color: black;
+            text-decoration: none;
+        }
+        /* Example: Symbols Modal specific content */
+        .symbols-container { display: flex; flex-wrap: wrap; gap: 5px; max-height: 300px; overflow-y: auto; margin-top: 15px; }
+        .symbol-item { padding: 5px 8px; border: 1px solid #eee; border-radius: 3px; cursor: pointer; font-size: 1.1em; min-width: 30px; text-align: center;}
+        .symbol-item:hover { background-color: #eee; }
+        /* Example: Border Modal specific content */
+        .border-controls { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-top: 15px; }
+        .border-controls label { font-weight: 500; }
+        .border-controls select, .border-controls input { padding: 5px; border: 1px solid #ccc; border-radius: 3px; width: 100%; }
+        .border-preview { height: 50px; border: 1px solid black; margin-top: 15px; background-color: #f8f9fa; }
+        .modal-actions { margin-top: 20px; text-align: left; }
+        html[dir="rtl"] .modal-actions { text-align: right; }
+        .modal-actions button { padding: 8px 15px; border: none; border-radius: 3px; cursor: pointer; }
+        .modal-actions .apply-btn { background-color: var(--accent-color); color: white; margin-left: 10px; }
+        html[dir="rtl"] .modal-actions .apply-btn { margin-left: 0; margin-right: 10px; }
+        .modal-actions .cancel-btn { background-color: #ccc; }
+
+        /* --- التوافق مع الأجهزة المحمولة --- */
+        @media (max-width: 900px) {
+            html { font-size: 15px; }
+             .page-container {
+                  /* Let zoom handle the size reduction, avoid changing base dimensions here */
+                  /* Keep padding scaling with zoom, but mobile base padding is smaller */
+                   padding: calc(var(--page-padding-mobile) * var(--zoom-level));
+             }
+            .page-content {
+                font-size: 10pt; /* تصغير الخط قليلاً للهاتف */
+            }
+            .editor-area { padding: var(--page-gap) 0; } /* Maintain vertical gap */
+            .modal-content { width: 95%; }
+        }
+
+        @media (max-width: 600px) {
+            html { font-size: 14px; }
+            .toolbar { padding: 4px 6px; gap: 3px; min-height: 40px; }
+             .tool-group { padding: 2px 3px; gap: 2px; border-left-width: 0px; margin-left: 3px; padding-left: 3px;}
+             .tool-group:first-child { margin-left: 0; padding-left: 3px; }
+            .tool-button, .tool-select, .tool-input { height: 30px; min-width: 30px; padding: 4px 6px; font-size: 0.85rem; } /* حجم ثابت */
+            .tool-select { min-width: 60px; padding: 3px 4px; }
+            .tool-select.font-size-select { min-width: 50px; }
+            .tool-select.line-height-select { min-width: 50px; }
+             .color-preview { width: 14px; height: 14px; }
+            .tool-button.color-picker-btn { padding-right: 20px; }
+             html[dir="ltr"] .tool-button.color-picker-btn { padding-left: 20px; }
+
+            /* Status bar adjustments for mobile */
+            .status-bar {
+                height: var(--status-bar-height-mobile); /* Use mobile height variable */
+                padding: 0 10px;
+                font-size: 0.7rem;
+                line-height: var(--status-bar-height-mobile); /* Match height */
+                gap: 5px; /* Reduce gap */
+            }
+            .status-bar > div { gap: 3px; } /* Reduce internal gap */
+            .status-bar span { margin: 0 1px; }
+            .zoom-controls button {
+                padding: 0 2px;
+                height: calc(var(--status-bar-height-mobile) - 4px); /* Adjust height */
+            }
+            .zoom-controls .zoom-level {
+                min-width: 30px; margin: 0 3px;
+            }
+            /* --- End Status bar mobile --- */
+
+            /* .border-controls { grid-template-columns: 1fr; } */ /* Keep grid for border modal */
+            .floating-panel { max-width: 90vw; }
+            .floating-panel .panel-content { max-height: 150px; overflow-y: auto; }
+        }
+    </style>
+
+    <!-- 4. jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- 5. html2canvas Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   
+</head>
+<body>
+    
+     <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #6b8536;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+
+    <div class="editor-wrapper">
+        <!-- Toolbar (No changes needed here) -->
+        <div class="toolbar" role="toolbar" aria-label="شريط أدوات التنسيق">
+            <!-- حفظ -->
+            <div class="tool-group">
+                <button class="tool-button" id="savePdf" title="حفظ كـ PDF" aria-label="حفظ PDF"><i class="fas fa-file-pdf"></i></button>
+                <button class="tool-button" id="savePng" title="حفظ كصورة PNG (كل الصفحات)" aria-label="حفظ PNG"><i class="fas fa-file-image"></i></button>
+                <button class="tool-button" id="saveHtml" title="حفظ كملف HTML" aria-label="حفظ HTML"><i class="fas fa-file-code"></i></button>
+            </div>
+            <!-- تراجع/إعادة -->
+            <div class="tool-group">
+                <button class="tool-button" data-command="undo" title="تراجع" aria-label="تراجع"><i class="fas fa-undo"></i></button>
+                <button class="tool-button" data-command="redo" title="إعادة" aria-label="إعادة"><i class="fas fa-redo"></i></button>
+            </div>
+            <!-- صفحة جديدة -->
+            <div class="tool-group">
+                 <button class="tool-button" id="addPageBtn" title="إضافة صفحة جديدة" aria-label="إضافة صفحة"><i class="fas fa-plus-square"></i></button>
+            </div>
+            <!-- نمط -->
+            <div class="tool-group">
+                <select class="tool-select" data-command="formatBlock" title="نمط الفقرة" aria-label="نمط الفقرة">
+                    <option value="p">فقرة عادية</option>
+                    <option value="h1">عنوان 1</option>
+                    <option value="h2">عنوان 2</option>
+                    <option value="h3">عنوان 3</option>
+                    <option value="h4">عنوان 4</option>
+                    <option value="h5">عنوان 5</option>
+                    <option value="h6">عنوان 6</option>
+                    <option value="blockquote">اقتباس</option>
+                    <option value="pre">نص منسق مسبقًا</option>
+                </select>
+            </div>
+            <!-- خط -->
+            <div class="tool-group">
+                <select class="tool-select font-select" data-command="fontName" title="نوع الخط" aria-label="نوع الخط">
+                    <option value="Cairo" style="font-family: 'Cairo', sans-serif;">Cairo (كايرو)</option>
+                    <option value="Tajawal" style="font-family: 'Tajawal', sans-serif;">Tajawal (تجوال)</option>
+                    <option value="Amiri" style="font-family: 'Amiri', serif;">Amiri (أميري)</option>
+                    <option value="Noto Naskh Arabic" style="font-family: 'Noto Naskh Arabic', serif;">Noto Naskh (نسخ)</option>
+                    <option value="Changa" style="font-family: 'Changa', sans-serif;">Changa (شنجا)</option>
+                    <option value="Readex Pro" style="font-family: 'Readex Pro', sans-serif;">Readex Pro</option>
+                    <option value="Markazi Text" style="font-family: 'Markazi Text', serif;">Markazi (مركزي)</option>
+                    <option value="Lemonada" style="font-family: 'Lemonada', cursive;">Lemonada (ليمونادة)</option>
+                    <option value="Lateef" style="font-family: 'Lateef', cursive;">Lateef (لطيف)</option>
+                    <option value="Arial" style="font-family: Arial, sans-serif;">Arial</option>
+                    <option value="Verdana" style="font-family: Verdana, sans-serif;">Verdana</option>
+                    <option value="Times New Roman" style="font-family: 'Times New Roman', serif;">Times New Roman</option>
+                    <option value="Georgia" style="font-family: Georgia, serif;">Georgia</option>
+                    <option value="Courier New" style="font-family: 'Courier New', monospace;">Courier New</option>
+                </select>
+            </div>
+             <!-- حجم خط (أرقام) -->
+            <div class="tool-group">
+                 <select class="tool-select font-size-select" data-custom-command="fontSize" title="حجم الخط" aria-label="حجم الخط">
+                     <option value="8pt">8</option>
+                     <option value="9pt">9</option>
+                     <option value="10pt">10</option>
+                     <option value="11pt" selected>11</option>
+                     <option value="12pt">12</option>
+                     <option value="14pt">14</option>
+                     <option value="16pt">16</option>
+                     <option value="18pt">18</option>
+                     <option value="20pt">20</option>
+                     <option value="22pt">22</option>
+                     <option value="24pt">24</option>
+                     <option value="26pt">26</option>
+                     <option value="28pt">28</option>
+                     <option value="36pt">36</option>
+                     <option value="48pt">48</option>
+                     <option value="72pt">72</option>
+                 </select>
+            </div>
+            <!-- تباعد الأسطر -->
+            <div class="tool-group">
+                 <select class="tool-select line-height-select" data-custom-command="lineHeight" title="تباعد الأسطر" aria-label="تباعد الأسطر">
+                     <option value="1">1.0</option>
+                     <option value="1.15">1.15</option>
+                     <option value="1.5">1.5</option>
+                     <option value="1.7" selected>1.7</option>
+                     <option value="2">2.0</op
+                     tion>
+                     <option value="2.5">2.5</option>
+                     <option value="3">3.0</option>
+                 </select>
+            </div>
+             <!-- تنسيق أساسي -->
+            <div class="tool-group">
+                <button class="tool-button" data-command="bold" title="غامق" aria-pressed="false" aria-label="غامق"><i class="fas fa-bold"></i></button>
+                <button class="tool-button" data-command="italic" title="مائل" aria-pressed="false" aria-label="مائل"><i class="fas fa-italic"></i></button>
+                <button class="tool-button" data-command="underline" title="تسطير" aria-pressed="false" aria-label="تسطير"><i class="fas fa-underline"></i></button>
+                <button class="tool-button" data-command="strikethrough" title="يتوسطه خط" aria-pressed="false" aria-label="يتوسطه خط"><i class="fas fa-strikethrough"></i></button>
+                <button class="tool-button" data-command="superscript" title="مرتفع" aria-pressed="false" aria-label="مرتفع"><i class="fas fa-superscript"></i></button>
+                <button class="tool-button" data-command="subscript" title="منخفض" aria-pressed="false" aria-label="منخفض"><i class="fas fa-subscript"></i></button>
+            </div>
+             <!-- ألوان -->
+             <div class="tool-group">
+                 <div class="color-button-wrapper">
+                     <button class="tool-button color-picker-btn" title="لون النص" aria-label="لون النص">
+                         <i class="fas fa-font"></i>
+                         <span class="color-preview" id="foreColorPreview" style="background-color: var(--text-color);"></span>
+                     </button>
+                     <input type="color" class="color-input-hidden" data-command="foreColor" value="#212529" aria-labelledby="foreColorPreview">
+                 </div>
+                 <div class="color-button-wrapper">
+                     <button class="tool-button color-picker-btn" title="لون التمييز (الخلفية)" aria-label="لون التمييز">
+                         <i class="fas fa-highlighter"></i>
+                          <span class="color-preview" id="backColorPreview" style="background-color: #ffffff; border-color: #ccc;"></span>
+                     </button>
+                      <!-- Using 'hiliteColor' command which is more standard for background highlight -->
+                      <input type="color" class="color-input-hidden" data-command="hiliteColor" value="#ffff00" aria-labelledby="backColorPreview">
+                 </div>
+                 <div class="color-button-wrapper">
+                    <button class="tool-button color-picker-btn" title="لون خلفية الفقرة" aria-label="خلفية الفقرة">
+                        <i class="fas fa-fill-drip"></i>
+                        <span class="color-preview" id="blockBackColorPreview" style="background-color: #ffffff; border-color: #ccc;"></span>
+                    </button>
+                    <input type="color" class="color-input-hidden" data-custom-command="blockBackgroundColor" value="#ffffff" aria-labelledby="blockBackColorPreview">
+                </div>
+             </div>
+             <!-- تأثيرات نصية إضافية -->
+             <div class="tool-group">
+                 <button class="tool-button" data-custom-command="overline" title="خط علوي" aria-pressed="false" aria-label="خط علوي">O</button>
+                 <!-- <button class="tool-button" data-custom-command="doubleUnderline" title="تسطير مزدوج" aria-pressed="false" aria-label="تسطير مزدوج">U=</button> --> <!-- Double underline removed due to poor support -->
+                 <button class="tool-button" data-custom-command="textShadow" title="ظل النص" aria-pressed="false" aria-label="ظل النص"><i class="fa-solid fa-clone"></i></button>
+                 <button class="tool-button" data-custom-command="textBorder" title="حدود النص" aria-pressed="false" aria-label="حدود النص"><i class="fas fa-border-style"></i></button>
+                 <button class="tool-button" data-custom-command="textGlow" title="توهج النص" aria-pressed="false" aria-label="توهج النص"><i class="fas fa-sun"></i></button>
+                 <button class="tool-button" data-command="removeFormat" title="إزالة التنسيق" aria-label="إزالة التنسيق"><i class="fas fa-eraser"></i></button>
+            </div>
+             <!-- محاذاة -->
+            <div class="tool-group">
+                <button class="tool-button" data-command="justifyLeft" title="محاذاة لليسار" aria-pressed="false" aria-label="محاذاة لليسار"><i class="fas fa-align-left"></i></button>
+                <button class="tool-button" data-command="justifyCenter" title="توسيط" aria-pressed="false" aria-label="توسيط"><i class="fas fa-align-center"></i></button>
+                <button class="tool-button" data-command="justifyRight" title="محاذاة لليمين" aria-pressed="false" aria-label="محاذاة لليمين"><i class="fas fa-align-right"></i></button>
+                <button class="tool-button" data-command="justifyFull" title="ضبط" aria-pressed="false" aria-label="ضبط"><i class="fas fa-align-justify"></i></button>
+            </div>
+            <!-- قوائم ومسافة بادئة -->
+            <div class="tool-group">
+                <button class="tool-button" data-command="insertOrderedList" title="قائمة مرقمة" aria-pressed="false" aria-label="قائمة مرقمة"><i class="fas fa-list-ol"></i></button>
+                <button class="tool-button" data-command="insertUnorderedList" title="قائمة منقطة" aria-pressed="false" aria-label="قائمة منقطة"><i class="fas fa-list-ul"></i></button>
+                 <button class="tool-button" data-command="outdent" title="إنقاص المسافة البادئة" aria-label="إنقاص المسافة البادئة"><i class="fas fa-outdent"></i></button>
+                 <button class="tool-button" data-command="indent" title="زيادة المسافة البادئة" aria-label="زيادة المسافة البادئة"><i class="fas fa-indent"></i></button>
+            </div>
+             <!-- إدراج -->
+             <div class="tool-group">
+                 <button class="tool-button" data-custom-command="createLink" title="إضافة/تعديل رابط" aria-label="إضافة رابط"><i class="fas fa-link"></i></button>
+                 <button class="tool-button" data-command="unlink" title="إزالة الرابط" aria-label="إزالة الرابط"><i class="fas fa-unlink"></i></button>
+                  <button class="tool-button" data-custom-command="insertImage" title="إدراج صورة" aria-label="إدراج صورة"><i class="fas fa-image"></i></button>
+                  <button class="tool-button" data-command="insertHorizontalRule" title="إدراج خط أفقي" aria-label="إدراج خط أفقي"><i class="fas fa-minus"></i></button>
+                  <button class="tool-button" id="insertSymbol" title="إدراج رموز" aria-label="إدراج رموز"><i class="fas fa-icons"></i></button>
+                  <button class="tool-button" data-custom-command="insertTable" title="إدراج جدول" aria-label="إدراج جدول"><i class="fas fa-table"></i></button>
+                  <button class="tool-button" data-custom-command="insertShape" data-shape-type="square" title="إدراج مربع" aria-label="إدراج مربع"><i class="fas fa-square"></i></button>
+                  <button class="tool-button" data-custom-command="insertShape" data-shape-type="circle" title="إدراج دائرة" aria-label="إدراج دائرة"><i class="fas fa-circle"></i></button>
+             </div>
+             <!-- اتجاه النص -->
+             <div class="tool-group">
+                 <button class="tool-button" data-custom-command="setDirection" data-value="rtl" title="اتجاه النص: يمين لليسار" aria-pressed="true" aria-label="يمين لليسار"><i class="fas fa-align-right"></i> RTL</button>
+                 <button class="tool-button" data-custom-command="setDirection" data-value="ltr" title="اتجاه النص: يسار لليمين" aria-pressed="false" aria-label="يسار لليمين"><i class="fas fa-align-left"></i> LTR</button>
+            </div>
+            <!-- حدود الصفحة -->
+            <div class="tool-group">
+                <button class="tool-button" id="pageBorderBtn" title="إعدادات حدود الصفحة" aria-label="حدود الصفحة"><i class="fas fa-border-all"></i></button>
+            </div>
+        </div>
+
+        <!-- Editor Area (Will scroll vertically) -->
+        <div class="editor-area" id="editorArea">
+             <div class="loader-overlay" id="loaderOverlay"><div class="loader"></div></div>
+            <!-- Pages will be added here -->
+            <div class="page-container" id="pageContainer_1">
+                 <div class="page-content" id="editor_1" contenteditable="true" spellcheck="false" role="textbox" aria-multiline="true" aria-label="منطقة تحرير النص - صفحة 1" data-placeholder="ابدأ الكتابة في الصفحة 1...">
+                    <!-- Default content -->
+                     <h1>محرر المستندات الإحترافي (متعدد الصفحات)</h1>
+                     <p style="font-family: Tajawal;">أهلاً بك في محرر المستندات المطور. استخدم الأدوات أعلاه لتنسيق النص، تغيير الخطوط والألوان، إضافة الصور والروابط، وحفظ عملك. <span class="text-glow">جرب التوهج!</span></p>
+                     <p><strong style="font-size: 14pt; color: var(--accent-color);">الميزات الجديدة تشمل:</strong></p>
+                     <ul>
+                         <li style="font-family: 'Amiri';">إمكانية إضافة صفحات متعددة (A4).</li>
+                         <li>إدراج وتعديل <strong class="text-border">الجداول</strong> (يمكن سحبها!).</li>
+                         <li><span style="background-color: yellow;">تمييز النص</span> وخلفية الفقرة.</li>
+                         <li>تأثيرات نصية إضافية (ظل، حدود، توهج).</li>
+                         <li>إدراج أشكال (مربع، دائرة) والتحكم بها.</li>
+                         <li>التحكم بتباعد الأسطر.</li>
+                         <li>انقر نقراً مزدوجاً في أي مكان لبدء الكتابة.</li>
+                     </ul>
+                      <p>تم تصميم الواجهة لتكون <span style="text-shadow: 1px 1px 2px #ccc;">سريعة الاستجابة</span> وتعمل بشكل جيد على أجهزة الهاتف.</p>
+                      <blockquote style="background-color: #f0f0f0; padding: 10px;">هذا مثال على اقتباس داخل المحرر بخلفية.</blockquote>
+                      <p style="direction: ltr; text-align: left; line-height: 1.5;">This paragraph is set to Left-to-Right direction with 1.5 line spacing.</p>
+                      <p>محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. محتوى إضافي لاختبار تجاوز الصفحة. نهاية المحتوى الإضافي.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar (Should be visible now) -->
+        <div class="status-bar">
+            <div> <!-- Left side -->
+                <span>الكلمات: <span id="word-count">0</span></span> |
+                <span>الأحرف: <span id="char-count">0</span></span> |
+                <span id="current-style-info"></span>
+            </div>
+            <div class="zoom-controls"> <!-- Right side -->
+                <button id="zoomOut" title="تصغير"><i class="fas fa-search-minus"></i></button>
+                <span class="zoom-level" id="zoomLevel">100%</span>
+                <button id="zoomIn" title="تكبير"><i class="fas fa-search-plus"></i></button>
+                <button id="zoomFit" title="ملاءمة العرض"><i class="fas fa-expand-arrows-alt"></i></button>
+                <button id="zoomReset" title="إعادة تعيين"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (No changes needed here) -->
+    <div class="modal-overlay" id="symbolsModal">
+        <div class="modal-content">
+            <span class="modal-close-btn" id="closeSymbolsModal">&times;</span>
+            <h4>إدراج رمز</h4>
+            <div class="symbols-container" id="symbolsContainer">
+                 <span class="symbol-item">©</span> <span class="symbol-item">®</span> <span class="symbol-item">™</span>
+                 <span class="symbol-item">€</span> <span class="symbol-item">£</span> <span class="symbol-item">¥</span>
+                 <span class="symbol-item">§</span> <span class="symbol-item">¶</span> <span class="symbol-item">°</span>
+                 <span class="symbol-item">±</span> <span class="symbol-item">÷</span> <span class="symbol-item">×</span>
+                 <span class="symbol-item">←</span> <span class="symbol-item">↑</span> <span class="symbol-item">→</span> <span class="symbol-item">↓</span>
+                 <span class="symbol-item">∑</span> <span class="symbol-item">√</span> <span class="symbol-item">∞</span>
+                 <span class="symbol-item">≈</span> <span class="symbol-item">≠</span> <span class="symbol-item">≤</span> <span class="symbol-item">≥</span>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="borderModal">
+        <div class="modal-content">
+             <span class="modal-close-btn" id="closeBorderModal">&times;</span>
+             <h4>إعدادات حدود الصفحة</h4>
+             <div class="border-controls">
+                 <label for="borderWidth">سمك الحدود:</label>
+                 <select id="borderWidth">
+                     <option value="0px">0px (بدون)</option>
+                     <option value="1px" selected>1px</option>
+                     <option value="2px">2px</option>
+                     <option value="3px">3px</option>
+                     <option value="4px">4px</option>
+                     <option value="5px">5px</option>
+                     <option value="8px">8px</option>
+                     <option value="10px">10px</option>
+                 </select>
+                 <label for="borderStyle">نمط الحدود:</label>
+                 <select id="borderStyle">
+                    <option value="none">بدون (None)</option>
+                    <option value="solid" selected>صلب (Solid)</option>
+                    <option value="dashed">متقطع (Dashed)</option>
+                    <option value="dotted">منقط (Dotted)</option>
+                    <option value="double">مزدوج (Double)</option>
+                    <option value="groove">أخدود (Groove)</option>
+                    <option value="ridge">حافة (Ridge)</option>
+                    <option value="inset">غائر (Inset)</option>
+                    <option value="outset">بارز (Outset)</option>
+                 </select>
+                 <label for="borderColor">لون الحدود:</label>
+                 <input type="color" id="borderColor" value="#000000">
+             </div>
+             <label>معاينة:</label>
+             <div class="border-preview" id="borderPreview"></div>
+             <div class="modal-actions">
+                 <button class="apply-btn" id="applyBorder">تطبيق</button>
+                 <button class="cancel-btn" id="cancelBorder">إلغاء</button>
+             </div>
+        </div>
+    </div>
+
+    <!-- Floating Panels (No changes needed here) -->
+    <div class="floating-panel" id="tableControls">
+        <h4>أدوات الجدول <i class="fas fa-arrows-alt" title="اسحب لتحريك الجدول" style="cursor: move; margin-right: 10px; color: #aaa;"></i></h4>
+        <div class="panel-content">
+            <button class="tool-button" data-action="table-add-row-above" title="إضافة صف للأعلى"><i class="fas fa-arrow-up"></i> صف</button>
+            <button class="tool-button" data-action="table-add-row-below" title="إضافة صف للأسفل"><i class="fas fa-arrow-down"></i> صف</button>
+            <button class="tool-button" data-action="table-add-col-left" title="إضافة عمود لليسار"><i class="fas fa-arrow-left"></i> عمود</button>
+            <button class="tool-button" data-action="table-add-col-right" title="إضافة عمود لليمين"><i class="fas fa-arrow-right"></i> عمود</button>
+            <button class="tool-button" data-action="table-delete-row" title="حذف الصف الحالي"><i class="fas fa-trash-alt"></i> صف</button>
+            <button class="tool-button" data-action="table-delete-col" title="حذف العمود الحالي"><i class="fas fa-trash-alt"></i> عمود</button>
+            <button class="tool-button" data-action="table-delete-table" title="حذف الجدول بالكامل"><i class="fas fa-times-circle"></i> جدول</button>
+            <label for="tableCellBgColor">خلية:</label>
+            <input type="color" id="tableCellBgColor" data-action="table-cell-bgcolor" title="لون خلفية الخلية" value="#ffffff">
+            <label for="tableBorderColor">حدود:</label>
+            <input type="color" id="tableBorderColor" data-action="table-border-color" title="لون حدود الجدول" value="#cccccc">
+            <label for="tableBgColor">جدول:</label>
+            <input type="color" id="tableBgColor" data-action="table-bgcolor" title="لون خلفية الجدول" value="#ffffff">
+        </div>
+    </div>
+    <div class="floating-panel" id="shapeControls">
+        <h4>أدوات الشكل</h4>
+        <div class="panel-content">
+            <label>تعبئة:</label>
+            <input type="color" data-action="shape-fill-color" title="لون التعبئة" value="#eeeeee">
+            <label>حدود:</label>
+            <input type="color" data-action="shape-border-color" title="لون الحدود" value="#333333">
+            <label>سمك:</label>
+             <select class="tool-select" data-action="shape-border-width" title="سمك الحدود">
+                <option value="0px">0px</option>
+                <option value="1px">1px</option>
+                <option value="2px">2px</option>
+                <option value="3px">3px</option>
+                <option value="5px">5px</option>
+            </select>
+            <button class="tool-button" data-action="shape-delete" title="حذف الشكل"><i class="fas fa-trash-alt"></i></button>
+        </div>
+    </div>
+
+
+    <!-- 6. JavaScript Logic (Updates below) -->
+    <script>
+        // --- عناصر الواجهة (تحديث وإضافة) ---
+        const editorWrapper = document.querySelector('.editor-wrapper');
+        const toolbar = document.querySelector('.toolbar');
+        const editorArea = document.getElementById('editorArea');
+        const wordCountSpan = document.getElementById('word-count');
+        const charCountSpan = document.getElementById('char-count');
+        const styleInfoSpan = document.getElementById('current-style-info');
+        const loaderOverlay = document.getElementById('loaderOverlay');
+        const zoomLevelSpan = document.getElementById('zoomLevel');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const zoomFitBtn = document.getElementById('zoomFit');
+        const zoomResetBtn = document.getElementById('zoomReset');
+        const symbolsModal = document.getElementById('symbolsModal');
+        const insertSymbolBtn = document.getElementById('insertSymbol');
+        const closeSymbolsModalBtn = document.getElementById('closeSymbolsModal');
+        const symbolsContainer = document.getElementById('symbolsContainer');
+        const borderModal = document.getElementById('borderModal');
+        const pageBorderBtn = document.getElementById('pageBorderBtn');
+        const closeBorderModalBtn = document.getElementById('closeBorderModal');
+        const borderWidthSelect = document.getElementById('borderWidth');
+        const borderStyleSelect = document.getElementById('borderStyle');
+        const borderColorInput = document.getElementById('borderColor');
+        const borderPreview = document.getElementById('borderPreview');
+        const applyBorderBtn = document.getElementById('applyBorder');
+        const cancelBorderBtn = document.getElementById('cancelBorder');
+        const addPageBtn = document.getElementById('addPageBtn');
+        const tableControlsPanel = document.getElementById('tableControls');
+        const shapeControlsPanel = document.getElementById('shapeControls');
+        const tableDragHandle = tableControlsPanel.querySelector('.fa-arrows-alt'); // Added handle
+
+        // --- تهيئة jsPDF ---
+        const { jsPDF } = window.jspdf;
+
+        // --- الأوامر القياسية والتبديل ---
+        const standardCommands = ['undo', 'redo', 'bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull', 'insertOrderedList', 'insertUnorderedList', 'indent', 'outdent', 'insertHorizontalRule', 'removeFormat', 'unlink', 'foreColor', 'hiliteColor', 'fontName', 'formatBlock', 'insertHTML', 'insertText', 'createLink', 'insertImage'];
+        const toggleCommands = ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'insertOrderedList', 'insertUnorderedList'];
+        const alignmentCommands = ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'];
+
+        // --- الحالة ---
+        let currentSelection = null;
+        let currentEditingElement = null;
+        let zoomLevel = 1;
+        let nextPageId = 2;
+        let selectedTableElement = null;
+        let selectedCellElement = null;
+        let selectedShapeElement = null;
+        let isDraggingShape = false;
+        let isResizingShape = false;
+        let isDraggingTable = false; // New state for table dragging
+        let dragOffsetX, dragOffsetY;
+        let resizeStartX, resizeStartY;
+        let resizeStartWidth, resizeStartHeight;
+        let resizeStartLeft, resizeStartTop; // Added for resize position adjustment
+        let activeResizeHandle = null;
+        let originalTablePosition = ''; // Store original position style for table
+
+        // --- وظائف المساعدة ---
+        const showLoader = (show = true) => {
+            loaderOverlay.style.display = show ? 'flex' : 'none';
+        };
+
+        const getActiveEditorElement = () => {
+            // Prioritize the explicitly tracked element
+            if (currentEditingElement && document.body.contains(currentEditingElement)) {
+                return currentEditingElement;
+            }
+             // Fallback to checking activeElement
+            if (document.activeElement && document.activeElement.classList.contains('page-content')) {
+                 return document.activeElement;
+            }
+            // Fallback to selection parent
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount > 0) {
+                let node = selection.anchorNode;
+                while (node && node !== document.body) {
+                    if (node.classList && node.classList.contains('page-content')) {
+                        return node;
+                    }
+                    if (node.nodeType === 3 && node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('page-content')) {
+                        return node.parentNode;
+                    }
+                    node = node.parentNode;
+                }
+            }
+             // Final fallback: first page
+             return editorArea.querySelector('.page-content');
+        };
+
+        const executeStandardCommand = (command, value = null) => {
+            const activeEditor = getActiveEditorElement();
+            if (!activeEditor) {
+                console.warn("No active editor found to execute command:", command);
+                return;
+            }
+            // Ensure focus is within the intended editor before executing
+            if (!activeEditor.contains(document.activeElement) && document.activeElement?.contentEditable !== 'true') {
+                activeEditor.focus();
+                 // Restore selection if possible
+                 if (currentSelection && currentSelection.rangeCount > 0) {
+                    const range = currentSelection.getRangeAt(0);
+                    // Check if the saved selection belongs to this editor
+                    if (activeEditor.contains(range.commonAncestorContainer)) {
+                       const sel = window.getSelection();
+                       sel.removeAllRanges();
+                       sel.addRange(range);
+                    } else {
+                        // If selection is elsewhere, move cursor to end of editor
+                        const newRange = document.createRange();
+                        newRange.selectNodeContents(activeEditor);
+                        newRange.collapse(false);
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
+                    }
+                 }
+            }
+
+            try {
+                if (command === 'foreColor' && value) {
+                    document.getElementById('foreColorPreview').style.backgroundColor = value;
+                }
+                 else if (command === 'hiliteColor' && value) {
+                     document.getElementById('backColorPreview').style.backgroundColor = value;
+                 }
+                 document.execCommand('styleWithCSS', false, true); // Prefer CSS styles
+                 document.execCommand(command, false, value);
+                 document.execCommand('styleWithCSS', false, false);
+            } catch (e) {
+                console.error(`Error executing command ${command} in active editor:`, e);
+            }
+            // Don't force focus back if it wasn't needed, might interfere with modals etc.
+            // if(document.activeElement !== activeEditor) {
+            //     activeEditor.focus();
+            // }
+            updateToolbarState();
+            updateStatusCounter(); // Update counter after commands
+        };
+
+         const applyStyleToSelection = (styleProperty, styleValue, tagName = 'span') => {
+             const activeEditor = getActiveEditorElement();
+             if (!activeEditor) return;
+             activeEditor.focus(); // Ensure focus
+
+             const selection = window.getSelection();
+             if (!selection || selection.rangeCount === 0) return;
+
+             // Use execCommand for simple styles if possible, fallback for complex ones
+             if (styleProperty === 'fontSize' && !isNaN(parseInt(styleValue))) {
+                 // Map pt to execCommand size (1-7) - very approximate
+                 const pt = parseInt(styleValue);
+                 let sizeCommand = 3; // Default normal
+                 if (pt <= 8) sizeCommand = 1;
+                 else if (pt <= 10) sizeCommand = 2;
+                 else if (pt <= 12) sizeCommand = 3;
+                 else if (pt <= 14) sizeCommand = 4;
+                 else if (pt <= 18) sizeCommand = 5;
+                 else if (pt <= 24) sizeCommand = 6;
+                 else sizeCommand = 7;
+                 executeStandardCommand('fontSize', sizeCommand);
+                 // Force the exact pt size afterwards (might wrap selection)
+                 document.execCommand('styleWithCSS', false, true);
+                 document.execCommand('fontSize', false, styleValue); // Try direct value
+                 document.execCommand('styleWithCSS', false, false);
+                 // Fallback/Reinforce with wrapping span if execCommand fails
+                 setTimeout(() => {
+                     const range = selection.getRangeAt(0);
+                     if (range && !range.collapsed) {
+                         const span = document.createElement(tagName);
+                         span.style[styleProperty] = styleValue;
+                         try { range.surroundContents(span); } catch (e) { console.warn("Could not wrap font size"); }
+                     }
+                 }, 0);
+
+             } else {
+                 // Generic span wrapping for other styles
+                 const range = selection.getRangeAt(0);
+                 if (range.collapsed) {
+                     // Difficult to apply style to collapsed range reliably without browser magic
+                     console.warn("Cannot apply style to collapsed range reliably via span wrapping.");
+                     // Maybe insert a zero-width space and style that?
+                      const span = document.createElement(tagName);
+                      span.style[styleProperty] = styleValue;
+                      span.innerHTML = '&#8203;'; // Zero-width space
+                      range.insertNode(span);
+                      // Move cursor inside span
+                      range.setStart(span.firstChild, 1);
+                      range.collapse(true);
+                      selection.removeAllRanges();
+                      selection.addRange(range);
+                 } else {
+                     const span = document.createElement(tagName);
+                     span.style[styleProperty] = styleValue;
+                     try {
+                         // Use surroundContents if possible
+                         range.surroundContents(span);
+                         selection.removeAllRanges();
+                         selection.addRange(range); // Keep selection on the modified content
+                     } catch (e) {
+                         console.error("Error applying style with surroundContents, attempting manual wrap:", e);
+                         // Manual wrap as fallback (less reliable)
+                         const fragment = range.extractContents();
+                         span.appendChild(fragment);
+                         range.insertNode(span);
+                         range.selectNodeContents(span); // Select the new span
+                         selection.removeAllRanges();
+                         selection.addRange(range);
+                     }
+                 }
+             }
+             updateToolbarState();
+             updateStatusCounter();
+         };
+
+        const removeStyleFromSelection = (styleProperty) => {
+             // removeFormat is too broad, needs targeted removal (difficult)
+             executeStandardCommand('removeFormat'); // Use the standard command for now
+             updateToolbarState();
+             updateStatusCounter();
+        };
+
+         const applyClassToSelection = (className, tagName = 'span') => {
+             const activeEditor = getActiveEditorElement();
+             if (!activeEditor) return;
+             activeEditor.focus();
+             const selection = window.getSelection();
+             if (!selection || selection.rangeCount === 0) return;
+             const range = selection.getRangeAt(0);
+
+             // Similar logic to applyStyleToSelection for wrapping
+             if (range.collapsed) {
+                 console.warn("Cannot apply class to collapsed range reliably via span wrapping.");
+                 const span = document.createElement(tagName);
+                 span.className = className;
+                 span.innerHTML = '&#8203;';
+                 range.insertNode(span);
+                 range.setStart(span.firstChild, 1);
+                 range.collapse(true);
+                 selection.removeAllRanges();
+                 selection.addRange(range);
+             } else {
+                 const span = document.createElement(tagName);
+                 span.className = className;
+                 try {
+                     range.surroundContents(span);
+                     selection.removeAllRanges();
+                     selection.addRange(range);
+                 } catch (e) {
+                     console.error("Error applying class with surroundContents, attempting manual wrap:", e);
+                     const fragment = range.extractContents();
+                     span.appendChild(fragment);
+                     range.insertNode(span);
+                     range.selectNodeContents(span);
+                     selection.removeAllRanges();
+                     selection.addRange(range);
+                 }
+             }
+             updateToolbarState();
+             updateStatusCounter();
+         };
+
+        const removeClassFromSelection = (className) => {
+            // Needs targeted removal (difficult cross-browser)
+             executeStandardCommand('removeFormat'); // Use broad command for now
+             updateToolbarState();
+             updateStatusCounter();
+        };
+
+        const toggleCustomStyle = (type, value, styleProperty = null, className = null) => {
+             const isActive = checkCustomStyleActive(type, styleProperty, className);
+             if (isActive) {
+                  executeStandardCommand('removeFormat'); // Simple toggle off for now
+             } else {
+                  if (type === 'class' && className) {
+                      applyClassToSelection(className);
+                  } else if (type === 'style' && styleProperty) {
+                      applyStyleToSelection(styleProperty, value);
+                  }
+             }
+             updateToolbarState();
+        };
+
+        const checkCustomStyleActive = (type, styleProperty, className) => {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return false;
+
+            let node = selection.anchorNode;
+            const activeEditor = getActiveEditorElement();
+            if (!node || !activeEditor) return false;
+
+             // Handle collapsed selection: check parent node or common ancestor
+             let checkNode = selection.isCollapsed ? (node.nodeType === 3 ? node.parentNode : node) : selection.getRangeAt(0).commonAncestorContainer;
+
+             // Traverse up from the checkNode
+            while (checkNode && checkNode !== activeEditor && checkNode !== document.body) {
+                if (checkNode.nodeType === 1) { // Only check element nodes
+                    try {
+                         const computedStyle = window.getComputedStyle(checkNode);
+                         if (type === 'class' && className && checkNode.classList.contains(className)) {
+                             return true;
+                         } else if (type === 'style' && styleProperty) {
+                            let currentValue = computedStyle[styleProperty];
+                            // More specific checks
+                            if (styleProperty === 'textDecorationLine' && currentValue && currentValue.includes(className)) { // e.g., className is 'overline'
+                                return true;
+                            } else if (styleProperty === 'textShadow' && currentValue && currentValue !== 'none' && !currentValue.startsWith('rgb(0, 0, 0) 0px 0px 0px')) {
+                                return true;
+                            }
+                            // Add other specific checks if needed
+                         }
+                    } catch(e) { /* Ignore nodes that cause errors (like SVG) */ }
+                }
+                 // Don't go past the selection bounds for non-collapsed
+                if (!selection.isCollapsed && checkNode === selection.focusNode) {
+                     // If focusNode itself matches, we might need to check further up
+                     // break; // Let's allow checking further up for block styles
+                }
+                checkNode = checkNode.parentNode;
+            }
+            return false;
+        };
+
+        // --- وظائف التكبير والتصغير ---
+        const updateZoom = (newZoom) => {
+            zoomLevel = Math.max(0.3, Math.min(3, newZoom)); // Keep bounds
+            document.documentElement.style.setProperty('--zoom-level', zoomLevel);
+            zoomLevelSpan.textContent = `${Math.round(zoomLevel * 100)}%`;
+
+            // CSS handles the scaling of pages now via the variable
+            hideFloatingPanels(); // Hide panels on zoom change
+        };
+        const zoomIn = () => updateZoom(zoomLevel + 0.1);
+        const zoomOut = () => updateZoom(zoomLevel - 0.1);
+        const zoomReset = () => updateZoom(1);
+        const zoomFit = () => {
+             const editorClientWidth = editorArea.clientWidth;
+             if (editorClientWidth <= 0) return;
+             const baseA4Width = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--a4-width-base'));
+             // Estimate available width: editor width minus some padding/gap allowance
+             const gapAllowance = 40; // Adjust as needed
+             const effectiveWidth = editorClientWidth - gapAllowance;
+             if (effectiveWidth <= 0 || baseA4Width <= 0) return;
+             const newZoom = effectiveWidth / baseA4Width;
+             updateZoom(newZoom);
+        };
+
+        // --- وظائف الرموز (Modal based) ---
+        const showSymbolsModal = () => { symbolsModal.style.display = 'flex'; };
+        const hideSymbolsModal = () => { symbolsModal.style.display = 'none'; };
+        const handleSymbolClick = (e) => {
+             if (e.target.classList.contains('symbol-item')) {
+                 const symbol = e.target.textContent;
+                 executeStandardCommand('insertText', symbol);
+                 hideSymbolsModal();
+             }
+        };
+
+        // --- وظائف حدود الصفحة (Modal based) ---
+        const showBorderModal = () => {
+            borderWidthSelect.value = getComputedStyle(document.documentElement).getPropertyValue('--page-border-width');
+            borderStyleSelect.value = getComputedStyle(document.documentElement).getPropertyValue('--page-border-style');
+            borderColorInput.value = rgbToHex(getComputedStyle(document.documentElement).getPropertyValue('--page-border-color'));
+            updateBorderPreview();
+            borderModal.style.display = 'flex';
+        };
+        const hideBorderModal = () => { borderModal.style.display = 'none'; };
+        const updateBorderPreview = () => {
+            if (!borderPreview) return;
+            borderPreview.style.borderWidth = borderWidthSelect.value;
+            borderPreview.style.borderStyle = borderStyleSelect.value;
+            borderPreview.style.borderColor = borderColorInput.value;
+        };
+        const applyPageBorder = () => {
+            const width = borderWidthSelect.value;
+            const style = borderStyleSelect.value;
+            const color = borderColorInput.value;
+            document.documentElement.style.setProperty('--page-border-width', width);
+            document.documentElement.style.setProperty('--page-border-style', style);
+            document.documentElement.style.setProperty('--page-border-color', color);
+            hideBorderModal();
+        };
+
+        // --- وظيفة إضافة صفحة جديدة ---
+        const addNewPage = () => {
+            const newPageContainer = document.createElement('div');
+            newPageContainer.classList.add('page-container');
+            newPageContainer.id = `pageContainer_${nextPageId}`;
+
+            const newPageContent = document.createElement('div');
+            newPageContent.classList.add('page-content');
+            newPageContent.id = `editor_${nextPageId}`;
+            newPageContent.setAttribute('contenteditable', 'true');
+            newPageContent.setAttribute('spellcheck', 'false');
+            newPageContent.setAttribute('role', 'textbox');
+            newPageContent.setAttribute('aria-multiline', 'true');
+            newPageContent.setAttribute('aria-label', `منطقة تحرير النص - صفحة ${nextPageId}`);
+            newPageContent.setAttribute('data-placeholder', `ابدأ الكتابة في الصفحة ${nextPageId}...`);
+
+            // Inherit styles from the previous editor or default
+            const lastEditor = currentEditingElement || editorArea.querySelector('.page-content:last-of-type');
+            if (lastEditor) {
+                 const styles = window.getComputedStyle(lastEditor);
+                 newPageContent.style.fontFamily = styles.fontFamily;
+                 newPageContent.style.fontSize = styles.fontSize;
+                 newPageContent.style.lineHeight = styles.lineHeight;
+                 newPageContent.style.direction = styles.direction;
+                 newPageContent.style.textAlign = styles.textAlign;
+                 // Add initial empty paragraph for better typing start
+                 newPageContent.innerHTML = '<p><br></p>';
+            } else {
+                 newPageContent.style.fontFamily = getComputedStyle(document.body).fontFamily;
+                 newPageContent.style.fontSize = '11pt';
+                 newPageContent.style.lineHeight = '1.7';
+                 newPageContent.style.direction = 'rtl';
+                 newPageContent.style.textAlign = 'right';
+                 newPageContent.innerHTML = '<p><br></p>';
+            }
+
+            newPageContainer.appendChild(newPageContent);
+            editorArea.appendChild(newPageContainer);
+            setupPageContentListeners(newPageContent); // Setup listeners *after* adding to DOM
+
+            nextPageId++;
+            newPageContent.focus();
+            // Place cursor inside the initial paragraph
+            const range = document.createRange();
+            const sel = window.getSelection();
+            const firstP = newPageContent.querySelector('p');
+            if (firstP) {
+                range.setStart(firstP, 0); // Start of paragraph
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            newPageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        // --- وظائف الجداول ---
+        const insertTable = () => {
+            const rows = prompt("أدخل عدد الصفوف:", "3");
+            const cols = prompt("أدخل عدد الأعمدة:", "3");
+            if (rows === null || cols === null || isNaN(parseInt(rows)) || isNaN(parseInt(cols))) return;
+            const numRows = Math.max(1, parseInt(rows));
+            const numCols = Math.max(1, parseInt(cols));
+
+            // Added draggable-table class
+            let tableHTML = '<table border="1" class="draggable-table" style="border-color: #ccc; background-color: #ffffff; position: relative;"><tbody>'; // Start with relative position
+            for (let i = 0; i < numRows; i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < numCols; j++) {
+                    tableHTML += '<td style="background-color: #ffffff;"><p><br></p></td>'; // Add default p for better editing
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</tbody></table><p>&nbsp;</p>'; // Add space after table
+            executeStandardCommand('insertHTML', tableHTML);
+            // Setup listeners for the newly inserted table(s) immediately
+            const activeEditor = getActiveEditorElement();
+            if (activeEditor) {
+                activeEditor.querySelectorAll('table.draggable-table:not([data-listeners-added])').forEach(setupTableListeners);
+            }
+        };
+
+        const setupTableListeners = (table) => {
+            if (table.dataset.listenersAdded) return; // Prevent adding multiple times
+            table.addEventListener('mousedown', handleTableMouseDown);
+            table.dataset.listenersAdded = 'true'; // Mark as processed
+        };
+
+        const handleTableMouseDown = (e) => {
+            // Start dragging ONLY if clicking on the table border/padding or the drag handle icon, NOT inside a cell
+            const target = e.target;
+            const table = e.currentTarget;
+            if (target.closest('td, th') || target.closest('input, button, select')) {
+                // Click inside editable area or controls, don't drag table
+                return;
+            }
+            // Allow drag if clicking directly on table/tbody/tr (implies border/padding) or the drag handle
+            if (target === table || target === table.querySelector('tbody') || target.closest('tr') === target || target === tableDragHandle ) {
+                 selectShape(null); // Deselect shapes
+                 selectAndPrepareTableDrag(table, e);
+            }
+        };
+
+        const selectAndPrepareTableDrag = (table, e) => {
+             if (isDraggingTable) return; // Already dragging
+
+             selectedTableElement = table;
+             // Deselect previous cell/table visuals
+             document.querySelectorAll('.selected-cell').forEach(c => c.classList.remove('selected-cell'));
+             document.querySelectorAll('.selected-table').forEach(t => t.classList.remove('selected-table'));
+             selectedCellElement = null;
+
+             table.classList.add('selected-table'); // Show selection outline
+             showTableControls(table); // Show controls panel
+
+             isDraggingTable = true;
+             table.classList.add('dragging-table');
+
+             // Switch to absolute positioning for drag
+             originalTablePosition = table.style.position; // Store original
+             const parent = table.offsetParent || table.closest('.page-content') || document.body;
+             const parentRect = parent.getBoundingClientRect();
+             const tableRect = table.getBoundingClientRect();
+
+             // Initial absolute position calculations relative to parent
+             const startLeft = tableRect.left - parentRect.left + parent.scrollLeft;
+             const startTop = tableRect.top - parentRect.top + parent.scrollTop;
+
+             table.style.position = 'absolute';
+             table.style.left = `${startLeft}px`;
+             table.style.top = `${startTop}px`;
+             table.style.width = `${tableRect.width}px`; // Fix width during absolute drag
+             table.style.margin = '0'; // Remove margin that might interfere
+
+             dragOffsetX = e.clientX - tableRect.left;
+             dragOffsetY = e.clientY - tableRect.top;
+
+             document.addEventListener('mousemove', handleTableMouseMove);
+             document.addEventListener('mouseup', handleTableMouseUp);
+             e.preventDefault(); // Prevent text selection start
+             e.stopPropagation();
+        };
+
+        const handleTableMouseMove = (e) => {
+            if (!isDraggingTable || !selectedTableElement) return;
+
+            const parent = selectedTableElement.offsetParent || selectedTableElement.closest('.page-content');
+             if (!parent) return;
+             const parentRect = parent.getBoundingClientRect();
+
+             // Calculate new absolute position relative to the parent
+             let newX = e.clientX - parentRect.left - dragOffsetX + parent.scrollLeft;
+             let newY = e.clientY - parentRect.top - dragOffsetY + parent.scrollTop;
+
+            // Constrain within parent visual bounds (approximately)
+            const tableWidth = selectedTableElement.offsetWidth;
+            const tableHeight = selectedTableElement.offsetHeight;
+            newX = Math.max(0, Math.min(newX, parent.clientWidth - tableWidth));
+            newY = Math.max(0, Math.min(newY, parent.clientHeight - tableHeight));
+
+            selectedTableElement.style.left = `${newX}px`;
+            selectedTableElement.style.top = `${newY}px`;
+
+            // Update controls panel position
+            if (tableControlsPanel.style.display === 'block') {
+                positionFloatingPanel(tableControlsPanel, selectedTableElement);
+            }
+        };
+
+        const handleTableMouseUp = (e) => {
+            if (isDraggingTable && selectedTableElement) {
+                isDraggingTable = false;
+                selectedTableElement.classList.remove('dragging-table');
+                // Optional: Revert to relative positioning? Or keep absolute?
+                // Keeping absolute might be easier for saving/rendering, but might break flow.
+                // Let's keep it absolute for now. The user moved it intentionally.
+                // selectedTableElement.style.position = originalTablePosition || 'relative';
+                // selectedTableElement.style.width = ''; // Reset fixed width
+                // selectedTableElement.style.margin = ''; // Reset margin
+
+                document.removeEventListener('mousemove', handleTableMouseMove);
+                document.removeEventListener('mouseup', handleTableMouseUp);
+
+                // Focus the editor containing the table
+                 const editor = selectedTableElement.closest('.page-content');
+                 if (editor) editor.focus();
+            }
+        };
+
+
+        const showTableControls = (element) => {
+             const cell = element.closest('td, th');
+             const table = element.closest('table');
+             if (!table) { hideTableControls(); return; }
+
+            deselectAllShapes(); // Deselect shapes when table is focused
+            selectedTableElement = table;
+
+            // Deselect previous table/cell if different
+            document.querySelectorAll('.selected-table').forEach(t => { if (t !== table) t.classList.remove('selected-table'); });
+            document.querySelectorAll('.selected-cell').forEach(c => c.classList.remove('selected-cell'));
+
+             if (cell) {
+                 selectedCellElement = cell;
+                 selectedCellElement.classList.add('selected-cell');
+             } else {
+                  selectedCellElement = null; // No specific cell selected, just the table
+             }
+            table.classList.add('selected-table');
+            table.classList.add('draggable-table'); // Ensure class is present
+
+            const tableBorderColorInput = tableControlsPanel.querySelector('#tableBorderColor');
+            const tableBgColorInput = tableControlsPanel.querySelector('#tableBgColor');
+            const cellBgColorInput = tableControlsPanel.querySelector('#tableCellBgColor');
+
+            tableBorderColorInput.value = rgbToHex(table.style.borderColor || window.getComputedStyle(table).borderColor || '#cccccc');
+            tableBgColorInput.value = rgbToHex(table.style.backgroundColor || window.getComputedStyle(table).backgroundColor || '#ffffff');
+            if (selectedCellElement) {
+                cellBgColorInput.value = rgbToHex(selectedCellElement.style.backgroundColor || window.getComputedStyle(selectedCellElement).backgroundColor || '#ffffff');
+                cellBgColorInput.disabled = false;
+            } else {
+                 cellBgColorInput.value = '#ffffff';
+                 cellBgColorInput.disabled = true;
+            }
+
+            // Position and show the panel
+            positionFloatingPanel(tableControlsPanel, cell || table);
+            tableControlsPanel.style.display = 'block';
+            tableDragHandle.onmousedown = (e) => { // Attach drag start to handle icon
+                selectAndPrepareTableDrag(table, e);
+            };
+        };
+
+        const positionFloatingPanel = (panel, targetElement) => {
+             const rect = targetElement.getBoundingClientRect();
+             const editorAreaRect = editorArea.getBoundingClientRect();
+             const panelHeight = panel.offsetHeight;
+             const panelWidth = panel.offsetWidth;
+
+             // Prefer above, then below
+             let top = rect.top - editorAreaRect.top + editorArea.scrollTop - panelHeight - 10; // Above
+             if (top < editorArea.scrollTop + 5) { // If too high, place below
+                 top = rect.bottom - editorAreaRect.top + editorArea.scrollTop + 10;
+             }
+
+             // Center horizontally
+             let left = rect.left - editorAreaRect.left + editorArea.scrollLeft + (rect.width / 2) - (panelWidth / 2);
+
+             // Keep within editor bounds
+             top = Math.max(editorArea.scrollTop + 5, Math.min(top, editorArea.scrollTop + editorArea.scrollHeight - panelHeight - 5));
+             left = Math.max(editorArea.scrollLeft + 5, Math.min(left, editorArea.scrollLeft + editorAreaRect.width - panelWidth - 5));
+
+             panel.style.top = `${top}px`;
+             panel.style.left = `${left}px`;
+        };
+
+
+        const hideTableControls = () => {
+            tableControlsPanel.style.display = 'none';
+             if (selectedCellElement) selectedCellElement.classList.remove('selected-cell');
+             if (selectedTableElement) {
+                 selectedTableElement.classList.remove('selected-table');
+                 // selectedTableElement.classList.remove('draggable-table'); // Keep class for potential re-selection
+             }
+             selectedCellElement = null;
+             selectedTableElement = null;
+             if (tableDragHandle) tableDragHandle.onmousedown = null; // Remove handler
+        };
+
+        const handleTableControlAction = (action, targetElement) => {
+            if (!selectedTableElement) return;
+            const cellRequiredActions = ['table-add-row-above', 'table-add-row-below', 'table-add-col-left', 'table-add-col-right', 'table-delete-row', 'table-delete-col', 'table-cell-bgcolor'];
+            if (cellRequiredActions.includes(action) && !selectedCellElement) {
+                alert("يرجى تحديد خلية داخل الجدول أولاً لتنفيذ هذا الإجراء."); return;
+            }
+            const cell = selectedCellElement;
+            const table = selectedTableElement;
+            const tbody = table.querySelector('tbody') || table;
+            const cellIndex = cell ? cell.cellIndex : -1;
+            const rowIndex = cell ? cell.closest('tr').rowIndex : -1;
+             const editor = table.closest('.page-content'); // Get containing editor
+
+            try {
+                switch (action) {
+                    case 'table-add-row-above': { const newRow = tbody.insertRow(rowIndex); for (let i = 0; i < cell.closest('tr').cells.length; i++) { newRow.insertCell(i).innerHTML = '<p><br></p>'; } break; }
+                    case 'table-add-row-below': { const newRow = tbody.insertRow(rowIndex + 1); for (let i = 0; i < cell.closest('tr').cells.length; i++) { newRow.insertCell(i).innerHTML = '<p><br></p>'; } break; }
+                    case 'table-add-col-left': { for (let i = 0; i < tbody.rows.length; i++) { tbody.rows[i].insertCell(cellIndex).innerHTML = '<p><br></p>'; } break; }
+                    case 'table-add-col-right': { for (let i = 0; i < tbody.rows.length; i++) { tbody.rows[i].insertCell(cellIndex + 1).innerHTML = '<p><br></p>'; } break; }
+                    case 'table-delete-row': { if (tbody.rows.length > 1) { tbody.deleteRow(rowIndex); hideTableControls(); } else { alert("لا يمكن حذف آخر صف في الجدول."); } break; }
+                    case 'table-delete-col': { if (cell.closest('tr').cells.length > 1) { for (let i = 0; i < tbody.rows.length; i++) { if (tbody.rows[i].cells[cellIndex]) tbody.rows[i].deleteCell(cellIndex); } hideTableControls(); } else { alert("لا يمكن حذف آخر عمود في الجدول."); } break; }
+                    case 'table-delete-table': { if (confirm("هل أنت متأكد من حذف الجدول بالكامل؟")) { table.remove(); hideTableControls(); } break; }
+                    case 'table-border-color': {
+                        table.style.borderColor = targetElement.value;
+                        table.setAttribute('border', '1'); // Ensure border attribute is present
+                        // Also apply to cells for consistency?
+                         Array.from(table.querySelectorAll('td, th')).forEach(td => td.style.borderColor = targetElement.value);
+                        break;
+                    }
+                    case 'table-bgcolor': { table.style.backgroundColor = targetElement.value; break; }
+                    case 'table-cell-bgcolor': { if(cell) cell.style.backgroundColor = targetElement.value; break; }
+                    default: console.warn("Unknown table action:", action);
+                }
+            } catch (e) { console.error("Error handling table action:", action, e); alert("حدث خطأ أثناء تعديل الجدول."); }
+            if(editor) editor.focus(); // Refocus editor after action
+        };
+
+        // --- وظائف الأشكال ---
+        const insertShape = (type) => {
+            const activeEditor = getActiveEditorElement();
+            if (!activeEditor) return;
+            activeEditor.focus();
+
+            const shapeId = `shape-${Date.now()}`;
+            const shape = document.createElement('div');
+            shape.classList.add('shape', type);
+            shape.id = shapeId;
+            shape.style.position = 'absolute';
+            shape.style.width = '100px';
+            shape.style.height = '100px';
+            shape.style.backgroundColor = '#eeeeee';
+            shape.style.border = '1px solid #333';
+            shape.style.left = '50px'; // Default position
+            shape.style.top = '50px';  // Default position
+            shape.setAttribute('contenteditable', 'false'); // Make shape itself non-editable
+
+            // Add resize handles
+            const handles = ['tl', 'tr', 'bl', 'br'];
+            handles.forEach(handlePos => {
+                 const handle = document.createElement('div');
+                 handle.classList.add('resize-handle', handlePos);
+                 handle.setAttribute('data-handle', handlePos);
+                 shape.appendChild(handle);
+            });
+
+            // Append directly to the editor area (page-content)
+            // Avoid using insertHTML for non-text nodes if possible
+             activeEditor.appendChild(shape);
+
+             // Add a paragraph *after* the shape to allow typing below it.
+             const p = document.createElement('p');
+             p.innerHTML = '<br>'; // Empty paragraph
+             activeEditor.appendChild(p);
+
+            setupShapeListeners(shape);
+            selectShape(shape); // Select the newly added shape
+             updateStatusCounter();
+        };
+        const setupShapeListeners = (shape) => {
+             if (shape.dataset.shapeListenersAdded) return;
+             shape.addEventListener('mousedown', handleShapeMouseDown);
+             shape.addEventListener('dragstart', (e) => e.preventDefault()); // Prevent default image drag
+             shape.querySelectorAll('.resize-handle').forEach(handle => {
+                 handle.addEventListener('mousedown', handleResizeMouseDown);
+             });
+             shape.dataset.shapeListenersAdded = 'true';
+        };
+        const handleShapeMouseDown = (e) => {
+            // Ignore if clicking on a resize handle
+            if (e.target.classList.contains('resize-handle')) return;
+            const shape = e.currentTarget;
+             // Only start drag if direct click on shape, not contents if any
+             if (e.target !== shape) return;
+
+            selectShape(shape); // Select the shape
+             hideTableControls(); // Hide table controls
+
+            isDraggingShape = true;
+            shape.classList.add('dragging');
+            const parent = shape.offsetParent || shape.closest('.page-content');
+             if (!parent) return; // Should not happen
+             const parentRect = parent.getBoundingClientRect();
+             const shapeRect = shape.getBoundingClientRect();
+
+             // Calculate offset relative to the shape's top-left corner
+            dragOffsetX = e.clientX - shapeRect.left;
+            dragOffsetY = e.clientY - shapeRect.top;
+
+            document.addEventListener('mousemove', handleShapeMouseMove);
+            document.addEventListener('mouseup', handleShapeMouseUp);
+            e.stopPropagation(); // Prevent triggering editor focus/selection change
+            e.preventDefault(); // Prevent default text selection behavior
+         };
+         const handleShapeMouseMove = (e) => {
+            if (!isDraggingShape || !selectedShapeElement) return;
+            const parent = selectedShapeElement.offsetParent || selectedShapeElement.closest('.page-content');
+             if (!parent) return;
+             const parentRect = parent.getBoundingClientRect();
+
+             // Calculate new top-left corner position relative to the parent
+             let newX = e.clientX - parentRect.left - dragOffsetX + parent.scrollLeft;
+             let newY = e.clientY - parentRect.top - dragOffsetY + parent.scrollTop;
+
+            // Constrain within parent bounds
+            const shapeWidth = selectedShapeElement.offsetWidth;
+            const shapeHeight = selectedShapeElement.offsetHeight;
+            newX = Math.max(0, Math.min(newX, parent.clientWidth - shapeWidth));
+            newY = Math.max(0, Math.min(newY, parent.clientHeight - shapeHeight));
+
+            selectedShapeElement.style.left = `${newX}px`;
+            selectedShapeElement.style.top = `${newY}px`;
+
+            // Update controls panel position if visible
+            if (shapeControlsPanel.style.display === 'block') {
+                 positionFloatingPanel(shapeControlsPanel, selectedShapeElement);
+             }
+         };
+         const handleShapeMouseUp = (e) => {
+            if (isDraggingShape) {
+                isDraggingShape = false;
+                 if(selectedShapeElement) selectedShapeElement.classList.remove('dragging');
+                document.removeEventListener('mousemove', handleShapeMouseMove);
+                document.removeEventListener('mouseup', handleShapeMouseUp);
+                 // Focus the editor containing the shape
+                 const editor = selectedShapeElement?.closest('.page-content');
+                 if (editor) editor.focus();
+            }
+         };
+         const handleResizeMouseDown = (e) => {
+             e.stopPropagation(); // Prevent shape drag start
+             e.preventDefault(); // Prevent default text selection
+
+             const handle = e.currentTarget;
+             const shape = handle.closest('.shape');
+             if (!shape) return;
+
+             selectShape(shape); // Ensure shape is selected
+             isResizingShape = true;
+             activeResizeHandle = handle.dataset.handle;
+             shape.classList.add('resizing');
+
+             // Store initial state for calculations
+             resizeStartX = e.clientX;
+             resizeStartY = e.clientY;
+             resizeStartWidth = shape.offsetWidth;
+             resizeStartHeight = shape.offsetHeight;
+             resizeStartLeft = parseFloat(shape.style.left || '0');
+             resizeStartTop = parseFloat(shape.style.top || '0');
+
+             document.addEventListener('mousemove', handleResizeMouseMove);
+             document.addEventListener('mouseup', handleResizeMouseUp);
+         };
+         const handleResizeMouseMove = (e) => {
+            if (!isResizingShape || !selectedShapeElement || !activeResizeHandle) return;
+
+            const dx = e.clientX - resizeStartX;
+            const dy = e.clientY - resizeStartY;
+
+            let newWidth = resizeStartWidth;
+            let newHeight = resizeStartHeight;
+            let newLeft = resizeStartLeft;
+            let newTop = resizeStartTop;
+
+            // Adjust dimensions and position based on the handle being dragged
+             if (activeResizeHandle.includes('r')) newWidth = resizeStartWidth + dx;
+             if (activeResizeHandle.includes('l')) { newWidth = resizeStartWidth - dx; newLeft = resizeStartLeft + dx; }
+             if (activeResizeHandle.includes('b')) newHeight = resizeStartHeight + dy;
+             if (activeResizeHandle.includes('t')) { newHeight = resizeStartHeight - dy; newTop = resizeStartTop + dy; }
+
+             // Prevent dimensions from becoming too small
+             newWidth = Math.max(20, newWidth);
+             newHeight = Math.max(20, newHeight);
+
+             // Apply new styles
+             selectedShapeElement.style.width = `${newWidth}px`;
+             selectedShapeElement.style.height = `${newHeight}px`;
+             selectedShapeElement.style.left = `${newLeft}px`;
+             selectedShapeElement.style.top = `${newTop}px`;
+
+              // Update controls panel position if visible
+              if (shapeControlsPanel.style.display === 'block') {
+                   positionFloatingPanel(shapeControlsPanel, selectedShapeElement);
+               }
+         };
+        const handleResizeMouseUp = (e) => {
+             if (isResizingShape) {
+                 isResizingShape = false;
+                 activeResizeHandle = null;
+                 if (selectedShapeElement) selectedShapeElement.classList.remove('resizing');
+                 document.removeEventListener('mousemove', handleResizeMouseMove);
+                 document.removeEventListener('mouseup', handleResizeMouseUp);
+                 // Focus the editor containing the shape
+                 const editor = selectedShapeElement?.closest('.page-content');
+                 if (editor) editor.focus();
+             }
+         };
+        const selectShape = (shapeElement) => {
+            // Deselect any currently selected shape
+            if (selectedShapeElement && selectedShapeElement !== shapeElement) {
+                selectedShapeElement.classList.remove('selected');
+                 // hideShapeControls(); // Hide controls when deselecting
+            }
+
+            // Deselect tables
+             hideTableControls();
+
+            selectedShapeElement = shapeElement;
+
+             if (shapeElement) {
+                 shapeElement.classList.add('selected');
+                 showShapeControls(shapeElement);
+             } else {
+                 // If null is passed, explicitly hide controls
+                 hideShapeControls();
+             }
+        };
+         const deselectAllShapes = () => {
+             document.querySelectorAll('.page-content .shape.selected').forEach(s => s.classList.remove('selected'));
+             if (selectedShapeElement) {
+                  selectedShapeElement = null;
+                  hideShapeControls();
+             }
+         };
+        const showShapeControls = (shapeElement) => {
+            if (!shapeElement) { hideShapeControls(); return; }; // Guard clause
+
+            positionFloatingPanel(shapeControlsPanel, shapeElement);
+            shapeControlsPanel.style.display = 'block';
+
+            // Update control values based on the selected shape's style
+            shapeControlsPanel.querySelector('[data-action="shape-fill-color"]').value = rgbToHex(shapeElement.style.backgroundColor || '#eeeeee');
+            shapeControlsPanel.querySelector('[data-action="shape-border-color"]').value = rgbToHex(shapeElement.style.borderColor || '#333333');
+            shapeControlsPanel.querySelector('[data-action="shape-border-width"]').value = shapeElement.style.borderWidth || '1px';
+         };
+
+        const hideShapeControls = () => {
+            shapeControlsPanel.style.display = 'none';
+             // Don't automatically deselect the shape here, just hide the panel
+             // if (selectedShapeElement) {
+             //     selectedShapeElement.classList.remove('selected');
+             //     selectedShapeElement = null;
+             // }
+        };
+        const handleShapeControlAction = (action, targetElement) => {
+            if (!selectedShapeElement) return;
+            let editorToFocus = selectedShapeElement.closest('.page-content');
+            switch (action) {
+                case 'shape-fill-color': selectedShapeElement.style.backgroundColor = targetElement.value; break;
+                case 'shape-border-color': selectedShapeElement.style.borderColor = targetElement.value; break;
+                case 'shape-border-width': selectedShapeElement.style.borderWidth = targetElement.value; selectedShapeElement.style.borderStyle = (targetElement.value === '0px') ? 'none' : 'solid'; break;
+                case 'shape-delete':
+                     if (confirm("هل أنت متأكد من حذف هذا الشكل؟")) {
+                        selectedShapeElement.remove();
+                        selectedShapeElement = null;
+                        hideShapeControls();
+                     }
+                    break;
+                default: console.warn("Unknown shape action:", action);
+            }
+            if (editorToFocus) editorToFocus.focus(); // Refocus editor
+        };
+         const rgbToHex = (rgb) => {
+             if (!rgb || typeof rgb !== 'string') return '#000000'; // Default black if invalid
+             if (rgb.startsWith('#')) return rgb; // Already hex
+              if (rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#ffffff'; // Treat transparent as white for input default
+             let match = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/);
+             if (!match) {
+                // Handle named colors (simplistic)
+                // Create a temporary element to resolve named color
+                const temp = document.createElement('div');
+                temp.style.color = rgb;
+                document.body.appendChild(temp);
+                const computedColor = window.getComputedStyle(temp).color;
+                document.body.removeChild(temp);
+                match = computedColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)$/);
+                 if (!match) return '#000000'; // Fallback if name resolution fails
+             }
+             const r = parseInt(match[1]); const g = parseInt(match[2]); const b = parseInt(match[3]);
+             return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+          };
+
+        // --- وظائف أخرى (تباعد الأسطر، خلفية الفقرة) ---
+        const applyBlockStyle = (styleProperty, styleValue) => {
+            const activeEditor = getActiveEditorElement();
+            if (!activeEditor) return;
+            activeEditor.focus();
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) return;
+            const range = selection.getRangeAt(0);
+
+            // Get the block element(s) containing the selection start and end
+            const startBlock = getContainingBlock(range.startContainer, activeEditor);
+            const endBlock = range.collapsed ? startBlock : getContainingBlock(range.endContainer, activeEditor);
+
+            const blockNodes = new Set(); // Use a Set to avoid duplicates
+            if (startBlock) blockNodes.add(startBlock);
+            if (endBlock) blockNodes.add(endBlock);
+
+             // If selection spans multiple blocks, apply to all in between (simplistic: assumes direct children for now)
+             if (startBlock && endBlock && startBlock !== endBlock) {
+                 let currentNode = startBlock.nextElementSibling;
+                 while (currentNode && currentNode !== endBlock) {
+                     if (currentNode.nodeType === 1 && window.getComputedStyle(currentNode).display.match(/block|list-item|table|table-row|flex|grid/)) {
+                        blockNodes.add(currentNode);
+                     }
+                     currentNode = currentNode.nextElementSibling;
+                 }
+             }
+
+             // If still no blocks (e.g., editor is empty or just text nodes), apply to editor directly? Risky.
+             // Better: Wrap selection in a default block (<p>) and apply there?
+             if (blockNodes.size === 0 && !range.collapsed) {
+                 // Wrap selection in a paragraph and apply style
+                  executeStandardCommand('formatBlock', 'p');
+                  // Re-get selection and block after formatting
+                  const newSelection = window.getSelection();
+                  if (newSelection && newSelection.rangeCount > 0) {
+                      const newRange = newSelection.getRangeAt(0);
+                      const newBlock = getContainingBlock(newRange.startContainer, activeEditor);
+                      if (newBlock) blockNodes.add(newBlock);
+                  }
+             } else if (blockNodes.size === 0 && range.collapsed) {
+                  // Try to find block containing caret
+                   const caretBlock = getContainingBlock(range.startContainer, activeEditor);
+                   if (caretBlock) blockNodes.add(caretBlock);
+                   else {
+                       // Insert a new paragraph at caret?
+                        const p = document.createElement('p');
+                        p.innerHTML = '<br>';
+                        range.insertNode(p);
+                        p.style[styleProperty] = styleValue;
+                        // Move caret into the new P?
+                        range.setStart(p, 0);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        return; // Exit early as we handled it
+                   }
+             }
+
+
+             // Apply style to all unique block nodes found
+             blockNodes.forEach(blockNode => {
+                  if (blockNode && blockNode !== activeEditor && blockNode.style) { // Ensure it's a valid element with style property
+                       blockNode.style[styleProperty] = styleValue;
+                  }
+             });
+
+             updateToolbarState();
+             updateStatusCounter();
+         };
+
+         // Helper to find the nearest block-level parent
+         const getContainingBlock = (node, editorElement) => {
+             while (node && node !== editorElement) {
+                 if (node.nodeType === 1 && node.style && window.getComputedStyle(node).display.match(/block|list-item|table|table-row|flex|grid/)) {
+                     return node; // Found the block
+                 }
+                 node = node.parentNode;
+             }
+             return null; // No containing block found within the editor
+         };
+
+        const setLineHeight = (value) => { applyBlockStyle('lineHeight', value); };
+        const setBlockBackgroundColor = (color) => {
+             applyBlockStyle('backgroundColor', color);
+             const preview = document.getElementById('blockBackColorPreview');
+             if (preview) preview.style.backgroundColor = color;
+        };
+
+        // --- Double-click to type anywhere ---
+        const handleDoubleClickOnPage = (e) => {
+             const pageContent = e.currentTarget;
+             const target = e.target;
+
+             // Only trigger if clicking directly on page background, not existing text/elements
+             if (target !== pageContent && !target.classList.contains('page-container')) {
+                 return;
+             }
+             // Avoid triggering if double-clicking a shape or table directly
+            if (target.closest('.shape, table')) {
+                return;
+            }
+
+
+             // Create a new absolutely positioned div for text input
+             const textBox = document.createElement('div');
+             textBox.classList.add('abs-text-box');
+             textBox.setAttribute('contenteditable', 'true');
+
+             // Calculate position relative to the page content area
+             const rect = pageContent.getBoundingClientRect();
+             const x = e.clientX - rect.left;
+             const y = e.clientY - rect.top;
+
+             textBox.style.left = `${x}px`;
+             textBox.style.top = `${y}px`;
+             textBox.style.fontFamily = window.getComputedStyle(pageContent).fontFamily; // Inherit font
+             textBox.style.fontSize = window.getComputedStyle(pageContent).fontSize; // Inherit size
+             textBox.style.lineHeight = window.getComputedStyle(pageContent).lineHeight; // Inherit line height
+             textBox.style.direction = window.getComputedStyle(pageContent).direction; // Inherit direction
+             textBox.innerHTML = '<p><br></p>'; // Add paragraph for initial typing
+
+             pageContent.appendChild(textBox);
+             setupAbsTextBoxListeners(textBox); // Add listeners if needed (e.g., for dragging later)
+
+             // Focus and place cursor
+             textBox.focus();
+             const range = document.createRange();
+             const sel = window.getSelection();
+             const firstP = textBox.querySelector('p');
+             if (firstP) {
+                range.setStart(firstP, 0);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+             }
+
+             e.preventDefault(); // Prevent default double-click behavior (like text selection)
+         };
+
+         // Optional: Add listeners for the absolute text box (e.g., if you want to make it draggable later)
+         const setupAbsTextBoxListeners = (textBox) => {
+             // Example: Make it removable if empty on blur
+             textBox.addEventListener('blur', () => {
+                 if (!textBox.textContent?.trim() && textBox.innerHTML.includes('<br>')) {
+                     textBox.remove();
+                 }
+             });
+             // Add drag listeners here if needed in the future
+         };
+
+
+        // --- معالجات الأحداث ---
+        toolbar.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-command], button[data-custom-command]');
+            if (button && !button.disabled) {
+                event.preventDefault();
+                const standardCommand = button.dataset.command;
+                const customCommand = button.dataset.customCommand;
+                if (standardCommand && standardCommands.includes(standardCommand)) executeStandardCommand(standardCommand);
+                else if (customCommand) handleCustomCommand(customCommand, button);
+            }
+        });
+        toolbar.addEventListener('change', (event) => {
+             const target = event.target.closest('select[data-command], select[data-custom-command], input[type="color"]');
+             if (!target || target.disabled) return;
+             event.preventDefault();
+             const standardCommand = target.dataset.command;
+             const customCommand = target.dataset.customCommand;
+             const value = target.value;
+             if (standardCommand && standardCommands.includes(standardCommand)) executeStandardCommand(standardCommand, value);
+             else if (customCommand) {
+                  if (customCommand === 'fontSize') { applyStyleToSelection('fontSize', value); }
+                  else if (customCommand === 'lineHeight') { setLineHeight(value); }
+                  else if (customCommand === 'blockBackgroundColor') { setBlockBackgroundColor(value); }
+             }
+        });
+        const handleCustomCommand = (command, button) => {
+             switch (command) {
+                 case 'createLink': const urlLink = prompt("أدخل عنوان الرابط (URL):", "https://"); if (urlLink) executeStandardCommand('createLink', urlLink); break;
+                 case 'insertImage': const urlImage = prompt("أدخل عنوان الصورة (URL):"); if (urlImage) executeStandardCommand('insertImage', urlImage); break;
+                 case 'insertTable': insertTable(); break;
+                 case 'insertShape': insertShape(button.dataset.shapeType || 'square'); break;
+                 case 'overline': toggleCustomStyle('style', 'overline', 'textDecorationLine', 'overline'); break;
+                 case 'textShadow': toggleCustomStyle('style', '1px 1px 3px rgba(0,0,0,0.5)', 'textShadow', '1px 1px 3px rgba(0,0,0,0.5)'); break;
+                 case 'textBorder': toggleCustomStyle('class', null, null, 'text-border'); break; // Note: text-border class needs CSS definition
+                 case 'textGlow': toggleCustomStyle('class', null, null, 'text-glow'); break; // Note: text-glow class needs CSS definition
+                  case 'setDirection':
+                      const dir = button.dataset.value;
+                      applyBlockStyle('direction', dir);
+                      applyBlockStyle('textAlign', (dir === 'rtl') ? 'right' : 'left');
+                      document.querySelectorAll('[data-custom-command="setDirection"]').forEach(btn => {
+                          const isActive = btn.dataset.value === dir;
+                          btn.classList.toggle('active', isActive);
+                          btn.setAttribute('aria-pressed', isActive);
+                      });
+                      // Update html dir attribute if needed for overall layout consistency
+                      // document.documentElement.dir = dir;
+                      break;
+                 default: console.warn("Unknown custom command:", command);
+             }
+             updateToolbarState();
+         };
+        const hideFloatingPanels = () => {
+             hideTableControls();
+             deselectAllShapes(); // This now includes hideShapeControls
+        };
+
+        // --- Update Toolbar State ---
+        const updateToolbarState = () => {
+             const selection = window.getSelection();
+             const activeEditor = getActiveEditorElement();
+             if (!selection || selection.rangeCount === 0 || !activeEditor) {
+                 // Reset buttons to inactive state if no selection or editor
+                 toolbar.querySelectorAll('.tool-button.active').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+                 toolbar.querySelectorAll('.tool-select').forEach(s => s.selectedIndex = (s.querySelector('option[selected]')?.index || 0)); // Reset selects to default/first option
+                 // Reset color previews
+                 document.getElementById('foreColorPreview').style.backgroundColor = 'var(--text-color)';
+                 document.getElementById('backColorPreview').style.backgroundColor = '#ffffff';
+                 document.getElementById('blockBackColorPreview').style.backgroundColor = '#ffffff';
+                 return;
+             }
+             currentSelection = selection; // Store the current selection state
+
+             // --- Update Toggle Buttons (Bold, Italic, etc.) ---
+            toggleCommands.forEach(command => {
+                const button = toolbar.querySelector(`button[data-command="${command}"]`);
+                if (button) {
+                    try {
+                        const isActive = document.queryCommandState(command);
+                        button.classList.toggle('active', isActive);
+                        button.setAttribute('aria-pressed', isActive);
+                    } catch (e) {
+                        button.classList.remove('active');
+                        button.setAttribute('aria-pressed', 'false');
+                        // console.warn(`Could not query state for ${command}: ${e}`);
+                    }
+                }
+            });
+
+            // --- Update Alignment Buttons ---
+            alignmentCommands.forEach(command => {
+                 const button = toolbar.querySelector(`button[data-command="${command}"]`);
+                 if (button) {
+                     let isActive = false;
+                     try {
+                         isActive = document.queryCommandState(command);
+                         // Fallback check if queryCommandState is unreliable for alignment
+                         if (!isActive) {
+                             let node = selection.anchorNode;
+                             const alignMap = { justifyLeft: 'left', justifyCenter: 'center', justifyRight: 'right', justifyFull: 'justify' };
+                             const expectedAlign = alignMap[command];
+                             let currentAlign = 'start'; // Default
+                             let checkNode = getContainingBlock(node, activeEditor); // Find the block element
+                             if (checkNode) {
+                                 currentAlign = window.getComputedStyle(checkNode).textAlign;
+                             } else {
+                                 currentAlign = window.getComputedStyle(activeEditor).textAlign; // Fallback to editor style
+                             }
+                             // Resolve start/end based on direction
+                             if (currentAlign === 'start') currentAlign = document.dir === 'rtl' ? 'right' : 'left';
+                             if (currentAlign === 'end') currentAlign = document.dir === 'rtl' ? 'left' : 'right';
+                             isActive = currentAlign === expectedAlign;
+                         }
+                     } catch (e) { isActive = false; /* console.warn(`Could not query state for ${command}: ${e}`); */ }
+                     button.classList.toggle('active', isActive);
+                     button.setAttribute('aria-pressed', isActive);
+                 }
+             });
+
+             // --- Update Selects (Font, Format Block) ---
+            ['fontName', 'formatBlock'].forEach(command => {
+                const select = toolbar.querySelector(`select[data-command="${command}"]`);
+                if (select) {
+                     let value = '';
+                     try {
+                         value = document.queryCommandValue(command);
+                         // Normalize font name value (remove quotes, take first font)
+                         if (command === 'fontName' && value) {
+                             value = value.split(',')[0].replace(/['"]/g, '').trim();
+                         }
+                         // Normalize format block value (lowercase)
+                         if (command === 'formatBlock' && value) {
+                              value = value.toLowerCase();
+                              // Map 'div' or other non-standard blocks to 'p' if needed
+                              if (!Array.from(select.options).some(opt => opt.value.toLowerCase() === value)) {
+                                  value = 'p'; // Default to paragraph
+                              }
+                         }
+                     } catch(e) { value = ''; /* console.warn(`Could not query value for ${command}: ${e}`); */ }
+
+                     // If queryCommandValue fails, try inspecting the node
+                     if (!value && selection.anchorNode) {
+                         let node = selection.anchorNode;
+                         if (node.nodeType === 3) node = node.parentNode; // Get element node
+
+                         if (command === 'formatBlock') {
+                            let blockNode = getContainingBlock(node, activeEditor);
+                             value = blockNode ? blockNode.tagName.toLowerCase() : 'p';
+                              if (!Array.from(select.options).some(opt => opt.value.toLowerCase() === value)) {
+                                  value = 'p'; // Default to paragraph if tag not in list
+                              }
+                         } else if (command === 'fontName') {
+                             if (node && activeEditor.contains(node)) {
+                                value = window.getComputedStyle(node).fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+                             }
+                         }
+                     }
+
+                     // Set the select value
+                     if (value) {
+                         const normalizedValue = value.toLowerCase();
+                         let optionFound = false;
+                         for (let opt of select.options) {
+                             // Check option value or font-family style for fontName
+                             const optValue = (command === 'fontName' && opt.style.fontFamily)
+                                 ? opt.style.fontFamily.split(',')[0].replace(/['"]/g, '').trim().toLowerCase()
+                                 : opt.value.toLowerCase();
+                             if (optValue === normalizedValue) {
+                                 select.value = opt.value;
+                                 optionFound = true;
+                                 break;
+                             }
+                         }
+                         if (!optionFound) {
+                             // Fallback if exact match not found
+                              if (command === 'formatBlock') select.value = 'p';
+                              else select.selectedIndex = Array.from(select.options).findIndex(opt => opt.selected) ?? 0; // Keep selected or first
+                         }
+                     } else {
+                         // Default if no value found
+                         if (command === 'formatBlock') select.value = 'p';
+                         else select.selectedIndex = Array.from(select.options).findIndex(opt => opt.selected) ?? 0;
+                     }
+                }
+            });
+
+            // --- Update Custom Selects (Font Size, Line Height) ---
+            const fontSizeSelect = toolbar.querySelector('select[data-custom-command="fontSize"]');
+            if (fontSizeSelect) {
+                 let sizeValue = '11pt'; // Default
+                 let node = selection.anchorNode;
+                 if (node && node.nodeType === 3) node = node.parentNode;
+                 if (node && activeEditor.contains(node)) {
+                     try {
+                        const currentSize = window.getComputedStyle(node).fontSize;
+                        // Convert px to pt (approx) and find closest option
+                        const currentPt = parseFloat(currentSize) * 0.75;
+                         const closestOption = Array.from(fontSizeSelect.options).reduce((prev, curr) => (
+                            Math.abs(parseInt(curr.value) - currentPt) < Math.abs(parseInt(prev.value) - currentPt) ? curr : prev
+                         ), fontSizeSelect.options[0]); // Provide default initial value
+                         sizeValue = closestOption.value;
+                     } catch (e) { /* Use default */ }
+                 }
+                 fontSizeSelect.value = sizeValue;
+            }
+
+             const lineHeightSelect = toolbar.querySelector('select[data-custom-command="lineHeight"]');
+             if (lineHeightSelect) {
+                  let lineHeightValue = '1.5'; // Default
+                  let blockNode = getContainingBlock(selection.anchorNode, activeEditor);
+                  if (blockNode) {
+                      try {
+                         const currentLineHeight = window.getComputedStyle(blockNode).lineHeight;
+                         // Find matching option (handle 'normal' or px values if necessary)
+                         let matched = false;
+                         for (let opt of lineHeightSelect.options) {
+                             if (opt.value === currentLineHeight) {
+                                 lineHeightValue = opt.value;
+                                 matched = true; break;
+                             }
+                         }
+                         // If no direct match, maybe calculate based on font size if it's 'normal' or px? (Complex)
+                         // Stick to default if no match found for now
+                      } catch(e) { /* Use default */ }
+                  }
+                  lineHeightSelect.value = lineHeightValue;
+             }
+
+             // --- Update Custom Toggle Buttons (Overline, Shadow, etc.) ---
+             const customToggles = [
+                { cmd: 'overline', type: 'style', prop: 'textDecorationLine', val: 'overline' }, // Check includes 'overline'
+                { cmd: 'textShadow', type: 'style', prop: 'textShadow', val: '1px 1px 3px rgba(0,0,0,0.5)'}, // Check if not 'none'
+                { cmd: 'textBorder', type: 'class', class: 'text-border' }, // Check class
+                { cmd: 'textGlow', type: 'class', class: 'text-glow' }   // Check class
+             ];
+             customToggles.forEach(toggle => {
+                 const button = toolbar.querySelector(`button[data-custom-command="${toggle.cmd}"]`);
+                 if (button) {
+                     const isActive = checkCustomStyleActive(toggle.type, toggle.prop, toggle.class || toggle.val);
+                     button.classList.toggle('active', isActive);
+                     button.setAttribute('aria-pressed', isActive);
+                 }
+             });
+
+             // --- Update Color Previews ---
+            try {
+                 const foreColor = document.queryCommandValue('foreColor');
+                 document.getElementById('foreColorPreview').style.backgroundColor = foreColor ? rgbToHex(foreColor) : 'var(--text-color)';
+            } catch (e) { /* Ignore */ }
+            try {
+                 const backColor = document.queryCommandValue('hiliteColor'); // Check hiliteColor for background
+                 document.getElementById('backColorPreview').style.backgroundColor = backColor ? rgbToHex(backColor) : '#ffffff';
+            } catch (e) { /* Ignore */ }
+             try {
+                let blockNode = getContainingBlock(selection.anchorNode, activeEditor);
+                 const blockBg = blockNode ? window.getComputedStyle(blockNode).backgroundColor : 'transparent';
+                 document.getElementById('blockBackColorPreview').style.backgroundColor = rgbToHex(blockBg) || '#ffffff';
+             } catch(e) { /* Ignore */ }
+
+             // --- Update Direction Buttons ---
+             const currentDirection = getContainingBlock(selection.anchorNode, activeEditor)?.style.direction || activeEditor.style.direction || document.documentElement.dir || 'rtl';
+             document.querySelectorAll('button[data-custom-command="setDirection"]').forEach(btn => {
+                 const isActive = btn.dataset.value === currentDirection;
+                 btn.classList.toggle('active', isActive);
+                 btn.setAttribute('aria-pressed', isActive);
+             });
+
+            updateStatusStyleInfo();
+        };
+
+        // Update status bar style info
+        const updateStatusStyleInfo = () => {
+            if (!styleInfoSpan) return;
+            if (!currentSelection || !currentSelection.anchorNode) { styleInfoSpan.textContent = ''; return; }
+
+            let node = currentSelection.anchorNode;
+            const activeEditor = getActiveEditorElement();
+             if (!node || !activeEditor || !activeEditor.contains(node)) { styleInfoSpan.textContent = ''; return; }
+
+            if (node.nodeType === 3) node = node.parentNode; // Get the element
+
+            try {
+                const styles = window.getComputedStyle(node);
+                const font = styles.fontFamily.split(',')[0].replace(/['"]/g, '').trim();
+                const size = styles.fontSize;
+                let formatTag = 'p'; // Default
+                let blockNode = getContainingBlock(node, activeEditor);
+                if (blockNode) {
+                    formatTag = blockNode.tagName.toLowerCase();
+                }
+                styleInfoSpan.textContent = `النمط: ${formatTag} | الخط: ${font} | الحجم: ${size}`;
+            } catch (e) {
+                styleInfoSpan.textContent = ''; // Clear on error
+            }
+        };
+
+        // --- Word/Char Counter (Counts all pages) ---
+        const updateStatusCounter = () => {
+            if (!wordCountSpan || !charCountSpan) return;
+            let fullText = '';
+            editorArea.querySelectorAll('.page-content').forEach(editor => {
+                try {
+                     // Clone editor content, remove non-text elements for better counting? (Optional complexity)
+                     // Simple textContent is usually sufficient
+                     fullText += (editor.textContent || '') + "\n";
+                } catch(e) { console.warn("Error getting text content for counter:", e); }
+            });
+            const text = fullText.trim().replace(/\s+/g, ' '); // Normalize whitespace
+            const words = text ? text.split(' ') : []; // Split by space
+            const chars = fullText.length; // Count raw characters including newlines between pages
+            wordCountSpan.textContent = words.length === 1 && words[0] === '' ? 0 : words.length; // Handle empty case
+            charCountSpan.textContent = chars;
+         };
+
+        // --- وظائف الحفظ ---
+        const triggerDownload = (filename, dataUrl) => { const link = document.createElement('a'); link.href = dataUrl; link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); /* Clean up blob URL */ };
+
+        document.getElementById('savePdf')?.addEventListener('click', async () => {
+            showLoader(true);
+            // Temporarily disable editing on all pages
+            const editors = editorArea.querySelectorAll('.page-content');
+            editors.forEach(editor => editor.setAttribute('contenteditable', 'false'));
+            hideFloatingPanels(); deselectAllShapes(); // Ensure clean capture
+            const originalScrollTop = editorArea.scrollTop; editorArea.scrollTop = 0; // Scroll to top for capture
+            await new Promise(resolve => setTimeout(resolve, 150)); // Wait for rendering potentially
+
+            try {
+                if (typeof html2canvas === 'undefined' || typeof jsPDF === 'undefined') {
+                    throw new Error("Libraries jsPDF/html2canvas not loaded");
+                }
+                const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4', putOnlyUsedFonts: true, floatPrecision: 16 });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const pageElements = Array.from(editorArea.querySelectorAll('.page-container'));
+
+                for (let i = 0; i < pageElements.length; i++) {
+                     const pageElement = pageElements[i];
+                     // Ensure elements like shapes/tables with absolute positioning are captured correctly
+                     // May need allowTaint: true if external resources cause issues, but better to handle CORS
+                     const canvas = await html2canvas(pageElement, {
+                         scale: 2, // Increase scale for better quality PDF
+                         useCORS: true, // Attempt to load cross-origin images
+                         logging: false,
+                         width: pageElement.offsetWidth, // Use actual rendered size at current zoom? No, use base size? Test this. Let's stick to offsetWidth.
+                         height: pageElement.offsetHeight,
+                         windowWidth: pageElement.scrollWidth, // Provide full scroll dimensions
+                         windowHeight: pageElement.scrollHeight,
+                         scrollX: 0, scrollY: 0, x: 0, y: 0, // Capture from top-left
+                         ignoreElements: (element) => element.classList.contains('floating-panel') || element.classList.contains('resize-handle') || element.classList.contains('loader-overlay') || element.closest('.floating-panel') // Ignore floating panels and handles
+                     });
+                     const imgData = canvas.toDataURL('image/png');
+                     const imgProps = pdf.getImageProperties(imgData);
+
+                     // Calculate image dimensions to fit A4 page while maintaining aspect ratio
+                     const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
+                     const imgWidth = imgProps.width * ratio;
+                     const imgHeight = imgProps.height * ratio;
+
+                     // Center the image on the PDF page (adjust xPos/yPos for margins if needed)
+                     const xPos = (pdfWidth - imgWidth) / 2;
+                     const yPos = (pdfHeight - imgHeight) / 2;
+
+                     if (i > 0) pdf.addPage(); // Add new page for subsequent pages
+                     pdf.addImage(imgData, 'PNG', xPos, yPos, imgWidth, imgHeight, undefined, 'FAST'); // Use FAST compression
+                }
+                pdf.save('document.pdf');
+            } catch (error) {
+                console.error("Error saving PDF:", error);
+                alert("حدث خطأ أثناء حفظ الملف بصيغة PDF. تأكد من تحميل المكتبات بشكل صحيح وأن المحتوى لا يحتوي على مشاكل.");
+            }
+            finally {
+                showLoader(false);
+                // Re-enable editing
+                editors.forEach(editor => editor.setAttribute('contenteditable', 'true'));
+                editorArea.scrollTop = originalScrollTop; // Restore scroll position
+                getActiveEditorElement()?.focus(); // Restore focus
+            }
+        });
+
+        document.getElementById('savePng')?.addEventListener('click', async () => {
+             showLoader(true);
+             const pageContainers = editorArea.querySelectorAll('.page-container');
+             if (!pageContainers.length) {
+                 alert("لا توجد صفحات للحفظ.");
+                 showLoader(false);
+                 return;
+             }
+             // Temporarily disable editing
+             const editors = editorArea.querySelectorAll('.page-content');
+             editors.forEach(editor => editor.setAttribute('contenteditable', 'false'));
+             hideFloatingPanels(); deselectAllShapes(); // Ensure clean capture
+             const originalScrollTop = editorArea.scrollTop; editorArea.scrollTop = 0; // Scroll to top
+             await new Promise(resolve => setTimeout(resolve, 150)); // Wait for rendering potentially
+
+             try {
+                 if (typeof html2canvas === 'undefined') throw new Error("html2canvas not loaded");
+
+                 for (let i = 0; i < pageContainers.length; i++) {
+                     const pageElement = pageContainers[i];
+                     const pageNumber = i + 1;
+                     console.log(`Capturing PNG for page ${pageNumber}`);
+
+                      // Scroll the specific page into view if needed (might help with lazy-loaded content)
+                      // pageElement.scrollIntoView({ block: 'nearest' });
+                      // await new Promise(resolve => setTimeout(resolve, 50)); // Short delay after scroll
+
+                     const canvas = await html2canvas(pageElement, {
+                         scale: 2, // Good resolution for PNG
+                         useCORS: true,
+                         logging: false,
+                         width: pageElement.offsetWidth,
+                         height: pageElement.offsetHeight,
+                         windowWidth: pageElement.scrollWidth,
+                         windowHeight: pageElement.scrollHeight,
+                         scrollX: 0, scrollY: 0, x: 0, y: 0,
+                         ignoreElements: (el) => el.classList.contains('floating-panel') || el.classList.contains('resize-handle') || el.classList.contains('loader-overlay') || el.closest('.floating-panel')
+                     });
+                     triggerDownload(`document_page_${pageNumber}.png`, canvas.toDataURL('image/png'));
+                     console.log(`Download triggered for page ${pageNumber}`);
+                     await new Promise(resolve => setTimeout(resolve, 50)); // Small delay between downloads maybe?
+                 }
+
+             } catch (error) {
+                 console.error("Error saving PNG:", error);
+                 alert("حدث خطأ أثناء حفظ الملفات بصيغة PNG.");
+             } finally {
+                 showLoader(false);
+                 // Re-enable editing
+                 editors.forEach(editor => editor.setAttribute('contenteditable', 'true'));
+                 editorArea.scrollTop = originalScrollTop; // Restore scroll position
+                 getActiveEditorElement()?.focus(); // Restore focus
+             }
+         });
+
+         document.getElementById('saveHtml')?.addEventListener('click', () => {
+             showLoader(true);
+             try {
+                 let combinedHTML = '';
+                 const defaultFontFamily = getComputedStyle(document.body).fontFamily;
+                 const defaultLineHeight = getComputedStyle(document.body).lineHeight;
+                 const pageBorderWidth = getComputedStyle(document.documentElement).getPropertyValue('--page-border-width');
+                 const pageBorderStyle = getComputedStyle(document.documentElement).getPropertyValue('--page-border-style');
+                 const pageBorderColor = getComputedStyle(document.documentElement).getPropertyValue('--page-border-color');
+                 const pagePadding = getComputedStyle(document.documentElement).getPropertyValue('--page-padding');
+                 const pagePaddingMobile = getComputedStyle(document.documentElement).getPropertyValue('--page-padding-mobile');
+
+                 editorArea.querySelectorAll('.page-container').forEach((page, index) => {
+                      const pageContentElement = page.querySelector('.page-content');
+                      if (!pageContentElement) return;
+
+                      // Clone the content to modify it without affecting the live editor
+                      const contentClone = pageContentElement.cloneNode(true);
+
+                      // Remove unwanted elements from the clone
+                      contentClone.querySelectorAll('.resize-handle, .loader-overlay, .floating-panel').forEach(el => el.remove());
+                      // Remove helper attributes
+                      contentClone.querySelectorAll('[data-listeners-added], [data-shape-listeners-added]').forEach(el => {
+                          el.removeAttribute('data-listeners-added');
+                          el.removeAttribute('data-shape-listeners-added');
+                      });
+                       // Remove selection classes
+                      contentClone.querySelectorAll('.selected-cell, .selected-table, .selected').forEach(el => {
+                          el.classList.remove('selected-cell', 'selected-table', 'selected');
+                      });
+                      // Remove temporary dragging classes/styles
+                      contentClone.querySelectorAll('.dragging-table, .dragging, .resizing').forEach(el => {
+                          el.classList.remove('dragging-table', 'dragging', 'resizing');
+                           // Reset position if it was made absolute for dragging? Probably best to keep absolute if user dragged it.
+                      });
+                      // Clean contenteditable attribute (should not be needed in saved file)
+                       contentClone.removeAttribute('contenteditable');
+                       contentClone.querySelectorAll('[contenteditable="true"]').forEach(el => el.removeAttribute('contenteditable'));
+
+
+                      let pageHTML = contentClone.innerHTML;
+                      pageHTML = pageHTML.replace(/&#8203;/g, ''); // Remove zero-width spaces
+
+                      combinedHTML += `<!-- Page ${index + 1} -->\n<div class="saved-page">\n${pageHTML}\n</div>\n`;
+                 });
+
+                 // Define CSS for classes used (like text-border, text-glow) and absolutely positioned elements
+                 const cssStyles = `
+<style>:root { --a4-width: 794px; --a4-height: 1123px; --page-padding: ${pagePadding}; --page-padding-mobile: ${pagePaddingMobile}; }
+body { font-family: ${defaultFontFamily}; line-height: ${defaultLineHeight}; margin: 0; padding: 0; background-color: #e0e0e0; direction: rtl; }
+.saved-page { width: var(--a4-width); min-height: var(--a4-height); padding: var(--page-padding); margin: 20px auto; background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden; page-break-after: always; border: ${pageBorderWidth} ${pageBorderStyle} ${pageBorderColor}; position: relative; /* Needed for absolute children */ }
+img { max-width: 100%; height: auto; display: block; }
+table { width: auto; max-width: 100%; border-collapse: collapse; margin-bottom: 1em; border: 1px solid #ccc; /* Position may be inline or absolute based on user action */ }
+th, td { border: 1px solid #ccc; padding: 6px 8px; vertical-align: top; min-width: 30px; }
+th { background-color: #f2f2f2; font-weight: bold; }
+blockquote { border-right: 4px solid #ccc; padding-right: 1em; margin: 1em 0; font-style: italic; color: #555; }
+ul, ol { margin-right: 2.5em; margin-bottom: 0.8em; padding-right:0;}
+html[dir="ltr"] blockquote { border-right: none; border-left: 4px solid #ccc; padding-right: 0; padding-left: 1em; }
+html[dir="ltr"] ul, html[dir="ltr"] ol { margin-right: 0; margin-left: 2.5em; }
+.text-border { padding: 0 2px; border: 1px solid currentColor; border-radius: 2px; display: inline-block; line-height: 1; }
+.text-glow { text-shadow: 0 0 5px currentColor, 0 0 8px currentColor; }
+.text-overline { text-decoration: overline; } /* Assuming standard overline */
+.shape { position: absolute !important; /* Keep absolute */ cursor: default; z-index: 5; }
+.shape.circle { border-radius: 50%; }
+.abs-text-box { position: absolute !important; border: 1px solid transparent; padding: 5px; z-index: 3; } /* Style for saved abs text */
+@media (max-width: 900px) { .saved-page { padding: var(--page-padding-mobile); } }
+@media print { body { background-color: #fff; margin: 0; padding: 0; } .saved-page { box-shadow: none; margin: 0; border: ${pageBorderWidth} ${pageBorderStyle} ${pageBorderColor}; width: 100%; height: auto; padding: ${pagePadding}; page-break-inside: avoid; position: relative; } .shape, .abs-text-box, table[style*="position: absolute"] { position: absolute !important; } /* Ensure absolute positioning is kept for print */ }
+</style>`;
+
+                 const fullHTML = `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>مستند محفوظ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Changa:wght@300;400;600;700&family=Lateef&family=Lemonada:wght@300;400;600&family=Markazi+Text:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Readex+Pro:wght@300;400;500;600&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+${cssStyles}</head><body>${combinedHTML}</body></html>`;
+
+                 const blob = new Blob([fullHTML], { type: 'text/html' });
+                 triggerDownload('document.html', URL.createObjectURL(blob));
+             } catch (error) {
+                 console.error("Error saving HTML:", error);
+                 alert("حدث خطأ أثناء حفظ الملف بصيغة HTML.");
+             }
+             finally { showLoader(false); }
+         });
+
+        // --- Event Listeners Setup ---
+        const handleSelectionChange = () => {
+            // Debounce or throttle this? Can fire very rapidly.
+            // Simple check: if selection hasn't actually changed node/offset, maybe skip update?
+            const newSelection = window.getSelection();
+            if (newSelection && currentSelection &&
+                newSelection.anchorNode === currentSelection.anchorNode &&
+                newSelection.anchorOffset === currentSelection.anchorOffset &&
+                newSelection.focusNode === currentSelection.focusNode &&
+                newSelection.focusOffset === currentSelection.focusOffset &&
+                newSelection.rangeCount === currentSelection.rangeCount) {
+                 // Selection likely hasn't changed meaningfully for toolbar state
+                 // return; // Skip update? Be careful, might miss caret movement style changes
+            }
+
+            currentSelection = newSelection ? newSelection.getRangeAt(0).cloneRange() : null; // Store a copy
+
+             // Update based on current caret position or selection
+            const activeEditor = getActiveEditorElement();
+             if (activeEditor && activeEditor.contains(document.activeElement)) {
+                currentEditingElement = activeEditor; // Track the focused editor
+             }
+            updateToolbarState(); // Update toolbar based on new selection/caret
+            updateStatusCounter(); // Update word/char count
+        };
+
+        const setupPageContentListeners = (editorElement) => {
+             editorElement.addEventListener('focus', (e) => {
+                 currentEditingElement = e.target; // Track focused editor
+                 // console.log("Focus on:", currentEditingElement.id);
+                 handleSelectionChange(); // Update toolbar etc. on focus
+             });
+             editorElement.addEventListener('blur', (e) => {
+                // Don't hide panels immediately on blur, might be focusing panel itself
+                setTimeout(() => {
+                    const activeEl = document.activeElement;
+                    // Hide ONLY if focus moved completely outside editor, toolbar, panels, modals
+                    if (!editorArea.contains(activeEl) &&
+                        !toolbar.contains(activeEl) &&
+                        !activeEl?.closest('.floating-panel') &&
+                        !activeEl?.closest('.modal-overlay'))
+                    {
+                        // console.log("Hiding panels due to blur outside editor area");
+                        hideFloatingPanels();
+                    }
+                }, 150); // Delay allows focus to shift to panel/toolbar
+             });
+             editorElement.addEventListener('input', handleSelectionChange); // Update toolbar/counter on input
+             editorElement.addEventListener('keydown', handleSelectionChange); // Catch arrow keys etc.
+             editorElement.addEventListener('mouseup', handleSelectionChange); // Update after mouse selection
+
+             editorElement.addEventListener('paste', (event) => {
+                 event.preventDefault();
+                 const text = event.clipboardData?.getData('text/plain') || '';
+                 if (text) {
+                     // Insert text using execCommand for better undo/redo integration
+                      executeStandardCommand('insertText', text);
+                 }
+                 updateStatusCounter();
+             });
+
+             // --- Click handling for Tables and Shapes ---
+             editorElement.addEventListener('click', (event) => {
+                const clickedElement = event.target;
+                const table = clickedElement.closest('table');
+                const shape = clickedElement.closest('.shape');
+
+                 if (shape) {
+                    selectShape(shape);
+                     event.stopPropagation(); // Prevent hiding panel
+                 } else if (table) {
+                     // Show controls, select cell if TD/TH clicked, otherwise just table
+                     showTableControls(clickedElement.closest('td, th') || table);
+                     event.stopPropagation(); // Prevent hiding panel
+                 } else if (!clickedElement.closest('.floating-panel')) {
+                      // Clicked on page background or regular text (not shape/table/panel)
+                      // console.log("Clicked editor background or text");
+                      hideFloatingPanels(); // Hide both table and shape panels
+                 }
+             });
+
+             // --- Double Click Listener ---
+             editorElement.addEventListener('dblclick', handleDoubleClickOnPage);
+
+             // --- Setup listeners for existing elements ---
+             editorElement.querySelectorAll('.shape').forEach(setupShapeListeners);
+             editorElement.querySelectorAll('table.draggable-table').forEach(setupTableListeners);
+             editorElement.querySelectorAll('.abs-text-box').forEach(setupAbsTextBoxListeners);
+        };
+
+        // --- Global Click Listener (for hiding panels) ---
+         document.addEventListener('click', (event) => {
+             const target = event.target;
+             const isInsideEditorArea = editorArea.contains(target);
+             const isInsideToolbar = toolbar.contains(target);
+             const isInsidePanel = target.closest('.floating-panel');
+             const isInsideModal = target.closest('.modal-overlay');
+
+             // Hide panels IF the click is outside:
+             // - the editor area entirely
+             // - the toolbar
+             // - any floating panel
+             // - any modal
+             if (!isInsideEditorArea && !isInsideToolbar && !isInsidePanel && !isInsideModal) {
+                 // console.log("Global click outside relevant areas");
+                 hideFloatingPanels();
+             }
+         }, true); // Use capture phase to catch clicks early
+
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+            document.querySelectorAll('.page-content').forEach((editor, index) => {
+                setupPageContentListeners(editor);
+                if (index === 0) {
+                    currentEditingElement = editor; // Set initial focus target
+                }
+                // Placeholder handling (visual cue for empty editors)
+                if (!editor.innerHTML.trim() || editor.innerHTML === '<p><br></p>') {
+                    editor.classList.add('is-empty');
+                }
+                editor.addEventListener('input', () => {
+                     if (!editor.textContent?.trim()) { editor.classList.add('is-empty'); }
+                     else { editor.classList.remove('is-empty'); }
+                 });
+             });
+
+             // Listener for selection changes (covers keyboard and mouse)
+             // Use 'selectionchange' on document for broader coverage
+            document.addEventListener('selectionchange', handleSelectionChange);
+
+            addPageBtn.addEventListener('click', addNewPage);
+            zoomInBtn.addEventListener('click', zoomIn);
+            zoomOutBtn.addEventListener('click', zoomOut);
+            zoomFitBtn.addEventListener('click', zoomFit);
+            zoomResetBtn.addEventListener('click', zoomReset);
+            insertSymbolBtn.addEventListener('click', showSymbolsModal);
+            closeSymbolsModalBtn.addEventListener('click', hideSymbolsModal);
+            symbolsContainer.addEventListener('click', handleSymbolClick);
+            pageBorderBtn.addEventListener('click', showBorderModal);
+            closeBorderModalBtn.addEventListener('click', hideBorderModal);
+            cancelBorderBtn.addEventListener('click', hideBorderModal);
+            borderWidthSelect.addEventListener('change', updateBorderPreview);
+            borderStyleSelect.addEventListener('change', updateBorderPreview);
+            borderColorInput.addEventListener('input', updateBorderPreview);
+            applyBorderBtn.addEventListener('click', applyPageBorder);
+
+             // --- Panel Event Delegation ---
+             tableControlsPanel.addEventListener('click', (e) => {
+                 const button = e.target.closest('button[data-action]');
+                 if (button) handleTableControlAction(button.dataset.action, button);
+                 // Don't stop propagation here, allow global click listener to check
+             });
+             tableControlsPanel.addEventListener('input', (e) => {
+                 const input = e.target.closest('input[type="color"][data-action]');
+                 if (input) handleTableControlAction(input.dataset.action, input);
+             });
+             shapeControlsPanel.addEventListener('click', (e) => {
+                 const button = e.target.closest('button[data-action]');
+                 if (button) handleShapeControlAction(button.dataset.action, button);
+             });
+             shapeControlsPanel.addEventListener('input', (e) => {
+                 const element = e.target.closest('input[type="color"][data-action], select[data-action]');
+                 if (element) handleShapeControlAction(element.dataset.action, element);
+             });
+             shapeControlsPanel.addEventListener('change', (e) => {
+                 const element = e.target.closest('select[data-action]');
+                 if (element) handleShapeControlAction(element.dataset.action, element);
+             });
+
+
+             // --- Initial State Setup ---
+             updateStatusCounter(); // Initial count
+             setTimeout(() => { // Delay initial updates slightly for accurate rendering/focus
+                 // Set initial zoom
+                 if (window.innerWidth <= 600) { // Mobile detect
+                     updateZoom(0.45); // **Set default mobile zoom to 45%**
+                 } else {
+                     updateZoom(1); // Default desktop zoom
+                 }
+                 // Set initial focus and update toolbar
+                 if (currentEditingElement) {
+                    currentEditingElement.focus(); // Focus first editor
+                 }
+                 handleSelectionChange(); // Update toolbar based on initial state
+             }, 150);
+
+            console.log("محرر المستندات الإحترافي (متعدد الصفحات) جاهز.");
+        });
+    </script>
+
+</body>
+</html>

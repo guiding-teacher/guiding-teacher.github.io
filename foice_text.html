@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> اداة ومحوّل الكلام إلى نص  👑</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dark-bg: #1a1a1a;
+            --dark-card-bg: #2b2b2b;
+            --text-light: #e0e0e0;
+            --gold-accent: #FFD700;
+            --gold-dark: #B8860B;
+            --button-start-bg: #007a4a;
+            --button-start-hover: #00643b;
+            --button-stop-bg: #B00000;
+            --button-stop-hover: #8b0000;
+            --button-copy-bg: #00507a;
+            --button-copy-hover: #003a5a;
+            --button-share-bg: #1DA1F2; /* Twitter Blue */
+            --button-share-hover: #0D8ADB;
+            --button-empty-bg: #8B4513; /* New color for empty text button (saddlebrown) */
+            --button-empty-hover: #6B3000;
+            --button-clear-bg: #555555;
+            --button-clear-hover: #444444;
+            --shadow-dark: rgba(0, 0, 0, 0.6);
+            --border-gold-subtle: rgba(255,215,0,0.3);
+            --border-gold-strong: rgba(255,215,0,0.6);
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            text-align: center;
+            direction: rtl;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--dark-card-bg);
+            padding: 35px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px var(--shadow-dark);
+            width: 100%;
+            max-width: 850px;
+            border: 1px solid var(--border-gold-subtle);
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.8s ease-out;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        h1 {
+            color: var(--gold-accent);
+            margin-bottom: 10px;
+            font-size: 2.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-shadow: 0 0 10px rgba(255,215,0,0.4);
+        }
+
+        .button-group {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px var(--shadow-dark);
+            font-family: 'Cairo', sans-serif;
+            text-align: center;
+            min-width: 160px;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        button:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.8);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px var(--shadow-dark);
+        }
+
+        button:disabled {
+            background-color: #444 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            color: #777;
+        }
+
+        #startButton {
+            background-color: var(--button-start-bg);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--button-start-bg);
+        }
+
+        #startButton:hover {
+            background-color: var(--button-start-hover);
+            border-color: var(--button-start-hover);
+        }
+
+        #startButton.listening::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background-color: var(--gold-accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 1.5s infinite ease-out;
+            box-shadow: 0 0 0 0 var(--gold-accent);
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; box-shadow: 0 0 0 0 var(--gold-accent); }
+            70% { transform: translate(-50%, -50%) scale(2); opacity: 0; box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
+        #stopButton {
+            background-color: var(--button-stop-bg);
+            border: 1px solid var(--button-stop-bg);
+        }
+
+        #stopButton:hover {
+            background-color: var(--button-stop-hover);
+            border-color: var(--button-stop-hover);
+        }
+
+        .action-buttons-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        #copyTextBtn {
+            background-color: var(--button-copy-bg);
+            border: 1px solid var(--button-copy-bg);
+        }
+        #copyTextBtn:hover {
+            background-color: var(--button-copy-hover);
+            border-color: var(--button-copy-hover);
+        }
+
+        #shareTextBtn { /* New styles for share button */
+            background-color: var(--button-share-bg);
+            border: 1px solid var(--button-share-bg);
+            display: none; /* Hidden by default, shown if navigator.share is supported */
+        }
+        #shareTextBtn:hover {
+            background-color: var(--button-share-hover);
+            border-color: var(--button-share-hover);
+        }
+
+        #emptyTextBtn {
+            background-color: var(--button-empty-bg);
+            border: 1px solid var(--button-empty-bg);
+        }
+        #emptyTextBtn:hover {
+            background-color: var(--button-empty-hover);
+            border-color: var(--button-empty-hover);
+        }
+
+        #clearAllBtn {
+            background-color: var(--button-clear-bg);
+            border: 1px solid var(--button-clear-bg);
+            margin-top: 30px;
+            width: fit-content;
+        }
+
+        #clearAllBtn:hover {
+            background-color: var(--button-clear-hover);
+            border-color: var(--button-clear-hover);
+        }
+
+        .output-display-container {
+            background-color: #3a3a3a;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 40px;
+            border: 1px solid var(--border-gold-strong);
+            box-shadow: 0 8px 25px var(--shadow-dark);
+            text-align: right;
+        }
+
+        .output-display-container p {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+       
+        .large-text-output {
+            background-color: #f8f8f8;
+            color: #333;
+            min-height: 250px;
+            max-height: 400px; /* تحديد ارتفاع أقصى لتفعيل شريط التمرير */
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 0;
+            font-size: 1.3em;
+            line-height: 1.6;
+            text-align: right;
+            overflow-y: auto; /* تفعيل شريط التمرير الرأسي عند الحاجة */
+            border: 1px solid #ddd;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+            background-image: linear-gradient(to bottom, #eee 1px, transparent 1px);
+            background-size: 100% 1.6em;
+            box-sizing: border-box;
+            
+            /* تخصيص شريط التمرير */
+            scrollbar-width: thin; /* لمتصفحات Firefox */
+            scrollbar-color: var(--gold-dark) #f1f1f1; /* لمتصفحات Firefox */
+        }
+
+        /* تخصيص شريط التمرير لمتصفحات WebKit (Chrome, Edge, Safari) */
+        .large-text-output::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .large-text-output::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+
+        .large-text-output::-webkit-scrollbar-thumb {
+            background-color: var(--gold-dark);
+            border-radius: 5px;
+            border: 2px solid #f1f1f1;
+        }
+
+        .large-text-output::-webkit-scrollbar-thumb:hover {
+            background-color: var(--gold-accent);
+        }
+
+        /* Placeholder for contenteditable div */
+        .large-text-output:empty::before {
+            content: attr(placeholder);
+            color: #aaa;
+            cursor: text;
+        }
+
+        #status {
+            font-size: 1.1em;
+            color: #aaaaaa;
+            margin-top: -15px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .small-text {
+            font-size: 0.9em;
+            color: #777777;
+            margin-top: 40px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 15px;
+                border-radius: 15px;
+            }
+            h1 {
+                font-size: 2.2em;
+                margin-bottom: 10px;
+            }
+            .button-group, .action-buttons-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+            button {
+                width: 100%;
+                min-width: unset;
+                padding: 12px 25px;
+                font-size: 1.1em;
+            }
+            .output-display-container {
+                padding: 18px;
+                border-radius: 12px;
+            }
+            .output-display-container p {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+            }
+            .large-text-output {
+                min-height: 200px; /* Adjusted height for mobile */
+                padding: 12px;
+                font-size: 1.1em;
+            }
+            .action-buttons-group button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            #clearAllBtn {
+                width: 100%;
+            }
+            #status {
+                font-size: 0.95em;
+                margin-bottom: 15px;
+            }
+            .small-text {
+                font-size: 0.8em;
+                margin-top: 30px;
+            }
+        }
+    </style>
+</head>
+    
+<body>
+    
+    <div class="container">
+        <h1><span role="img" aria-label="Crown">😍</span> اكتب بصوتك <span role="img" aria-label="Sparkles">✨</span></h1>
+
+        <p style="font-size: 1.1em; line-height: 1.8; margin-bottom: 15px; color: var(--gold-dark);">
+            
+            <br>سجل صوتك ودزة مباشر وين متريد
+        </p>
+        
+        <div class="button-group">
+            <button id="startButton">بدء الاستماع 🎤</button>
+            <button id="stopButton" disabled>إيقاف الاستماع 🛑</button>
+        </div>
+
+        <p id="status">الحالة: جاهز للاستماع ✅</p>
+
+        <div class="output-display-container">
+            <p>النص المُتعرف عليه:</p>
+            <div id="recognizedTextDisplay" class="large-text-output" dir="rtl" contenteditable="true" placeholder="سوف يظهر النص الذي تتعرف عليه هنا...">
+                <!-- Recognized text will appear here -->
+            </div>
+            <div class="action-buttons-group">
+                <button id="copyTextBtn">نسخ النص 📋</button>
+                <button id="shareTextBtn">مشاركة النص 📤</button> <!-- زر المشاركة الجديد -->
+                <button id="emptyTextBtn">إفراغ النص 🧹</button>
+            </div>
+        </div>
+        
+        <button id="clearAllBtn">إعادة ضبط الكل 🔄</button>
+
+        <p class="small-text">
+            هذا التطبيق يستخدم تقنيات متقدمة للتعرف على الكلام (Web Speech API).
+            تم تطويره لمساعدتك في تحويل الصوت إلى نص بسهولة وكفاءة!
+            <br>
+            <span style="font-size: 0.85em; color: #999;">
+                <a href="index.html">منصة المعلم المرشد </a>
+            </span>
+        </p>
+    </div>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert('عذراً! متصفحك لا يدعم Web Speech API. يرجى استخدام متصفح حديث مثل Chrome أو Edge أو Firefox لتجربة كاملة.');
+            document.querySelector('.container').innerHTML = `
+                <h1 style="color: #D32F2F;">عذراً، متصفحك لا يدعم هذه الميزة! 😢</h1>
+                <p style="font-size: 1.2em; line-height: 1.6;">
+                    يرجى استخدام متصفح ويب حديث مثل
+                    <a href="https://www.google.com/chrome/" target="_blank">Google Chrome</a>،
+                    <a href="https://www.microsoft.com/edge" target="_blank">Microsoft Edge</a>، أو
+                    <a href="https://www.mozilla.org/firefox/" target="_blank">Mozilla Firefox</a>
+                    للوصول إلى وظائف التعرف على الصوت.
+                </p>
+            `;
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ar-IQ'; // تم تغيير اللغة إلى 'ar-IQ' لدعم اللهجة العراقية
+            recognition.interimResults = false;
+            recognition.continuous = true; // جعل الاستماع مستمرًا
+
+            const startBtn = document.getElementById('startButton');
+            const stopBtn = document.getElementById('stopButton');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const statusSpan = document.getElementById('status');
+            const recognizedTextDisplay = document.getElementById('recognizedTextDisplay');
+            const copyTextBtn = document.getElementById('copyTextBtn');
+            const shareTextBtn = document.getElementById('shareTextBtn'); // الحصول على زر المشاركة
+            const emptyTextBtn = document.getElementById('emptyTextBtn');
+
+            const LOCAL_STORAGE_KEY = 'goldenSpeechToText'; // مفتاح الحفظ المحلي
+
+            // دالة لحفظ النص في التخزين المحلي
+            function saveTextToLocalStorage() {
+                localStorage.setItem(LOCAL_STORAGE_KEY, recognizedTextDisplay.textContent);
+            }
+
+            // دالة لتحميل النص من التخزين المحلي
+            function loadTextFromLocalStorage() {
+                const savedText = localStorage.getItem(LOCAL_STORAGE_KEY);
+                if (savedText !== null) { // تأكد من أن القيمة ليست null
+                    recognizedTextDisplay.textContent = savedText;
+                } else {
+                    recognizedTextDisplay.textContent = '';
+                }
+                // التمرير للأسفل لضمان رؤية أحدث نص
+                recognizedTextDisplay.scrollTop = recognizedTextDisplay.scrollHeight;
+            }
+
+            // دالة للتحقق من دعم Web Share API وتعديل ظهور زر المشاركة
+            function updateShareButtonVisibility() {
+                if (navigator.share) {
+                    shareTextBtn.style.display = 'inline-block'; // أظهر الزر إذا كان مدعوماً
+                } else {
+                    shareTextBtn.style.display = 'none'; // أخفِ الزر إذا لم يكن مدعوماً
+                    console.warn("Web Share API is not supported in this browser.");
+                }
+            }
+
+            // تحميل النص عند تحميل الصفحة
+            window.addEventListener('load', () => {
+                loadTextFromLocalStorage();
+                updateShareButtonVisibility(); // تحديث حالة زر المشاركة عند التحميل
+            });
+
+            // الاستماع إلى التغييرات اليدوية في مربع النص لحفظها تلقائياً
+            recognizedTextDisplay.addEventListener('input', saveTextToLocalStorage);
+
+
+            recognition.onstart = () => {
+                statusSpan.textContent = "الحالة: جاري الاستماع... 🎧";
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                startBtn.classList.add('listening');
+            };
+
+            recognition.onend = () => {
+                statusSpan.textContent = "الحالة: جاهز للاستماع ✅";
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+            };
+
+            recognition.onerror = (event) => {
+                let errorMsg = `خطأ في التعرف: ${event.error}`;
+                if (event.error === 'no-speech') errorMsg = "لم يتم الكشف عن صوت. حاول مجدداً";
+                else if (event.error === 'not-allowed') errorMsg = "يجب السماح باستخدام الميكروفون (الرجاء منح الإذن).";
+                else if (event.error === 'audio-capture') errorMsg = "مشكلة في التقاط الصوت. تحقق من الميكروفون.";
+                else if (event.error === 'network') errorMsg = "مشكلة في الشبكة. تحقق من اتصالك بالإنترنت.";
+                
+                console.error("Speech recognition error:", event);
+                statusSpan.textContent = errorMsg;
+                
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+            };
+
+            recognition.onresult = (event) => {
+                let currentTranscript = '';
+                // بما أن continuous صحيح، event.results ستحتوي على نتائج مؤقتة سابقة
+                // وآخر نتيجة نهائية. نحن نريد آخر نتيجة نهائية.
+                // النتيجة الأخيرة في event.results هي عادةً الأحدث.
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        currentTranscript += event.results[i][0].transcript;
+                    }
+                }
+                
+                if (currentTranscript.trim()) {
+                    const existingText = recognizedTextDisplay.textContent;
+                    // إضافة النص الجديد في سطر جديد، إلا إذا كان المربع فارغًا تمامًا
+                    recognizedTextDisplay.textContent = existingText ? existingText + '\n' + currentTranscript : currentTranscript;
+                    recognizedTextDisplay.scrollTop = recognizedTextDisplay.scrollHeight; // التمرير للأسفل تلقائياً
+                    statusSpan.textContent = "الحالة: تم التعرف على جزء من النص! 🎉";
+                    saveTextToLocalStorage(); // حفظ النص بعد كل تحديث صوتي
+                }
+            };
+
+            startBtn.onclick = () => {
+              try {
+                if (recognition.start) {
+                    recognition.start();
+                } else {
+                    throw new Error("recognition.start is not a function or supported.");
+                }
+              } catch (e) {
+                console.error("Error starting recognition:", e);
+                statusSpan.textContent = "خطأ عند بدء التعرف الصوتي: " + e.message;
+                  startBtn.disabled = false;
+                  stopBtn.disabled = true;
+                  startBtn.classList.remove('listening');
+              }
+            };
+
+            stopBtn.onclick = () => {
+              try {
+                if (recognition.stop) {
+                    recognition.stop();
+                } else {
+                    throw new Error("recognition.stop is not a function or supported.");
+                }
+              } catch (e) {
+                console.error("Error stopping recognition:", e);
+                statusSpan.textContent = "الحالة: خطأ عند الإيقاف.";
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+              }
+            };
+
+            copyTextBtn.onclick = async () => {
+                const textToCopy = recognizedTextDisplay.textContent;
+                if (!textToCopy.trim()) {
+                    alert("لا يوجد نص لنسخه!");
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(textToCopy);
+                    statusSpan.textContent = "الحالة: تم نسخ النص بنجاح! ✅";
+                } catch (err) {
+                    console.error('فشل نسخ النص: ', err);
+                    statusSpan.textContent = "الحالة: فشل نسخ النص ❌ (تأكد من السماح للمتصفح بالوصول إلى الحافظة أو استخدم HTTPS)";
+                    alert("فشل نسخ النص. يرجى محاولة النسخ يدوياً.");
+                }
+            };
+
+            // وظيفة زر المشاركة الجديد
+            shareTextBtn.onclick = async () => {
+                const textToShare = recognizedTextDisplay.textContent;
+
+                if (!textToShare.trim()) {
+                    alert("لا يوجد نص لمشاركته!");
+                    return;
+                }
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: 'نص من محول الكلام الذهبي 👑',
+                            text: textToShare,
+                            // يمكنك إضافة URL للصفحة إذا أردت مشاركتها أيضاً
+                            // url: window.location.href 
+                        });
+                        statusSpan.textContent = "الحالة: تم مشاركة النص بنجاح! ✅";
+                    } catch (error) {
+                        if (error.name === 'AbortError') {
+                            statusSpan.textContent = "الحالة: تم إلغاء المشاركة. 🚫";
+                        } else {
+                            console.error('خطأ عند مشاركة النص:', error);
+                            statusSpan.textContent = `الحالة: فشل مشاركة النص: ${error.message} ❌`;
+                            alert("فشل مشاركة النص. يرجى المحاولة مرة أخرى.");
+                        }
+                    }
+                } else {
+                    // هذا الجزء لا ينبغي أن يتم الوصول إليه إذا كان زر المشاركة مخفياً بشكل صحيح
+                    alert('عذراً! متصفحك لا يدعم ميزة المشاركة المباشرة. يرجى نسخ النص يدوياً.');
+                    statusSpan.textContent = "الحالة: ميزة المشاركة غير مدعومة في متصفحك. ❌";
+                }
+            };
+
+            emptyTextBtn.onclick = () => {
+                recognizedTextDisplay.textContent = "";
+                saveTextToLocalStorage(); // حفظ حالة الفراغ في localStorage
+                statusSpan.textContent = "الحالة: تم إفراغ النص بنجاح! 🧹";
+            };
+
+            clearAllBtn.onclick = () => {
+                recognizedTextDisplay.textContent = "";
+                saveTextToLocalStorage(); // حفظ حالة الفراغ في localStorage
+                statusSpan.textContent = "الحالة: جاهز للاستماع ✅";
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('listening');
+                if (recognition && recognition.abort) {
+                    try { recognition.abort(); } catch(e) { console.warn("Error aborting recognition on clear:", e); }
+                }
+            };
+        }
+    </script>
+</body>
+</html>

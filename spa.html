@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة العمليات الحسابية - أسئلة أكثر</title>
+    <style>
+        /* --- CSS styles from the previous version (unchanged) --- */
+        :root {
+            --phone-width: min(95vw, 360px);
+            --key-size: clamp(60px, 17vw, 80px);
+            --font-size-keys: clamp(2em, 7vw, 2.5em);
+            --font-size-display: clamp(2.2em, 8vw, 3em);
+            --font-size-feedback: clamp(1em, 3.5vw, 1.2em);
+            --font-size-question: clamp(1.2em, 4.5vw, 1.6em);
+            --op-button-size: clamp(38px, 11vw, 50px);
+            --flash-bg-color: transparent;
+            --key-border-color: #005ea0;
+        }
+
+        html, body {
+            height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden;
+            background-image: url('kids_background.jpg'); /* !!! استبدل بالصورة الصحيحة !!! */
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+            font-family: 'Tahoma', sans-serif; display: flex; justify-content: center; align-items: center;
+        }
+
+        .main-container {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: var(--phone-width); max-height: 100vh; padding: max(1vh, 8px);
+            box-sizing: border-box; gap: max(1.5vh, 10px);
+        }
+
+        .operation-selector {
+            display: flex; justify-content: space-around; align-items: center;
+            background-color: #d8e4f3; padding: 10px; border-radius: 10px;
+            width: 100%; box-sizing: border-box; box-shadow: 0 3px 7px rgba(0,0,0,0.15);
+            flex-wrap: wrap; gap: 10px;
+        }
+
+        .op-button {
+            width: var(--op-button-size); height: var(--op-button-size); border-radius: 50%;
+            border: 2px solid #777; background-color: #ffffff; color: #333;
+            font-size: 1.6em; font-weight: bold; cursor: pointer; display: flex;
+            justify-content: center; align-items: center;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+        }
+        .op-button:hover { background-color: #f0f0f0; }
+        .op-button.active { background-color: #5cb85c; border-color: #4cae4c; color: white; }
+        .op-button:active { transform: scale(0.92); }
+
+        .game-info { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 5px; }
+
+        .question-area {
+            background-color: #e7f0ff; padding: 12px 18px; border-radius: 10px;
+            font-size: var(--font-size-question); font-weight: bold; text-align: center;
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.15); width: 100%; min-height: 1.8em;
+            box-sizing: border-box; color: #222;
+        }
+
+        #feedback {
+            font-size: var(--font-size-feedback); font-weight: bold; min-height: 1.5em;
+            text-align: center; padding: 5px; border-radius: 5px; width: 100%;
+            box-sizing: border-box; transition: background-color 0.3s ease, color 0.3s ease;
+            text-shadow: 0px 0px 3px rgba(255, 255, 255, 0.7);
+        }
+
+        .correct-flash { background-color: #28a745; color: white; animation: feedback-flash 0.6s ease-out; text-shadow: none; }
+        .incorrect-flash { background-color: #dc3545; color: white; animation: feedback-flash 0.6s ease-out; text-shadow: none; }
+        @keyframes feedback-flash {
+            0%, 100% { background-color: transparent; color: inherit; text-shadow: 0px 0px 3px rgba(255, 255, 255, 0.7); }
+            50% { background-color: var(--flash-bg-color); color: white; text-shadow: none; }
+        }
+
+        .phone-container {
+            width: 100%; border: 3px solid #222; border-radius: 30px; background-color: #6fdd6f;
+            padding: max(2vh, 15px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); display: flex;
+            flex-direction: column; align-items: center; gap: max(1.5vh, 12px); box-sizing: border-box;
+        }
+
+        .screen {
+            background-color: white; width: 95%; height: clamp(75px, 15vh, 100px);
+            border: 3px solid #444; border-radius: 8px; padding: 8px 12px; box-sizing: border-box;
+            position: relative; overflow: hidden; display: flex; align-items: center; justify-content: flex-end;
+        }
+
+        #display {
+            font-size: var(--font-size-display); color: #111; white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; direction: ltr; flex-grow: 1; text-align: right; letter-spacing: 2px;
+        }
+
+        .wifi-symbol { display: none; }
+        .controls { display: flex; justify-content: space-around; align-items: center; width: 90%; margin-bottom: 8px; }
+        .soft-key { display: none; }
+
+        .ok-button {
+            width: clamp(45px, 13vw, 55px); height: clamp(45px, 13vw, 55px); background-color: #f0f0f0;
+            border: 3px solid #777; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: clamp(0.9em, 3.5vw, 1.2em); color: #222; cursor: pointer;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2); transition: background-color 0.1s, box-shadow 0.1s, transform 0.1s;
+        }
+        .ok-button:active { background-color: #d8d8d8; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); transform: scale(0.94); }
+
+        .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: max(1.5vh, 12px); width: 95%; }
+
+        .keypad button {
+            background-color: white; border: 3px solid var(--key-border-color); border-radius: 15px;
+            height: var(--key-size); font-size: var(--font-size-keys); font-weight: bold; color: #222;
+            cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: background-color 0.1s, box-shadow 0.1s, transform 0.1s; display: flex;
+            justify-content: center; align-items: center; text-shadow: 1px 1px 2px rgba(255, 0, 0, 0.5);
+        }
+        .keypad button:active { background-color: #e8e8e8; box-shadow: inset 0 2px 5px rgba(0,0,0,0.25); transform: scale(0.96) translateY(1px); }
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <!-- عناصر الصوت (كما هي) -->
+    <audio id="click-sound" src="click.mp3" preload="auto"></audio>
+    <audio id="correct-sound" src="correct.mp3" preload="auto"></audio>
+    <audio id="incorrect-sound" src="incorrect.mp3" preload="auto"></audio>
+
+    <!-- الحاوية الرئيسية (كما هي) -->
+    <div class="main-container">
+        <div class="operation-selector">
+             <button class="op-button" data-op="add">+</button>
+             <button class="op-button" data-op="subtract">−</button>
+             <button class="op-button" data-op="multiply">×</button>
+             <button class="op-button" data-op="divide">÷</button>
+        </div>
+        <div class="game-info">
+              <div class="question-area" id="question">اختر عملية حسابية للبدء!</div>
+              <div id="feedback"></div>
+        </div>
+        <div class="phone-container">
+             <div class="screen">
+                 <span id="display"></span>
+             </div>
+             <div class="controls">
+                 <button class="ok-button" id="ok-button">OK</button>
+             </div>
+             <div class="keypad">
+                 <button class="key" data-value="1">1</button>
+                 <button class="key" data-value="2">2</button>
+                 <button class="key" data-value="3">3</button>
+                 <button class="key" data-value="4">4</button>
+                 <button class="key" data-value="5">5</button>
+                 <button class="key" data-value="6">6</button>
+                 <button class="key" data-value="7">7</button>
+                 <button class="key" data-value="8">8</button>
+                 <button class="key" data-value="9">9</button>
+                 <button class="key" data-value="*">*</button>
+                 <button class="key" data-value="0">0</button>
+                 <button class="key" data-value="#">#</button>
+             </div>
+        </div>
+    </div>
+
+    <!-- JavaScript (مع تعديل دالة generateQuestion فقط) -->
+    <script>
+        const display = document.getElementById('display');
+        const keypadButtons = document.querySelectorAll('.keypad .key');
+        const okButton = document.getElementById('ok-button');
+        const questionDisplay = document.getElementById('question');
+        const feedbackDisplay = document.getElementById('feedback');
+        const operationButtons = document.querySelectorAll('.op-button');
+
+        const clickSound = document.getElementById('click-sound');
+        const correctSound = document.getElementById('correct-sound');
+        const incorrectSound = document.getElementById('incorrect-sound');
+
+        let currentAnswer = null;
+        let gameStarted = false;
+        let currentOperation = null;
+        const MAX_DIGITS = 5;
+
+        function playSound(soundElement) {
+            if (soundElement && soundElement.readyState >= 2) {
+                soundElement.currentTime = 0;
+                soundElement.play().catch(error => console.log("Audio play failed:", error));
+            }
+        }
+
+        function clearDisplay() { display.textContent = ''; }
+        function backspace() { display.textContent = display.textContent.slice(0, -1); }
+
+        // --- ***** التعديل هنا ***** ---
+        function generateQuestion() {
+            if (!currentOperation) return;
+
+            let num1, num2, questionText;
+            // --- زيادة حدود الأرقام لأسئلة أكثر تنوعاً ---
+            const maxNumAddSub = 25;     // الحد الأقصى لأرقام الجمع والطرح (كان 12)
+            const maxMultiply = 12;      // الحد الأقصى لأرقام الضرب (كان 10)
+            const maxDivideResult = 12;  // الحد الأقصى لناتج القسمة والمقسوم عليه (كان 10)
+            // -----------------------------------------
+
+            switch (currentOperation) {
+                case 'add':
+                    num1 = Math.floor(Math.random() * (maxNumAddSub + 1));
+                    num2 = Math.floor(Math.random() * (maxNumAddSub + 1));
+                    currentAnswer = num1 + num2;
+                    questionText = `${num1} + ${num2} = ؟`;
+                    break;
+                case 'subtract':
+                    // ضمان نتيجة غير سالبة دائماً
+                    num1 = Math.floor(Math.random() * (maxNumAddSub + 1));
+                    num2 = Math.floor(Math.random() * (num1 + 1)); // num2 أصغر أو يساوي num1
+                    currentAnswer = num1 - num2;
+                    questionText = `${num1} - ${num2} = ؟`;
+                    break;
+                case 'multiply':
+                    num1 = Math.floor(Math.random() * (maxMultiply + 1));
+                    num2 = Math.floor(Math.random() * (maxMultiply + 1));
+                    currentAnswer = num1 * num2;
+                    questionText = `${num1} × ${num2} = ؟`;
+                    break;
+                case 'divide':
+                    // ضمان نتيجة قسمة صحيحة
+                    let result = Math.floor(Math.random() * maxDivideResult) + 1; // الناتج لا يساوي صفر
+                    // المقسوم عليه أيضاً لا يساوي صفر ويمكن أن يصل للحد الأقصى
+                    num2 = Math.floor(Math.random() * maxDivideResult) + 1;
+                    num1 = result * num2; // حساب المقسوم
+                    currentAnswer = result;
+                    questionText = `${num1} ÷ ${num2} = ؟`;
+                    break;
+                default:
+                    questionText = "خطأ"; currentAnswer = null;
+            }
+
+            questionDisplay.textContent = questionText;
+            feedbackDisplay.textContent = '';
+            feedbackDisplay.className = '';
+             feedbackDisplay.style.textShadow = '0px 0px 3px rgba(255, 255, 255, 0.7)'; // تأكيد الظل
+            clearDisplay();
+            gameStarted = true;
+        }
+        // --- ***** نهاية التعديل ***** ---
+
+
+        function showFeedback(message, isCorrect) {
+            feedbackDisplay.textContent = message;
+            const soundToPlay = isCorrect ? correctSound : incorrectSound;
+            const flashClass = isCorrect ? 'correct-flash' : 'incorrect-flash';
+            const flashBgColor = isCorrect ? '#28a745' : '#dc3545';
+
+            document.documentElement.style.setProperty('--flash-bg-color', flashBgColor);
+            feedbackDisplay.className = flashClass;
+            playSound(soundToPlay);
+
+            setTimeout(() => {
+                if (feedbackDisplay.classList.contains(flashClass)) {
+                   feedbackDisplay.classList.remove('correct-flash', 'incorrect-flash');
+                   feedbackDisplay.style.color = isCorrect ? '#1a7431' : '#a51826';
+                   feedbackDisplay.style.backgroundColor = 'transparent';
+                   feedbackDisplay.style.textShadow = '0px 0px 3px rgba(255, 255, 255, 0.7)';
+                }
+            }, 600);
+        }
+
+        // --- باقي كود JavaScript (كما هو) ---
+        operationButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                operationButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentOperation = button.getAttribute('data-op');
+                questionDisplay.textContent = `اضغط "OK" لبدء أسئلة ${button.textContent}`;
+                feedbackDisplay.textContent = '';
+                feedbackDisplay.className = '';
+                feedbackDisplay.style.textShadow = '0px 0px 3px rgba(255, 255, 255, 0.7)';
+                clearDisplay();
+                gameStarted = false;
+                playSound(clickSound);
+            });
+        });
+
+        keypadButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                playSound(clickSound);
+                const value = button.getAttribute('data-value');
+
+                if (value === '*') { backspace(); }
+                else if (value === '#') { clearDisplay(); }
+                else {
+                    if (display.textContent.length < MAX_DIGITS) {
+                        display.textContent += value;
+                    }
+                }
+            });
+        });
+
+        okButton.addEventListener('click', () => {
+            playSound(clickSound);
+            if (!currentOperation) {
+                showFeedback("اختر عملية حسابية أولاً!", false); return;
+            }
+            if (!gameStarted) { generateQuestion(); }
+            else {
+                const userAnswerText = display.textContent;
+                if (userAnswerText === '') { showFeedback('أدخل إجابة!', false); return; }
+                const userAnswer = parseInt(userAnswerText, 10);
+                if (isNaN(userAnswer)) { showFeedback('إدخال غير صالح!', false); return; }
+
+                if (userAnswer === currentAnswer) {
+                    showFeedback('إجابة صحيحة!', true);
+                    setTimeout(generateQuestion, 1800);
+                } else {
+                    showFeedback(`خطأ. الإجابة: ${currentAnswer}`, false);
+                }
+            }
+        });
+
+         function initAudio() {
+            clickSound.play().then(() => clickSound.pause()).catch(()=>{});
+            correctSound.play().then(() => correctSound.pause()).catch(()=>{});
+            incorrectSound.play().then(() => incorrectSound.pause()).catch(()=>{});
+        }
+         document.body.addEventListener('click', initAudio, { once: true });
+         document.body.addEventListener('touchstart', initAudio, { once: true });
+    </script>
+
+</body>
+</html>

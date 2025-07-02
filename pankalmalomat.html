@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>استمارة شعبة بنك المعلومات والحاسبات</title>
+    <!-- Amiri Font for HTML display -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Using Amiri font for HTML as specified */
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --light-grey: #f8f9fa;
+            --dark-grey: #343a40;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+            --border-color: #dee2e6;
+            --font-family: 'Amiri', serif; /* CHANGED FONT FAMILY FOR HTML */
+        }
+        *, *::before, *::after { /* Added for more predictable sizing */
+            box-sizing: border-box;
+        }
+        body {font-family: var(--font-family); background-color: #e9ecef; color: var(--dark-grey); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;}
+        .page-container {background-color: #fff; padding: 25px; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); border-radius: 8px; width: 100%; max-width: 1123px; display: flex; flex-direction: column;}
+        .page-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);}
+        .page-header .header-input {font-size: 0.9em; color: var(--secondary-color); border: 1px solid transparent; padding: 5px; background-color: transparent; font-family: var(--font-family); width: auto; min-width: 200px; border-radius: 4px;}
+        .page-header .header-input:hover,
+        .page-header .header-input:focus {border-color: var(--border-color); }
+        .page-header .current-date-input { /* Style for the new date input if needed, otherwise header-input covers it */ }
+        .page-header .school-name-input {font-weight: 500; text-align: right;}
+        .main-title {text-align: center; color: var(--primary-color); font-weight: 700; font-size: 1.7em; margin-bottom: 20px;}
+        .form-section {margin-bottom: 30px; padding: 20px; background-color: var(--light-grey); border-radius: 6px; border: 1px solid var(--border-color);}
+        .form-grid {display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 15px; margin-bottom: 20px;}
+        .form-group {display: flex; flex-direction: column;}
+        .form-group label {margin-bottom: 5px; font-size: 1.2em;  color: var(--dark-grey); font-weight: 700;}
+        .form-group input,
+        .form-group select {padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.9em; font-family: var(--font-family); transition: border-color 0.3s, box-shadow 0.3s; background-color: #fff; width: 100%; /* Ensure inputs fill grid cell */}
+        .form-group input:focus,
+        .form-group select:focus {outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);}
+        #spouseNameGroup { display: none; }
+        .form-actions {text-align: left; display: flex; gap: 10px; flex-wrap: wrap; /* Allow buttons to wrap */}
+        .btn {padding: 10px 20px; border: none; border-radius: 5px; font-size: 0.95em; font-family: var(--font-family); cursor: pointer; transition: background-color 0.3s, transform 0.1s;}
+        .btn:active { transform: translateY(1px); }
+        .btn-primary { background-color: var(--primary-color); color: white; } .btn-primary:hover { background-color: #0056b3; }
+        .btn-success { background-color: var(--success-color); color: white; } .btn-success:hover { background-color: #1e7e34; }
+        .btn-danger { background-color: var(--danger-color); color: white; } .btn-danger:hover { background-color: #bd2130; }
+        .btn-warning { background-color: var(--warning-color); color: var(--dark-grey); } .btn-warning:hover { background-color: #e0a800; }
+        .btn-info { background-color: var(--info-color); color: white; } .btn-info:hover { background-color: #117a8b; }
+        .btn-secondary { background-color: var(--secondary-color); color: white; } .btn-secondary:hover { background-color: #545b62; }
+        .table-controls {margin-bottom: 15px; display: flex; justify-content: flex-start; gap: 10px; flex-wrap: wrap;}
+        .employee-table {width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 1.0em; table-layout: fixed; border: 1px solid var(--border-color);}
+        .employee-table th,
+        .employee-table td {border: 1px solid var(--border-color); padding: 6px 4px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .employee-table th { white-space: normal; }
+        .employee-table th:last-child,
+        .employee-table td:last-child {width: 80px; text-align: center; white-space: normal;}
+        .employee-table th {background-color: var(--light-grey); color: var(--primary-color); font-weight: 500; position: sticky; top: 0; z-index: 1;}
+        .employee-table tbody tr:nth-child(even) { background-color: #fdfdfd; }
+        .employee-table tbody tr:hover { background-color: #e9f5ff; }
+        .action-icon {cursor: pointer; font-size: 1.1em; margin: 0 5px;}
+        .edit-icon { color: var(--info-color); } .edit-icon:hover { color: #117a8b; }
+        .delete-icon { color: var(--danger-color); } .delete-icon:hover { color: #a71d2a; }
+        .pagination-controls {display: flex; justify-content: center; align-items: center; margin-top: 20px; flex-wrap: wrap; /* Allow pagination controls to wrap */}
+        .pagination-controls button { margin: 5px; } /* Add margin for wrapped buttons */
+        .pagination-controls span { margin: 0 10px; font-size: 0.9em; }
+        .page-footer {margin-top: 30px; padding-top: 15px; border-top: 1px solid var(--border-color); text-align: left; font-size: 0.9em; color: var(--secondary-color);}
+        .page-footer .footer-input {font-size: 1em; color: var(--secondary-color); border: 1px solid transparent; padding: 5px; background-color: transparent; font-family: var(--font-family); width: auto; min-width: 250px; text-align: left; border-radius: 4px;}
+        .page-footer .footer-input:hover,
+        .page-footer .footer-input:focus { border-color: var(--border-color); }
+        .table-wrapper { overflow-x: auto; }
+
+        /* Responsive adjustments for mobile devices */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .page-container {
+                padding: 15px;
+            }
+            .page-header {
+                flex-direction: column;
+                align-items: stretch; 
+                gap: 10px;
+            }
+            .page-header .header-input {
+                width: 100%;
+                min-width: 0; 
+                text-align: right;
+            }
+            .main-title {
+                font-size: 1.4em; /* Adjusted from 1.3em for better readability */
+                margin-bottom: 15px;
+            }
+            .form-section {
+                padding: 15px;
+            }
+            .form-grid {
+                 grid-template-columns: 1fr; /* Stack form elements in a single column */
+                 gap: 12px; /* Adjusted gap */
+            }
+            .form-group label {
+                font-size: 0.8em;
+            }
+            .form-group input,
+            .form-group select {
+                font-size: 0.85em;
+                padding: 8px 10px;
+            }
+            .form-actions,
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .form-actions .btn,
+            .table-controls .btn {
+                width: 100%;
+                margin-bottom: 10px; /* Adjusted margin */
+                font-size: 0.9em;
+            }
+            .form-actions .btn:last-child,
+            .table-controls .btn:last-child {
+                margin-bottom: 0;
+            }
+            .employee-table {
+                font-size: 0.90em; /* Slightly larger than 0.7 for better readability */
+            }
+            .employee-table th,
+            .employee-table td {
+                padding: 5px 3px;
+            }
+             .employee-table th:last-child,
+             .employee-table td:last-child { /* Actions column */
+                width: 70px; /* Adjusted width for action icons */
+            }
+            .action-icon {
+                font-size: 1em; /* Adjust icon size */
+                margin: 0 3px;
+            }
+            .pagination-controls {
+                gap: 5px; /* Add gap for wrapping items */
+            }
+            .pagination-controls button {
+                padding: 8px 12px;
+                font-size: 0.85em;
+                margin: 5px; /* Ensure consistent margin */
+            }
+            .pagination-controls span {
+                font-size: 0.85em;
+                margin: 5px 8px; /* Adjust margin for span */
+            }
+            .page-footer {
+                margin-top: 20px;
+                padding-top: 10px;
+            }
+            .page-footer .footer-input {
+                width: 100%;
+                min-width: 0;
+                text-align: right;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) { /* Further adjustments for very small screens */
+            .main-title {
+                font-size: 1em;
+                
+            }
+            .form-group{
+                font-size: 1.2em;
+            }
+            
+             .form-group input,
+            .form-group select {
+                font-size: 0.8em; /* Ensure readability */
+            }
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.85em;
+            }
+            .employee-table {
+                font-size: 0.68em; 
+            }
+            .employee-table th,
+            .employee-table td {
+                padding: 4px 2px;
+            }
+            .employee-table th:last-child,
+            .employee-table td:last-child {
+                width: 60px; 
+            }
+            .action-icon {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 16px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="page-container">
+        <div class="page-header">
+            <input type="text" id="currentDateInput" class="header-input current-date-input" placeholder="التاريخ: مثال: ٢٠٢٤/٠١/٠١">
+            <input type="text" id="schoolNameInput" class="header-input school-name-input" placeholder="اسم المدرسة">
+        </div>
+        <h1 class="main-title">استمارة شعبة بنك المعلومات والحاسبات</h1>
+        <div class="form-section">
+            <form id="employeeForm">
+                <input type="hidden" id="editIndex" value="-1">
+                <div class="form-grid">
+                    <div class="form-group"><label for="empId">الرقم الوظيفي</label><input type="text" id="empId" required></div>
+                    <div class="form-group"><label for="firstName">الاسم الاول</label><input type="text" id="firstName" required></div>
+                    <div class="form-group"><label for="secondName">الاسم الثاني</label><input type="text" id="secondName"></div>
+                    <div class="form-group"><label for="thirdName">الاسم الثالث</label><input type="text" id="thirdName"></div>
+                    <div class="form-group"><label for="fourthName">الاسم الرابع</label><input type="text" id="fourthName"></div>
+                    <div class="form-group"><label for="surname">اللقب</label><input type="text" id="surname" required></div>
+                    <div class="form-group"><label for="motherName">اسم الام</label><input type="text" id="motherName"></div>
+                    <div class="form-group"><label for="motherFatherName">اسم اب الام</label><input type="text" id="motherFatherName"></div>
+                    <div class="form-group"><label for="motherGrandfatherName">اسم جد الام</label><input type="text" id="motherGrandfatherName"></div>
+                    <div class="form-group"><label for="gender">الجنس</label><select id="gender"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div>
+                    <div class="form-group"><label for="dob">تاريخ التولد</label><input type="date" id="dob"></div>
+                    <div class="form-group"><label for="maritalStatus">الحالة الاجتماعية</label><select id="maritalStatus"><option value="">-- اختر --</option><option value="اعزب">اعزب</option><option value="متزوج">متزوج</option><option value="منفصل">منفصل</option><option value="ارمل">ارمل/ة</option></select></div>
+                    <div class="form-group" id="spouseNameGroup"><label for="spouseName">اسم الزوج/الزوجة</label><input type="text" id="spouseName"></div>
+                    <div class="form-group"><label for="jobTitle">العنوان الوظيفي</label><select id="jobTitle"><option value="">-- اختر --</option><option value="مدير">مدير</option> <option value="معاون">معاون</option><option value="مرشد تربوي">مرشد تربوي</option> <option value="معلم">معلم</option><option value="مدرس">مدرس</option> <option value="معلم جامعي">معلم جامعي</option><option value="موظف خدمات">موظف خدمات</option> <option value="حارس ليلي">حارس ليلي</option><option value="حارس">حارس</option> <option value="حرفي اول">حرفي اول</option><option value="رئيس حرفيين">رئيس حرفيين</option> <option value="فلاح">فلاح</option><option value="مهندس زراعي">مهندس زراعي</option></select></div>
+                    <div class="form-group"><label for="jobGrade">الدرجة الوظيفية</label><select id="jobGrade"><option value="">-- اختر --</option><option value="الدرجة الأولى">الدرجة الأولى</option> <option value="الدرجة الثانية">الدرجة الثانية</option><option value="الدرجة الثالثة">الدرجة الثالثة</option> <option value="الدرجة الرابعة">الدرجة الرابعة</option><option value="الدرجة الخامسة">الدرجة الخامسة</option> <option value="الدرجة السادسة">الدرجة السادسة</option><option value="الدرجة السابعة">الدرجة السابعة</option> <option value="الدرجة الثامنة">الدرجة الثامنة</option><option value="الدرجة التاسعة">الدرجة التاسعة</option> <option value="الدرجة العاشرة">الدرجة العاشرة</option></select></div>
+                    <div class="form-group"><label for="education">التحصيل الدراسي</label><select id="education"><option value="">-- اختر --</option><option value="دبلوم">دبلوم</option> <option value="دبلوم عالي">دبلوم عالي</option><option value="بكالوريوس">بكالوريوس</option> <option value="ماجستير">ماجستير</option><option value="دكتوراه">دكتوراه</option> <option value="الاعدادية">الاعدادية</option><option value="المتوسطة">المتوسطة</option> <option value="الابتدائية">الابتدائية</option><option value="يقرأ ويكتب">يقرأ ويكتب</option> <option value="محو الامية">محو الامية</option></select></div>
+                    <div class="form-group"><label for="specialization">التخصص الدقيق</label><input type="text" id="specialization"></div>
+                    <div class="form-group"><label for="firstHireDate">تاريخ المباشرة لاول مرة</label><input type="date" id="firstHireDate"></div>
+                    <div class="form-group"><label for="rehireDate">تاريخ اعادة التعيين</label><input type="date" id="rehireDate"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" id="submitBtn" class="btn btn-primary"><i class="fas fa-plus"></i> إضافة موظف</button>
+                    <button type="button" id="cancelEditBtn" class="btn btn-secondary" style="display: none;"><i class="fas fa-times"></i> إلغاء التعديل</button>
+                </div>
+            </form>
+        </div>
+        <div class="table-controls">
+            <button id="exportExcel" class="btn btn-success"><i class="fas fa-file-excel"></i> تحويل إلى Excel</button>
+            <button id="exportPdf" class="btn btn-danger"><i class="fas fa-file-pdf"></i> تنزيل PDF</button>
+            <button id="clearTable" class="btn btn-warning"><i class="fas fa-trash-alt"></i> إفراغ الجدول</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="employee-table">
+                <thead>
+                    <tr>
+                        <th>الرقم<br>الوظيفي</th><th>الاسم<br>الاول</th><th>الاسم<br>الثاني</th><th>الاسم<br>الثالث</th><th>الاسم<br>الرابع</th>
+                        <th>اللقب</th><th>اسم<br>الام</th><th>اسم<br>اب الام</th><th>اسم<br>جد الام</th><th>الجنس</th><th>تاريخ<br>التولد</th>
+                        <th>الحالة<br>الاجتماعية</th><th>اسم<br>الزوج/ة</th>
+                        <th>العنوان<br>الوظيفي</th><th>الدرجة<br>الوظيفية</th><th>التحصيل<br>الدراسي</th><th>التخصص<br>الدقيق</th>
+                        <th>تاريخ<br>المباشرة</th><th>تاريخ إعادة<br>التعيين</th><th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="employeeTableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination-controls">
+            <button id="prevPage" class="btn btn-secondary" disabled><i class="fas fa-chevron-right"></i> السابق</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage" class="btn btn-secondary" disabled>التالي <i class="fas fa-chevron-left"></i></button>
+        </div>
+        <div class="page-footer">
+            <input type="text" id="directorNameInput" class="footer-input" placeholder="اسم مدير المدرسة">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        function arrayBufferToBase64(buffer) {let binary = '';const bytes = new Uint8Array(buffer);for (let i = 0; i < bytes.byteLength; i++) {binary += String.fromCharCode(bytes[i]);}return window.btoa(binary);}
+        let loadedFontBase64 = null; const FONT_ALIAS_IN_PDF = 'ArabicFont';
+        async function loadFontForPDF(fontNameToLoad = 'Amiri') {
+            let fontUrl;
+            let activeFontName = fontNameToLoad;
+
+            if (fontNameToLoad === 'Amiri') {
+                fontUrl = 'https://raw.githubusercontent.com/google/fonts/main/ofl/amiri/Amiri-Regular.ttf';
+            } else { 
+                fontUrl = 'https://raw.githubusercontent.com/google/fonts/main/ofl/tajawal/Tajawal-Regular.ttf';
+                activeFontName = 'Tajawal';
+            }
+
+            try {
+                const response = await fetch(fontUrl);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status} for ${activeFontName}`);
+                const fontBuffer = await response.arrayBuffer();
+                loadedFontBase64 = arrayBufferToBase64(fontBuffer);
+                console.log(`${activeFontName} TTF font loaded for PDF.`);
+            } catch (error) {
+                console.error(`Error loading ${activeFontName} font for PDF:`, error);
+                alert(`فشل تحميل الخط العربي (${activeFontName}) للـ PDF.\n` + error.message);
+                if (fontNameToLoad === 'Amiri' && activeFontName !== 'Tajawal') {
+                    console.log("Attempting to load fallback font Tajawal...");
+                    await loadFontForPDF('Tajawal');
+                }
+            }
+        }
+        function loadSettings() {const savedSchoolName = localStorage.getItem('schoolNameSetting'); const savedDirectorName = localStorage.getItem('directorNameSetting'); if (savedSchoolName) {document.getElementById('schoolNameInput').value = savedSchoolName;} if (savedDirectorName) {document.getElementById('directorNameInput').value = savedDirectorName;}}
+        function saveSettings() {localStorage.setItem('schoolNameSetting', document.getElementById('schoolNameInput').value); localStorage.setItem('directorNameSetting', document.getElementById('directorNameInput').value);}
+        
+        function getCleanLocalDateString(dateObj) {
+            if (!dateObj || isNaN(dateObj.getTime())) return '';
+            let year = new Intl.DateTimeFormat('ar-EG', { year: 'numeric', numberingSystem: 'arab' }).format(dateObj);
+            let month = new Intl.DateTimeFormat('ar-EG', { month: '2-digit', numberingSystem: 'arab' }).format(dateObj);
+            let day = new Intl.DateTimeFormat('ar-EG', { day: '2-digit', numberingSystem: 'arab' }).format(dateObj);
+            
+            year = year.replace(/[\u200B-\u200F\uFEFF]/g, '');
+            month = month.replace(/[\u200B-\u200F\uFEFF]/g, '');
+            day = day.replace(/[\u200B-\u200F\uFEFF]/g, '');
+
+            return `${year}/${month}/${day}`;
+        }
+
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFontForPDF('Amiri'); loadSettings();
+            const currentDateInput = document.getElementById('currentDateInput');
+            const schoolNameInput = document.getElementById('schoolNameInput'); const directorNameInput = document.getElementById('directorNameInput'); const maritalStatusSelect = document.getElementById('maritalStatus'); const spouseNameGroup = document.getElementById('spouseNameGroup'); const spouseNameInput = document.getElementById('spouseName'); const employeeForm = document.getElementById('employeeForm'); const editIndexInput = document.getElementById('editIndex'); const submitBtn = document.getElementById('submitBtn'); const cancelEditBtn = document.getElementById('cancelEditBtn'); const employeeTableBody = document.getElementById('employeeTableBody'); const clearTableBtn = document.getElementById('clearTable'); const exportExcelBtn = document.getElementById('exportExcel'); const exportPdfBtn = document.getElementById('exportPdf'); const prevPageBtn = document.getElementById('prevPage'); const nextPageBtn = document.getElementById('nextPage'); const pageInfoSpan = document.getElementById('pageInfo');
+            
+            currentDateInput.value = getCleanLocalDateString(new Date()); 
+
+            schoolNameInput.addEventListener('change', saveSettings); directorNameInput.addEventListener('change', saveSettings); maritalStatusSelect.addEventListener('change', function() {spouseNameGroup.style.display = (this.value === 'متزوج') ? 'flex' : 'none'; if (this.value !== 'متزوج') spouseNameInput.value = '';});
+            let employees = []; const ROWS_PER_PAGE = 15; let currentPage = 1; const storedEmployees = localStorage.getItem('employeesData'); if (storedEmployees) { try { employees = JSON.parse(storedEmployees); if (!Array.isArray(employees)) employees = [];} catch (e) { console.error("Error parsing employeesData:", e); employees = []; }}
+            
+            const formatDateForDisplay = (dateStr) => {
+                if (!dateStr) return '-';
+                return getCleanLocalDateString(new Date(dateStr));
+            };
+
+            const populateFormForEdit = (index) => { const emp = employees[index]; if (!emp) return; document.getElementById('empId').value = emp.empId || ''; document.getElementById('firstName').value = emp.firstName || ''; document.getElementById('secondName').value = emp.secondName || ''; document.getElementById('thirdName').value = emp.thirdName || ''; document.getElementById('fourthName').value = emp.fourthName || ''; document.getElementById('surname').value = emp.surname || ''; document.getElementById('motherName').value = emp.motherName || ''; document.getElementById('motherFatherName').value = emp.motherFatherName || ''; document.getElementById('motherGrandfatherName').value = emp.motherGrandfatherName || ''; document.getElementById('gender').value = emp.gender || 'ذكر'; document.getElementById('dob').value = emp.dob || ''; maritalStatusSelect.value = emp.maritalStatus || ''; maritalStatusSelect.dispatchEvent(new Event('change')); spouseNameInput.value = emp.spouseName || ''; document.getElementById('jobTitle').value = emp.jobTitle || ''; document.getElementById('jobGrade').value = emp.jobGrade || ''; document.getElementById('education').value = emp.education || ''; document.getElementById('specialization').value = emp.specialization || ''; document.getElementById('firstHireDate').value = emp.firstHireDate || ''; document.getElementById('rehireDate').value = emp.rehireDate || ''; editIndexInput.value = index; submitBtn.innerHTML = '<i class="fas fa-save"></i> تحديث البيانات'; submitBtn.classList.remove('btn-primary'); submitBtn.classList.add('btn-info'); cancelEditBtn.style.display = 'inline-block'; window.scrollTo({ top: employeeForm.offsetTop - 20, behavior: 'smooth' });};
+            const resetFormToNormal = () => { employeeForm.reset(); editIndexInput.value = "-1"; submitBtn.innerHTML = '<i class="fas fa-plus"></i> إضافة موظف'; submitBtn.classList.remove('btn-info'); submitBtn.classList.add('btn-primary'); cancelEditBtn.style.display = 'none'; maritalStatusSelect.dispatchEvent(new Event('change')); }; cancelEditBtn.addEventListener('click', resetFormToNormal);
+            const renderTable = () => { employeeTableBody.innerHTML = ''; if (employees.length === 0) {pageInfoSpan.textContent = 'لا توجد بيانات'; prevPageBtn.disabled = true; nextPageBtn.disabled = true; return;} const totalPages = Math.ceil(employees.length / ROWS_PER_PAGE); currentPage = Math.max(1, Math.min(currentPage, totalPages)); const startIndex = (currentPage - 1) * ROWS_PER_PAGE; const paginatedEmployees = employees.slice(startIndex, startIndex + ROWS_PER_PAGE); paginatedEmployees.forEach((emp, relativeIndex) => { const actualIndex = startIndex + relativeIndex; const row = employeeTableBody.insertRow(); row.insertCell().textContent = emp.empId || '-'; row.insertCell().textContent = emp.firstName || '-'; row.insertCell().textContent = emp.secondName || '-'; row.insertCell().textContent = emp.thirdName || '-'; row.insertCell().textContent = emp.fourthName || '-'; row.insertCell().textContent = emp.surname || '-'; row.insertCell().textContent = emp.motherName || '-'; row.insertCell().textContent = emp.motherFatherName || '-'; row.insertCell().textContent = emp.motherGrandfatherName || '-'; row.insertCell().textContent = emp.gender || '-'; row.insertCell().textContent = formatDateForDisplay(emp.dob); row.insertCell().textContent = emp.maritalStatus || '-'; row.insertCell().textContent = emp.spouseName || '-'; row.insertCell().textContent = emp.jobTitle || '-'; row.insertCell().textContent = emp.jobGrade || '-'; row.insertCell().textContent = emp.education || '-'; row.insertCell().textContent = emp.specialization || '-'; row.insertCell().textContent = formatDateForDisplay(emp.firstHireDate); row.insertCell().textContent = formatDateForDisplay(emp.rehireDate); const actionCell = row.insertCell(); const editIcon = document.createElement('i'); editIcon.className = 'fas fa-edit action-icon edit-icon'; editIcon.title = 'تعديل الصف'; editIcon.onclick = () => populateFormForEdit(actualIndex); actionCell.appendChild(editIcon); const deleteIcon = document.createElement('i'); deleteIcon.className = 'fas fa-trash-alt action-icon delete-icon'; deleteIcon.title = 'حذف الصف'; deleteIcon.onclick = () => deleteEmployee(actualIndex); actionCell.appendChild(deleteIcon); }); updatePaginationControls(totalPages); localStorage.setItem('employeesData', JSON.stringify(employees));};
+            const updatePaginationControls = (totalPages) => { pageInfoSpan.textContent = `صفحة ${currentPage} من ${totalPages}`; prevPageBtn.disabled = currentPage === 1; nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;};
+            employeeForm.addEventListener('submit', (e) => { e.preventDefault(); const editIdx = parseInt(editIndexInput.value, 10); const employeeData = { empId: document.getElementById('empId').value, firstName: document.getElementById('firstName').value, secondName: document.getElementById('secondName').value, thirdName: document.getElementById('thirdName').value, fourthName: document.getElementById('fourthName').value, surname: document.getElementById('surname').value, motherName: document.getElementById('motherName').value, motherFatherName: document.getElementById('motherFatherName').value, motherGrandfatherName: document.getElementById('motherGrandfatherName').value, gender: document.getElementById('gender').value, dob: document.getElementById('dob').value, maritalStatus: document.getElementById('maritalStatus').value, spouseName: document.getElementById('maritalStatus').value === 'متزوج' ? document.getElementById('spouseName').value : '', jobTitle: document.getElementById('jobTitle').value, jobGrade: document.getElementById('jobGrade').value, education: document.getElementById('education').value, specialization: document.getElementById('specialization').value, firstHireDate: document.getElementById('firstHireDate').value, rehireDate: document.getElementById('rehireDate').value,}; if (editIdx > -1) {employees[editIdx] = employeeData;} else {employees.push(employeeData); const totalPages = Math.ceil(employees.length / ROWS_PER_PAGE); if (employees.length > currentPage * ROWS_PER_PAGE && currentPage < totalPages) { currentPage = totalPages; }} resetFormToNormal(); renderTable();});
+            const deleteEmployee = (index) => { if (confirm('هل أنت متأكد من حذف هذا الموظف؟')) { const editIdx = parseInt(editIndexInput.value, 10); employees.splice(index, 1); if (index === editIdx) {resetFormToNormal();} else if (index < editIdx) {editIndexInput.value = editIdx -1;} const totalPages = Math.ceil(employees.length / ROWS_PER_PAGE); if (currentPage > totalPages && totalPages > 0) {currentPage = totalPages;} else if (employees.length === 0) {currentPage = 1;} renderTable(); }};
+            clearTableBtn.addEventListener('click', () => { if (confirm('هل أنت متأكد من إفراغ الجدول بالكامل؟ هذا الإجراء سيحذف جميع البيانات المحفوظة بشكل دائم.')) { employees = []; currentPage = 1; resetFormToNormal(); renderTable(); }});
+            prevPageBtn.addEventListener('click', () => {if (currentPage > 1) { currentPage--; renderTable(); }}); nextPageBtn.addEventListener('click', () => {const totalPages = Math.ceil(employees.length / ROWS_PER_PAGE); if (currentPage < totalPages) { currentPage++; renderTable(); }});
+            exportExcelBtn.addEventListener('click', () => { if (employees.length === 0) { alert('لا توجد بيانات لتصديرها.'); return; } const headers = ["الرقم الوظيفي", "الاسم الاول", "الاسم الثاني", "الاسم الثالث", "الاسم الرابع", "اللقب", "اسم الام", "اسم اب الام", "اسم جد الام", "الجنس", "تاريخ التولد", "الحالة الاجتماعية", "اسم الزوج/ة", "العنوان الوظيفي", "الدرجة الوظيفية", "التحصيل الدراسي", "التخصص الدقيق", "تاريخ المباشرة", "تاريخ إعادة التعيين"]; const dataToExport = employees.map(emp => ({"الرقم الوظيفي": emp.empId, "الاسم الاول": emp.firstName, "الاسم الثاني": emp.secondName, "الاسم الثالث": emp.thirdName, "الاسم الرابع": emp.fourthName, "اللقب": emp.surname, "اسم الام": emp.motherName, "اسم اب الام": emp.motherFatherName, "اسم جد الام": emp.motherGrandfatherName, "الجنس": emp.gender, "تاريخ التولد": emp.dob ? getCleanLocalDateString(new Date(emp.dob)) : '', "الحالة الاجتماعية": emp.maritalStatus, "اسم الزوج/ة": emp.spouseName, "العنوان الوظيفي": emp.jobTitle, "الدرجة الوظيفية": emp.jobGrade, "التحصيل الدراسي": emp.education, "التخصص الدقيق": emp.specialization, "تاريخ المباشرة": emp.firstHireDate ? getCleanLocalDateString(new Date(emp.firstHireDate)) : '', "تاريخ إعادة التعيين": emp.rehireDate ? getCleanLocalDateString(new Date(emp.rehireDate)) : ''})); const worksheet = XLSX.utils.json_to_sheet(dataToExport, { header: headers, skipHeader: false }); const workbook = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(workbook, worksheet, "الموظفين"); XLSX.writeFile(workbook, "بيانات_الموظفين.xlsx");});
+
+            exportPdfBtn.addEventListener('click', () => {
+                if (employees.length === 0) { alert('لا توجد بيانات لتصديرها.'); return; }
+                if (!loadedFontBase64) { alert("الخط العربي للـ PDF غير جاهز."); return; }
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+                    doc.addFileToVFS(`${FONT_ALIAS_IN_PDF}.ttf`, loadedFontBase64);
+                    doc.addFont(`${FONT_ALIAS_IN_PDF}.ttf`, FONT_ALIAS_IN_PDF, 'normal');
+                    doc.setFont(FONT_ALIAS_IN_PDF);
+
+                    const logicalHeaders = [
+                        "الرقم\nالوظيفي", "الاسم\nالاول", "الاسم\nالثاني", "الاسم\nالثالث", "الاسم\nالرابع", "اللقب",
+                        "اسم\nالام", "اسم اب\nالام", "اسم جد\nالام", "الجنس", "تاريخ\nالتولد",
+                        "الحالة\nالاجتماعية", "اسم\nالزوج/ة",
+                        "العنوان\nالوظيفي", "الدرجة\nالوظيفية", "التحصيل\nالدراسي", "التخصص\nالدقيق",
+                        "تاريخ\nالمباشرة", "إعادة\nالتعيين"
+                    ];
+                    
+                    const formatDateForPdfTable = (dateStr) => {
+                        if (!dateStr) return '-';
+                        try {
+                            const date = new Date(dateStr);
+                            if (isNaN(date.getTime())) return dateStr || '-'; 
+                            return getCleanLocalDateString(date);
+                        } catch (e) {
+                            return dateStr || '-'; 
+                        }
+                    };
+
+                    const logicalBody = employees.map(emp => [
+                        emp.empId || '-', emp.firstName || '-', emp.secondName || '-', emp.thirdName || '-', emp.fourthName || '-', emp.surname || '-',
+                        emp.motherName || '-', emp.motherFatherName || '-', emp.motherGrandfatherName || '-', emp.gender || '-', formatDateForPdfTable(emp.dob),
+                        emp.maritalStatus || '-', emp.spouseName || '-',
+                        emp.jobTitle || '-', emp.jobGrade || '-', emp.education || '-', emp.specialization || '-',
+                        formatDateForPdfTable(emp.firstHireDate), formatDateForPdfTable(emp.rehireDate)
+                    ]);
+
+                    const pdfHeadersForVisualRTL = logicalHeaders.slice().reverse();
+                    const pdfBodyForVisualRTL = logicalBody.map(row => row.slice().reverse());
+
+                    const tableStartY = 90;
+                    const pageMargin = 35; 
+
+                    const columnWidthsRTL = { 
+                        0: { cellWidth: 48 },  1: { cellWidth: 48 },  2: { cellWidth: 45 }, 
+                        3: { cellWidth: 45 },  4: { cellWidth: 42 },  5: { cellWidth: 45 }, 
+                        6: { cellWidth: 42 },  7: { cellWidth: 42 },  8: { cellWidth: 48 }, 
+                        9: { cellWidth: 30 },  10: { cellWidth: 42 }, 11: { cellWidth: 42 }, 
+                        12: { cellWidth: 42 }, 13: { cellWidth: 40 }, 14: { cellWidth: 40 }, 
+                        15: { cellWidth: 40 }, 16: { cellWidth: 40 }, 17: { cellWidth: 40 }, 
+                        18: { cellWidth: 40 }
+                    };
+                    
+                    let totalTableWidth = 0;
+                    Object.values(columnWidthsRTL).forEach(col => totalTableWidth += col.cellWidth);
+
+                    const pageWidth = doc.internal.pageSize.getWidth(); 
+                    const availableWidthForTable = pageWidth - (2 * pageMargin);
+                    
+                    let tableActualMarginX;
+                     if (totalTableWidth < availableWidthForTable) {
+                        tableActualMarginX = pageMargin + (availableWidthForTable - totalTableWidth) / 2;
+                    } else {
+                        tableActualMarginX = pageMargin; 
+                    }
+                    tableActualMarginX = Math.max(5, tableActualMarginX);
+
+
+                    doc.autoTable({
+                        head: [pdfHeadersForVisualRTL],
+                        body: pdfBodyForVisualRTL,
+                        startY: tableStartY,
+                        theme: 'grid',
+                        margin: { top: tableStartY, right: tableActualMarginX, bottom: 60, left: tableActualMarginX },
+                        styles: {
+                            font: FONT_ALIAS_IN_PDF,
+                            halign: 'right', 
+                            fontSize: 7.0, 
+                            fontStyle: 'bold',
+                            cellPadding: {top: 3, right: 4, bottom: 3, left: 4},
+                            lineWidth: 0.1,
+                            lineColor: [180, 180, 180],
+                            overflow: 'linebreak', 
+                            minCellHeight: 23
+                        },
+                        headStyles: {
+                            fillColor: [0, 123, 255],
+                            textColor: 255,
+                            fontStyle: 'bold',
+                            halign: 'center', 
+                            valign: 'middle',
+                            fontSize: 7.2,
+                            cellPadding: {top: 3.5, right: 3, bottom: 3.5, left: 3},
+                            minCellHeight: 27
+                        },
+                        columnStyles: columnWidthsRTL,
+                        didDrawPage: function (data) {
+                            doc.setFont(FONT_ALIAS_IN_PDF);
+                            const iPageWidth = doc.internal.pageSize.getWidth(); 
+                            const iPageHeight = doc.internal.pageSize.getHeight(); 
+                            
+                            const textMargin = pageMargin;
+
+                            const iAvailableWidth = iPageWidth - (2 * textMargin);
+                            let currentY = 25;
+
+                            doc.setFontSize(13);
+                            doc.setTextColor(40);
+                            const mainTitleText = "استمارة شعبة بنك المعلومات والحاسبات";
+                            const mainTitleLines = doc.splitTextToSize(mainTitleText, iAvailableWidth - 20);
+                            doc.text(mainTitleLines, iPageWidth / 2, currentY, { align: 'center' });
+                            currentY += doc.getTextDimensions(mainTitleLines).h + 15;
+
+                            doc.setFontSize(9);
+                            const schoolNameText = schoolNameInput.value || "اسم المدرسة: غير محدد";
+                            const enteredDate = currentDateInput.value;
+                            const dateTextVal = enteredDate ? 'التاريخ: ' + enteredDate : 'التاريخ: (لم يُدخل)';
+
+                            const schoolNameLines = doc.splitTextToSize(schoolNameText, iAvailableWidth / 2 - 20);
+                            const dateLines = doc.splitTextToSize(dateTextVal, iAvailableWidth / 2 - 20);
+                            
+                            doc.text(schoolNameLines, iPageWidth - textMargin - 5 , currentY, { align: 'right' });
+                            doc.text(dateLines, textMargin + 5, currentY, { align: 'left' });
+
+                            const directorNameText = directorNameInput.value || "اسم مدير المدرسة: غير محدد";
+                            const directorNameLines = doc.splitTextToSize(directorNameText, iAvailableWidth - 20);
+                            const directorNameHeight = doc.getTextDimensions(directorNameLines).h;
+                            doc.text(directorNameLines, textMargin + 5, iPageHeight - textMargin - 5 - directorNameHeight + doc.getLineHeight(), {align: 'left'});
+                        }
+                    });
+                    doc.save('بيانات_الموظفين.pdf');
+                } catch (error) {
+                    console.error("Error during PDF generation:", error);
+                    alert("حدث خطأ أثناء إنشاء ملف PDF: " + error.message + "\nيرجى مراجعة الـ Console لمزيد من التفاصيل.");
+                }
+            });
+            renderTable();
+        });
+    </script>
+</body>
+</html>

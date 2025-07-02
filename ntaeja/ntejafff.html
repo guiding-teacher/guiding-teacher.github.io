@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إصدار نتائج الطلاب الاحترافي</title>
+    <!-- Bootstrap 5 CSS RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-rtl@5.3.3/dist/css/bootstrap-rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font - Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        /* Define CSS Variables */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --border-radius: 10px;
+            --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            /* Variables for card background */
+            --card-bg-color: transparent;
+            --card-bg-image: none;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            direction: rtl;
+            overflow-x: hidden;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), #2980b9);
+            color: white;
+            font-weight: 600;
+            border-bottom: none;
+            padding: 15px 20px;
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        }
+
+        .btn {
+            font-weight: 600;
+            border-radius: var(--border-radius);
+            padding: 10px 20px;
+            transition: var(--transition);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #2980b9);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #219653);
+            border: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #c0392b);
+            border: none;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #e67e22);
+            border: none;
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            border: none;
+        }
+
+        .form-control, .form-select {
+            border-radius: var(--border-radius);
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            transition: var(--transition);
+        }
+
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+            border-color: var(--primary-color);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark-color);
+            border-top: none;
+        }
+
+        .badge {
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        /* A4 Card Styling for Display */
+        .a4-card {
+            width: 210mm;
+            min-height: 297mm; /* Keep min-height for consistent display */
+            margin: 20px auto;
+            padding: 20mm;
+            background: white;
+            box-shadow: var(--box-shadow);
+            border-radius: 15px;
+            position: relative;
+            display: none;
+            direction: rtl;
+            page-break-after: always;
+            border: 1px solid #eee;
+            /* Dynamic Background (used for display, direct style for PDF capture) */
+            background-color: var(--card-bg-color);
+            background-image: var(--card-bg-image);
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .a4-card .school-header {
+            text-align: center;
+            margin-bottom: 15px; /* Reduced from 30px */
+            position: relative;
+        }
+
+        .a4-card .school-logo-display {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin: 0 auto 10px; /* Reduced from 15px */
+            border-radius: 50%;
+            border: 3px solid var(--primary-color);
+            padding: 5px;
+            background: white;
+        }
+
+        .a4-card .school-header h4 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 5px;
+        }
+
+        .a4-card .school-header h5 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .a4-card .academic-year {
+            font-size: 18px;
+            color: #666;
+        }
+
+        footer {
+            text-align: center;
+        }
+        
+        a {
+            text-decoration: none;
+            text-align: center;
+            color:#654689;
+            font-weight: 700;
+        }
+
+        a:hover {
+            color: #00B375;
+            text-decoration: underline; /* أو none حسب رغبتك */
+        }
+
+        .a4-card .header-divider {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary-color), transparent);
+            margin: 10px auto; /* Reduced from 20px */
+            width: 80%;
+        }
+        
+        .a4-card .student-details-line {
+            display: flex;
+            justify-content: space-between; /* Distribute items */
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px dashed #ddd;
+            color: var(--dark-color);
+        }
+        /* Adjust flex basis for more balanced distribution */
+        .a4-card .student-details-line span {
+            flex: 1; /* Each span takes equal space */
+            text-align: center; /* Center text within each span */
+        }
+        .a4-card .student-details-line span:first-child {
+            text-align: right;
+        }
+        .a4-card .student-details-line span:last-child {
+            text-align: left;
+        }
+
+        .a4-card .student-name-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 10px; /* Reduced from 15px */
+            margin-bottom: 10px; /* Reduced from 15px */
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .a4-card .grades-table {
+            margin-bottom: 15px; /* Reduced from 20px */
+        }
+
+        .a4-card .grades-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .a4-card .grades-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px;
+            font-weight: 600;
+            border: 1px solid var(--primary-color);
+        }
+
+        .a4-card .grades-table td {
+            padding: 10px;
+            border: 1px solid #eee;
+            text-align: center;
+        }
+
+        .a4-card .failed-grade {
+            background-color: #ffebee;
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+
+        .a4-card .final-results {
+            margin: 10px 0; /* Reduced from 20px */
+        }
+
+        .a4-card .results-row {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .a4-card .results-row p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .a4-card .results-row .badge {
+            font-size: 18px;
+            padding: 8px 12px;
+            margin-right: 10px;
+        }
+
+        .supplementary-subjects,
+        .decision-pass-message { /* Combined for consistent margin reduction */
+            background-color: #fff8e1; /* Example background, can be overridden for decision-pass */
+            border-right: 5px solid var(--warning-color); /* Example border, can be overridden */
+            padding: 15px;
+            margin: 8px 0; /* SIGNIFICANTLY REDUCED from 20px */
+            border-radius: 5px;
+        }
+        /* Specific override for decision-pass-message for consistency */
+        .decision-pass-message {
+            background-color: #e8f5e9;
+            border-right: 5px solid var(--success-color);
+        }
+
+        /* Adjusted footer styles for better conditional visibility */
+        .a4-card .notes-section { /* New class to wrap just the notes paragraph */
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .a4-card .footer-signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 2px dashed #ddd;
+        }
+        .a4-card .footer-signatures p {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #555;
+            flex: 1;
+            text-align: right;
+        }
+        .a4-card .footer-signatures p:last-child {
+            text-align: left;
+        }
+        .a4-card p.text-muted {
+            margin-top: 8px;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .a4-card {
+                width: 100%;
+                min-height: auto;
+                padding: 15px;
+                margin: 10px auto;
+            }
+            
+            .a4-card .results-row {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .a4-card .results-row p {
+                margin-bottom: 15px;
+            }
+            
+            .a4-card .footer-signatures {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .a4-card .footer-signatures p {
+                margin-bottom: 15px;
+                text-align: center !important;
+            }
+        }
+        
+        /* Print Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .a4-card, .a4-card * {
+                visibility: visible;
+            }
+            .a4-card {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 20mm;
+                box-shadow: none;
+                page-break-after: always;
+                border: none; /* Remove border for clean print */
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2980b9;
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Tooltip Styles */
+        .tooltip-inner {
+            font-family: 'Cairo', sans-serif;
+            font-size: 14px;
+            padding: 8px 12px;
+            background-color: var(--dark-color);
+        }
+
+        .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before,
+        .bs-tooltip-top .tooltip-arrow::before {
+            border-top-color: var(--dark-color);
+        }
+
+        /* Loading Spinner */
+        .spinner-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: white;
+        }
+
+        .spinner {
+            width: 70px;
+            height: 70px;
+            border: 8px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 300px;
+            background-color: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            border-radius: 10px;
+            background: linear-gradient(90deg, var(--primary-color), #00b4db);
+            width: 0%;
+            transition: width 0.3s ease;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="spinner-container" id="spinnerContainer">
+        <div class="spinner"></div>
+        <h4 id="loadingText">جاري معالجة البيانات...</h4>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-graduation-cap me-2"></i> نظام النتائج الاحترافي
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#schoolSection"><i class="fas fa-school me-1"></i> بيانات المدرسة</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#studentSection"><i class="fas fa-user-graduate me-1"></i> بيانات الطلاب</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#resultsSection"><i class="fas fa-eye me-1"></i> عرض النتائج</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button class="btn btn-outline-light me-2" id="helpBtn">
+                        <i class="fas fa-question-circle me-1"></i> مساعدة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-12">
+                <!-- School Data Section -->
+                <div class="card mb-4 animate__animated animate__fadeIn" id="schoolSection">
+                    <div class="card-header">
+                        <i class="fas fa-school me-2"></i> بيانات المدرسة الرئيسية
+                    </div>
+                    <div class="card-body">
+                        <form id="schoolInfoForm" class="row g-3"> <!-- Added form tag -->
+                            <div class="col-md-6 col-lg-4">
+                                <label for="schoolName" class="form-label">اسم المدرسة:</label>
+                                <input type="text" class="form-control" id="schoolName" placeholder="المدرسة الأهلية الحديثة" required> <!-- Added required -->
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="semester" class="form-label">الفصل الدراسي:</label>
+                                <input type="text" class="form-control" id="semester" placeholder="الفصل الدراسي الأول / الثاني" required> <!-- Added required -->
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="academicYear" class="form-label">السنة الدراسية:</label>
+                                <input type="text" class="form-control" id="academicYear" placeholder="2023-2024" required> <!-- Added required -->
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="advisorName" class="form-label">اسم المرشد:</label>
+                                <input type="text" class="form-control" id="advisorName" placeholder="أ. أحمد علي" required> <!-- Added required -->
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="directorName" class="form-label">اسم المدير:</label>
+                                <input type="text" class="form-control" id="directorName" placeholder="أ. ابراهيم عبد الكريم" required> <!-- Added required -->
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="gradeLevel" class="form-label">الصف الدراسي العام:</label>
+                                <input type="text" class="form-control" id="gradeLevel" placeholder="مثال: الصف الخامس" required> <!-- Added required -->
+                            </div>
+                             <div class="col-md-6 col-lg-4">
+                                <label for="decisionPassGrade" class="form-label">درجة النجاح بقرار (لمادة واحدة):</label>
+                                <select class="form-select" id="decisionPassGrade">
+                                    <option value="0">لا يوجد قرار نجاح</option>
+                                    <option value="5">5 درجات (بحد أدنى 45)</option>
+                                    <option value="10">10 درجات (بحد أدنى 40)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Dynamic Subject Name Inputs - New Section -->
+                            <div class="col-12 mt-3">
+                                <label class="form-label">تحديد المواد الدراسية (الحد الأقصى 12 مادة):</label>
+                                <small class="text-muted d-block mb-2">أدخل أسماء المواد التي تدرسها المدرسة. الحقول الفارغة لن تظهر في قائمة الدرجات.</small>
+                                <div class="row g-2" id="subjectInputsContainer">
+                                    <!-- Subject name inputs will be generated here by JavaScript -->
+                                </div>
+                            </div>
+                            <!-- End Dynamic Subject Name Inputs -->
+
+                            <div class="col-md-6 col-lg-4">
+                                <label for="schoolLogoInput" class="form-label">شعار المدرسة:</label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="schoolLogoInput" accept="image/*">
+                                    <button class="btn btn-outline-danger" type="button" id="clearSchoolLogoBtn" data-bs-toggle="tooltip" title="مسح الشعار المحفوظ">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="mt-2">
+                                    <img id="schoolLogoPreview" src="" alt="شعار المدرسة" class="img-thumbnail" style="max-width: 150px; max-height: 150px; display: none;">
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="cardBackgroundColor" class="form-label">لون خلفية البطاقة (اختياري):</label>
+                                <input type="color" class="form-control form-control-color" id="cardBackgroundColor" value="#ffffff">
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="cardBackgroundImageInput" class="form-label">صورة خلفية البطاقة (اختياري):</label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="cardBackgroundImageInput" accept="image/*">
+                                    <button class="btn btn-outline-danger" type="button" id="clearCardBackgroundBtn" data-bs-toggle="tooltip" title="مسح الخلفية المحفوظة">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">الصورة ستلغي اللون. الحد الأقصى 5 ميجابايت.</small>
+                                <div class="mt-2">
+                                    <img id="cardBackgroundImagePreview" src="" alt="خلفية البطاقة" class="img-thumbnail" style="max-width: 150px; max-height: 150px; display: none;">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary w-100" id="saveSchoolInfoBtn"> <!-- Changed type to submit -->
+                                    <i class="fas fa-save me-2"></i> حفظ بيانات المدرسة
+                                </button>
+                            </div>
+                        </form> <!-- Closed form tag -->
+                    </div>
+                </div>
+
+                <!-- Student Data Entry Section -->
+                <div class="card mb-4 animate__animated animate__fadeIn" id="studentSection">
+                    <div class="card-header">
+                        <i class="fas fa-user-plus me-2"></i> إضافة / تعديل بيانات الطالب
+                    </div>
+                    <div class="card-body">
+                        <form id="studentForm" class="row g-3">
+                            <input type="hidden" id="studentId">
+                            <div class="col-md-6">
+                                <label for="fullName" class="form-label">الاسم الثلاثي:</label>
+                                <input type="text" class="form-control" id="fullName" placeholder="أدخل الاسم الثلاثي" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="studentGrade" class="form-label">الصف (خاص بالطالب):</label>
+                                <input type="text" class="form-control" id="studentGrade" placeholder="مثال: الخامس أ" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="enrollmentId" class="form-label">رقم القيد:</label>
+                                <input type="text" class="form-control" id="enrollmentId" placeholder="أدخل رقم القيد" required>
+                            </div>
+                            <!-- Dynamic Subject Grade Inputs - New Section -->
+                            <div id="dynamicStudentSubjectGrades" class="row g-3 mt-0">
+                                <!-- Dynamic grade inputs will be injected here by JS -->
+                            </div>
+                            <!-- End Dynamic Subject Grade Inputs -->
+                            <div class="col-12">
+                                <label for="notes" class="form-label">الملاحظات:</label>
+                                <textarea class="form-control" id="notes" rows="3" placeholder="أدخل أي ملاحظات إضافية حول الطالب"></textarea>
+                            </div>
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-success me-2" id="addStudentBtn" style="width: 150px;">
+                                    <i class="fas fa-plus-circle me-2"></i> إضافة طالب
+                                </button>
+                                <button type="button" class="btn btn-warning d-none" id="updateStudentBtn" style="width: 150px;">
+                                    <i class="fas fa-save me-2"></i> تحديث الطالب
+                                </button>
+                                <button type="reset" class="btn btn-secondary" id="resetFormBtn">
+                                    <i class="fas fa-undo me-2"></i> إعادة تعيين
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Student List Table -->
+                <div class="card mb-4 animate__animated animate__fadeIn">
+                    <div class="card-header">
+                        <i class="fas fa-users me-2"></i> قائمة الطلاب المسجلين
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover table-bordered">
+                                <thead>
+                                    <tr id="studentsTableHeaderRow">
+                                        <th width="40">ت</th>
+                                        <th>الاسم الثلاثي</th>
+                                        <th width="100">القيد</th>
+                                        <!-- Dynamic Subject Headers will be injected here by JavaScript -->
+                                        <th width="80">المجموع</th>
+                                        <th width="80">المعدل</th>
+                                        <th width="100">النتيجة</th>
+                                        <th>الملاحظات</th>
+                                        <th width="120">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTableBody">
+                                    <!-- Student rows will be injected here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p id="noStudentsMessage" class="text-center text-muted mt-3 d-none">لا يوجد طلاب مسجلين بعد. الرجاء إضافة طالب.</p>
+                        <div class="text-center mt-4">
+                            <button type="button" class="btn btn-outline-danger btn-sm" id="deleteAllStudentsBtn" data-bs-toggle="tooltip" title="حذف جميع بيانات الطلاب">
+                                <i class="fas fa-eraser me-2"></i> حذف جميع بيانات الطلاب
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Display Section -->
+                <div class="card mb-4 animate__animated animate__fadeIn" id="resultsSection">
+                    <div class="card-header">
+                        <i class="fas fa-eye me-2"></i> عرض النتائج
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="d-flex flex-wrap justify-content-center gap-3">
+                            <button type="button" class="btn btn-primary btn-lg" id="distributeResultsBtn">
+                                <i class="fas fa-file-invoice me-2"></i> عرض بطاقات النتائج
+                            </button>
+                            <button type="button" class="btn btn-danger btn-lg" id="downloadPdfBtn">
+                                <i class="fas fa-file-pdf me-2"></i> تحميل جميع البطاقات (PDF)
+                            </button>
+                            <button type="button" class="btn btn-info btn-lg" id="printAllCardsBtn">
+                                <i class="fas fa-print me-2"></i> طباعة جميع البطاقات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Display Area (A4 Cards) -->
+                <div class="results-display" id="resultsDisplay">
+                    <!-- A4 result cards will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-question-circle me-2"></i> تعليمات استخدام النظام</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="accordion" id="helpAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#helpSchoolData">
+                                    <i class="fas fa-school me-2"></i> إدخال بيانات المدرسة
+                                </button>
+                            </h2>
+                            <div id="helpSchoolData" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <ol>
+                                        <li>قم بإدخال اسم المدرسة كاملاً</li>
+                                        <li>حدد الفصل الدراسي (الأول أو الثاني)</li>
+                                        <li>أدخل السنة الدراسية بالصيغة الصحيحة (مثال: 2023-2024)</li>
+                                        <li>أدخل اسم المرشد الأكاديمي</li>
+                                        <li>أدخل اسم مدير المدرسة</li>
+                                        <li>حدد الصف الدراسي العام للمدرسة</li>
+                                        <li><strong>جديد:</strong> اختر "درجة النجاح بقرار" المناسبة، أو "لا يوجد قرار نجاح" لتعطيل الميزة.</li>
+                                        <li><strong>جديد:</strong> قم بإدخال أسماء المواد الدراسية للمدرسة في الحقول المخصصة. الحقول التي تترك فارغة لن تظهر في قائمة الدرجات.</li>
+                                        <li>يمكنك رفع شعار المدرسة (اختياري) أو مسحه بزر المسح.</li>
+                                        <li>يمكنك اختيار لون خلفية للبطاقة (سيتم حفظ اللون عند الضغط على "حفظ بيانات المدرسة").</li>
+                                        <li>يمكنك رفع صورة خلفية للبطاقة (اختياري، ستقوم بإلغاء اللون) أو مسحها بزر المسح.</li>
+                                        <li>اضغط على زر "حفظ بيانات المدرسة" لتأكيد حفظ البيانات الإلزامية أو لإظهار رسالة التأكيد.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#helpStudentData">
+                                    <i class="fas fa-user-graduate me-2"></i> إدخال بيانات الطلاب
+                                </button>
+                            </h2>
+                            <div id="helpStudentData" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <ol>
+                                        <li>أدخل الاسم الثلاثي للطالب</li>
+                                        <li>حدد الصف الدراسي الخاص بالطالب (يمكن أن يختلف عن الصف العام)</li>
+                                        <li>أدخل رقم القيد الخاص بالطالب</li>
+                                        <li><strong>جديد:</strong> أدخل درجات الطالب في المواد التي حددتها في قسم بيانات المدرسة. إدخال الدرجات اختياري، وسيتم اعتبار الحقول الفارغة 0.</li>
+                                        <li>يمكنك إضافة ملاحظات خاصة بالطالب (اختياري)</li>
+                                        <li>اضغط على زر "إضافة طالب" لحفظ البيانات</li>
+                                        <li>لتعديل بيانات طالب موجود، اضغط على زر التعديل في الجدول</li>
+                                        <li>لحذف طالب، اضغط على زر الحذف في الجدول</li>
+                                    </ol>
+                               </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#helpResults">
+                                    <i class="fas fa-eye me-2"></i> عرض النتائج
+                                </button>
+                            </h2>
+                            <div id="helpResults" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <ol>
+                                        <li>بعد إدخال جميع بيانات الطلاب، اضغط على زر "عرض بطاقات النتائج"</li>
+                                        <li>ستظهر بطاقات النتائج لكل طالب على حدة في نفس الصفحة.</li>
+                                        <li>يمكنك معاينة البطاقات هنا.</li>
+                                        <li>لتحميل جميع البطاقات كملف PDF بدقة عالية، اضغط على زر "تحميل جميع البطاقات (PDF)".</li>
+                                        <li>لطباعة جميع البطاقات دفعة واحدة، اضغط على زر "طباعة جميع البطاقات".</li>
+                                        <li>للحصول على أفضل نتائج للطباعة، تأكد من تفعيل خيار "طباعة الخلفيات" في إعدادات الطابعة.</li>
+                                    </ol>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">حسناً</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jsPDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<footer>
+    جميع الحقوق محفوظة °2025 
+    <br> <a href="index.html">منصة المعلم المرشد</a>
+    <br>
+    <br>
+</footer>
+
+
+<script>
+// Initialize tooltips
+const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+
+// Initialize jsPDF
+const { jsPDF } = window.jspdf;
+
+// DOM Elements References
+const spinnerContainer = document.getElementById('spinnerContainer');
+const loadingText = document.getElementById('loadingText');
+const progressBar = document.getElementById('progressBar');
+
+const schoolInfoForm = document.getElementById('schoolInfoForm'); // New form reference for school data
+const schoolNameInput = document.getElementById('schoolName');
+const semesterInput = document.getElementById('semester');
+const academicYearInput = document.getElementById('academicYear');
+const advisorNameInput = document.getElementById('advisorName');
+const directorNameInput = document.getElementById('directorName');
+const gradeLevelInput = document.getElementById('gradeLevel');
+const decisionPassGradeInput = document.getElementById('decisionPassGrade');
+const subjectInputsContainer = document.getElementById('subjectInputsContainer');
+const schoolLogoInput = document.getElementById('schoolLogoInput');
+const schoolLogoPreview = document.getElementById('schoolLogoPreview');
+const clearSchoolLogoBtn = document.getElementById('clearSchoolLogoBtn');
+const cardBackgroundColorInput = document.getElementById('cardBackgroundColor');
+const cardBackgroundImageInput = document.getElementById('cardBackgroundImageInput');
+const cardBackgroundImagePreview = document.getElementById('cardBackgroundImagePreview');
+const clearCardBackgroundBtn = document.getElementById('clearCardBackgroundBtn');
+const saveSchoolInfoBtn = document.getElementById('saveSchoolInfoBtn'); // Now a submit button
+
+const studentForm = document.getElementById('studentForm');
+const studentIdInput = document.getElementById('studentId');
+const fullNameInput = document.getElementById('fullName');
+const studentGradeInput = document.getElementById('studentGrade');
+const enrollmentIdInput = document.getElementById('enrollmentId');
+const dynamicStudentSubjectGrades = document.getElementById('dynamicStudentSubjectGrades');
+const notesInput = document.getElementById('notes');
+const addStudentBtn = document.getElementById('addStudentBtn');
+const updateStudentBtn = document.getElementById('updateStudentBtn');
+const resetFormBtn = document.getElementById('resetFormBtn');
+const studentsTableBody = document.getElementById('studentsTableBody');
+const studentsTableHeaderRow = document.getElementById('studentsTableHeaderRow');
+const noStudentsMessage = document.getElementById('noStudentsMessage');
+const deleteAllStudentsBtn = document.getElementById('deleteAllStudentsBtn');
+const distributeResultsBtn = document.getElementById('distributeResultsBtn');
+const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+const printAllCardsBtn = document.getElementById('printAllCardsBtn');
+const resultsDisplay = document.getElementById('resultsDisplay');
+const helpBtn = document.getElementById('helpBtn');
+const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
+
+// Data Storage Variables
+let schoolInfo = {
+    name: '',
+    semester: '',
+    academicYear: '',
+    advisor: '',
+    director: '',
+    gradeLevel: '',
+    decisionPassGrade: '0',
+    subjects: Array(12).fill(''), // Initialize with 12 empty strings for subjects
+    logo: '',
+    cardBackgroundColor: '#ffffff',
+    cardBackgroundImage: ''
+};
+let students = [];
+let editingStudentId = null;
+
+// Constants
+const LOCAL_STORAGE_SCHOOL_KEY = 'school_info_pro_v9_dynamic_subjects'; // Updated key
+const LOCAL_STORAGE_STUDENTS_KEY = 'students_data_pro_v9_dynamic_subjects'; // Updated key
+const PASS_MARK = 50;
+const MAX_SUBJECTS = 12;
+
+// Helper Functions
+
+/**
+ * Shows loading spinner with custom message
+ * @param {string} message - Loading message to display
+ */
+function showLoading(message = 'جاري معالجة البيانات...') {
+    loadingText.textContent = message;
+    progressBar.style.width = '0%';
+    progressBar.textContent = '0%';
+    spinnerContainer.style.display = 'flex';
+}
+
+/**
+ * Hides loading spinner
+ */
+function hideLoading() {
+    spinnerContainer.style.display = 'none';
+}
+
+/**
+ * Updates progress bar during long operations
+ * @param {number} progress - Progress percentage (0-100)
+ */
+function updateProgress(progress) {
+    const percentage = Math.min(100, Math.max(0, progress));
+    progressBar.style.width = `${percentage}%`;
+    progressBar.textContent = `${Math.round(percentage)}%`;
+}
+
+/**
+ * Renders the 12 subject name input fields in the school section.
+ */
+function renderSchoolSubjectInputs() {
+    subjectInputsContainer.innerHTML = '';
+    for (let i = 0; i < MAX_SUBJECTS; i++) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-md-6 col-lg-3';
+        colDiv.innerHTML = `
+            <label for="subjectName${i + 1}" class="form-label">المادة ${i + 1}:</label>
+            <input type="text" class="form-control subject-name-input" id="subjectName${i + 1}" placeholder="اسم المادة" value="${schoolInfo.subjects[i] || ''}">
+        `;
+        subjectInputsContainer.appendChild(colDiv);
+    }
+
+    // Add event listeners for auto-save on change for subject names (without toast)
+    document.querySelectorAll('.subject-name-input').forEach(input => {
+        input.addEventListener('change', () => saveSchoolInfo(false));
+    });
+}
+
+/**
+ * Renders dynamic subject grade inputs in the student form based on active subjects.
+ */
+function renderStudentSubjectInputs() {
+    dynamicStudentSubjectGrades.innerHTML = '';
+    schoolInfo.subjects.forEach((subjectName, index) => {
+        if (subjectName.trim()) { // Only render if subject name is not empty
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-3';
+            // Sanitize subject name for ID to avoid issues with spaces or special chars
+            const inputId = `grade_input_${subjectName.replace(/[^a-zA-Z0-9_]/g, '_')}_${index}`;
+            colDiv.innerHTML = `
+                <label for="${inputId}" class="form-label">${subjectName}:</label>
+                <input type="number" class="form-control dynamic-grade-input" id="${inputId}" min="0" max="100" placeholder="0-100">
+            `;
+            dynamicStudentSubjectGrades.appendChild(colDiv);
+        }
+    });
+}
+
+/**
+ * Loads school information and student data from localStorage
+ */
+function loadData() {
+    const storedSchoolInfo = localStorage.getItem(LOCAL_STORAGE_SCHOOL_KEY);
+    if (storedSchoolInfo) {
+        schoolInfo = JSON.parse(storedSchoolInfo);
+        // Ensure subjects array has MAX_SUBJECTS length, filling with empty if less
+        if (!schoolInfo.subjects || schoolInfo.subjects.length < MAX_SUBJECTS) {
+            const existingSubjects = schoolInfo.subjects || [];
+            schoolInfo.subjects = existingSubjects.concat(Array(MAX_SUBJECTS - existingSubjects.length).fill(''));
+        }
+        
+        schoolNameInput.value = schoolInfo.name || '';
+        semesterInput.value = schoolInfo.semester || '';
+        academicYearInput.value = schoolInfo.academicYear || '';
+        advisorNameInput.value = schoolInfo.advisor || '';
+        directorNameInput.value = schoolInfo.director || '';
+        gradeLevelInput.value = schoolInfo.gradeLevel || '';
+        decisionPassGradeInput.value = schoolInfo.decisionPassGrade || '0';
+        
+        if (schoolInfo.logo) {
+            schoolLogoPreview.src = schoolInfo.logo;
+            schoolLogoPreview.style.display = 'block';
+        } else {
+            schoolLogoPreview.src = '';
+            schoolLogoPreview.style.display = 'none';
+        }
+        cardBackgroundColorInput.value = schoolInfo.cardBackgroundColor || '#ffffff';
+        if (schoolInfo.cardBackgroundImage) {
+            cardBackgroundImagePreview.src = schoolInfo.cardBackgroundImage;
+            cardBackgroundImagePreview.style.display = 'block';
+        } else {
+            cardBackgroundImagePreview.src = '';
+            cardBackgroundImagePreview.style.display = 'none';
+        }
+    } else {
+        // Initialize subjects for a fresh start if no school info exists
+        schoolInfo.subjects = Array(MAX_SUBJECTS).fill('');
+    }
+
+    renderSchoolSubjectInputs(); // Render subject inputs in school section on load
+    renderStudentSubjectInputs(); // Render subject inputs in student form on load
+
+    const storedStudents = localStorage.getItem(LOCAL_STORAGE_STUDENTS_KEY);
+    if (storedStudents) {
+        students = JSON.parse(storedStudents);
+    }
+}
+
+/**
+ * Saves current school information to localStorage
+ * @param {boolean} showToast - Whether to display a success toast message. Defaults to false.
+ */
+function saveSchoolInfo(showToast = false) { 
+    schoolInfo.name = schoolNameInput.value;
+    schoolInfo.semester = semesterInput.value;
+    schoolInfo.academicYear = academicYearInput.value;
+    schoolInfo.advisor = advisorNameInput.value;
+    schoolInfo.director = directorNameInput.value;
+    schoolInfo.gradeLevel = gradeLevelInput.value;
+    schoolInfo.decisionPassGrade = decisionPassGradeInput.value;
+    schoolInfo.cardBackgroundColor = cardBackgroundColorInput.value;
+
+    // Read subject names from inputs
+    schoolInfo.subjects = [];
+    for (let i = 0; i < MAX_SUBJECTS; i++) {
+        const input = document.getElementById(`subjectName${i + 1}`);
+        schoolInfo.subjects[i] = input ? input.value.trim() : '';
+    }
+    
+    localStorage.setItem(LOCAL_STORAGE_SCHOOL_KEY, JSON.stringify(schoolInfo));
+    
+    // After saving school info (especially subjects), update student form subjects
+    renderStudentSubjectInputs();
+    renderStudentsTable(); // Also update table headers
+
+    if (showToast) { 
+        Swal.fire({
+            icon: 'success',
+            title: 'تم الحفظ',
+            text: 'تم حفظ بيانات المدرسة بنجاح',
+            confirmButtonText: 'حسناً',
+            timer: 2000,
+            timerProgressBar: true
+        });
+    }
+}
+
+/**
+ * Saves current student data array to localStorage
+ */
+function saveStudents() {
+    localStorage.setItem(LOCAL_STORAGE_STUDENTS_KEY, JSON.stringify(students));
+}
+
+/**
+ * Calculates student metrics (total, average, result, etc.)
+ * @param {object} student - Student object
+ * @returns {object} Calculated metrics
+ */
+function calculateStudentMetrics(student) {
+    const activeSubjects = schoolInfo.subjects.filter(name => name.trim()); // Get only defined subject names
+    const subjectGrades = activeSubjects.map(subjName => {
+        return {
+            name: subjName,
+            grade: parseInt(student.grades[subjName] || 0) // Get grade from student.grades object, default to 0
+        };
+    });
+
+    const gradesOnly = subjectGrades.map(s => s.grade);
+    const totalGrades = gradesOnly.reduce((sum, grade) => sum + grade, 0);
+    const average = subjectGrades.length > 0 ? totalGrades / subjectGrades.length : 0; // Avoid division by zero
+
+    let failedSubjectsCount = 0;
+    let failedSubjectsList = [];
+    let decisionSubject = null;
+
+    subjectGrades.forEach(subj => {
+        if (subj.grade < PASS_MARK) {
+            failedSubjectsCount++;
+            failedSubjectsList.push(subj.name);
+        }
+    });
+
+    let result;
+    const decisionGradeOption = parseInt(schoolInfo.decisionPassGrade);
+    
+    if (failedSubjectsCount === 0) {
+        result = 'ناجح';
+    } else if (failedSubjectsCount === 1 && decisionGradeOption > 0) {
+        const singleFailedSubject = subjectGrades.find(subj => subj.grade < PASS_MARK);
+        const minGradeForDecision = PASS_MARK - decisionGradeOption;
+
+        if (singleFailedSubject && singleFailedSubject.grade >= minGradeForDecision) {
+            result = 'ناجح بقرار';
+            decisionSubject = singleFailedSubject.name;
+            failedSubjectsList = []; // Clear failed list if passing by decision
+        } else {
+            result = 'مكمل';
+        }
+    } else if (failedSubjectsCount >= 1 && failedSubjectsCount <= 2) { // Allow up to 2 for supplementary
+        result = 'مكمل';
+    } else {
+        result = 'راسب';
+    }
+
+    return {
+        average: average.toFixed(2),
+        total: totalGrades,
+        result: result,
+        failedSubjectsCount: failedSubjectsCount,
+        failedSubjectsList: failedSubjectsList,
+        decisionSubject: decisionSubject
+    };
+}
+
+/**
+ * Renders the students data into the HTML table
+ */
+function renderStudentsTable() {
+    studentsTableBody.innerHTML = '';
+    
+    // Update table headers first
+    let headerHtml = `
+        <th width="40">ت</th>
+        <th>الاسم الثلاثي</th>
+        <th width="100">القيد</th>
+    `;
+    const activeSubjects = schoolInfo.subjects.filter(name => name.trim());
+    activeSubjects.forEach(subjName => {
+        headerHtml += `<th width="80">${subjName}</th>`;
+    });
+    headerHtml += `
+        <th width="80">المجموع</th>
+        <th width="80">المعدل</th>
+        <th width="100">النتيجة</th>
+        <th>الملاحظات</th>
+        <th width="120">الإجراءات</th>
+    `;
+    studentsTableHeaderRow.innerHTML = headerHtml;
+
+    if (students.length === 0) {
+        noStudentsMessage.classList.remove('d-none');
+        return;
+    }
+    
+    noStudentsMessage.classList.add('d-none');
+
+    students.forEach((student, index) => {
+        const metrics = calculateStudentMetrics(student);
+        const row = studentsTableBody.insertRow();
+        
+        let resultBadgeClass = '';
+        if (metrics.result === 'ناجح' || metrics.result === 'ناجح بقرار') {
+            resultBadgeClass = 'bg-success';
+        } else if (metrics.result === 'مكمل') {
+            resultBadgeClass = 'bg-warning text-dark';
+        } else {
+            resultBadgeClass = 'bg-danger';
+        }
+
+        let gradeCellsHtml = '';
+        activeSubjects.forEach(subjName => {
+            const grade = student.grades && student.grades[subjName] !== undefined ? student.grades[subjName] : '-'; // Display '-' if no grade
+            const gradeForClass = parseInt(grade || 0); // For determining failed class
+            const gradeClass = gradeForClass < PASS_MARK ? 'class="failed-grade"' : '';
+            gradeCellsHtml += `<td ${gradeClass}>${grade}</td>`;
+        });
+
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${student.fullName}</td>
+            <td>${student.enrollmentId}</td>
+            ${gradeCellsHtml}
+            <td>${metrics.total}</td>
+            <td>${metrics.average}</td>
+            <td><span class="badge ${resultBadgeClass}">${metrics.result}</span></td>
+            <td>${student.notes || '-'}</td>
+            <td>
+                <button class="btn btn-sm btn-warning btn-icon edit-btn" data-id="${student.id}" data-bs-toggle="tooltip" title="تعديل">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger btn-icon delete-btn" data-id="${student.id}" data-bs-toggle="tooltip" title="حذف">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        `;
+    });
+
+    // Add event listeners to edit and delete buttons
+    document.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            editStudent(e.currentTarget.dataset.id);
+        });
+    });
+    
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            deleteStudent(e.currentTarget.dataset.id);
+        });
+    });
+
+    // Reinitialize tooltips for new elements
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+/**
+ * Handles student form submission (add or update)
+ * @param {Event} event - Form submit event
+ */
+function handleStudentFormSubmit(event) {
+    event.preventDefault();
+
+    const newStudentGrades = {};
+    schoolInfo.subjects.forEach((subjectName, index) => {
+        if (subjectName.trim()) {
+            const inputId = `grade_input_${subjectName.replace(/[^a-zA-Z0-9_]/g, '_')}_${index}`;
+            const gradeInput = document.getElementById(inputId);
+            if (gradeInput) {
+                // Treat empty or non-numeric as 0
+                newStudentGrades[subjectName] = parseInt(gradeInput.value) || 0;
+            }
+        }
+    });
+
+    const newStudent = {
+        id: studentIdInput.value || String(Date.now()),
+        fullName: fullNameInput.value,
+        grade: studentGradeInput.value,
+        enrollmentId: enrollmentIdInput.value,
+        grades: newStudentGrades, // Store dynamic grades here
+        notes: notesInput.value
+    };
+
+    if (editingStudentId) {
+        // Update existing student
+        const index = students.findIndex(s => s.id === editingStudentId);
+        if (index !== -1) {
+            students[index] = newStudent;
+            Swal.fire({
+                icon: 'success',
+                title: 'تم التحديث',
+                text: 'تم تحديث بيانات الطالب بنجاح',
+                confirmButtonText: 'حسناً',
+                timer: 2000,
+                timerProgressBar: true
+            });
+        }
+        editingStudentId = null;
+        addStudentBtn.classList.remove('d-none');
+        updateStudentBtn.classList.add('d-none');
+    } else {
+        // Add new student
+        students.push(newStudent);
+        Swal.fire({
+            icon: 'success',
+            title: 'تمت الإضافة',
+            text: 'تمت إضافة الطالب بنجاح',
+            confirmButtonText: 'حسناً',
+            timer: 2000,
+            timerProgressBar: true
+        });
+    }
+
+    saveStudents();
+    renderStudentsTable();
+    studentForm.reset();
+    renderStudentSubjectInputs(); // Clear dynamic inputs after reset
+}
+
+/**
+ * Populates the form with data of the student to be edited
+ * @param {string} id - Student ID
+ */
+function editStudent(id) {
+    const studentToEdit = students.find(s => s.id === id);
+    if (studentToEdit) {
+        editingStudentId = id;
+        studentIdInput.value = studentToEdit.id;
+        fullNameInput.value = studentToEdit.fullName;
+        studentGradeInput.value = studentToEdit.grade;
+        enrollmentIdInput.value = studentToEdit.enrollmentId;
+        notesInput.value = studentToEdit.notes;
+
+        // Populate dynamic subject grades
+        schoolInfo.subjects.forEach((subjectName, index) => {
+            if (subjectName.trim()) {
+                const inputId = `grade_input_${subjectName.replace(/[^a-zA-Z0-9_]/g, '_')}_${index}`;
+                const gradeInput = document.getElementById(inputId);
+                if (gradeInput) {
+                    // Use the stored grade or empty string if not found/defined for this subject
+                    gradeInput.value = studentToEdit.grades && studentToEdit.grades[subjectName] !== undefined ? studentToEdit.grades[subjectName] : '';
+                }
+            }
+        });
+
+        addStudentBtn.classList.add('d-none');
+        updateStudentBtn.classList.remove('d-none');
+
+        // Scroll to form
+        fullNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+/**
+ * Deletes a student from the data array
+ * @param {string} id - Student ID
+ */
+function deleteStudent(id) {
+    Swal.fire({
+        title: 'هل أنت متأكد؟',
+        text: "لن تتمكن من استعادة بيانات الطالب بعد الحذف!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'نعم، احذف!',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            students = students.filter(s => s.id !== id);
+            saveStudents();
+            renderStudentsTable();
+            
+            if (editingStudentId === id) {
+                studentForm.reset();
+                editingStudentId = null;
+                addStudentBtn.classList.remove('d-none');
+                updateStudentBtn.classList.add('d-none');
+                renderStudentSubjectInputs(); // Clear dynamic inputs
+            }
+            
+            Swal.fire(
+                'تم الحذف!',
+                'تم حذف بيانات الطالب بنجاح.',
+                'success'
+            );
+        }
+    });
+}
+
+/**
+ * Deletes all student data
+ */
+function deleteAllStudents() {
+    Swal.fire({
+        title: 'هل أنت متأكد؟',
+        text: "سيتم حذف جميع بيانات الطلاب ولا يمكن استعادتها!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'نعم، احذف الكل!',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            students = [];
+            saveStudents();
+            renderStudentsTable();
+            resultsDisplay.innerHTML = '';
+            
+            Swal.fire(
+                'تم الحذف!',
+                'تم حذف جميع بيانات الطلاب بنجاح.',
+                'success'
+            );
+        }
+    });
+}
+
+/**
+ * Generates A4 result cards for all students for display
+ */
+function generateResultCards() {
+    resultsDisplay.innerHTML = ''; // Clear existing cards
+    
+    if (students.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'لا يوجد بيانات',
+            text: 'لا توجد بيانات طلاب لعرض البطاقات',
+            confirmButtonText: 'حسناً'
+        });
+        return;
+    }
+    
+    // Check main school info fields (already required by HTML form validation, but this adds a JS check)
+    if (!schoolInfo.name || !schoolInfo.academicYear || !schoolInfo.director || !schoolInfo.advisor || !schoolInfo.gradeLevel || !schoolInfo.semester) {
+        Swal.fire({
+            icon: 'error',
+            title: 'بيانات المدرسة الأساسية ناقصة',
+            text: 'الرجاء إدخال جميع البيانات الأساسية للمدرسة (الاسم، الفصل، السنة، المرشد، المدير، الصف العام) أولاً.',
+            confirmButtonText: 'حسناً'
+        });
+        return;
+    }
+
+    if (schoolInfo.subjects.filter(s => s.trim()).length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تحديد المواد الدراسية',
+            text: 'لم يتم تحديد أي مواد دراسية. لن تظهر الدرجات في البطاقات.',
+            confirmButtonText: 'موافق'
+        });
+        // Continue even if no subjects, as it's an optional field for display.
+    }
+
+    // Apply card background styles via CSS variables to the document root
+    document.documentElement.style.setProperty('--card-bg-color', schoolInfo.cardBackgroundColor);
+    document.documentElement.style.setProperty('--card-bg-image', schoolInfo.cardBackgroundImage ? `url(${schoolInfo.cardBackgroundImage})` : 'none');
+
+    students.forEach((student, index) => {
+        const metrics = calculateStudentMetrics(student);
+        const card = document.createElement('div');
+        card.className = 'a4-card animate__animated animate__fadeIn';
+        card.setAttribute('data-student-id', student.id);
+        card.style.animationDelay = `${index * 0.1}s`;
+
+        const activeSubjects = schoolInfo.subjects.filter(name => name.trim());
+        let gradesTableHtml = '';
+        activeSubjects.forEach(subjName => {
+            const grade = student.grades[subjName] !== undefined ? student.grades[subjName] : '-'; // Display '-' if no grade
+            const gradeForClass = parseInt(grade || 0); // For determining failed class
+            const gradeClass = gradeForClass < PASS_MARK ? 'class="failed-grade"' : '';
+            gradesTableHtml += `<tr><td>${subjName}</td><td ${gradeClass}>${grade}</td></tr>`;
+        });
+
+        let supplementaryOrDecisionMessage = '';
+        if (metrics.result === 'مكمل' && metrics.failedSubjectsList.length > 0) {
+            supplementaryOrDecisionMessage = `
+                <div class="supplementary-subjects">
+                    <p class="mb-2"><strong>المواد المكمل بها:</strong></p>
+                    <p class="failed-list">${metrics.failedSubjectsList.join(' و ')}</p>
+                </div>
+            `;
+        } else if (metrics.result === 'ناجح بقرار' && metrics.decisionSubject) {
+            supplementaryOrDecisionMessage = `
+                <div class="decision-pass-message">
+                    <p class="mb-0"><strong>ناجح بقرار في مادة:</strong> ${metrics.decisionSubject}</p>
+                </div>
+            `;
+        }
+        
+        // Conditionally render the notes section
+        const notesSectionHtml = student.notes ? `
+            <div class="notes-section">
+                <p><strong>ملاحظات:</strong> ${student.notes}</p>
+            </div>
+        ` : '';
+
+        card.innerHTML = `
+            <div class="school-header">
+                <img src="${schoolInfo.logo || 'https://via.placeholder.com/120x120/3498db/FFFFFF?text=شعار'}" alt="School Logo" class="school-logo-display">
+                <h4>${schoolInfo.name}</h4>
+                <h5> النتيجة النهاية لدرجات ${schoolInfo.semester}</h5>
+                <p class="academic-year">للعام الدراسي: ${schoolInfo.academicYear}</p>
+                <hr class="header-divider">
+            </div>
+
+            <h5 class="student-name-title">${student.fullName}</h5>
+            <div class="student-details-line">
+                <span><strong>الصف:</strong> ${student.grade}</span>
+                <span><strong>رقم القيد:</strong> ${student.enrollmentId}</span>
+                <span><strong>المرشد:</strong> ${schoolInfo.advisor}</span>
+            </div>
+
+            <div class="grades-table">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>المادة</th>
+                            <th>الدرجة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${gradesTableHtml}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="final-results">
+                <div class="results-row">
+                    <p><strong>المجموع الكلي:</strong> <span class="badge bg-primary">${metrics.total}</span></p>
+                    <p><strong>المعدل العام:</strong> <span class="badge bg-info">${metrics.average}%</span></p>
+                    <p><strong>النتيجة النهائية:</strong>
+                        <span class="badge ${metrics.result === 'ناجح' || metrics.result === 'ناجح بقرار' ? 'bg-success' : (metrics.result === 'مكمل' ? 'bg-warning text-dark' : 'bg-danger')}">
+                            ${metrics.result}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            ${supplementaryOrDecisionMessage}
+
+            ${notesSectionHtml} <!-- Conditionally included notes -->
+
+            <div class="footer-signatures">
+                <p class="parent-signature"><strong>توقيع ولي الأمر:</strong> ..........................</p>
+                <p class="director-signature"><strong>المدير:</strong> ${schoolInfo.director}</p>
+            </div>
+            <p class="text-muted text-center mt-3">مع خالص التمنيات بالنجاح والتوفيق.</p>
+        `;
+        
+        resultsDisplay.appendChild(card);
+    });
+
+    // Show all cards after generation
+    setTimeout(() => {
+        document.querySelectorAll('.a4-card').forEach(card => {
+            card.style.display = 'block';
+        });
+        
+        // Scroll to results
+        resultsDisplay.scrollIntoView({ behavior: 'smooth' });
+    }, students.length * 100 + 300);
+}
+
+/**
+ * Prints all result cards
+ */
+function printAllCards() {
+    const cards = document.querySelectorAll('.a4-card');
+    if (cards.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'لا يوجد بيانات',
+            text: 'الرجاء عرض بطاقات النتائج أولاً ثم المحاولة مرة أخرى',
+            confirmButtonText: 'حسناً'
+        });
+        return;
+    }
+
+    // Ensure cards are visible for printing
+    document.querySelectorAll('.a4-card').forEach(card => {
+        card.style.display = 'block';
+    });
+
+    // Trigger print
+    window.print();
+}
+
+/**
+ * Downloads all result cards as a single PDF file with high quality
+ */
+async function downloadAllPdfs() {
+    // Hide any currently displayed cards from resultsDisplay to avoid layout interference
+    document.querySelectorAll('.a4-card').forEach(card => card.style.display = 'none');
+    resultsDisplay.innerHTML = ''; // Clear results display area completely
+
+    if (students.length === 0) {
+        Swal.fire({
+            icon: 'error',
+            title: 'لا يوجد بيانات',
+            text: 'لا توجد بيانات طلاب لإنشاء ملف PDF',
+            confirmButtonText: 'حسناً'
+        });
+        return;
+    }
+
+    // Check main school info fields (already required by HTML form validation, but this adds a JS check)
+    if (!schoolInfo.name || !schoolInfo.academicYear || !schoolInfo.director || !schoolInfo.advisor || !schoolInfo.gradeLevel || !schoolInfo.semester) {
+        Swal.fire({
+            icon: 'error',
+            title: 'بيانات المدرسة الأساسية ناقصة',
+            text: 'الرجاء إدخال جميع البيانات الأساسية للمدرسة (الاسم، الفصل، السنة، المرشد، المدير، الصف العام) أولاً.',
+            confirmButtonText: 'حسناً'
+        });
+        return;
+    }
+    
+    if (schoolInfo.subjects.filter(s => s.trim()).length === 0) {
+         Swal.fire({
+            icon: 'warning',
+            title: 'تحديد المواد الدراسية',
+            text: 'لم يتم تحديد أي مواد دراسية. قد يظهر ملف PDF فارغاً من الدرجات.',
+            confirmButtonText: 'موافق'
+        });
+        // Continue, user might still want the PDF even without subjects
+    }
+
+    showLoading('جاري تحضير ملف PDF...');
+    
+    try {
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const margin = 10; // 10mm margin
+        const imgWidth = 190; // A4 width (210mm) - 2*margin
+
+        for (let i = 0; i < students.length; i++) {
+            const student = students[i];
+            updateProgress((i / students.length) * 100);
+            
+            // Dynamically create a fresh A4 card for each student for capture
+            const cardForCapture = document.createElement('div');
+            cardForCapture.className = 'a4-card'; // Apply existing A4 card styles
+            cardForCapture.style.position = 'absolute';
+            cardForCapture.style.left = '-9999px'; // Move off-screen
+            cardForCapture.style.top = '0'; // Ensure it's at the top, not just left
+            cardForCapture.style.display = 'block'; // Ensure it's rendered for html2canvas
+            cardForCapture.style.border = 'none'; // Remove border for clean PDF capture
+
+            // Apply dynamic background styles directly to the element for html2canvas to capture correctly
+            cardForCapture.style.backgroundColor = schoolInfo.cardBackgroundColor;
+            cardForCapture.style.backgroundImage = schoolInfo.cardBackgroundImage ? `url(${schoolInfo.cardBackgroundImage})` : 'none';
+            cardForCapture.style.backgroundSize = 'cover';
+            cardForCapture.style.backgroundPosition = 'center';
+            cardForCapture.style.backgroundRepeat = 'no-repeat';
+
+            const metrics = calculateStudentMetrics(student);
+            const activeSubjects = schoolInfo.subjects.filter(name => name.trim());
+            let gradesTableHtml = '';
+            activeSubjects.forEach(subjName => {
+                const grade = student.grades[subjName] !== undefined ? student.grades[subjName] : '-';
+                const gradeForClass = parseInt(grade || 0);
+                const gradeClass = gradeForClass < PASS_MARK ? 'class="failed-grade"' : '';
+                gradesTableHtml += `<tr><td>${subjName}</td><td ${gradeClass}>${grade}</td></tr>`;
+            });
+
+            let supplementaryOrDecisionMessage = '';
+            if (metrics.result === 'مكمل' && metrics.failedSubjectsList.length > 0) {
+                supplementaryOrDecisionMessage = `
+                    <div class="supplementary-subjects">
+                        <p class="mb-2"><strong>المواد المكمل بها:</strong></p>
+                        <p class="failed-list">${metrics.failedSubjectsList.join(' و ')}</p>
+                    </div>
+                `;
+            } else if (metrics.result === 'ناجح بقرار' && metrics.decisionSubject) {
+                supplementaryOrDecisionMessage = `
+                    <div class="decision-pass-message">
+                        <p class="mb-0"><strong>ناجح بقرار في مادة:</strong> ${metrics.decisionSubject}</p>
+                    </div>
+                `;
+            }
+
+            // Conditionally render the notes section
+            const notesSectionHtml = student.notes ? `
+                <div class="notes-section">
+                    <p><strong>ملاحظات:</strong> ${student.notes}</p>
+                </div>
+            ` : '';
+
+            // Populate the inner HTML of the temporary card
+            cardForCapture.innerHTML = `
+                <div class="school-header">
+                    <img src="${schoolInfo.logo || 'https://via.placeholder.com/120x120/3498db/FFFFFF?text=شعار'}" alt="School Logo" class="school-logo-display">
+                    <h4>${schoolInfo.name}</h4>
+                    <h5>كشف درجات ${schoolInfo.semester}</h5>
+                    <p class="academic-year">للعام الدراسي: ${schoolInfo.academicYear}</p>
+                    <hr class="header-divider">
+                </div>
+
+                <h5 class="student-name-title">${student.fullName}</h5>
+                <div class="student-details-line">
+                    <span><strong>الصف:</strong> ${student.grade}</span>
+                    <span><strong>رقم القيد:</strong> ${student.enrollmentId}</span>
+                    <span><strong>المرشد:</strong> ${schoolInfo.advisor}</span>
+                </div>
+
+                <div class="grades-table">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>المادة</th>
+                                <th>الدرجة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${gradesTableHtml}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="final-results">
+                    <div class="results-row">
+                        <p><strong>المجموع الكلي:</strong> <span class="badge bg-primary">${metrics.total}</span></p>
+                        <p><strong>المعدل العام:</strong> <span class="badge bg-info">${metrics.average}%</span></p>
+                        <p><strong>النتيجة النهائية:</strong>
+                            <span class="badge ${metrics.result === 'ناجح' || metrics.result === 'ناجح بقرار' ? 'bg-success' : (metrics.result === 'مكمل' ? 'bg-warning text-dark' : 'bg-danger')}">
+                                ${metrics.result}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                ${supplementaryOrDecisionMessage}
+
+                ${notesSectionHtml} <!-- Conditionally included notes -->
+
+                <div class="footer-signatures">
+                    <p class="parent-signature"><strong>توقيع ولي الأمر:</strong> ..........................</p>
+                    <p class="director-signature"><strong>المدير:</strong> ${schoolInfo.director}</p>
+                </div>
+                <p class="text-muted text-center mt-3">مع خالص التمنيات بالنجاح والتوفيق.</p>
+            `;
+            
+            document.body.appendChild(cardForCapture); // Add to DOM
+
+            // Force a reflow to ensure the element is laid out before capture
+            cardForCapture.offsetWidth; 
+
+            const canvas = await html2canvas(cardForCapture, {
+                scale: 3, // Higher scale for better quality
+                useCORS: true,
+                logging: false,
+                backgroundColor: null, // Transparent background for html2canvas
+                allowTaint: true,
+                // Ensure the window dimensions for html2canvas match the cloned element
+                windowWidth: cardForCapture.scrollWidth,
+                windowHeight: cardForCapture.scrollHeight,
+                // Scroll properties should be 0 because the element is off-screen
+                scrollX: 0,
+                scrollY: 0
+            });
+            
+            document.body.removeChild(cardForCapture); // Remove from DOM after capture
+            
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            
+            if (i > 0) {
+                doc.addPage();
+            }
+            
+            doc.addImage(imgData, 'JPEG', margin, margin, imgWidth, imgHeight);
+            
+            updateProgress(((i + 1) / students.length) * 100);
+        }
+        
+        // Save the PDF
+        doc.save('نتائج_الطلاب.pdf');
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'تم التحميل',
+            text: 'تم إنشاء ملف PDF بنجاح',
+            confirmButtonText: 'حسناً',
+            timer: 2000,
+            timerProgressBar: true
+        });
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'خطأ',
+            text: 'حدث خطأ أثناء إنشاء ملف PDF: ' + error.message,
+            confirmButtonText: 'حسناً'
+        });
+    } finally {
+        hideLoading();
+        // After PDF generation, re-display cards in resultsDisplay if desired
+        generateResultCards(); // This will re-generate and display the cards
+    }
+}
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    renderStudentsTable();
+    updateStudentBtn.classList.add('d-none');
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Event Listeners
+
+// Listen for form submit for school info
+schoolInfoForm.addEventListener('submit', (e) => {
+    e.preventDefault(); // Prevent default form submission
+    saveSchoolInfo(true); // Call save with showToast = true
+});
+
+// Listen for changes on decisionPassGrade to auto-save without toast
+decisionPassGradeInput.addEventListener('change', () => saveSchoolInfo(false));
+
+// For card background color, just update the live preview, save happens on form submit
+cardBackgroundColorInput.addEventListener('input', () => {
+    document.documentElement.style.setProperty('--card-bg-color', cardBackgroundColorInput.value);
+});
+
+
+studentForm.addEventListener('submit', handleStudentFormSubmit);
+deleteAllStudentsBtn.addEventListener('click', deleteAllStudents);
+distributeResultsBtn.addEventListener('click', generateResultCards);
+downloadPdfBtn.addEventListener('click', downloadAllPdfs);
+printAllCardsBtn.addEventListener('click', printAllCards);
+helpBtn.addEventListener('click', () => helpModal.show());
+resetFormBtn.addEventListener('click', () => {
+    editingStudentId = null;
+    addStudentBtn.classList.remove('d-none');
+    updateStudentBtn.classList.add('d-none');
+    renderStudentSubjectInputs(); // Reset/clear dynamic inputs
+});
+
+// Add click event for update button
+updateStudentBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    handleStudentFormSubmit(e);
+});
+
+// School logo upload handler
+schoolLogoInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        if (!file.type.match('image.*')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'الرجاء اختيار ملف صورة فقط',
+                confirmButtonText: 'حسناً'
+            });
+            event.target.value = ''; 
+            return;
+        }
+        
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            Swal.fire({
+                icon: 'error',
+                title: 'حجم الملف كبير',
+                text: 'الرجاء اختيار صورة بحجم أقل من 2 ميجابايت',
+                confirmButtonText: 'حسناً'
+            });
+            event.target.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            schoolInfo.logo = e.target.result;
+            schoolLogoPreview.src = schoolInfo.logo;
+            schoolLogoPreview.style.display = 'block';
+            saveSchoolInfo(true); // Show toast on image upload
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // If input is cleared manually
+        schoolInfo.logo = '';
+        schoolLogoPreview.src = '';
+        schoolLogoPreview.style.display = 'none';
+        schoolLogoInput.value = ''; // Clear file input
+        saveSchoolInfo(true); // Show toast on clearing image
+    }
+});
+
+// Clear School Logo button handler
+clearSchoolLogoBtn.addEventListener('click', () => {
+    schoolInfo.logo = '';
+    schoolLogoPreview.src = '';
+    schoolLogoPreview.style.display = 'none';
+    schoolLogoInput.value = ''; // Clear file input
+    saveSchoolInfo(true); // Show toast on clearing logo
+    Swal.fire({
+        icon: 'success',
+        title: 'تم المسح',
+        text: 'تم مسح شعار المدرسة المحفوظ بنجاح',
+        confirmButtonText: 'حسناً',
+        timer: 1500,
+        timerProgressBar: true
+    });
+});
+
+// Card background image upload handler
+cardBackgroundImageInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        if (!file.type.match('image.*')) {
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ',
+                text: 'الرجاء اختيار ملف صورة فقط لخلفية البطاقة',
+                confirmButtonText: 'حسناً'
+            });
+            event.target.value = ''; // Clear input
+            return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit for background image
+            Swal.fire({
+                icon: 'error',
+                title: 'حجم الملف كبير',
+                text: 'الرجاء اختيار صورة خلفية بحجم أقل من 5 ميجابايت',
+                confirmButtonText: 'حسناً'
+            });
+            event.target.value = ''; // Clear input
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            schoolInfo.cardBackgroundImage = e.target.result;
+            cardBackgroundImagePreview.src = schoolInfo.cardBackgroundImage;
+            cardBackgroundImagePreview.style.display = 'block';
+            saveSchoolInfo(true); // Show toast on image upload
+            document.documentElement.style.setProperty('--card-bg-image', `url(${schoolInfo.cardBackgroundImage})`);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // If input is cleared manually
+        schoolInfo.cardBackgroundImage = '';
+        cardBackgroundImagePreview.src = '';
+        cardBackgroundImagePreview.style.display = 'none';
+        saveSchoolInfo(true); // Show toast on clearing image
+        document.documentElement.style.setProperty('--card-bg-image', 'none');
+    }
+});
+
+// Clear Card Background button handler
+clearCardBackgroundBtn.addEventListener('click', () => {
+    schoolInfo.cardBackgroundImage = '';
+    cardBackgroundImagePreview.src = '';
+    cardBackgroundImagePreview.style.display = 'none';
+    cardBackgroundImageInput.value = ''; // Clear file input
+    saveSchoolInfo(true); // Show toast on clearing background
+    document.documentElement.style.setProperty('--card-bg-image', 'none'); // Remove dynamic background
+    Swal.fire({
+        icon: 'success',
+        title: 'تم المسح',
+        text: 'تم مسح صورة خلفية البطاقة المحفوظة بنجاح',
+        confirmButtonText: 'حسناً',
+        timer: 1500,
+        timerProgressBar: true
+    });
+});
+    
+</script>
+</body>
+</html>

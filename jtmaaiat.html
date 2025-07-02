@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إسئلة إمتحانات الشفوي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- إضافة عدة إصدارات من html2canvas كبدائل -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.0.0-rc.5/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/html2canvas@1.0.0-rc.5/dist/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --main-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --dark-text: #2c3e50;
+            --border-color: #ddd;
+        }
+        
+        body {
+            font-family: 'Tajawal', 'Tahoma', 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--dark-text);
+        }
+
+        .app-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0; 
+        }
+
+        .page-container {
+            width: 210mm;
+            min-height: 297mm; 
+            padding: 15mm;
+            margin: 0 auto 10px auto;
+            background-color: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            border: 1px solid var(--border-color); 
+        }
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 5px;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 5px;
+            position: relative;
+            
+        }
+        
+        .header::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--border-color), transparent);
+        }
+        
+        .header-top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .header-info-right, .header-info-left {
+            display: flex;
+            flex-direction: column;
+            flex-basis: 38%;
+            min-width: 25%;
+            margin-top: 0px;
+        }
+        
+        .header-info-right { 
+            text-align: right;
+            margin-left: auto;
+            width: 300px;
+        }
+        .header-info-left { 
+            text-align: right;
+            margin-right: auto;
+           
+        }
+        
+        .header-info-right div, .header-info-left div {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        .header-info-right div label, .header-info-left div label {
+            white-space: nowrap;
+            margin-left: 4px;
+            font-size: 0.9em;
+            text-align: right;
+            font-weight: 200;
+            color: var(--main-color);
+        }
+
+        .header-info-right input, .header-info-left input {
+            border: 1px solid var(--border-color);
+            padding: 6px 8px;
+            font-family: inherit;
+            font-size: 0.9em;
+            width:100%;
+            box-sizing: border-box;
+            text-align: right;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        
+        .header-info-right input:focus, .header-info-left input:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .header-main-titles-container {
+            text-align: center;
+            flex-basis: 24%;
+            flex-shrink: 0;
+            padding: 0 10px;
+            margin-bottom: 15px;
+            width: 50%;
+        }
+
+        .header-main-title-input, .header-sub-info-input {
+            font-family: inherit;
+            border: none;
+            background-color: transparent;
+            text-align: center;
+            width: 90%;
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+            color: var(--main-color);
+        }
+        
+        .header-main-title-input {
+            font-size: 1.0em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--main-color);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .header-main-title-input::after {
+            content: "";
+            display: block;
+            width: 50%;
+            height: 2px;
+            background: var(--secondary-color);
+            margin: 8px auto;
+            opacity: 0.5;
+        }
+        
+        .header-main-title-input.second-title {
+            font-size: 1.6em;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+        
+        .header-sub-info-input {
+            font-size: 1.0em;
+            margin-top: 5px;
+            color: var(--dark-text);
+            width: 100px;
+        }
+        
+        .exam-info-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .exam-info-item {
+            display: flex;
+            align-items: center;
+            background-color: #f0f8ff;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1em;
+            
+        }
+        
+        .exam-info-item label {
+            margin-left: 2px;
+            font-weight: 500;
+        }
+        
+        .exam-info-item input {
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 1em;
+            text-align: center;
+            min-width: 80px;
+        }
+        
+        .editable-academic-year-container {
+            font-size: 1em;
+            margin: 10px 0;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .editable-academic-year {
+            background-color: #e8f4fc;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1.1em;
+            display: inline-block;
+            outline: none;
+            border: 1px dashed transparent;
+            color: var(--main-color);
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            margin: 5px 0;
+        }
+        
+        .editable-academic-year:focus, .editable-academic-year:hover {
+            border: 1px dashed var(--secondary-color);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .exam-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.95em;
+            margin-top: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .exam-table th, .exam-table td {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .exam-table th {
+            font-weight: bold;
+            vertical-align: middle;
+            background-color: var(--light-bg);
+            color: var(--main-color);
+            font-size: 1.05em;
+            position: relative;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+        
+        .exam-table th::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--secondary-color);
+        }
+        
+        .exam-table th.level-hard { 
+            background-color: #fde8e8;
+            color: #c0392b;
+        }
+        .exam-table th.level-medium { 
+            background-color: #fff8e6;
+            color: #e67e22;
+        }
+        .exam-table th.level-easy { 
+            background-color: #e8f5e9;
+            color: #27ae60;
+        }
+        
+        .exam-table th.seq-col, .exam-table td.seq-col {
+            width: 40px;
+            padding: 8px 5px;
+            background-color: #f1f1f1;
+            font-weight: bold;
+        }
+        
+        .exam-table td.seq-col textarea {
+            width: 100%;
+            text-align: center;
+            padding: 5px;
+            box-sizing: border-box;
+            font-weight: bold;
+        }
+
+        .exam-table textarea {
+            width: 98%;
+            min-height: 24px;
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            box-sizing: border-box;
+            resize: none;
+            overflow-y: hidden;
+            background-color: white;
+            text-align: right;
+            line-height: 1.6;
+            border-radius: 4px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .exam-table textarea:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        
+        .controls {
+            padding-top: 20px; 
+            padding-bottom: 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%; 
+            max-width: 210mm; 
+            box-sizing: border-box;
+        }
+
+        .controls button {
+            padding: 10px 20px;
+            margin: 0; 
+            font-size: 0.95em;
+            cursor: pointer;
+            border: none;
+            border-radius: 30px;
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 150px;
+        }
+        
+        .controls button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .controls button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        
+        #addRowBtn {
+            background-color: #27ae60;
+        }
+        #addRowBtn:hover {
+            background-color: #219653;
+        }
+        #printBtn {
+            background-color: #9b59b6;
+        }
+        #printBtn:hover {
+            background-color: #8e44ad;
+        }
+        #clearTableBtn {
+            background-color: #e74c3c;
+        }
+        #clearTableBtn:hover {
+            background-color: #c0392b;
+        }
+
+        .principal-name-container {
+            margin-top: 20px;
+            text-align: right;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        .dds{
+            min-width: 120px;
+        }
+        
+        .principal-name-container label {
+            margin-left: 10px;
+            font-size: 1em;
+            font-weight: 500;
+            color: var(--main-color);
+        }
+        
+        .principal-name-container input[type="text"] {
+            width: 250px;
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            font-family: inherit;
+            font-size: 1em;
+            text-align: right;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        
+        .principal-name-container input[type="text"]:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        /* مؤشر التحميل */
+        #export-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 1.5em;
+            flex-direction: column;
+        }
+        
+        #export-loader .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-top: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media print {
+            body { 
+                background-color: white; 
+                margin: 0; 
+                padding: 0; 
+                font-size: 14pt;
+            }
+            .app-wrapper {
+                 padding: 0;
+            }
+            .page-container { 
+                width: 100%; 
+                min-height: auto; 
+                margin: 0; 
+                padding: 10mm; 
+                box-shadow: none; 
+                border: 1px solid #666; 
+            }
+            .controls { 
+                display: none !important; 
+            }
+            .exam-table textarea, 
+            .principal-name-container input[type="text"], 
+            .header input[type="text"], 
+            .editable-academic-year,
+            .exam-info-item input {
+                border: none !important; 
+                overflow: visible !important; 
+                min-height: unset !important;
+                background-color: transparent !important; 
+                height: auto !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                color: black !important;
+                font-size: inherit !important; 
+                line-height: 1.4 !important; 
+                -webkit-print-color-adjust: exact; 
+                color-adjust: exact;
+                box-shadow: none !important;
+            }
+            .header-main-title-input, 
+            .header-sub-info-input {
+                color: black !important; 
+            }
+            .editable-academic-year {
+                background-color: #e8f4fc !important; 
+                padding: 4px 10px !important; 
+                border-radius: 10px !important;
+            }
+            .exam-table th, 
+            .exam-table td {
+                page-break-inside: avoid;
+                padding: 6px !important; 
+            }
+             .exam-table th.seq-col, .exam-table td.seq-col {
+                padding: 6px 3px !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .app-wrapper {
+                padding: 10px 0;
+            }
+            .page-container { 
+                width: 98%; 
+                min-width: 300px; 
+                margin: 10px auto; 
+                padding: 10mm 5mm; 
+            }
+            .exam-table { 
+                font-size: 0.9em; 
+            }
+            .header-top-section { 
+                flex-direction: column; 
+                align-items: stretch; 
+            }
+            .header-info-left, 
+            .header-info-right, 
+            .header-main-titles-container { 
+                width: 100%; 
+                margin-bottom: 15px; 
+                flex-basis: auto; 
+            }
+            .header-info-right input, 
+            .header-info-left input {
+                width: 70%;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+                max-width: 95%;
+            }
+            .controls button {
+                width: 100%;
+                max-width: 280px; 
+            }
+            .exam-info-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+        .ss{
+            text-align: right;
+            width: 200px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="app-wrapper">
+        <div class="controls">
+            <button id="addRowBtn">إضافة سطر جديد</button>
+            <button id="clearTableBtn">إفراغ السجل</button>
+            <button id="printBtn">طباعة النموذج</button>
+            <button id="downloadImageBtn">تحميل صورة</button>
+        </div>
+
+        <div class="page-container" id="form-container">
+            <div class="header">
+                <div class="header-top-section">
+                    <div class="header-info-right">
+                        <div ><label class="ss">إدارة:</label> </div>
+                        <div><label>مدرسة:</label><input type="text" id="schoolName" value="الإبتدائية"></div>
+                        <div ><label>معلم/ة المادة</label><input class="dds" type="text" id="leaderId" value="ابراهيم"></div>
+                    </div>
+                    <div class="header-main-titles-container">
+                        <input type="text" class="header-main-title-input" id="basmalah" value="بسم الله الرحمن الرحيم">
+                        <input type="text" class="header-main-title-input second-title" id="examTitle" value="إسئلة إلامتحانات الشفوية">
+                        <input type="text" class="header-sub-info-input" id="yearEnd" value="نهاية السنة">
+                        <div class="editable-academic-year-container">
+                            <span class="editable-academic-year" id="academicYear" contenteditable="true">للعام الدراسي ٢٠٢٢-٢٠٢٣</span>
+                            
+                            
+                        </div>
+                        <div class="exam-info-container">
+                            <div class="exam-info-item">
+                                <label>الدور:</label>
+                                <input type="text" id="examRound" value="الأول">
+                            </div>
+                            <div class="exam-info-item">
+                                <label>التاريخ:</label>
+                                <input type="text" id="examDate" value="    /    / ٢٠٢٣">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-info-left">
+                        <div><label>الصف:</label><input type="text" id="className" value="الرابع الابتدائي"></div>
+                        <div><label>المادة:</label><input type="text" id="subjectName" value="الاجتماعيات"></div>
+                        <div><label>الفصل:</label><input type="text" id="classRoom" value=""></div>
+                    </div>
+                </div>
+            </div>
+
+            <table class="exam-table" id="examTable">
+                <thead>
+                    <tr>
+                        <th class="seq-col">ت</th>
+                        <th class="level-easy">المستوى السهل<br>٥ درجات</th>
+                        <th class="level-medium">المستوى الوسط<br>٣ درجات</th>
+                        <th class="level-hard">المستوى الصعب<br>درجتان</th>
+                    </tr>
+                </thead>
+                <tbody id="examTableBody">
+                    <!-- سيتم إضافة الصفوف ديناميكياً -->
+                </tbody>
+            </table>
+
+            <div class="principal-name-container">
+                <label for="principalName">اسم مدير المدرسة:</label>
+                <input type="text" id="principalName" name="principalName">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // دالة لعرض مؤشر التحميل
+        // متغيرات عامة
+let rowCounter = 0;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 500;
+
+// دالة لتهيئة الصفحة عند التحميل
+document.addEventListener('DOMContentLoaded', () => {
+    loadFormState();
+    
+    // إضافة مستمعي الأحداث لحقول الإدخال
+    document.querySelectorAll('input[type="text"][id], span[contenteditable="true"][id]').forEach(input => {
+        const eventType = input.tagName === 'SPAN' ? 'blur' : 'input';
+        input.addEventListener(eventType, saveFormState);
+        if(input.tagName === 'SPAN') input.addEventListener('input', saveFormState);
+    });
+    
+    // إضافة مستمعي الأحداث للأزرار
+    document.getElementById('addRowBtn').addEventListener('click', addNewRow);
+    document.getElementById('clearTableBtn').addEventListener('click', clearTable);
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('downloadImageBtn').addEventListener('click', captureToImage);
+});
+
+// دالة لعرض مؤشر التحميل
+function showLoading(message) {
+    const loader = document.createElement('div');
+    loader.id = 'export-loader';
+    loader.innerHTML = `
+        <div style="text-align: center;">
+            <div style="margin-bottom: 15px; font-size: 1.2em;">${message}</div>
+            <div class="spinner"></div>
+            <div id="export-progress" style="margin-top: 15px; font-size: 0.9em;"></div>
+        </div>
+    `;
+    document.body.appendChild(loader);
+}
+
+// دالة لتحديث رسالة التقدم
+function updateProgress(message) {
+    const progressEl = document.getElementById('export-progress');
+    if (progressEl) {
+        progressEl.textContent = message;
+    }
+}
+
+// دالة لإخفاء مؤشر التحميل
+function hideLoading() {
+    const loader = document.getElementById('export-loader');
+    if (loader) {
+        loader.remove();
+    }
+}
+
+// دالة لضبط حجم حقول النص تلقائياً
+function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    const scrollHeight = textarea.scrollHeight;
+    const minHeight = parseFloat(getComputedStyle(textarea).lineHeight) * 1.5;
+    textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+}
+
+// تهيئة ضبط حجم حقل النص لعنصر معين
+function initializeTextareaResizingForElement(element) {
+    if (element.tagName === 'TEXTAREA') {
+        autoResizeTextarea(element);
+        element.addEventListener('input', () => {
+            autoResizeTextarea(element);
+            saveFormState();
+        });
+    }
+}
+
+// تهيئة ضبط حجم جميع حقول النص
+function initializeAllTextareaResizing() {
+    document.querySelectorAll('.exam-table textarea').forEach(textarea => {
+        initializeTextareaResizingForElement(textarea);
+    });
+}
+
+// دالة لحفظ حالة النموذج
+function saveFormState() {
+    const data = {
+        inputs: {},
+        tableRows: []
+    };
+    
+    // حفظ حقول الإدخال
+    document.querySelectorAll('input[type="text"][id], span[contenteditable="true"][id]').forEach(input => {
+        const id = input.id;
+        if (!id) return;
+        data.inputs[id] = input.tagName === 'SPAN' ? input.textContent : input.value;
+    });
+
+    // حفظ بيانات الجدول
+    document.querySelectorAll('#examTableBody tr').forEach((row) => {
+        const rowData = [];
+        row.querySelectorAll('textarea').forEach(textarea => {
+            rowData.push(textarea.value);
+        });
+        data.tableRows.push(rowData);
+    });
+    
+    localStorage.setItem('examFormSheet', JSON.stringify(data));
+}
+
+// دالة لتحميل حالة النموذج المحفوظة
+function loadFormState() {
+    const savedData = localStorage.getItem('examFormSheet');
+    if (!savedData) {
+        loadDefaultTable();
+        return;
+    }
+    
+    try {
+        const data = JSON.parse(savedData);
+        
+        // استعادة حقول الإدخال
+        if (data.inputs) {
+            for (const id in data.inputs) {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (element.tagName === 'SPAN') {
+                        element.textContent = data.inputs[id];
+                    } else {
+                        element.value = data.inputs[id];
+                    }
+                }
+            }
+        }
+
+        // استعادة بيانات الجدول
+        const tableBody = document.getElementById('examTableBody');
+        tableBody.innerHTML = '';
+        
+        if (data.tableRows && data.tableRows.length > 0) {
+            data.tableRows.forEach((rowData, index) => {
+                createRow(index + 1, rowData);
+            });
+            rowCounter = data.tableRows.length;
+        } else {
+            loadDefaultTable();
+        }
+        
+        initializeAllTextareaResizing();
+
+    } catch (e) {
+        console.error("Error loading form state:", e);
+        loadDefaultTable();
+    }
+}
+
+// دالة لإنشاء صف جديد في الجدول
+function createRow(seq, values = ['', '', '', '']) {
+    const tableBody = document.getElementById('examTableBody');
+    if (!tableBody) {
+        console.error("examTableBody not found!");
+        return null;
+    }
+    
+    const newRow = tableBody.insertRow();
+    
+    // خلية رقم السؤال
+    const cellSeq = newRow.insertCell();
+    cellSeq.classList.add('seq-col');
+    const textareaSeq = document.createElement('textarea');
+    textareaSeq.value = values[0] || seq.toString();
+    cellSeq.appendChild(textareaSeq);
+
+    // خلية المستوى السهل
+    const cellEasy = newRow.insertCell();
+    const textareaEasy = document.createElement('textarea');
+    textareaEasy.value = values[1] || '';
+    cellEasy.appendChild(textareaEasy);
+
+    // خلية المستوى المتوسط
+    const cellMedium = newRow.insertCell();
+    const textareaMedium = document.createElement('textarea');
+    textareaMedium.value = values[2] || '';
+    cellMedium.appendChild(textareaMedium);
+    
+    // خلية المستوى الصعب
+    const cellHard = newRow.insertCell();
+    const textareaHard = document.createElement('textarea');
+    textareaHard.value = values[3] || '';
+    cellHard.appendChild(textareaHard);
+
+    // تهيئة ضبط الحجم لجميع حقول النص
+    [textareaSeq, textareaEasy, textareaMedium, textareaHard].forEach(ta => {
+        initializeTextareaResizingForElement(ta);
+    });
+    
+    return newRow;
+}
+
+// دالة لإضافة صف جديد
+function addNewRow() {
+    rowCounter++;
+    const newRowEl = createRow(rowCounter);
+    if (newRowEl) {
+        newRowEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    saveFormState();
+}
+
+// دالة لتحميل الجدول الافتراضي
+function loadDefaultTable() {
+    const defaultData = [
+        ['١', 'أعطيني مثال لظاهرة طبيعية', 'ما هي انواع النباتات في وطننا', 'عرف علم الجغرافية'], 
+        ['٢', 'ما عدد ايام الأسبوع', 'لماذا سمية الأسبوع أسبوعا', 'مها اليوم الأول والأخير من الأسبوع'], 
+        ['٣', 'كم عدد الاشهر القمرية', 'هناك نوعان من الاشهر ما هما', 'في أي شهر ولد النبي محمد صلى الله عليه وسلم'], 
+        ['٤', 'كم يوم في السنة', 'السنة تتكون من ٥٢ أسبوع صح أم خطأ', 'ماذا يحتاج الطيار للخرطية'], 
+        ['٥', 'هل تتشابه البيوت ام تختلف', 'المدرسة ظاهرة طبيعية ام بشرية', 'عرف/ المدينة'], 
+        ['٦', 'يعرف سكان المدينة باسم...........', 'في الليل كيف يمكننا معرفة الاتجاهات ...............', 'عرف البيت'], 
+        ['٧', 'اعطيني مثال لظهارة طبيعية', 'ما هو سبب تلوث الهواء في المدينة', 'ما فائدة الحدائق'], 
+        ['٨', 'ما هي مشكلات المدينة', 'ما هو اليوم الأخير في الأسبوع', 'كم عدد ايام السنة'], 
+        ['٩', 'الكوفة مركز بيئي مه', 'اتخذ الإمام ........ الكوفة عاصمة له مصحح ام خطأ', 'عرفي البيئة'], 
+        ['١٠', 'في النهار كيف يمكننا معرفة الاتجاهات', 'ماذا تسمى الجهة الواقعة بين الشمال والشرق', 'ماذا تقصد بي الشهر الماضي'], 
+        ['١١', 'المطر ظاهرة طبيعية بشرية', 'لماذا الساحل يحتاج للخريطة', 'عرف علم الجغرافية'], 
+        ['١٢', 'أعطيني مثال لظاهرة طبيعية', 'ما هي انواع النباتات في وطننا', 'مها اليوم الأول والأخير من الأسبوع'], 
+        ['١٣', 'ما عدد ايام الأسبوع', 'لماذا سمية الأسبوع أسبوعا', 'في أي شهر ولد النبي محمد صلى الله عليه وسلم'], 
+        ['١٤', 'كم عدد الاشهر القمرية', 'هناك نوعان من الاشهر ما هما', 'ماذا يحتاج الطيار للخرطية']
+    ];
+    
+    const tableBody = document.getElementById('examTableBody');
+    if (!tableBody) {
+        console.error("examTableBody not found in loadDefaultTable!");
+        return;
+    }
+    
+    tableBody.innerHTML = '';
+    defaultData.forEach((rowData, index) => {
+        createRow(index + 1, rowData);
+    });
+    
+    rowCounter = defaultData.length;
+    initializeAllTextareaResizing();
+}
+
+// دالة لتفريغ الجدول
+function clearTable() {
+    if (confirm('هل أنت متأكد من أنك تريد إفراغ السجل؟ سيتم حذف جميع الأسئلة.')) {
+        const tableBody = document.getElementById('examTableBody');
+        tableBody.innerHTML = '';
+        rowCounter = 0;
+        saveFormState();
+    }
+}
+
+// دالة لتحضير النموذج للتصدير
+async function prepareForExport() {
+    const originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    
+    const controls = document.querySelector('.controls');
+    const originalControlsDisplay = controls.style.display;
+    controls.style.display = 'none';
+    
+    const originalStyles = [];
+    
+    const textElements = [
+        ...document.querySelectorAll('#form-container textarea'),
+        ...document.querySelectorAll('#form-container input[type="text"]'),
+        ...document.querySelectorAll('#form-container span[contenteditable="true"]')
+    ];
+    
+    // حفظ الأنماط الأصلية
+    textElements.forEach(el => {
+        originalStyles.push({
+            element: el,
+            styles: {
+                border: el.style.border,
+                backgroundColor: el.style.backgroundColor,
+                height: el.style.height,
+                overflow: el.style.overflow,
+                padding: el.style.padding,
+                boxShadow: el.style.boxShadow,
+                resize: el.style.resize
+            }
+        });
+        
+        // تطبيق أنماط التصدير
+        el.style.border = 'none';
+        el.style.backgroundColor = el.id === 'academicYear' ? '#e8f4fc' : 'transparent';
+        el.style.height = 'auto';
+        if (el.tagName === 'TEXTAREA') {
+            el.style.height = el.scrollHeight + 'px';
+        }
+        el.style.overflow = 'hidden';
+        el.style.padding = '1px';
+        el.style.boxShadow = 'none';
+        el.style.resize = 'none';
+    });
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return {
+        restore: async () => {
+            // استعادة الأنماط الأصلية
+            originalStyles.forEach(item => {
+                for (const prop in item.styles) {
+                    item.element.style[prop] = item.styles[prop];
+                }
+            });
+            
+            controls.style.display = originalControlsDisplay;
+            document.body.style.overflow = originalBodyOverflow;
+            
+            initializeAllTextareaResizing();
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+    };
+}
+
+// دالة لمحاولة التقاط الصورة
+async function tryCapture(element, options) {
+    try {
+        updateProgress(`جاري المحاولة مع إعدادات: ${JSON.stringify(options)}`);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        
+        if (!window.html2canvas) {
+            throw new Error('لم يتم تحميل مكتبة html2canvas');
+        }
+        
+        return await html2canvas(element, options);
+    } catch (error) {
+        console.error('Capture attempt failed:', error);
+        updateProgress(`فشلت المحاولة: ${error.message}`);
+        return null;
+    }
+}
+
+// دالة لتنزيل الصورة
+async function downloadImage(dataUrl, filename) {
+    try {
+        // طريقة 1: استخدام عنصر <a>
+        try {
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return;
+        } catch (e) {
+            console.log('الطريقة الأولى فشلت، جاري تجربة طريقة بديلة');
+        }
+        
+        // طريقة 2: استخدام fetch و Blob
+        try {
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(blobUrl);
+            }, 100);
+            return;
+        } catch (e) {
+            console.log('الطريقة الثانية فشلت، جاري تجربة طريقة بديلة');
+        }
+        
+        // طريقة 3: فتح الصورة في نافذة جديدة
+        try {
+            const newWindow = window.open();
+            newWindow.document.write(`<img src="${dataUrl}" />`);
+            newWindow.document.close();
+            return;
+        } catch (e) {
+            console.log('الطريقة الثالثة فشلت');
+        }
+        
+        throw new Error('فشلت جميع طرق التنزيل');
+    } catch (error) {
+        console.error('Download error:', error);
+        throw error;
+    }
+}
+
+// دالة بديلة للتصدير إذا فشلت html2canvas
+async function alternativeExportMethod() {
+    updateProgress('جاري استخدام طريقة بديلة للتصدير...');
+    
+    try {
+        // محاولة استخدام window.print كبديل
+        window.print();
+        return true;
+    } catch (error) {
+        console.error('Alternative method failed:', error);
+        throw error;
+    }
+}
+
+// دالة محسنة لتصدير إلى صورة مع عدة محاولات وطرق بديلة
+async function captureToImage() {
+    showLoading('جاري إنشاء الصورة...');
+    
+    const container = document.getElementById('form-container');
+    if (!container) {
+        alert('خطأ: لم يتم العثور على حاوية النموذج.');
+        hideLoading();
+        return;
+    }
+    
+    const exportState = await prepareForExport();
+    
+    try {
+        let canvas = null;
+        let attempts = 0;
+        
+        // قائمة بالإعدادات المختلفة للمحاولة
+        const captureOptionsList = [
+            { scale: 2, useCORS: true, allowTaint: false, foreignObjectRendering: false },
+            { scale: 1, useCORS: false, allowTaint: true, foreignObjectRendering: true },
+            { scale: 1, useCORS: true, allowTaint: false, letterRendering: false },
+            { scale: 1, useCORS: true, allowTaint: true, logging: false }
+        ];
+        
+        // المحاولة مع إعدادات مختلفة حتى النجاح أو استنفاذ المحاولات
+        while (!canvas && attempts < MAX_RETRIES) {
+            const options = captureOptionsList[attempts] || captureOptionsList[0];
+            updateProgress(`المحاولة ${attempts + 1} من ${MAX_RETRIES}...`);
+            canvas = await tryCapture(container, options);
+            attempts++;
+        }
+        
+        if (!canvas) {
+            throw new Error('فشلت جميع محاولات إنشاء الصورة');
+        }
+        
+        // تحويل Canvas إلى صورة وتنزيلها
+        updateProgress('جاري تحويل البيانات...');
+        const image = canvas.toDataURL('image/png');
+        
+        updateProgress('جاري إعداد الملف للتنزيل...');
+        await downloadImage(image, 'أسئلة_الامتحان_الشفوي_' + new Date().toISOString().slice(0,10) + '.png');
+        
+    } catch (error) {
+        console.error('Image capture error:', error);
+        alert('حدث خطأ أثناء إنشاء الصورة: ' + error.message);
+        
+        // محاولة استخدام طريقة بديلة إذا فشلت html2canvas
+        try {
+            updateProgress('تجربة طريقة بديلة...');
+            await alternativeExportMethod();
+        } catch (altError) {
+            console.error('Alternative method error:', altError);
+            alert('فشلت الطريقة البديلة أيضًا: ' + altError.message);
+        }
+    } finally {
+        await exportState.restore();
+        hideLoading();
+    }
+}
+    </script>
+</body>
+</html>

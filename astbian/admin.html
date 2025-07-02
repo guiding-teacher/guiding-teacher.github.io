@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">إدارة الاستبيان - منصة الاستبيانات الفاخرة</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+</head>
+<body>
+    <header>
+        <h1>منصة المعلم المرشد</h1>
+        <p id="header-description">إنشاء وتعديل الاستبيانات</p>
+    </header>
+
+    <main>
+        <div id="loading-spinner" class="loader"></div>
+        <div id="alert-container" aria-live="polite"></div>
+
+        <div id="admin-mode-content" class="page-container">
+            <h2 id="admin-page-heading">إنشاء استبيان جديد</h2>
+
+            <div class="form-group">
+                <label for="survey-title">عنوان الاستبيان:</label>
+                <input type="text" id="survey-title" placeholder="أدخل عنوان الاستبيان" required>
+            </div>
+
+            <div class="form-group">
+                <label for="survey-description">وصف الاستبيان:</label>
+                <textarea id="survey-description" placeholder="وصف موجز عن الاستبيان"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="survey-admin-pin">الرمز السري (PIN) للمشرف (مطلوب):</label>
+                <input type="password" id="survey-admin-pin" placeholder="أدخل رمز سري للمشرف (4+ أحرف/أرقام)" required minlength="4">
+                <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                    ستحتاج هذا الرمز لتعديل الاستبيان أو عرض النتائج المفصلة لاحقًا. احفظه جيداً.
+                </small>
+            </div>
+
+            <h3>الأسئلة:</h3>
+            <div id="questions-container">
+                <!-- Questions will be dynamically added here by script.js -->
+            </div>
+
+            <button id="add-question-btn" class="secondary" style="margin-bottom: 20px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 8px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                إضافة سؤال جديد
+            </button>
+
+            <hr style="margin: 40px 0; border-color: var(--border-color);">
+
+            <h3>إعدادات الاستبيان المتقدمة:</h3>
+            <div class="settings-group">
+                <div class="form-group">
+                    
+                    <input type="file" id="survey-logo" accept="images/*">
+                    <img id="logo-preview" src="#" alt="معاينة الشعار" class="question-image-preview" style="display: none; max-width: 150px; margin-top:10px;">
+                </div>
+                 <div class="form-group">
+                    <label for="survey-logo-url">  أدخل رابط مباشر للشعار:</label>
+                    <input type="text" id="survey-logo-url" placeholder="https://example.com/logo.png">
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        إذا قمت بتحديد ملف ووضع رابط، سيتم استخدام الرابط المباشر.
+                    </small>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="background-color">لون خلفية صفحة الاستبيان (للمجيب):</label>
+                    <input type="color" id="background-color" value="#1a1a1a">
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="allow-anonymous">
+                    <label for="allow-anonymous">السماح بالإجابات المجهولة</label>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="allow-results-view">
+                    <label for="allow-results-view">السماح للمجيبين بمشاهدة ملخص النتائج بعد الإجابة</label>
+                </div>
+
+                <div class="form-group">
+                    <label for="start-date">تاريخ ووقت بدء الاستبيان (اختياري):</label>
+                    <input type="date" id="start-date">
+                    <input type="time" id="start-time" style="margin-top: 10px;">
+                </div>
+
+                <div class="form-group">
+                    <label for="end-date">تاريخ ووقت انتهاء الاستبيان (اختياري):</label>
+                    <input type="date" id="end-date">
+                    <input type="time" id="end-time" style="margin-top: 10px;">
+                </div>
+
+                <div class="form-group">
+                    <label for="thank-you-message">رسالة الشكر بعد الإجابة:</label>
+                    <textarea id="thank-you-message" placeholder="شكراً لك على إجابتك الفاخرة!"></textarea>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="show-progress">
+                    <label for="show-progress">إظهار شريط التقدم (للمجيب)</label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="randomize-questions">
+                    <label for="randomize-questions">ترتيب عشوائي للأسئلة (للمجيب)</label>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="save-local-btn" class="secondary">حفظ محلياً</button>
+                <button id="publish-btn">نشر / تحديث الاستبيان</button>
+                <button id="preview-survey-btn" class="secondary">معاينة الاستبيان</button>
+                <label for="import-survey-file" class="button-lookalike secondary">استيراد (JSON)</label>
+                <input type="file" id="import-survey-file" accept=".json" style="display: none;">
+                <button id="export-survey-btn" class="secondary">تصدير (JSON)</button>
+            </div>
+
+            <div id="admin-link-container" class="link-display" style="display: none;">
+                <p><strong>تم نشر/تحديث الاستبيان بنجاح!</strong></p>
+                <div class="info-item">
+                    <span>معرف الاستبيان (Survey ID):</span>
+                    <input type="text" id="published-survey-id-output" readonly style="font-weight:bold; color:var(--accent-gold-hover);">
+                    <button id="copy-published-id-btn" class="secondary">نسخ</button>
+                    <small style="display:block; width:100%; color: var(--text-secondary); margin-top: 5px;">احفظ هذا المعرف جيداً، ستحتاج إليه لإدارة الاستبيان لاحقاً.</small>
+                </div>
+                <div class="info-item" id="published-survey-pin-info" style="display:none;">
+                    <span>الرمز السري للمشرف (Admin PIN):</span>
+                    <input type="text" id="published-survey-pin-output" readonly style="font-weight:bold;">
+                    <button id="copy-published-pin-btn" class="secondary">نسخ</button>
+                     <small style="display:block; width:100%; color: var(--text-secondary); margin-top: 5px;">احفظ هذا الرمز السري جيداً، ستحتاج إليه لإدارة الاستبيان لاحقاً.</small>
+                </div>
+                 <div class="info-item" id="published-survey-pin-reminder" style="display:none;">
+                    <p style="color: var(--text-secondary); width:100%; text-align:right;">الرمز السري للمشرف: لقد اخترت الإبقاء على الرمز السري الحالي. تأكد من أنك تتذكره.</p>
+                </div>
+    
+                <div class="link-item" style="margin-top:15px;">
+                    <span>رابط المشاركة (للمجيبين):</span>
+                    <input type="text" id="survey-share-link-output" readonly>
+                    <button id="copy-share-link-btn" class="secondary">نسخ</button>
+                </div>
+                <div class="link-item">
+                     <span>رابط الإدارة/النتائج (للمشرف):</span>
+                    <input type="text" id="survey-admin-view-link-output" readonly>
+                    <button id="copy-admin-view-link-btn" class="secondary">نسخ</button>
+                </div>
+                 <div style="text-align:center; margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+                    <a href="admin.html" class="button-lookalike secondary" style="flex-grow:1;">إنشاء استبيان جديد</a>
+                    <a id="go-to-published-survey-btn" href="#" class="button-lookalike" style="flex-grow:1;">الذهاب إلى صفحة الاستبيان المنشور</a>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div id="preview-modal" class="modal">
+            <div class="modal-content preview-modal-content">
+                <div class="modal-header">
+                    <h2 id="preview-modal-title">معاينة الاستبيان</h2>
+                    <span class="close-btn" id="close-preview-modal">×</span>
+                </div>
+                <div id="preview-survey-content" class="survey-display-card">
+                    <!-- Preview content -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+    <footer>
+        <p>© <span id="current-year"></span> قسم الاستبيان   . جميع الحقوق محفوظة منصة المعلم المرشد.</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

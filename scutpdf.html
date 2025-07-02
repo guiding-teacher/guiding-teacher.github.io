@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أداة اقتطاع صفحات PDF الاحترافية</title>
+    <!-- Load pdf-lib Library -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Load fontkit (needed for reading/writing PDFs with various fonts) -->
+    <script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <!-- Cairo Font for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <!-- PDF.js for rendering PDF previews -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #007bff; /* Blue for extraction tool */
+            --secondary-color: #0056b3; /* Darker Blue */
+            --background-start: #121212;
+            --background-end: #1e1e1e;
+            --text-color: #f5f5f5;
+            --container-bg: #2d2d2d;
+            --container-shadow: rgba(0, 0, 0, 0.5);
+            --input-bg: #424242;
+            --input-border: #616161;
+            --input-text: #ffffff;
+            --success-color: #28a745; /* Green for success */
+            --danger-color: #dc3545; /* Red for errors */
+            --warning-color: #ffc107;
+            --border-radius: 10px;
+            --box-shadow: 0 12px 30px var(--container-shadow);
+            --button-text-color: #ffffff;
+            --preview-border: #616161;
+            --preview-bg: #3a3a3a;
+            --progress-bg: #555;
+            --progress-value-bg: var(--success-color);
+            --footer-bg: #222;
+            --footer-text: #aaa;
+            --page-item-bg: #424242;
+            --page-item-border: #505050;
+            --page-item-hover-bg: #535353;
+            
+            /* Modified for clearer selection */
+            --page-item-in-range-bg: #0060c0; /* Slightly lighter blue for selected background */
+            --page-item-in-range-border: var(--success-color); /* Green for selected border */
+
+            --page-item-highlight-outline: var(--success-color); /* For go-to-page feature */
+            --full-preview-bg: rgba(0, 0, 0, 0.9);
+        }
+
+        html { box-sizing: border-box; font-size: 16px; }
+        *, *:before, *:after { box-sizing: inherit; }
+
+        body {
+            font-family: 'Cairo', sans-serif; display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px 10px;
+            background: linear-gradient(135deg, var(--background-start), var(--background-end));
+            color: var(--text-color); direction: rtl; line-height: 1.6;
+        }
+
+        .extractor-container {
+            background-color: var(--container-bg); padding: 25px 20px; border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow); text-align: center; max-width: 900px; width: 100%;
+            transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .extractor-container:hover { transform: translateY(-6px); box-shadow: 0 18px 40px var(--container-shadow); }
+
+        h1 {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            margin-bottom: 25px; font-weight: 700; font-size: 1.8rem;
+        }
+
+        #pdfInput { display: none; }
+        .file-label {
+            display: inline-block; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--button-text-color); padding: 12px 25px; border-radius: 8px; cursor: pointer;
+            font-size: 1rem; transition: background .3s ease, box-shadow .3s ease, transform .2s ease;
+            margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3); border: none;
+        }
+        .file-label:hover {
+            background: linear-gradient(135deg, #0056b3, #004085); box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        #fileInfoDisplay {
+            display: block; margin-top: 10px; margin-bottom: 10px; font-size: 0.9em;
+            color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
+        }
+
+        #rangeSelectionContainer {
+            margin-bottom: 20px; display: none; 
+            flex-direction: column; align-items: center; gap: 15px;
+            padding: 15px; background-color: var(--input-bg); border-radius: var(--border-radius);
+        }
+        .range-inputs-row {
+            display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .range-inputs-row label { font-size: 0.95rem; margin-left: 5px; }
+        .range-input {
+            padding: 8px 12px; border-radius: 6px; border: 1px solid var(--input-border);
+            background-color: var(--page-item-bg); color: var(--input-text);
+            width: 100px; text-align: center; font-size: 0.95rem;
+        }
+        
+        #pageNavigationTools { 
+            margin-bottom: 10px; display: none; 
+            justify-content: center; align-items: center; gap: 10px;
+            padding: 10px; background-color: var(--input-bg); border-radius: var(--border-radius);
+            margin-top: 10px;
+        }
+        #pageNumberInput { 
+            padding: 8px 12px; border-radius: 6px; border: 1px solid var(--input-border);
+            background-color: var(--page-item-bg); color: var(--input-text);
+            width: 180px; text-align: center; font-size: 0.95rem;
+        }
+        #goToPageBtn {
+            padding: 9px 18px; background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 0.9rem; font-weight: bold;
+            transition: background .3s ease, transform .2s ease;
+        }
+         #goToPageBtn:hover {
+            background: linear-gradient(135deg, #004085, #0056b3);
+            transform: translateY(-1px);
+        }
+
+        #pagePreviewContainer {
+            margin-top: 0; margin-bottom: 25px; padding: 15px; border: 2px dashed var(--preview-border);
+            border-radius: var(--border-radius); min-height: 100px; background-color: var(--preview-bg);
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            align-items: flex-start; 
+            max-height: 450px; overflow-y: auto;
+        }
+        .page-preview-placeholder { text-align: center; color: #aaa; padding: 20px 0; width:100%;}
+        
+        .page-item {
+            background-color: var(--page-item-bg); border: 2px solid var(--page-item-border); /* Default border */
+            border-radius: 6px; padding: 10px;
+            width: 120px; height: 170px; 
+            display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+            cursor: default; 
+            user-select: none; transition: background-color 0.2s, border-color 0.2s, border-width 0.2s, transform 0.2s, outline 0.2s ease-out;
+            text-align: center; color: var(--text-color);
+            position: relative; overflow: hidden;
+        }
+        .page-item:hover:not(.in-range) { /* Hover effect only if not already in range to avoid conflict */
+            transform: scale(1.03);
+            border-color: var(--primary-color); 
+        }
+        .page-item.in-range { /* Style for pages within the selected extraction range */
+            background-color: var(--page-item-in-range-bg);
+            border: 3px solid var(--page-item-in-range-border); /* Thicker, prominent green border */
+            box-shadow: 0 0 12px rgba(40, 167, 69, 0.6); /* Shadow matching border color */
+            transform: scale(1.05); /* Slightly larger to make it pop */
+        }
+        .page-item.in-range .page-number {
+            color: #fff; /* Ensure page number is visible on new background */
+            font-weight: bold;
+        }
+        .page-item.highlighted { 
+             outline: 3px solid var(--page-item-highlight-outline);
+             outline-offset: 2px;
+        }
+        .page-number { 
+            font-size: 1.0em; margin-bottom: 5px; z-index: 2;
+            background-color: rgba(0, 0, 0, 0.7); padding: 2px 8px; border-radius: 10px;
+            transition: color 0.2s; /* Smooth color transition for page number */
+        }
+        
+        .page-preview-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+        }
+        
+        .view-page-btn {
+            background-color: rgba(0, 0, 0, 0.7); color: white; border: none;
+            border-radius: 4px; padding: 4px 8px; font-size: 0.7em;
+            cursor: pointer; margin-top: auto; 
+            transition: background-color 0.2s; z-index: 2;
+        }
+        .view-page-btn:hover { background-color: rgba(0, 0, 0, 0.9); }
+
+
+        #outputFilename {
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
+            background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        #outputFilename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        #processBtn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: var(--button-text-color); border: none;
+            padding: 14px 35px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: 700;
+            transition: transform .2s ease, box-shadow .3s ease, background .3s ease; margin-bottom: 15px;
+            box-shadow: 0 6px 18px rgba(0, 123, 255, 0.3);
+        }
+        #processBtn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-2px); box-shadow: 0 10px 25px rgba(0, 123, 255, 0.4);
+            background: linear-gradient(135deg, #0056b3, #004085);
+        }
+        #processBtn:disabled { background: #616161; color: #bdbdbd; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        #progressBarContainer { margin-bottom: 20px; height: 25px; display: none; }
+        #progressBar {
+            width: 100%; height: 10px; appearance: none; border: none; border-radius: 5px;
+            background-color: var(--progress-bg); overflow: hidden; margin-top: 5px;
+        }
+        #progressBar::-webkit-progress-bar { background-color: var(--progress-bg); border-radius: 5px; }
+        #progressBar::-webkit-progress-value { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+        #progressBar::-moz-progress-bar { background-color: var(--progress-value-bg); border-radius: 5px; transition: width 0.2s ease-out; }
+
+        #statusDiv { margin-top: 0; font-weight: 700; min-height: 1.5em; color: var(--secondary-color); font-size: 1rem; word-wrap: break-word; }
+
+        #download-options { margin-top: 25px; display: none; flex-direction: column; align-items: center; gap: 15px; }
+        .download-button {
+            display: inline-block; background-color: var(--success-color); color: var(--button-text-color); padding: 12px 25px; text-decoration: none; border-radius: 8px;
+            font-size: 1rem; transition: background-color .3s ease, transform .2s ease, box-shadow .3s ease; cursor: pointer;
+            border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 80%; max-width: 300px;
+        }
+        .download-button:hover { background-color: #218838; transform: scale(1.04) translateY(-1px); box-shadow: 0 6px 16px rgba(40, 167, 69, 0.5); }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.2); width: 20px; height: 20px; border-radius: 50%;
+            border-left-color: var(--primary-color); animation: spin 1s linear infinite; display: inline-block;
+            margin: 0 8px; vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: var(--footer-bg);
+            color: var(--footer-text); font-size: 0.85em; margin-top: 40px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+        
+        #fullPagePreviewOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--full-preview-bg); z-index: 1000;
+            display: none; justify-content: center; align-items: center;
+        }
+        #fullPagePreviewContainer {
+            position: relative; max-width: 90%; max-height: 90%;
+            background-color: var(--container-bg); border-radius: var(--border-radius);
+            padding: 20px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+        }
+        #fullPagePreviewCanvas {
+            max-width: 100%; max-height: calc(100vh - 100px);
+            display: block; margin: 0 auto;
+            border: 1px solid var(--input-border); border-radius: 4px;
+        }
+        #closePreviewBtn {
+            position: absolute; top: 10px; left: 10px;
+            background-color: var(--danger-color); color: white;
+            border: none; border-radius: 50%; width: 30px; height: 30px;
+            font-size: 16px; cursor: pointer; display: flex;
+            justify-content: center; align-items: center;
+            transition: background-color 0.2s;
+        }
+        #closePreviewBtn:hover { background-color: #c82333; }
+        #pagePreviewNav { display: flex; justify-content: center; gap: 15px; margin-top: 15px; }
+        .pagePreviewNavBtn {
+            background-color: var(--primary-color); color: white;
+            border: none; border-radius: 4px; padding: 8px 15px;
+            cursor: pointer; transition: background-color 0.2s;
+        }
+        .pagePreviewNavBtn:hover { background-color: var(--secondary-color); }
+        .pagePreviewNavBtn:disabled { background-color: #666; cursor: not-allowed; }
+        #currentPageIndicator { color: white; margin: 0 10px; align-self: center; min-width: 80px; text-align: center; }
+
+        @media (min-width: 600px) {
+            body { padding: 30px 0; }
+            .extractor-container { padding: 35px 45px; width: 90%; }
+            h1 { font-size: 2.2rem; }
+            .file-label { padding: 14px 30px; font-size: 1.1rem; }
+            #fileInfoDisplay { font-size: 0.95em; }
+            .range-input { width: 120px; padding: 10px 15px; font-size: 1rem; }
+            #pageNumberInput { width: 200px; padding: 10px 15px; font-size: 1rem; }
+            #goToPageBtn { padding: 11px 22px; font-size: 0.95rem; }
+            .page-item { width: 140px; height: 200px; } 
+            #outputFilename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
+            #processBtn { padding: 16px 40px; font-size: 1.2rem; }
+            #statusDiv { font-size: 1.05rem; }
+            #progressBarContainer { height: 30px; }
+            #progressBar { height: 12px; }
+            .download-button { padding: 14px 30px; font-size: 1.05rem; width: auto; max-width: none; }
+            .spinner { width: 22px; height: 22px; margin-left: 12px; }
+            footer { font-size: 0.9em; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="extractor-container">
+        <h1>أداة اقتطاع صفحات PDF </h1>
+
+        <label for="pdfInput" class="file-label">اختر ملف PDF</label>
+        <input type="file" id="pdfInput" accept="application/pdf">
+        <span id="fileInfoDisplay">لم يتم اختيار أي ملف.</span>
+
+        <div id="rangeSelectionContainer">
+            <div class="range-inputs-row">
+                <div>
+                    <label for="startPageInput">من الصفحة:</label>
+                    <input type="number" id="startPageInput" class="range-input" min="1">
+                </div>
+                <div>
+                    <label for="endPageInput">إلى الصفحة:</label>
+                    <input type="number" id="endPageInput" class="range-input" min="1">
+                </div>
+            </div>
+            <div id="pageNavigationTools">
+                <input type="number" id="pageNumberInput" placeholder="أدخل رقم صفحة للانتقال إليها" min="1">
+                <button id="goToPageBtn">اذهب للصفحة</button>
+            </div>
+        </div>
+
+        <div id="pagePreviewContainer">
+             <div class="page-preview-placeholder">سيتم عرض صفحات ملف PDF هنا بعد اختياره.</div>
+        </div>
+        
+        <input type="text" id="outputFilename" placeholder="اسم ملف الجزء المقتطع (اختياري)">
+
+        <button id="processBtn" disabled>اقتطاع الصفحات المحددة</button>
+
+        <div id="progressBarContainer">
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="statusDiv"></div>
+
+        <div id="download-options">
+            <a id="downloadLinkPdf" href="#" download="extracted_part.pdf" class="download-button">تحميل الجزء المقتطع (PDF)</a>
+        </div>
+    </div>
+
+    <div id="fullPagePreviewOverlay">
+        <div id="fullPagePreviewContainer">
+            <button id="closePreviewBtn">×</button>
+            <canvas id="fullPagePreviewCanvas"></canvas>
+            <div id="pagePreviewNav">
+                <button id="prevPageBtn" class="pagePreviewNavBtn">السابق</button>
+                <span id="currentPageIndicator">الصفحة 1 من 10</span>
+                <button id="nextPageBtn" class="pagePreviewNavBtn">التالي</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+
+    <script>
+        // JavaScript code remains exactly the same as the previous version
+        // ... (paste the full JavaScript from the previous response here) ...
+        console.log("Page Extractor Script start.");
+
+        if (typeof window.PDFLib === 'undefined' || typeof window.fontkit === 'undefined') {
+            console.error("pdf-lib or fontkit is not loaded!");
+            alert("خطأ: لم يتم تحميل المكتبات اللازمة (pdf-lib, fontkit). لا يمكن المتابعة.");
+            document.getElementById('processBtn').disabled = true;
+            document.getElementById('pdfInput').disabled = true;
+        } else {
+            console.log("pdf-lib and fontkit loaded successfully.");
+            const { PDFDocument } = window.PDFLib;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
+
+            const pdfInput = document.getElementById('pdfInput');
+            const fileInfoDisplay = document.getElementById('fileInfoDisplay');
+            const rangeSelectionContainer = document.getElementById('rangeSelectionContainer');
+            const startPageInput = document.getElementById('startPageInput');
+            const endPageInput = document.getElementById('endPageInput');
+            const pageNavigationToolsDiv = document.getElementById('pageNavigationTools');
+            const pageNumberInput = document.getElementById('pageNumberInput');
+            const goToPageBtn = document.getElementById('goToPageBtn');
+            const pagePreviewContainer = document.getElementById('pagePreviewContainer');
+            const outputFilenameInput = document.getElementById('outputFilename');
+            const processBtn = document.getElementById('processBtn');
+            const progressBarContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusDiv = document.getElementById('statusDiv');
+            const downloadOptionsDiv = document.getElementById('download-options');
+            const downloadLinkPdf = document.getElementById('downloadLinkPdf');
+            
+            const fullPagePreviewOverlay = document.getElementById('fullPagePreviewOverlay');
+            const fullPagePreviewCanvas = document.getElementById('fullPagePreviewCanvas');
+            const closePreviewBtn = document.getElementById('closePreviewBtn');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const currentPageIndicator = document.getElementById('currentPageIndicator');
+
+            let currentFile = { name: null, arrayBuffer: null, pdfDoc: null, pdfJsDoc: null, totalPages: 0 };
+            let extractionRange = { start: null, end: null };
+            let modifiedPdfBlobUrl = null;
+            let isProcessing = false;
+            let currentPreviewPage = 1;
+            let pdfJsPage = null;
+
+            function cleanupBlobUrl() {
+                if (modifiedPdfBlobUrl) {
+                    URL.revokeObjectURL(modifiedPdfBlobUrl);
+                    modifiedPdfBlobUrl = null;
+                }
+            }
+
+            function sanitizeFilename(filename) {
+                return filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_');
+            }
+            
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 بايت';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
+
+            function updatePagePreviewsHighlights() {
+                const pageItems = pagePreviewContainer.querySelectorAll('.page-item');
+                let isValidRange = extractionRange.start && extractionRange.end && extractionRange.start <= extractionRange.end &&
+                                   extractionRange.start > 0 && extractionRange.end <= currentFile.totalPages;
+
+                pageItems.forEach(item => {
+                    const pageIndex = parseInt(item.dataset.pageIndex, 10);
+                    if (isValidRange && pageIndex >= extractionRange.start - 1 && pageIndex <= extractionRange.end - 1) {
+                        item.classList.add('in-range');
+                    } else {
+                        item.classList.remove('in-range');
+                    }
+                });
+                updateUIState();
+            }
+
+            async function renderPagePreviews() {
+                pagePreviewContainer.innerHTML = ''; 
+                if (!currentFile.pdfDoc) {
+                    pagePreviewContainer.innerHTML = '<div class="page-preview-placeholder">سيتم عرض صفحات ملف PDF هنا بعد اختياره.</div>';
+                    updateUIState();
+                    return;
+                }
+
+                const pages = currentFile.pdfDoc.getPages(); 
+                currentFile.totalPages = pages.length;
+                
+                startPageInput.max = currentFile.totalPages;
+                endPageInput.max = currentFile.totalPages;
+                pageNumberInput.max = currentFile.totalPages;
+
+                if (pages.length === 0) {
+                    pagePreviewContainer.innerHTML = '<div class="page-preview-placeholder">الملف لا يحتوي على صفحات.</div>';
+                    updateUIState();
+                    return;
+                }
+                                
+                for (let i = 0; i < pages.length; i++) {
+                    const pageItem = document.createElement('div');
+                    pageItem.classList.add('page-item');
+                    pageItem.dataset.pageIndex = i; 
+
+                    pageItem.innerHTML = `
+                        <canvas class="page-preview-canvas"></canvas>
+                        <span class="page-number"> ${i + 1}</span>
+                        <button class="view-page-btn">معاينة كاملة</button>
+                    `;
+                    
+                    const canvas = pageItem.querySelector('.page-preview-canvas');
+                    const viewBtn = pageItem.querySelector('.view-page-btn');
+                    
+                    viewBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openFullPagePreview(i + 1);
+                    });
+                    
+                    pagePreviewContainer.appendChild(pageItem);
+
+                    if (currentFile.pdfJsDoc && canvas) { 
+                        try {
+                            const pdfJsPageInstance = await currentFile.pdfJsDoc.getPage(i + 1);
+                            const viewport = pdfJsPageInstance.getViewport({ scale: 0.3 }); 
+                            
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            
+                            const renderContext = {
+                                canvasContext: canvas.getContext('2d'),
+                                viewport: viewport
+                            };
+                            await pdfJsPageInstance.render(renderContext).promise;
+                            
+                            pdfJsPageInstance.cleanup();
+                        } catch (renderError) {
+                            console.error(`Error rendering page ${i + 1} thumbnail:`, renderError);
+                            const ctx = canvas.getContext('2d');
+                            if (ctx) { 
+                                canvas.width = canvas.width; 
+                                ctx.fillStyle = '#777';
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                ctx.fillStyle = 'white';
+                                ctx.textAlign = 'center';
+                                ctx.font = '12px Cairo';
+                                ctx.fillText('خطأ في العرض', canvas.width / 2, canvas.height / 2);
+                            }
+                        }
+                    } else if (!currentFile.pdfJsDoc && canvas) {
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            canvas.width = pageItem.clientWidth > 0 ? pageItem.clientWidth : 100; 
+                            canvas.height = pageItem.clientHeight > 0 ? pageItem.clientHeight : 140;
+                            ctx.fillStyle = '#555';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.fillStyle = 'white';
+                            ctx.textAlign = 'center';
+                            ctx.font = '12px Cairo';
+                            ctx.fillText('لا توجد معاينة', canvas.width / 2, canvas.height / 2);
+                        }
+                    }
+                }
+                
+                if (currentFile.totalPages > 0) {
+                    extractionRange.start = 1;
+                    extractionRange.end = currentFile.totalPages; 
+                    startPageInput.value = extractionRange.start;
+                    endPageInput.value = extractionRange.end;
+                }
+                updatePagePreviewsHighlights();
+
+                statusDiv.textContent = 'تم تحميل الملف بنجاح. حدد نطاق الصفحات للاقتطاع.';
+                statusDiv.style.color = 'var(--success-color)';
+            }
+
+            async function openFullPagePreview(pageNum) {
+                if (!currentFile.pdfJsDoc) {
+                    statusDiv.textContent = "تعذر تحميل معاينة الصفحة. قد يكون الملف محمياً أو تالفاً.";
+                    statusDiv.style.color = 'var(--warning-color)';
+                    return;
+                }
+                currentPreviewPage = pageNum;
+                fullPagePreviewOverlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                await renderFullPagePreview();
+            }
+            
+            async function renderFullPagePreview() {
+                try {
+                    if (pdfJsPage) { pdfJsPage.cleanup(); pdfJsPage = null; }
+                    pdfJsPage = await currentFile.pdfJsDoc.getPage(currentPreviewPage);
+                    const viewport = pdfJsPage.getViewport({ scale: 1.5 }); 
+                    
+                    fullPagePreviewCanvas.height = viewport.height;
+                    fullPagePreviewCanvas.width = viewport.width;
+                    currentPageIndicator.textContent = `الصفحة ${currentPreviewPage} من ${currentFile.totalPages}`;
+                    prevPageBtn.disabled = currentPreviewPage <= 1;
+                    nextPageBtn.disabled = currentPreviewPage >= currentFile.totalPages;
+                    
+                    await pdfJsPage.render({
+                        canvasContext: fullPagePreviewCanvas.getContext('2d'),
+                        viewport: viewport
+                    }).promise;
+                } catch (error) {
+                    console.error("Error rendering PDF page:", error);
+                    statusDiv.textContent = "حدث خطأ أثناء عرض الصفحة.";
+                    statusDiv.style.color = 'var(--danger-color)';
+                    closeFullPagePreview();
+                }
+            }
+            
+            function closeFullPagePreview() {
+                fullPagePreviewOverlay.style.display = 'none';
+                document.body.style.overflow = 'auto';
+                if (pdfJsPage) { pdfJsPage.cleanup(); pdfJsPage = null; }
+            }
+            
+            function navigatePreviewPage(direction) {
+                const newPage = currentPreviewPage + direction;
+                if (newPage >= 1 && newPage <= currentFile.totalPages) {
+                    currentPreviewPage = newPage;
+                    renderFullPagePreview();
+                }
+            }
+
+            function resetState() {
+                if (currentFile.pdfJsDoc && typeof currentFile.pdfJsDoc.destroy === 'function') {
+                    currentFile.pdfJsDoc.destroy(); 
+                }
+                currentFile = { name: null, arrayBuffer: null, pdfDoc: null, pdfJsDoc: null, totalPages: 0 };
+                extractionRange = { start: null, end: null };
+                outputFilenameInput.value = '';
+                fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
+                fileInfoDisplay.style.color = 'var(--text-color)';
+                pagePreviewContainer.innerHTML = '<div class="page-preview-placeholder">سيتم عرض صفحات ملف PDF هنا بعد اختياره.</div>';
+                downloadOptionsDiv.style.display = 'none';
+                progressBarContainer.style.display = 'none';
+                progressBar.value = 0;
+                cleanupBlobUrl();
+                if (pdfInput) pdfInput.value = null;
+
+                rangeSelectionContainer.style.display = 'none';
+                pageNavigationToolsDiv.style.display = 'none';
+                startPageInput.value = '';
+                endPageInput.value = '';
+                pageNumberInput.value = '';
+                startPageInput.max = null;
+                endPageInput.max = null;
+                pageNumberInput.max = null;
+                
+                statusDiv.textContent = ''; 
+                updateUIState();
+            }
+
+            function updateUIState(processing = isProcessing) {
+                const fileLoaded = !!currentFile.pdfDoc && currentFile.totalPages > 0;
+                const isValidRange = extractionRange.start && extractionRange.end &&
+                                     extractionRange.start > 0 && extractionRange.end > 0 &&
+                                     extractionRange.start <= currentFile.totalPages &&
+                                     extractionRange.end <= currentFile.totalPages &&
+                                     extractionRange.start <= extractionRange.end;
+
+                processBtn.disabled = !fileLoaded || !isValidRange || processing;
+                rangeSelectionContainer.style.display = fileLoaded ? 'flex' : 'none';
+                pageNavigationToolsDiv.style.display = fileLoaded ? 'flex' : 'none';
+
+                if (fileLoaded) {
+                    let infoText = `الملف: ${currentFile.name} (${currentFile.totalPages} صفحات). `;
+                    if (isValidRange) {
+                        infoText += `سيتم اقتطاع الصفحات من ${extractionRange.start} إلى ${extractionRange.end}.`;
+                    } else if (extractionRange.start || extractionRange.end) { 
+                        infoText += ` <span style="color: var(--warning-color);">(نطاق الصفحات غير صالح!)</span>`;
+                    }
+                    fileInfoDisplay.innerHTML = infoText;
+                    
+                    if (!outputFilenameInput.value && currentFile.name && isValidRange && !processing && !statusDiv.textContent.includes('اكتمل')) {
+                        const baseName = currentFile.name.replace(/\.pdf$/i, '');
+                        outputFilenameInput.value = `${baseName}_p${extractionRange.start}-p${extractionRange.end}`;
+                    }
+                } else if (!currentFile.name) {
+                    fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
+                    fileInfoDisplay.style.color = 'var(--text-color)';
+                    outputFilenameInput.value = '';
+                    downloadOptionsDiv.style.display = 'none';
+                }
+                
+                progressBarContainer.style.display = processing ? 'block' : 'none';
+            }
+
+            async function handleFileSelection(event) {
+                if (isProcessing) {
+                    pdfInput.value = null; return;
+                }
+                const file = event.target.files[0];
+                if (!file) {
+                    if (currentFile.name) resetState();
+                    return;
+                }
+                
+                resetState(); 
+
+                fileInfoDisplay.textContent = `الملف المختار: ${file.name} (${formatBytes(file.size)})`;
+                fileInfoDisplay.style.color = 'var(--text-color)';
+
+                if (file.type !== 'application/pdf') {
+                    statusDiv.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF.`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
+                    pdfInput.value = null; return;
+                }
+
+                currentFile.name = file.name;
+                statusDiv.innerHTML = 'جاري قراءة الملف وتحضير المعاينة... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                
+                try {
+                    currentFile.arrayBuffer = await file.arrayBuffer();
+                    currentFile.pdfDoc = await PDFDocument.load(currentFile.arrayBuffer, { 
+                        updateMetadata: false, 
+                        ignoreEncryption: true, 
+                        fontkit: window.fontkit
+                    });
+                    
+                    if (currentFile.pdfDoc.isEncrypted) {
+                         statusDiv.textContent = `خطأ: الملف "${file.name}" محمي بكلمة مرور ولا يمكن معالجته.`;
+                         statusDiv.style.color = 'var(--danger-color)';
+                         currentFile.pdfDoc = null; currentFile.arrayBuffer = null;
+                         renderPagePreviews(); updateUIState(); pdfInput.value = null;
+                         return;
+                    }
+
+                    if (currentFile.arrayBuffer) {
+                        try {
+                            currentFile.pdfJsDoc = await pdfjsLib.getDocument({ data: currentFile.arrayBuffer }).promise;
+                        } catch (pdfJsError) {
+                            console.error("Error loading PDF with PDF.js for preview:", pdfJsError);
+                            currentFile.pdfJsDoc = null; 
+                            statusDiv.textContent += " (تحذير: قد لا تظهر معاينات الصفحات المصغرة بسبب خطأ في تحميل العرض)";
+                            statusDiv.style.color = 'var(--warning-color)';
+                        }
+                    }
+                    await renderPagePreviews();
+
+                } catch (loadError) {
+                    console.error(`Error parsing PDF "${file.name}":`, loadError);
+                    statusDiv.textContent = `خطأ في قراءة الملف "${file.name}": ${loadError.message || 'ملف تالف أو غير مدعوم.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    currentFile.pdfDoc = null; currentFile.arrayBuffer = null; currentFile.pdfJsDoc = null;
+                    renderPagePreviews(); updateUIState(); pdfInput.value = null;
+                }
+            }
+
+            pdfInput.addEventListener("change", handleFileSelection);
+            
+            const dropZone = document.querySelector('.extractor-container');
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); if (!isProcessing) dropZone.style.outline = '2px dashed var(--primary-color)'; });
+            dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.style.outline = 'none'; });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault(); e.stopPropagation(); dropZone.style.outline = 'none';
+                if (isProcessing) return;
+                if (e.dataTransfer.files.length > 0) {
+                    pdfInput.files = e.dataTransfer.files; 
+                    const event = new Event('change', { bubbles: true }); 
+                    pdfInput.dispatchEvent(event);
+                }
+            });
+
+            [startPageInput, endPageInput].forEach(input => {
+                input.addEventListener('input', () => { 
+                    extractionRange.start = parseInt(startPageInput.value, 10) || null;
+                    extractionRange.end = parseInt(endPageInput.value, 10) || null;
+                    
+                    let rangeStatusMessage = '';
+                    let rangeStatusColor = 'var(--success-color)';
+
+                    if (currentFile.pdfDoc && currentFile.totalPages > 0) {
+                        if (extractionRange.start && (extractionRange.start < 1 || extractionRange.start > currentFile.totalPages)) {
+                            rangeStatusMessage = `صفحة البداية يجب أن تكون بين 1 و ${currentFile.totalPages}.`;
+                            rangeStatusColor = 'var(--warning-color)';
+                        }
+                        if (extractionRange.end && (extractionRange.end < 1 || extractionRange.end > currentFile.totalPages)) {
+                            rangeStatusMessage = (rangeStatusMessage ? rangeStatusMessage + " " : "") + `صفحة النهاية يجب أن تكون بين 1 و ${currentFile.totalPages}.`;
+                            rangeStatusColor = 'var(--warning-color)';
+                        }
+                        
+                        if (extractionRange.start && extractionRange.end && extractionRange.start > extractionRange.end && rangeStatusColor !== 'var(--warning-color)') {
+                             rangeStatusMessage = 'خطأ: يجب أن تكون صفحة البداية أصغر من أو تساوي صفحة النهاية.';
+                             rangeStatusColor = 'var(--warning-color)';
+                        }
+                    }
+                    
+                    if (rangeStatusMessage) {
+                        statusDiv.textContent = rangeStatusMessage;
+                        statusDiv.style.color = rangeStatusColor;
+                    } else if (statusDiv.textContent.includes('صفحة البداية') || statusDiv.textContent.includes('صفحة النهاية')) {
+                         statusDiv.textContent = (currentFile.totalPages > 0) ? 'حدد نطاق الصفحات للاقتطاع.' : '';
+                         statusDiv.style.color = 'var(--success-color)';
+                    }
+                    updatePagePreviewsHighlights();
+                });
+            });
+
+            goToPageBtn.addEventListener('click', () => {
+                if (!currentFile.pdfDoc || currentFile.totalPages === 0) {
+                    statusDiv.textContent = 'الرجاء تحميل ملف PDF أولاً.';
+                    statusDiv.style.color = 'var(--warning-color)'; return;
+                }
+                const pageNumStr = pageNumberInput.value;
+                if (!pageNumStr) {
+                    statusDiv.textContent = 'الرجاء إدخال رقم الصفحة للانتقال إليها.';
+                    statusDiv.style.color = 'var(--warning-color)'; pageNumberInput.focus(); return;
+                }
+                const pageNum = parseInt(pageNumStr, 10);
+                if (isNaN(pageNum) || pageNum < 1 || pageNum > currentFile.totalPages) {
+                    statusDiv.textContent = `رقم الصفحة غير صالح. الرجاء إدخال رقم بين 1 و ${currentFile.totalPages}.`;
+                    statusDiv.style.color = 'var(--warning-color)'; pageNumberInput.focus(); return;
+                }
+
+                const pageIndex = pageNum - 1;
+                const pageItemElement = pagePreviewContainer.querySelector(`.page-item[data-page-index="${pageIndex}"]`);
+                if (pageItemElement) {
+                    pageItemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    pageItemElement.classList.add('highlighted');
+                    setTimeout(() => pageItemElement.classList.remove('highlighted'), 1500);
+                    statusDiv.textContent = `تم الانتقال إلى الصفحة ${pageNum}.`;
+                    statusDiv.style.color = 'var(--success-color)';
+                } else {
+                    statusDiv.textContent = 'لم يتم العثور على عنصر الصفحة.';
+                    statusDiv.style.color = 'var(--danger-color)';
+                }
+            });
+
+            processBtn.addEventListener('click', async function() {
+                if (isProcessing || !currentFile.pdfDoc || !extractionRange.start || !extractionRange.end) {
+                    statusDiv.textContent = 'الرجاء تحميل ملف PDF وتحديد نطاق صفحات صالح للاقتطاع.';
+                    statusDiv.style.color = 'var(--warning-color)'; return;
+                }
+                if (extractionRange.start > extractionRange.end || extractionRange.start < 1 || extractionRange.end > currentFile.totalPages) {
+                     statusDiv.textContent = 'نطاق الصفحات المحدد غير صالح. يرجى التحقق والمحاولة مرة أخرى.';
+                     statusDiv.style.color = 'var(--warning-color)'; return;
+                }
+
+                isProcessing = true;
+                updateUIState();
+                cleanupBlobUrl();
+                statusDiv.innerHTML = 'جاري تحضير الملف... <div class="spinner"></div>';
+                statusDiv.style.color = 'var(--secondary-color)';
+                downloadOptionsDiv.style.display = 'none';
+                progressBar.value = 0;
+                progressBarContainer.style.display = 'block';
+
+                try {
+                    const originalDoc = await PDFDocument.load(currentFile.arrayBuffer, { fontkit: window.fontkit, ignoreEncryption: true });
+                    const newPdfDoc = await PDFDocument.create();
+                    newPdfDoc.registerFontkit(window.fontkit); 
+                    progressBar.value = 10; 
+
+                    const pagesToCopyIndices = [];
+                    for (let i = extractionRange.start - 1; i < extractionRange.end; i++) {
+                        pagesToCopyIndices.push(i);
+                    }
+                    
+                    if (pagesToCopyIndices.length === 0) {
+                        throw new Error("يجب تحديد صفحة واحدة على الأقل للاقتطاع.");
+                    }
+
+                    const copiedPages = await newPdfDoc.copyPages(originalDoc, pagesToCopyIndices);
+                    progressBar.value = 50;
+
+                    let copiedCount = 0;
+                    for (const page of copiedPages) {
+                        newPdfDoc.addPage(page);
+                        copiedCount++;
+                        progressBar.value = 50 + Math.round((copiedCount / copiedPages.length) * 40);
+                        if (copiedCount % 5 === 0 || copiedCount === copiedPages.length) { 
+                           await new Promise(resolve => setTimeout(resolve, 0)); 
+                        }
+                    }
+                    
+                    statusDiv.innerHTML = 'جاري حفظ الملف المقتطع... <div class="spinner"></div>';
+                    progressBar.value = 90;
+
+                    const modifiedPdfBytes = await newPdfDoc.save({ useObjectStreams: true });
+                    progressBar.value = 98; 
+
+                    modifiedPdfBlobUrl = URL.createObjectURL(new Blob([modifiedPdfBytes], { type: 'application/pdf' }));
+                    
+                    let outputName = outputFilenameInput.value.trim();
+                    if (!outputName) {
+                        const baseName = currentFile.name.replace(/\.pdf$/i, '');
+                        outputName = `${baseName}_p${extractionRange.start}-p${extractionRange.end}`;
+                    }
+                    outputName = sanitizeFilename(outputName);
+                    if (!outputName.toLowerCase().endsWith('.pdf')) {
+                        outputName += '.pdf';
+                    }
+
+                    downloadLinkPdf.href = modifiedPdfBlobUrl;
+                    downloadLinkPdf.download = outputName;
+
+                    statusDiv.textContent = `اكتمل! تم اقتطاع ${copiedPages.length} صفحة (صفحات) بنجاح.`;
+                    statusDiv.style.color = 'var(--success-color)';
+                    progressBar.value = 100;
+                    setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
+                    downloadOptionsDiv.style.display = 'flex';
+
+                } catch (error) {
+                    console.error("Error during PDF page extraction:", error);
+                    statusDiv.textContent = `حدث خطأ: ${error.message || 'خطأ غير معروف.'}`;
+                    statusDiv.style.color = 'var(--danger-color)';
+                    progressBarContainer.style.display = 'none';
+                    downloadOptionsDiv.style.display = 'none';
+                    cleanupBlobUrl();
+                } finally {
+                    isProcessing = false;
+                    const spinner = statusDiv.querySelector('.spinner');
+                    if (spinner) spinner.remove();
+                    updateUIState(); 
+                }
+            });
+            
+            closePreviewBtn.addEventListener('click', closeFullPagePreview);
+            prevPageBtn.addEventListener('click', () => navigatePreviewPage(-1));
+            nextPageBtn.addEventListener('click', () => navigatePreviewPage(1));
+            fullPagePreviewOverlay.addEventListener('click', (e) => { if (e.target === fullPagePreviewOverlay) closeFullPagePreview(); });
+            document.addEventListener('keydown', (e) => {
+                if (fullPagePreviewOverlay.style.display === 'flex') {
+                    if (e.key === 'ArrowLeft' || e.key === 'Left') navigatePreviewPage(-1);
+                    else if (e.key === 'ArrowRight' || e.key === 'Right') navigatePreviewPage(1);
+                    else if (e.key === 'Escape') closeFullPagePreview();
+                }
+            });
+
+            console.log("Setting initial UI state for page extractor.");
+            resetState();
+            window.addEventListener('beforeunload', cleanupBlobUrl);
+            console.log("Page extractor script initialization complete.");
+        }
+    </script>
+
+</body>
+</html>

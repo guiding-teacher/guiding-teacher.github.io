@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">الاستبيان</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+</head>
+<body>
+    <header>
+        <img id="survey-main-logo" src="#" alt="شعار الاستبيان" style="display: none; max-height: 100px; margin-bottom: 10px; border-radius: 8px;">
+        <div class="header-text-content">
+            <h1 id="survey-main-title">اسم الاستبيان</h1>
+            <p id="survey-main-description">وصف الاستبيان هنا.</p>
+        </div>
+    </header>
+
+    <main>
+        <div id="loading-spinner" class="loader"></div>
+        <div id="alert-container" aria-live="polite"></div>
+
+        <div id="survey-timing-info-container" class="page-container survey-timing-info" style="display: none; text-align: center; margin-bottom: 20px; background-color: var(--primary-bg); border: 1px dashed var(--accent-gold);">
+            <!-- سيتم ملء هذه المعلومات بواسطة JavaScript -->
+        </div>
+        
+        <div id="survey-page-content">
+            <div id="survey-id-input-container" class="page-container" style="display: none;">
+                <h2>الوصول إلى استبيانك</h2>
+                <p>أدخل معرف الاستبيان والرمز السري ( الذي حصلت عليه في صفحة النشر ) للوصول إليه أو إدارته.</p>
+                <form id="survey-id-lookup-form">
+                    <div class="form-group">
+                        <label for="survey-id-input">معرف الاستبيان (Survey ID):</label>
+                        <input type="text" id="survey-id-input" placeholder="أدخل معرف الاستبيان هنا" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="survey-pin-input-for-lookup">الرمز السري (PIN) الخاص بالاستبيان:</label>
+                        <input type="password" id="survey-pin-input-for-lookup" placeholder="أدخل الرمز السري للمشرف" required>
+                    </div>
+                    <button type="submit" class="button-lookalike">بحث ووصول</button>
+                </form>
+                 <p style="margin-top: 20px; text-align:center;">
+                    <a href="admin.html" class="button-lookalike secondary">إنشاء استبيان جديد</a>
+                </p>
+            </div>
+
+            <div id="published-mode-info-container" class="page-container" style="display: none;">
+                <h2>تم نشر استبيانك بنجاح!</h2>
+                <div class="survey-id-display" style="margin-bottom: 15px;">
+                    معرف الاستبيان الخاص بك هو: <strong id="published-survey-id-display" style="user-select: all; color: var(--accent-gold-hover);"></strong>
+                </div>
+                 <div class="survey-id-display" id="published-survey-pin-info-display" style="margin-bottom: 15px; display:none;">
+                    الرمز السري للمشرف: <strong id="published-survey-pin-text-display" style="user-select: all; color: var(--accent-gold-hover);"></strong>
+                    <p style="font-size:0.9em; color:var(--text-secondary);"> (احفظ هذا الرمز جيداً، ستحتاج إليه لإدارة الاستبيان لاحقاً)</p>
+                </div>
+                <p>يمكنك الآن مشاركة الرابط التالي مع جمهورك:</p>
+                <div class="link-item" style="margin-bottom: 20px;">
+                    <input type="text" id="published-survey-link-input" readonly>
+                    <button id="copy-published-link-btn" class="secondary">نسخ الرابط</button>
+                </div>
+                
+                <h3>معاينة الاستبيان (كما سيظهر للمجيبين):</h3>
+                <div id="published-survey-readonly-view" class="survey-display-card">
+                    <!-- Read-only survey will be rendered here -->
+                </div>
+                <hr style="margin: 30px 0; border-color: var(--border-color);">
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button id="manage-survey-after-publish-btn" class="button-lookalike secondary" style="flex-grow: 1;">
+                        تعديل هيكل هذا الاستبيان
+                    </button>
+                   <a id="view-results-after-publish-link" href="#" class="button-lookalike" style="flex-grow: 1;">
+    عرض النتائج والإحصائيات (للمشرف)
+</a>
+                </div>
+            </div>
+
+            <div id="responder-form-container" class="page-container survey-display-card" style="display: none;">
+                <form id="survey-form-responder">
+                    <!-- Questions will be dynamically rendered here -->
+                </form>
+            </div>
+
+            <div id="thank-you-container" class="thank-you-message" style="display: none;">
+                <h3 id="thank-you-text">شكراً لك على إجابتك!</h3>
+               <a href="#" id="view-results-after-submission-link" class="button-lookalike secondary" style="display:none;">عرض ملخص النتائج</a>
+                 <div id="share-survey-after-submission-container" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border-color); display:none;">
+                    <p style="font-size: 1rem; color: var(--text-secondary);">شارك هذا الاستبيان مع الآخرين:</p>
+                    <div class="link-item" style="margin-top: 10px;">
+                        <input type="text" id="share-survey-link-output-resp" readonly>
+                        <button id="copy-share-link-btn-resp" class="secondary">نسخ الرابط</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="public-results-container" class="page-container results-display" style="display: none;">
+                <h2>ملخص نتائج الاستبيان</h2>
+                <div class="results-summary">
+                    <p>إجمالي الإجابات: <strong id="public-total-responses">0</strong></p>
+                </div>
+                <div id="public-questions-results-display">
+                    <!-- Public results for questions will be rendered here -->
+                </div>
+                <button id="back-to-survey-btn" class="secondary" style="margin-top:20px; display:none;">العودة لصفحة الاستبيان الرئيسية</button>
+            </div>
+
+            <div id="survey-admin-section" class="page-container" style="display: none;">
+                <h2>إدارة الاستبيان (للمشرف)</h2>
+                <div id="admin-login-form-container">
+                    <form id="admin-pin-form">
+                        <div class="form-group">
+                            <label for="admin-pin-input">الرجاء إدخال الرمز السري (PIN) للمشرف:</label>
+                            <input type="password" id="admin-pin-input" required>
+                        </div>
+                        <button type="submit">دخول</button>
+                    </form>
+                </div>
+
+                <div id="admin-actions-container" style="display:none;">
+                    <div class="admin-controls">
+                        <a href="#" id="edit-survey-link" class="button-lookalike secondary">تعديل هيكل هذا الاستبيان</a>
+                        <button id="toggle-results-view-btn" class="secondary">...</button>
+                        <button id="export-responses-csv-btn" class="secondary">تصدير الإجابات (CSV)</button>
+                    </div>
+                    <h3>النتائج التفصيلية للاستبيان:</h3>
+                    <div class="results-summary">
+                        <p>إجمالي الإجابات: <strong id="admin-total-responses">0</strong></p>
+                    </div>
+                    <div id="admin-questions-results-display" class="results-display">
+                        <!-- Detailed admin results for questions will be rendered here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="show-admin-login-button-container" class="page-container" style="display:none; text-align:center;">
+                <button id="show-admin-login-btn" class="button-lookalike secondary">دخول كمسؤول/مشرف لهذا الاستبيان</button>
+            </div>
+
+        </div>
+         <!-- Modal for Image Full View (Mainly for Response Images, Logo is in header) -->
+        <div id="image-modal" class="modal">
+            <span class="image-modal-close" id="image-modal-close-btn">×</span>
+            <img class="modal-content" id="image-modal-content">
+            <div id="image-modal-caption"></div>
+        </div>
+
+    </main>
+    <footer>
+        <p>© <span id="current-year"></span> قسم الاستبيان لمنصة المعلم المرشد.</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

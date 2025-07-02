@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أسئلة وأجوبة - العلوم للصف الرابع</title>
+
+    <!-- Include Libraries for Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+        /* General Styles */
+        :root {
+            --header-footer-bg: #fdf0d9; /* Light tan/orange */
+            --unit-header-bg: #ddeedf;   /* Light green */
+            --table-header-bg: #f2f2f2;  /* Light gray */
+            --table-border-color: #888; /* Darker gray */
+            --container-border-color: #555; /* Darker border for page */
+            --text-color: #000000;
+            --button-bg: #4CAF50;
+            --button-hover-bg: #45a049;
+            --export-button-bg: #007bff; /* Blue for export */
+            --export-button-hover-bg: #0056b3;
+            --clear-button-bg: #ffc107; /* Yellow for clear */
+            --clear-button-hover-bg: #e0a800;
+            --delete-button-bg: #f44336;
+            --delete-button-hover-bg: #da190b;
+            --body-bg: #dcdcdc;
+        }
+
+        body {
+            font-family: 'Tahoma', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #393838;
+            color: var(--text-color);
+            direction: rtl;
+        }
+
+        /* A4 Container with fixed size */
+        .worksheet-container {
+            position: relative;
+            width: 210mm;
+            min-height: 297mm;
+            height: 297mm;
+            margin: 25px auto;
+            padding: 15mm 10mm;
+            background-color: #fff;
+            border: 1px solid #bbb;
+            outline: 4px double var(--container-border-color);
+            outline-offset: -6px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Content area with scroll */
+        .worksheet-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        /* Control Buttons Area */
+        .controls {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 5px;
+        }
+        .controls button {
+            margin: 5px 8px;
+        }
+
+        /* Header Styles */
+        .worksheet-header-container {
+            background-color: var(--header-footer-bg);
+            border: 1px solid var(--table-border-color);
+            padding: 0;
+        }
+
+        .worksheet-header {
+            padding: 5px 10px;
+            margin-bottom: 15px;
+        }
+
+        .worksheet-header table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        .worksheet-header td {
+            padding: 6px 8px;
+            font-size: 0.95em;
+            vertical-align: middle;
+        }
+        .worksheet-header td:nth-child(1) { text-align: right; }
+        .worksheet-header td:nth-child(3) { text-align: left; font-size: 0.9em;}
+
+        .worksheet-header [contenteditable="true"] {
+            padding: 4px 6px !important;
+            margin: -4px -6px !important;
+            border-radius: 3px;
+            background-color: transparent !important;
+        }
+
+        /* Unit Header */
+        .unit-header {
+            background-color: var(--unit-header-bg);
+            color: var(--text-color);
+            padding: 8px 15px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid var(--table-border-color);
+            border-radius: 6px;
+            font-size: 1.1em;
+        }
+
+        /* Table Styles */
+        .qa-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            border: 1px solid var(--table-border-color);
+        }
+
+        .qa-table th,
+        .qa-table td {
+            border: 1px solid var(--table-border-color);
+            padding: 8px 10px;
+            text-align: right;
+            vertical-align: top;
+            word-wrap: break-word;
+            font-size: 1em;
+        }
+
+        .qa-table th {
+            background-color: var(--table-header-bg);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* Default column widths */
+        .qa-table .col-seq { width: 5%; }
+        .qa-table .col-question { width: 45%; }
+        .qa-table .col-answer { width: 45%; }
+        .qa-table .col-action { width: 5%; text-align: center;}
+
+        /* Adjust widths when action column is hidden for export/print */
+        .hide-action .col-seq { width: 7%; }
+        .hide-action .col-question { width: 46.5%; }
+        .hide-action .col-answer { width: 46.5%; }
+
+        /* Editable Content */
+        [contenteditable="true"] {
+            background-color: #ffffff;
+            outline: none;
+            cursor: text;
+            min-height: 20px;
+            display: block;
+            padding: 3px 5px;
+            border: 1px dashed transparent;
+            margin: -3px -5px;
+        }
+
+        [contenteditable="true"]:hover,
+        [contenteditable="true"]:focus {
+            background-color: #f8f8f8;
+            border: 1px dashed #aaa;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Buttons */
+        .action-button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s ease;
+            vertical-align: middle;
+        }
+
+        .add-row-btn { background-color: var(--button-bg); }
+        .add-row-btn:hover { background-color: var(--button-hover-bg); }
+
+        .export-image-btn { background-color: var(--export-button-bg); }
+        .export-image-btn:hover { background-color: var(--export-button-hover-bg); }
+
+        .export-pdf-btn { background-color: var(--export-button-bg); }
+        .export-pdf-btn:hover { background-color: var(--export-button-hover-bg); }
+
+        .clear-data-btn { background-color: var(--clear-button-bg); color: #333; }
+        .clear-data-btn:hover { background-color: var(--clear-button-hover-bg); }
+
+        .delete-row-btn {
+            background-color: var(--delete-button-bg);
+            font-size: 0.8em;
+            padding: 4px 8px;
+            margin: 0 auto;
+            display: block;
+        }
+        .delete-row-btn:hover { background-color: var(--delete-button-hover-bg); }
+
+        /* Footer Styles */
+        .worksheet-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 8px 10px;
+            font-size: 0.9em;
+            background-color: var(--header-footer-bg);
+            border: 1px solid var(--table-border-color);
+        }
+        .worksheet-footer[contenteditable="true"] {
+             padding: 5px !important;
+             margin: 0 !important;
+        }
+
+        /* Spinner Styling */
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--export-button-bg);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 8px;
+            vertical-align: middle;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .worksheet-container { 
+                width: 95%; 
+                margin: 15px auto; 
+                padding: 10mm 5mm; 
+                min-height: auto; 
+                height: auto;
+                outline: 3px double var(--container-border-color); 
+                outline-offset: -5px;
+            }
+            .controls button { font-size: 0.85em; padding: 5px 10px; margin: 3px 5px; }
+            .qa-table th, .qa-table td { padding: 6px 8px; font-size: 0.9em; }
+            .qa-table .col-seq { width: 8%; }
+            .qa-table .col-question { width: 42%; }
+            .qa-table .col-answer { width: 42%; }
+            .qa-table .col-action { width: 8%; }
+        }
+
+        @media (max-width: 480px) {
+            body { font-size: 14px; }
+            .worksheet-container { 
+                padding: 8mm 4mm; 
+                outline: 2px double var(--container-border-color); 
+                outline-offset: -4px;
+            }
+            .controls { padding: 5px;}
+            .controls button { font-size: 0.8em; padding: 4px 8px; margin: 2px 3px; }
+            .worksheet-header td { font-size: 0.9em; padding: 4px; }
+            .unit-header { font-size: 0.95em; padding: 6px 10px;}
+            .qa-table th, .qa-table td { padding: 4px 5px; font-size: 0.8em; }
+            .delete-row-btn { padding: 3px 6px; font-size: 0.7em; }
+            .worksheet-footer { font-size: 0.8em; padding: 6px;}
+        }
+
+        /* Print Styles */
+        @media print {
+            body { 
+                background-color: #fff; 
+                font-size: 10pt; 
+                color: #000; 
+                margin: 0; 
+                padding: 0; 
+            }
+            .worksheet-container { 
+                width: 210mm; 
+                height: 297mm; 
+                margin: 0; 
+                padding: 15mm 10mm; 
+                border: none !important; 
+                outline: none !important; 
+                box-shadow: none; 
+                overflow: visible;
+            }
+            .controls { display: none !important; }
+            .worksheet-header, .unit-header, .worksheet-footer { 
+                padding: 5px; 
+                border: 1px solid #999; 
+                background-color: var(--header-footer-bg) !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            .unit-header { 
+                background-color: var(--unit-header-bg) !important; 
+                border-radius: 0; 
+            }
+            .qa-table { 
+                border: 1px solid #999; 
+                margin-bottom: 10px; 
+            }
+            .qa-table th, .qa-table td { 
+                border: 1px solid #999; 
+                font-size: 9pt; 
+                padding: 4px 6px; 
+                vertical-align: top; 
+            }
+            .qa-table th { 
+                background-color: var(--table-header-bg) !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            [contenteditable="true"] { 
+                border: none !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                background-color: transparent !important; 
+                box-shadow: none !important; 
+            }
+            .qa-table .col-action,
+            .add-row-btn, .delete-row-btn, .spinner {
+                display: none !important;
+            }
+            .qa-table .col-seq { width: 7%; }
+            .qa-table .col-question { width: 46.5%; }
+            .qa-table .col-answer { width: 46.5%; }
+            @page { 
+                size: A4; 
+                margin: 0;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <!-- Area for Control Buttons -->
+    <div class="controls">
+        <button class="action-button add-row-btn" id="addRowBtn">إضافة سطر جديد</button>
+        <button class="action-button export-image-btn" id="exportImageBtn">
+            تصدير كصورة (PNG) <span class="spinner" id="spinnerImage"></span>
+        </button>
+        <button class="action-button export-pdf-btn" id="exportPdfBtn">
+            تصدير كـ PDF <span class="spinner" id="spinnerPdf"></span>
+        </button>
+        <button class="action-button clear-data-btn" id="clearDataBtn">مسح كل البيانات</button>
+    </div>
+
+    <div class="worksheet-container" id="worksheetContainer">
+        <div class="worksheet-content">
+            <div class="worksheet-header-container">
+                <header class="worksheet-header">
+                     <table>
+                        <tr>
+                          
+                           <td contenteditable="true">إدارة مدرسة الإبتدائية</td>
+   <td contenteditable="true">
+     
+     مدرسة:
+   </td>
+   <td>
+     <div contenteditable="true">الصف : الرابع</div>
+     <div contenteditable="true">المادة : العلوم</div>
+                            </td>
+                        </tr>
+                    </table>
+                </header>
+            </div>
+
+            <div class="unit-header" contenteditable="true">
+                أسئلة وأجوبة للعلم الدراسي ٢٠١٩-٢٠٢٠
+            </div>
+
+            <!-- Table will get 'hide-action' class during export -->
+            <table class="qa-table" id="qaTable">
+                <thead>
+                    <tr>
+                        <th class="col-seq">ت</th>
+                        <th class="col-question">صيغة السؤال</th>
+                        <th class="col-answer">صيغة الجواب</th>
+                        <th class="col-action">حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows loaded/added by JS -->
+                </tbody>
+            </table>
+
+            <footer class="worksheet-footer" contenteditable="true">
+                اعداد الاستاذ : ابراهيم عبد الكريم
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Ensure jsPDF is accessible
+        const { jsPDF } = window.jspdf;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Element Selections ---
+            const tableBody = document.getElementById('qaTable').querySelector('tbody');
+            const qaTable = document.getElementById('qaTable');
+            const addRowBtn = document.getElementById('addRowBtn');
+            const exportImageBtn = document.getElementById('exportImageBtn');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const clearDataBtn = document.getElementById('clearDataBtn');
+            const worksheetContainer = document.getElementById('worksheetContainer');
+            const worksheetContent = document.querySelector('.worksheet-content');
+            const spinnerImage = document.getElementById('spinnerImage');
+            const spinnerPdf = document.getElementById('spinnerPdf');
+
+            const headerCell1 = document.querySelector('.worksheet-header tr td:nth-child(1)[contenteditable="true"]');
+            const headerCell2 = document.querySelector('.worksheet-header tr td:nth-child(2)[contenteditable="true"]');
+            const headerCell3_1 = document.querySelector('.worksheet-header tr td:nth-child(3) div:nth-child(1)[contenteditable="true"]');
+            const headerCell3_2 = document.querySelector('.worksheet-header tr td:nth-child(3) div:nth-child(2)[contenteditable="true"]');
+            const unitHeaderCell = document.querySelector('.unit-header[contenteditable="true"]');
+            const footerCell = document.querySelector('.worksheet-footer[contenteditable="true"]');
+
+            // --- Storage Keys & Initial Data ---
+            const localStorageKey = 'worksheetData_Science_G4_v3';
+            const headerStorageKey = 'worksheetHeaders_Science_G4_v3';
+            const initialData = [
+                 { q: "ما هي البكتريا ؟", a: "هي كائنات حية بسيطة لا نراها بالعين ." },
+                { q: "ما هي الاسواط ؟", a: "تراكيب تساعد بعض أنواع البكتريا في الحركة ." },
+                { q: "ما أنواع البكتريا ؟", a: "كروية / عصوية / حلزونية" },
+                { q: "لماذا سميت البكتريا الكروية (العصوية/الحلزونية) بهذا الاسم .", a: "الكروية تشبه الكرة\nالعصوية تشبه العصا\nالحلزونية تشبه الحلزون" },
+                { q: "كيف تتحرك البكتريا الحلزونية ؟", a: "بواسطة الاسواط ." },
+                { q: "ما الطحالب ؟", a: "كائنات حية متنوعة الاشكال والحجوم والالوان وهي أما وحيدة الخلية أو متعددة الخلايا ." },
+                { q: "ما أنواع الطحالب ؟", a: "الخضر / البنية / الحمراء" },
+                { q: "لماذا تستطيع الطحالب صنع غذائها بنفسها ؟", a: "لانها تمتلك المادة الخضراء الضروري لصناعة الغذاء ." },
+                { q: "ما أهمية الطحالب في البيئة ؟", a: "توفير الاوكسجين والمحافظة على التوازن البيئي ." },
+                { q: "كيف تصنف الطحالب ؟", a: "حسب الوانها وحسب تراكيبها ." },
+                { q: "مم تتكون النباتات المركبة ؟", a: "الجذر ، الساق ، الأوراق ، الازهار" },
+                { q: "ما وظيفة الجذر ؟", a: "تثبيت النبات ، وامتصاص الماء والاملاح ." },
+                { q: "ما وظيفة الساق ؟", a: "نقل الماء من الجذر إلى الساق ، نقل الغذاء الذي تصنعه الاوراق إلى اجزاء النبات الاخرى ." },
+                { q: "ما وظيفة الأوراق ؟", a: "صنع الغذاء للنبات ." },
+                { q: "ما وظيفة الازهار ؟", a: "التكاثر ." },
+                { q: "ما اسم العملية التي يتخلص منها النبات من الماء الزائد بوساطة الورقة ؟", a: "النتح ." },
+                { q: "لماذا تكون ورقة النخلة كبيرة ومركبة ؟", a: "لغرض زيادة المساحة السطحية للورقة ليمكنها من أداء عملية البناء الضوئي ." },
+                { q: "ما الحيوانات المركبة ؟", a: "حيوانات متعددة الخلايا لها تراكيب جسم مختلفة ." },
+                { q: "ما مجموعات الحيوانات المركبة ؟", a: "الأسماك ، البرمائيات، الزواحف ، الطيور ، اللبائن ." },
+                { q: "مم يتركب جسم الدجاجة ؟", a: "الرأس والعنق والجذع والذيل ." },
+                { q: "ما الذي يغطي جسم الأسماك ؟", a: "القشور ." },
+                { q: "بماذا يختلف منقار النسر عن منقار العصفور ؟", a: "منقار النسر حجمه أكبر وأقوى ومدبب النهاية. ومنقار العصفور حجمه صغير مثلث الشكل ." },
+                { q: "لماذا يعد البطريق من الطيور ؟", a: "يغطي جسمه الريش ، وجود منقار ، يتكاثر بالبيض ." },
+                { q: "ما الحيوانات التي يغطي جسمها الشعر وتتكاثر بالبيض ؟", a: "اللبائن ." },
+                { q: "لماذا لا تعد الحيتان من الأسماك ؟", a: "لان الحيتان تتنفس الهواء الجوي وتتكاثر بالولادة وتغذي صغارها من غددها اللبنية ؟" }
+            ];
+            const initialHeaders = {
+                header1: "إدارة  ",
+                header2: "مدرسة:",
+                header3_1: "الصف : الرابع",
+                header3_2: "المادة : العلوم",
+                unitHeader: "أسئلة وأجوبة للعلم الدراسي ٢٠١٩-٢٠٢٠",
+                footer: "اعداد الاستاذ : ابراهيم عبد الكريم"
+            };
+
+            // --- Helper Function Spinner ---
+            function showSpinner(spinnerElement, buttonElement, show = true) {
+                if (spinnerElement) spinnerElement.style.display = show ? 'inline-block' : 'none';
+                if (buttonElement) buttonElement.disabled = show;
+            }
+
+            // --- Core Functions (createRow, renumberRows, addRow) ---
+            function createRow(seq, question = "", answer = "") {
+                const tr = document.createElement('tr');
+                const tdSeq = document.createElement('td');
+                tdSeq.className = 'col-seq';
+                tdSeq.textContent = seq;
+
+                const tdQuestion = document.createElement('td');
+                tdQuestion.className = 'col-question';
+                const qDiv = document.createElement('div');
+                qDiv.setAttribute('contenteditable', 'true');
+                qDiv.textContent = question;
+                qDiv.addEventListener('input', saveData);
+                tdQuestion.appendChild(qDiv);
+
+                const tdAnswer = document.createElement('td');
+                tdAnswer.className = 'col-answer';
+                const aDiv = document.createElement('div');
+                aDiv.setAttribute('contenteditable', 'true');
+                aDiv.textContent = answer;
+                aDiv.addEventListener('input', saveData);
+                tdAnswer.appendChild(aDiv);
+
+                const tdAction = document.createElement('td');
+                tdAction.className = 'col-action';
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '×';
+                deleteBtn.title = 'حذف السطر';
+                deleteBtn.className = 'action-button delete-row-btn';
+                deleteBtn.onclick = () => {
+                    if (confirm('هل أنت متأكد من حذف هذا السطر؟')) {
+                        tr.remove();
+                        renumberRows();
+                        saveData();
+                    }
+                };
+                tdAction.appendChild(deleteBtn);
+
+                tr.appendChild(tdSeq);
+                tr.appendChild(tdQuestion);
+                tr.appendChild(tdAnswer);
+                tr.appendChild(tdAction);
+
+                return tr;
+            }
+
+            function renumberRows() {
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                    const seqCell = row.querySelector('td:first-child');
+                    if (seqCell) {
+                        seqCell.textContent = index + 1;
+                    }
+                });
+             }
+
+            function addRow() {
+                const rowCount = tableBody.querySelectorAll('tr').length;
+                const newRow = createRow(rowCount + 1);
+                tableBody.appendChild(newRow);
+                const newQuestionDiv = newRow.querySelector('.col-question div[contenteditable="true"]');
+                if (newQuestionDiv) {
+                    newQuestionDiv.focus();
+                }
+                saveData();
+            }
+
+            // --- Data Persistence (saveData, loadData) ---
+            function saveData() {
+                 const rows = tableBody.querySelectorAll('tr');
+                const dataToSave = [];
+                rows.forEach(row => {
+                    const questionDiv = row.querySelector('.col-question div[contenteditable="true"]');
+                    const answerDiv = row.querySelector('.col-answer div[contenteditable="true"]');
+                    if (questionDiv && answerDiv) { dataToSave.push({ q: questionDiv.textContent.trim(), a: answerDiv.textContent.trim() }); }
+                });
+                 localStorage.setItem(localStorageKey, JSON.stringify(dataToSave));
+
+                 const headerData = {
+                     header1: headerCell1 ? headerCell1.textContent.trim() : '', 
+                     header2: headerCell2 ? headerCell2.textContent.trim() : '',
+                     header3_1: headerCell3_1 ? headerCell3_1.textContent.trim() : '', 
+                     header3_2: headerCell3_2 ? headerCell3_2.textContent.trim() : '',
+                     unitHeader: unitHeaderCell ? unitHeaderCell.textContent.trim() : '', 
+                     footer: footerCell ? footerCell.textContent.trim() : ''
+                 };
+                localStorage.setItem(headerStorageKey, JSON.stringify(headerData));
+             }
+
+            function loadData() {
+                const savedData = localStorage.getItem(localStorageKey);
+                let dataToLoad = initialData;
+                if (savedData) { 
+                    try { 
+                        const parsed = JSON.parse(savedData); 
+                        if(Array.isArray(parsed)) dataToLoad = parsed; 
+                    } catch (e) { 
+                        console.error("Err loading table data:", e); 
+                    } 
+                }
+                tableBody.innerHTML = '';
+                dataToLoad.forEach((item, index) => { 
+                    tableBody.appendChild(createRow(index + 1, item.q, item.a)); 
+                });
+
+                const savedHeaders = localStorage.getItem(headerStorageKey);
+                let headersToLoad = initialHeaders;
+                if (savedHeaders) { 
+                    try { 
+                        const parsed = JSON.parse(savedHeaders); 
+                        headersToLoad = { ...initialHeaders, ...parsed }; 
+                    } catch (e) { 
+                        console.error("Err loading headers:", e); 
+                    } 
+                }
+                if (headerCell1) headerCell1.textContent = headersToLoad.header1; 
+                if (headerCell2) headerCell2.textContent = headersToLoad.header2;
+                if (headerCell3_1) headerCell3_1.textContent = headersToLoad.header3_1; 
+                if (headerCell3_2) headerCell3_2.textContent = headersToLoad.header3_2;
+                if (unitHeaderCell) unitHeaderCell.textContent = headersToLoad.unitHeader; 
+                if (footerCell) footerCell.textContent = headersToLoad.footer;
+             }
+
+            // --- Export Functions ---
+            function exportToImage() {
+                showSpinner(spinnerImage, exportImageBtn, true);
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.hasAttribute('contenteditable')) activeElement.blur();
+
+                // Temporarily hide controls and adjust layout for export
+                const controls = document.querySelector('.controls');
+                const originalControlsDisplay = controls.style.display;
+                controls.style.display = 'none';
+
+                // Calculate the total height needed for the content
+                const contentHeight = worksheetContent.scrollHeight;
+                const containerHeight = worksheetContainer.offsetHeight;
+                const scale = 1.5; // Higher scale for better quality
+
+                html2canvas(worksheetContainer, {
+                    scale: scale,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: null, // Transparent background
+                    height: contentHeight,
+                    windowHeight: contentHeight,
+                    scrollY: 0,
+                    onclone: (clonedDoc) => {
+                        // Hide action column for export
+                        const actionColumns = clonedDoc.querySelectorAll('.col-action');
+                        actionColumns.forEach(col => col.style.display = 'none');
+                        
+                        // Adjust table layout
+                        const table = clonedDoc.querySelector('.qa-table');
+                        if(table) table.classList.add('hide-action');
+                        
+                        // Make sure the container shows all content
+                        const clonedContainer = clonedDoc.getElementById('worksheetContainer');
+                        if (clonedContainer) {
+                            clonedContainer.style.height = 'auto';
+                            clonedContainer.style.overflow = 'visible';
+                        }
+                    }
+                }).then(canvas => {
+                    // Restore controls visibility
+                    controls.style.display = originalControlsDisplay;
+
+                    // Create download link
+                    const link = document.createElement('a');
+                    link.download = 'ورقة_الأسئلة_والأجوبة.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    showSpinner(spinnerImage, exportImageBtn, false);
+                }).catch(err => {
+                    console.error("Error exporting image:", err);
+                    alert("حدث خطأ أثناء تصدير الصورة.");
+                    controls.style.display = originalControlsDisplay;
+                    showSpinner(spinnerImage, exportImageBtn, false);
+                });
+            }
+
+            function exportToPdf() {
+                showSpinner(spinnerPdf, exportPdfBtn, true);
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.hasAttribute('contenteditable')) activeElement.blur();
+
+                // Temporarily hide controls
+                const controls = document.querySelector('.controls');
+                const originalControlsDisplay = controls.style.display;
+                controls.style.display = 'none';
+
+                // Calculate dimensions
+                const pdfWidthMM = 210; // A4 width in mm
+                const pdfHeightMM = 297; // A4 height in mm
+                const pdfMargin = 10; // Margin in mm
+                const effectivePdfWidth = pdfWidthMM - 2 * pdfMargin;
+                const effectivePdfHeight = pdfHeightMM - 2 * pdfMargin;
+                const scale = 2; // Higher scale for better quality
+
+                html2canvas(worksheetContainer, {
+                    scale: scale,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: null, // Transparent background
+                    windowHeight: worksheetContent.scrollHeight,
+                    onclone: (clonedDoc) => {
+                        // Hide action column for export
+                        const actionColumns = clonedDoc.querySelectorAll('.col-action');
+                        actionColumns.forEach(col => col.style.display = 'none');
+                        
+                        // Adjust table layout
+                        const table = clonedDoc.querySelector('.qa-table');
+                        if(table) table.classList.add('hide-action');
+                        
+                        // Make sure the container shows all content
+                        const clonedContainer = clonedDoc.getElementById('worksheetContainer');
+                        if (clonedContainer) {
+                            clonedContainer.style.height = 'auto';
+                            clonedContainer.style.overflow = 'visible';
+                        }
+                    }
+                }).then(canvas => {
+                    // Restore controls visibility
+                    controls.style.display = originalControlsDisplay;
+
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    // Calculate image dimensions to fit PDF page
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    
+                    // Calculate the ratio to fit the PDF page width
+                    const ratio = effectivePdfWidth / imgWidth;
+                    const scaledHeight = imgHeight * ratio;
+                    
+                    // Add image to PDF
+                    pdf.addImage(imgData, 'PNG', pdfMargin, pdfMargin, effectivePdfWidth, scaledHeight);
+                    
+                    // Check if content is taller than one page
+                    if (scaledHeight > effectivePdfHeight) {
+                        // Add remaining content to new pages
+                        let heightLeft = scaledHeight - effectivePdfHeight;
+                        let position = pdfMargin;
+                        
+                        while (heightLeft >= 0) {
+                            position = position - effectivePdfHeight;
+                            pdf.addPage();
+                            pdf.addImage(imgData, 'PNG', pdfMargin, position, effectivePdfWidth, scaledHeight);
+                            heightLeft = heightLeft - effectivePdfHeight;
+                        }
+                    }
+                    
+                    pdf.save('ورقة_الأسئلة_والأجوبة.pdf');
+                    showSpinner(spinnerPdf, exportPdfBtn, false);
+                }).catch(err => {
+                    console.error("Error exporting PDF:", err);
+                    alert("حدث خطأ أثناء تصدير PDF.");
+                    controls.style.display = originalControlsDisplay;
+                    showSpinner(spinnerPdf, exportPdfBtn, false);
+                });
+            }
+
+            // --- Clear Data Function ---
+             function clearAllData() {
+                if (confirm('هل أنت متأكد من رغبتك في مسح جميع البيانات؟ لا يمكن التراجع عن هذا الإجراء.')) {
+                    tableBody.innerHTML = '';
+                    if (headerCell1) headerCell1.textContent = initialHeaders.header1;
+                    if (headerCell2) headerCell2.textContent = initialHeaders.header2;
+                    if (headerCell3_1) headerCell3_1.textContent = initialHeaders.header3_1;
+                    if (headerCell3_2) headerCell3_2.textContent = initialHeaders.header3_2;
+                    if (unitHeaderCell) unitHeaderCell.textContent = initialHeaders.unitHeader;
+                    if (footerCell) footerCell.textContent = initialHeaders.footer;
+                    localStorage.removeItem(localStorageKey);
+                    localStorage.removeItem(headerStorageKey);
+                    alert('تم مسح جميع البيانات.');
+                }
+            }
+
+            // --- Event Listeners ---
+            addRowBtn.addEventListener('click', addRow);
+            exportImageBtn.addEventListener('click', exportToImage);
+            exportPdfBtn.addEventListener('click', exportToPdf);
+            clearDataBtn.addEventListener('click', clearAllData);
+
+            const allEditableHeaderFooter = [headerCell1, headerCell2, headerCell3_1, headerCell3_2, unitHeaderCell, footerCell];
+            allEditableHeaderFooter.forEach(cell => { if (cell) cell.addEventListener('input', saveData); });
+
+            // --- Initial Load ---
+            loadData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دليل المدارس</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+
+        :root {
+            --primary-bg: #0d1b2a;
+            --secondary-bg: #1b263b;
+            --card-bg: rgba(65, 90, 119, 0.6);
+            --text-color: #e0e1dd;
+            --accent-color: #63cdee;
+            --accent-hover: #3a86ff;
+            --border-color: rgba(76, 201, 240, 0.2);
+            --shadow-color: rgba(76, 201, 240, 0.1);
+            --font-family: 'Tajawal', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            line-height: 1.7;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: auto;
+            padding: 20px;
+            background-color: var(--secondary-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            flex-grow: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            color: #c7d621fa;
+            text-shadow: 0 0 15px var(--accent-color);
+            margin-bottom: 10px;
+        }
+        header h1 i {
+            margin-left: 10px;
+        }
+        header p {
+            font-size: 1.1rem;
+            color: #b0b3c0;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+            position: relative; 
+        }
+        #searchInput {
+            width: 100%;
+            padding: 15px 20px;
+            padding-left: 50px; 
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: rgba(65, 90, 119, 0.3);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            font-family: var(--font-family);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        #searchInput::placeholder {
+            color: #a0a3b0;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(76, 201, 240, 0.2);
+        }
+        .search-icon-container {
+            position: absolute;
+            left: 15px; 
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-color);
+            opacity: 0.7;
+            font-size: 1.1rem;
+            pointer-events: none; 
+        }
+
+
+        .schools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .school-card-user {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px var(--shadow-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .school-card-user:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(76, 201, 240, 0.2);
+        }
+        
+        .school-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; 
+            margin-bottom: 12px;
+        }
+
+        .school-card-header h3 {
+            color:#22f3d1;
+            font-size: 1.6rem;
+            margin: 0; 
+            flex-grow: 1; 
+        }
+        .school-card-header h3 i {
+            margin-left: 8px;
+            opacity: 0.8;
+        }
+
+        .school-coordinates {
+            font-size: 0.8rem;
+            color: #b0b3c0;
+            text-align: left; 
+            line-height: 1.3;
+            white-space: nowrap; 
+            padding-right: 10px; 
+        }
+        .school-coordinates span {
+            display: block;
+        }
+
+
+        .school-card-user p {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #c5c8d6;
+            flex-grow: 1; 
+        }
+        .school-card-user p i {
+            margin-left: 6px;
+            color: var(--accent-color);
+            opacity: 0.7;
+        }
+        .school-card-actions {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column; 
+            gap: 10px; 
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px; 
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem; 
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            text-align: center;
+            width: 100%; 
+        }
+        .btn i {
+            margin-left: 8px;
+        }
+
+        .primary-btn {
+            background-color: var(--accent-color);
+            color: var(--primary-bg);
+            box-shadow: 0 4px 10px rgba(76, 201, 240, 0.3);
+        }
+
+        .primary-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(58, 134, 255, 0.4);
+        }
+
+        .secondary-btn {
+            background-color: rgba(73, 80, 87, 0.7); 
+            color: var(--text-color);
+            border: 1px solid rgba(76, 201, 240, 0.3);
+        }
+        .secondary-btn:hover {
+            background-color: #343a40; 
+            transform: translateY(-2px);
+            border-color: var(--accent-color);
+        }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.7); 
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding-top: 30px; 
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            margin: auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 850px; 
+            border-radius: 10px;
+            position: relative;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .glass-effect { 
+            background: rgba(27, 38, 59, 0.9); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+
+        .close-modal-btn {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            left: 25px; 
+            font-size: 32px;
+            font-weight: bold;
+            transition: color 0.3s ease;
+            z-index: 1001; 
+        }
+
+        .close-modal-btn:hover,
+        .close-modal-btn:focus {
+            color: var(--accent-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #modalSchoolName {
+            text-align: center;
+            color: var(--accent-color);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        .map-iframe-container {
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px; 
+            border: 2px solid var(--border-color);
+            height: 500px; 
+        }
+
+        #schoolMapIframe { 
+            display: block;
+            width: 100%;
+            height: 100%; 
+            border:0;
+        }
+        
+        .modal-school-details {
+            margin-bottom: 25px;
+            padding: 15px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            text-align: right; 
+        }
+        .modal-school-details-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .modal-school-details-header h4 {
+            color: var(--accent-color);
+            font-size: 1.3rem;
+            margin: 0;
+            flex-grow: 1;
+        }
+        .modal-school-details-header h4 i {
+            margin-left: 8px;
+        }
+        .modal-school-coordinates {
+            font-size: 0.9rem;
+            color: #b0b3c0;
+            text-align: left;
+            line-height: 1.4;
+            padding-right: 10px;
+        }
+        .modal-school-coordinates span {
+            display: block;
+        }
+
+        .modal-school-details p {
+            font-size: 1rem;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+        .modal-school-details p strong {
+            color: #bdc1c6;
+        }
+
+        .modal-actions {
+            text-align: center;
+            display: flex; 
+            justify-content: center;
+            gap: 15px; 
+            flex-wrap: wrap; 
+        }
+        .modal-actions .btn {
+            margin: 5px; 
+            flex-grow: 1; 
+            max-width: 250px; 
+        }
+
+
+        .loading-text, .no-data-text, .no-results-text {
+            grid-column: 1 / -1;
+            text-align: center;
+            font-size: 1.2rem;
+            padding: 30px;
+            color: #aaa;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: #888b97;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            header h1 { font-size: 2.2rem; }
+            header p { font-size: 1rem; }
+            .schools-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .school-card-header h3 { font-size: 1.4rem; }
+            .school-coordinates { font-size: 0.75rem; padding-right: 5px;}
+
+            #searchInput { padding: 12px 15px; padding-left: 40px; font-size: 1rem;}
+            .search-icon-container { left: 10px; font-size: 1rem; }
+
+            .school-card-user p { font-size: 0.9rem; }
+            
+            .modal-content { width: 95%; padding: 20px; max-width: 95%; }
+            #modalSchoolName { font-size: 1.5rem; }
+            .map-iframe-container { height: 350px; } 
+
+            .modal-school-details-header h4 {font-size: 1.1rem;}
+            .modal-school-details p {font-size: 0.9rem;}
+            .modal-school-coordinates { font-size: 0.8rem;}
+
+            .modal-actions .btn { 
+                max-width: none; 
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 { font-size: 1.8rem; }
+            .school-card-user { padding: 20px; }
+            .school-card-header { flex-direction: column; align-items: flex-start;}
+            .school-coordinates { text-align: right; padding-right: 0; margin-top: 5px; }
+
+
+            .map-iframe-container { height: 300px; } 
+            .modal-actions .btn {
+                 font-size: 0.9rem;
+                 padding: 10px 15px;
+            }
+        }
+        a{
+            text-decoration: none;
+            color: aqua;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-map-marked-alt"></i> دليل المدارس</h1>
+            <p>ابحث عن مدرستك وتصفح موقعها بسهولة</p>
+            
+            
+             <a href="intent://resolve?domain=T_abrahim#Intent;package=org.telegram.messenger;scheme=tg;end;" target="_blank">
+              <i class="fas fa-map-marked-alt"></i>   
+            ارسال موقع المدرسة تيلكرام
+            </a> 
+            
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="ابحث عن اسم المدرسة...">
+            <div class="search-icon-container">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+
+        <main id="schoolsContainer" class="schools-grid">
+            <!-- School cards will be dynamically inserted here -->
+        </main>
+
+        <footer>
+            <p>© 2025 دليل المدارس الخاص بموقع المعلم المرشد. جميع الحقوق محفوظة.</p>
+        </footer>
+    </div>
+
+    <div id="mapModal" class="modal">
+        <div class="modal-content glass-effect">
+            <span class="close-modal-btn" title="إغلاق النافذة">×</span>
+            <h3 id="modalSchoolName"></h3> <!-- This is the h3 above the iframe -->
+            <div class="map-iframe-container">
+                <iframe id="schoolMapIframe" src="" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <div id="modalSchoolInfo" class="modal-school-details">
+                <!-- School details (name, address, coordinates) will be populated here by JS -->
+            </div>
+            <div class="modal-actions">
+                <button id="connectToSchoolBtn" class="btn primary-btn"><i class="fas fa-directions"></i> صلني بالمدرسة</button>
+                <button id="shareLocationBtn" class="btn secondary-btn"><i class="fas fa-share-alt"></i> مشاركة الموقع الدقيق</button>
+                <button id="closePreviewOnlyBtn" class="btn secondary-btn"><i class="fas fa-times-circle"></i> إغلاق المعاينة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <script>
+        // --- START Firebase Configuration ---
+        // Replace with your actual Firebase project configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBo3jI4fVUYZdz_SvVkIDslwpKsvYd2254",
+  authDomain: "comments-system-8158e.firebaseapp.com",
+  databaseURL: "https://comments-system-8158e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "comments-system-8158e",
+  storageBucket: "comments-system-8158e.firebasestorage.app",
+  messagingSenderId: "1033836980839",
+  appId: "1:1033836980839:web:08675b0419bbbd6b2fc2c2",
+  measurementId: "G-47DT6Y2TPT"
+};
+        // --- END Firebase Configuration ---
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const schoolsContainer = document.getElementById('schoolsContainer');
+            const modal = document.getElementById('mapModal');
+            const modalSchoolNameHeader = document.getElementById('modalSchoolName'); // The h3 above iframe
+            const schoolMapIframe = document.getElementById('schoolMapIframe');
+            const closeModalBtn = document.querySelector('.close-modal-btn');
+            const connectToSchoolBtn = document.getElementById('connectToSchoolBtn');
+            const searchInput = document.getElementById('searchInput');
+            const modalSchoolInfo = document.getElementById('modalSchoolInfo'); // The div for details below iframe
+            const shareLocationBtn = document.getElementById('shareLocationBtn'); 
+            const closePreviewOnlyBtn = document.getElementById('closePreviewOnlyBtn');
+
+            const schoolsRef = database.ref('schools');
+            let currentSchoolData = null; 
+            let allSchools = []; 
+
+            function extractCoordinatesFromMapLink(mapLink) {
+                if (!mapLink || typeof mapLink !== 'string') {
+                    return null;
+                }
+                let match;
+                match = mapLink.match(/!2d(-?\d+\.?\d*)!3d(-?\d+\.?\d*)/);
+                if (match && match[1] && match[2]) {
+                    return { longitude: parseFloat(match[1]), latitude: parseFloat(match[2]) };
+                }
+                match = mapLink.match(/@(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+                if (match && match[1] && match[2]) {
+                    return { latitude: parseFloat(match[1]), longitude: parseFloat(match[2]) };
+                }
+                match = mapLink.match(/ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+                if (match && match[1] && match[2]) {
+                    return { latitude: parseFloat(match[1]), longitude: parseFloat(match[2]) };
+                }
+                match = mapLink.match(/q=(-?\d+\.?\d*),(-?\d+\.?\d*)/);
+                 if (match && match[1] && match[2]) {
+                    return { latitude: parseFloat(match[1]), longitude: parseFloat(match[2]) };
+                }
+                return null;
+            }
+
+            function applySearchFilter() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                let visibleCount = 0;
+                
+                schoolsContainer.querySelectorAll('.school-card-user').forEach(card => {
+                    const schoolName = card.dataset.name.toLowerCase(); 
+                    if (schoolName.includes(searchTerm)) {
+                        card.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                const noResultsText = schoolsContainer.querySelector('.no-results-text');
+                const loadingText = schoolsContainer.querySelector('.loading-text');
+                const noDataText = schoolsContainer.querySelector('.no-data-text');
+
+                if (loadingText) loadingText.style.display = 'none';
+                if (noDataText) noDataText.style.display = 'none';
+                
+                if (noResultsText) {
+                    noResultsText.style.display = (visibleCount === 0 && allSchools.length > 0 && searchTerm !== '') ? 'block' : 'none';
+                }
+
+                if (allSchools.length === 0 && !loadingText && !noDataText && !schoolsContainer.querySelector('.no-data-text')) {
+                     showInitialMessage('no-data-text', 'لا توجد مدارس متاحة حالياً.');
+                }
+            }
+
+            searchInput.addEventListener('input', applySearchFilter);
+
+            function showInitialMessage(className, message) {
+                schoolsContainer.innerHTML = ''; 
+                const p = document.createElement('p');
+                p.className = className;
+                p.textContent = message;
+                schoolsContainer.appendChild(p);
+
+                if (!schoolsContainer.querySelector('.no-results-text')) {
+                    const noResP = document.createElement('p');
+                    noResP.className = 'no-results-text';
+                    noResP.style.display = 'none';
+                    noResP.textContent = 'لم يتم العثور على مدارس تطابق بحثك.';
+                    schoolsContainer.appendChild(noResP);
+                }
+            }
+
+            function loadSchools() {
+                showInitialMessage('loading-text', 'جاري تحميل قائمة المدارس...');
+
+                schoolsRef.orderByChild('timestamp').on('value', (snapshot) => { 
+                    schoolsContainer.innerHTML = ''; 
+                    allSchools = []; 
+
+                    const schoolsData = snapshot.val();
+                    if (schoolsData) {
+                        snapshot.forEach(childSnapshot => { 
+                            allSchools.push({ key: childSnapshot.key, ...childSnapshot.val() });
+                        });
+                    }
+                    
+                    if (allSchools.length === 0) {
+                        showInitialMessage('no-data-text', 'لا توجد مدارس متاحة حالياً.');
+                    } else {
+                        allSchools.forEach(schoolEntry => {
+                            displaySchoolCard(schoolEntry, schoolEntry.key);
+                        });
+                        if (!schoolsContainer.querySelector('.no-results-text')) {
+                             const noResP = document.createElement('p');
+                            noResP.className = 'no-results-text';
+                            noResP.style.display = 'none';
+                            noResP.textContent = 'لم يتم العثور على مدارس تطابق بحثك.';
+                            schoolsContainer.appendChild(noResP); 
+                        }
+                    }
+                    applySearchFilter(); 
+                    checkUrlForSchoolId(); 
+                }, (error) => {
+                    console.error("Error fetching schools: ", error);
+                    showInitialMessage('no-data-text', 'حدث خطأ أثناء تحميل المدارس. يرجى المحاولة مرة أخرى.');
+                });
+            }
+            
+            function displaySchoolCard(school, id) {
+                const card = document.createElement('div');
+                card.classList.add('school-card-user');
+                card.dataset.name = school.name; 
+                card.dataset.id = id; 
+
+                const coords = extractCoordinatesFromMapLink(school.mapLink);
+                let lat = coords ? coords.latitude : null;
+                let lon = coords ? coords.longitude : null;
+
+                if (lat === null && typeof school.latitude === 'number') lat = school.latitude;
+                if (lon === null && typeof school.longitude === 'number') lon = school.longitude;
+                
+                let coordinatesHTML = '';
+                if (lat !== null && lon !== null && !isNaN(lat) && !isNaN(lon)) {
+                    coordinatesHTML = `
+                        <div class="school-coordinates">
+                            <span>X: ${lon.toFixed(5)}</span>
+                            <span>Y: ${lat.toFixed(5)}</span>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="school-card-header">
+                        <h3><i class="fas fa-landmark"></i> ${school.name}</h3>
+                        ${coordinatesHTML}
+                    </div>
+                    <p><i class="fas fa-map-pin"></i> <strong>العنوان:</strong> ${school.address || 'غير متوفر'}</p>
+                    <div class="school-card-actions">
+                        <button class="btn primary-btn view-location-btn" 
+                                data-maplink="${school.mapLink || ''}" 
+                                data-name="${school.name || 'اسم غير معروف'}" 
+                                data-address="${school.address || ''}"
+                                data-latitude="${lat !== null && !isNaN(lat) ? lat : ''}"
+                                data-longitude="${lon !== null && !isNaN(lon) ? lon : ''}">
+                            <i class="fas fa-eye"></i> رؤية موقع المدرسة
+                        </button>
+                        <button class="btn secondary-btn share-preview-link-btn" data-school-id="${id}" data-school-name="${school.name || 'اسم غير معروف'}">
+                            <i class="fas fa-link"></i> مشاركة رابط المعاينة
+                        </button>
+                    </div>
+                `;
+                card.querySelector('.view-location-btn').addEventListener('click', function() {
+                    const extractedLat = this.dataset.latitude ? parseFloat(this.dataset.latitude) : null;
+                    const extractedLon = this.dataset.longitude ? parseFloat(this.dataset.longitude) : null;
+                    
+                    currentSchoolData = {
+                        key: id,
+                        name: this.dataset.name,
+                        mapLink: this.dataset.maplink, 
+                        address: this.dataset.address,
+                        latitude: extractedLat !== null && !isNaN(extractedLat) ? extractedLat : null,
+                        longitude: extractedLon !== null && !isNaN(extractedLon) ? extractedLon : null
+                    };
+                    openMapModal(currentSchoolData);
+                });
+
+                card.querySelector('.share-preview-link-btn').addEventListener('click', function(e) {
+                    e.stopPropagation(); 
+                    const schoolId = this.dataset.schoolId;
+                    const schoolName = this.dataset.schoolName;
+                    const previewUrl = `${window.location.origin}${window.location.pathname}?schoolId=${schoolId}`;
+                    
+                    const shareData = {
+                        title: `معاينة مدرسة: ${schoolName}`,
+                        text: `شاهد معاينة موقع مدرسة ${schoolName} على دليل المدارس.`,
+                        url: previewUrl
+                    };
+
+                    if (navigator.share) {
+                        navigator.share(shareData)
+                            .then(() => console.log('Shared preview link successfully.'))
+                            .catch(error => console.error('Error sharing preview link:', error));
+                    } else {
+                        prompt(`انسخ رابط معاينة مدرسة ${schoolName}:`, previewUrl);
+                    }
+                });
+                schoolsContainer.appendChild(card);
+            }
+
+            function openMapModal(schoolData) { 
+                modalSchoolNameHeader.textContent = schoolData.name || "تفاصيل المدرسة"; 
+                schoolMapIframe.src = schoolData.mapLink || ""; 
+                
+                let modalCoordinatesHTML = '';
+                if (schoolData.latitude !== null && schoolData.longitude !== null && !isNaN(schoolData.latitude) && !isNaN(schoolData.longitude)) {
+                    modalCoordinatesHTML = `
+                        <div class="modal-school-coordinates">
+                            <span>X: ${schoolData.longitude.toFixed(5)}</span>
+                            <span>Y: ${schoolData.latitude.toFixed(5)}</span>
+                        </div>
+                    `;
+                }
+
+                modalSchoolInfo.innerHTML = `
+                    <div class="modal-school-details-header">
+                        <h4><i class="fas fa-school"></i> ${schoolData.name || "اسم غير معروف"}</h4>
+                        ${modalCoordinatesHTML}
+                    </div>
+                    <p><i class="fas fa-map-marker-alt"></i> <strong>العنوان:</strong> ${schoolData.address || 'غير متوفر'}</p>
+                `;
+                
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden'; 
+            }
+
+            function closeModal() {
+                modal.style.display = 'none';
+                schoolMapIframe.src = 'about:blank'; 
+                currentSchoolData = null;
+                modalSchoolInfo.innerHTML = ''; 
+                modalSchoolNameHeader.textContent = ''; 
+                document.body.style.overflow = 'auto'; 
+
+                if (window.history.replaceState) {
+                    const url = new URL(window.location.href);
+                    if (url.searchParams.has('schoolId')) {
+                        url.searchParams.delete('schoolId');
+                        window.history.replaceState({}, document.title, url.pathname + url.search);
+                    }
+                }
+            }
+
+            closeModalBtn.addEventListener('click', closeModal);
+            closePreviewOnlyBtn.addEventListener('click', closeModal); 
+
+            connectToSchoolBtn.addEventListener('click', function() {
+                if (!currentSchoolData || (!currentSchoolData.address && (currentSchoolData.latitude === null || currentSchoolData.longitude === null))) {
+                    alert('لا يمكن تحديد موقع المدرسة للاتجاهات.');
+                    return;
+                }
+                
+                const destinationQuery = (currentSchoolData.latitude !== null && currentSchoolData.longitude !== null && !isNaN(currentSchoolData.latitude) && !isNaN(currentSchoolData.longitude))
+                    ? `${currentSchoolData.latitude},${currentSchoolData.longitude}`
+                    : encodeURIComponent(currentSchoolData.address || currentSchoolData.name); // Fallback to name if address is also missing
+
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const userLat = position.coords.latitude;
+                            const userLng = position.coords.longitude;
+                            const directionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${destinationQuery}&travelmode=driving`;
+                            window.open(directionsUrl, '_blank');
+                        },
+                        (error) => {
+                            console.error("Error getting user location: ", error);
+                            const destinationOnlyUrl = `https://www.google.com/maps/search/?api=1&query=${destinationQuery}`;
+                            alert('لم نتمكن من تحديد موقعك الحالي. سنعرض لك موقع المدرسة، ويمكنك إدخال موقعك يدويًا في خرائط جوجل.\nالخطأ: ' + error.message);
+                            window.open(destinationOnlyUrl, '_blank');
+                        }
+                    );
+                } else {
+                    const destinationOnlyUrl = `https://www.google.com/maps/search/?api=1&query=${destinationQuery}`;
+                    alert('المتصفح لا يدعم تحديد الموقع الجغرافي. سنعرض لك موقع المدرسة مباشرة.');
+                    window.open(destinationOnlyUrl, '_blank');
+                }
+            });
+            
+            shareLocationBtn.addEventListener('click', async function() {
+                if (!currentSchoolData) {
+                    alert('يرجى تحديد مدرسة أولاً.');
+                    return;
+                }
+                
+                let shareUrl;
+                let shareText = `تفاصيل مدرسة ${currentSchoolData.name || 'اسم غير معروف'}\n`;
+
+                if (currentSchoolData.latitude !== null && currentSchoolData.longitude !== null && !isNaN(currentSchoolData.latitude) && !isNaN(currentSchoolData.longitude)) {
+                    shareUrl = `https://www.google.com/maps/search/?api=1&query=${currentSchoolData.latitude},${currentSchoolData.longitude}`;
+                    shareText += `الإحداثيات: Y: ${currentSchoolData.latitude.toFixed(5)}, X: ${currentSchoolData.longitude.toFixed(5)}\n`;
+                } else if (currentSchoolData.address) {
+                    shareUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentSchoolData.address)}`;
+                    shareText += `العنوان: ${currentSchoolData.address}\n`;
+                } else {
+                    // Fallback to just the school name if no coords or address
+                     shareUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentSchoolData.name || 'مدرسة')}`;
+                    if (!currentSchoolData.name) {
+                         alert('لا تتوفر معلومات كافية لمشاركة موقع هذه المدرسة.');
+                        return;
+                    }
+                }
+                shareText += `رابط الخريطة:`;
+
+                const shareData = {
+                    title: `الموقع الدقيق لمدرسة: ${currentSchoolData.name || 'مدرسة'}`,
+                    text: shareText, 
+                    url: shareUrl  
+                };
+
+                try {
+                    if (navigator.share) {
+                        await navigator.share(shareData);
+                    } else {
+                        prompt(`انسخ رابط الموقع الدقيق لمدرسة ${currentSchoolData.name || 'مدرسة'}:`, shareData.url);
+                    }
+                } catch (err) {
+                    console.error('Error sharing school location:', err);
+                }
+            });
+
+            function checkUrlForSchoolId() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const schoolIdToOpen = urlParams.get('schoolId');
+
+                if (schoolIdToOpen && allSchools.length > 0) {
+                    const schoolToOpen = allSchools.find(s => s.key === schoolIdToOpen);
+                    if (schoolToOpen) {
+                        const coordsFromLink = extractCoordinatesFromMapLink(schoolToOpen.mapLink);
+                        let schoolLat = coordsFromLink ? coordsFromLink.latitude : null;
+                        let schoolLon = coordsFromLink ? coordsFromLink.longitude : null;
+
+                        if (schoolLat === null && typeof schoolToOpen.latitude === 'number') schoolLat = schoolToOpen.latitude;
+                        if (schoolLon === null && typeof schoolToOpen.longitude === 'number') schoolLon = schoolToOpen.longitude;
+
+                        currentSchoolData = { 
+                            key: schoolToOpen.key,
+                            name: schoolToOpen.name,
+                            mapLink: schoolToOpen.mapLink, 
+                            address: schoolToOpen.address || '',
+                            latitude: schoolLat !== null && !isNaN(schoolLat) ? schoolLat : null,
+                            longitude: schoolLon !== null && !isNaN(schoolLon) ? schoolLon : null
+                        };
+                        openMapModal(currentSchoolData);
+                    } else {
+                        console.warn(`School with ID ${schoolIdToOpen} not found.`);
+                        if (window.history.replaceState) {
+                           const url = new URL(window.location.href);
+                           url.searchParams.delete('schoolId');
+                           window.history.replaceState({}, document.title, url.pathname + url.search);
+                        }
+                    }
+                }
+            }
+
+            loadSchools();
+
+            window.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && modal.style.display === 'block') {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

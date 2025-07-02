@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة القاعات الامتحانية</title>
+    <meta name="description" content="خدمة مجانية لعمل خرائط توزيع للتلاميذ وحسب عدد القاعات المحددة قم بتوزيع التلاميذ بسهولة ودقة عالية في الخرائط الامتحانية الوزارية.">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS Styles - Kept the same as your last provided version */
+        body {
+            font-family: 'Tajawal', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a2a3a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #343a40;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(214, 232, 27, 0.38);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .controls button {
+            padding: 10px 18px;
+            font-size: 15px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid #adb5bd;
+            background-color: #f8f9fa;
+            color: #80042e;
+            border-radius: 5px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .controls button:hover {
+            background-color: #c9ee74;
+            border-color: #2582d3;
+        }
+        .controls button#distributeStudentsButton {
+            background-color: #376d32; /* Green */
+            color: white;
+            border-color: #15104e;
+        }
+         .controls button#distributeStudentsButton:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        
+        .general-settings-section {
+            width: 100%;
+            max-width:900px;
+            margin: 10px 20px 25px 15px;
+            padding: 20px;
+            background-color: #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+            border: 1px solid #c7cdd3;
+        }
+        .general-settings-section h3 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #0056b3;
+            font-weight: 700;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .settings-field {
+            display: flex;
+            flex-direction: column;
+        }
+        .settings-field label {
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+        .settings-field input[type="text"],
+        .settings-field input[type="number"],
+        .settings-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #adb5bd;
+            border-radius: 5px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 15px;
+            background-color: #fdfdff;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .settings-field input[type="text"]:focus,
+        .settings-field input[type="number"]:focus,
+        .settings-field select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        
+        .page-main-title, .header-title, .header-subtitle, 
+.student-name, .student-school, .student-id {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-kerning: normal;
+    letter-spacing: 0 !important;
+}
+
+        .data-input-section {
+            width: 100%;
+            max-width: 900px;
+            margin:   auto 29px 50px;
+            justify-content: center;
+            padding: 20px;
+            background-color: #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+            border: 1px solid #ced4da;
+        }
+        .data-input-section h3 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #0056b3;
+             font-weight: 700;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        .input-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .input-table th, .input-table td {
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            text-align: right;
+            font-size: 15px;
+            vertical-align: middle;
+        }
+        .input-table th {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: 600;
+        }
+        .input-table input[type="text"], .input-table select {
+            width: calc(100% - 16px);
+            padding: 8px;
+            border: 1px solid #adb5bd;
+            border-radius: 5px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 15px;
+            background-color: #fdfdff;
+        }
+         .input-table input[type="text"]:focus, .input-table select:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+        .add-student-button-container {
+            text-align: center;
+            margin-bottom: 10px;
+            display: flex; /* For aligning buttons */
+            justify-content: center;
+            gap: 10px; /* Space between buttons */
+        }
+        .add-student-button-container button {
+             padding: 10px 25px;
+             font-size: 16px;
+             font-weight: 600;
+             color: white;
+             border: none;
+        }
+        #addStudentToListButton { background-color: #007bff; }
+        #addStudentToListButton:hover { background-color: #0056b3; }
+        #clearStudentListButton { background-color: #dc3545; } /* Red for delete */
+        #clearStudentListButton:hover { background-color: #c82333; }
+
+
+        #enteredStudentsList {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(49, 164, 73, 0.38);
+            border: 1px solid #474a3b;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #121d73;
+        }
+        #enteredStudentsList div {
+            padding: 8px 10px;
+            border-bottom: 1px solid #1978d7;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #enteredStudentsList div:last-child {
+            border-bottom: none;
+        }
+        #enteredStudentsList .student-actions button {
+            padding: 3px 8px;
+            font-size: 12px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        #enteredStudentsList .edit-btn { background-color: #ffc107; color: #212529; }
+        #enteredStudentsList .edit-btn:hover { background-color: #e0a800; }
+        #enteredStudentsList .delete-btn { background-color: #dc3545; }
+        #enteredStudentsList .delete-btn:hover { background-color: #c82333; }
+
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 12mm 15mm;
+            background-color: white;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            box-sizing: border-box;
+            border: 1px solid #adb5bd;
+            position: relative;
+        }
+
+        .page-container {
+             width: 100%;
+             display: flex;
+             flex-direction: column;
+             align-items: center;
+        }
+
+        .header { text-align: center; margin-bottom: 15px; }
+        .header-title { font-size: 17px; font-weight: 700; margin: 0 0 2px 0; }
+        .header-subtitle { font-size: 13px; font-weight: 500; margin: 0 0 5px 0; line-height: 1.6; }
+        .title-and-stats-line { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; margin-bottom: 25px; min-height: 40px; }
+        .stats-inline-group { display: flex; flex-direction: column; font-size: 11.5px; line-height: 1.5; padding: 0 5px; flex-shrink: 0; }
+        .stats-group-males-females { align-items: flex-end; }
+        .stats-group-yarmouk-yaqout { align-items: flex-start; }
+        
+        .header-title:empty::before, .header-subtitle:empty::before,
+        .page-stats-males:empty::before, .page-stats-females:empty::before,
+        .page-main-title:empty::before,
+        .page-stats-top-school1:empty::before, .page-stats-top-school2:empty::before,
+        .page-sector-a-title:empty::before, .page-sector-b-title:empty::before,
+        .manager-name-display:empty::before,
+        .student-name:empty::before, .student-school:empty::before, .student-id:empty::before {
+            content: attr(data-placeholder); color: #aaa; pointer-events: none; display: block;
+        }
+        
+        .main-title-container-inline { text-align: center; flex-grow: 0; flex-shrink: 1; padding: 0 5px; }
+        .page-main-title {
+            font-size: 36px; font-weight: 700; margin: 0; border-bottom: 3px solid black; display: inline-block; padding-bottom: 4px; 
+            letter-spacing: 2px; /* MODIFIED: Adjusted for better PDF rendering */
+            white-space: nowrap; min-height: 1.2em;
+        }
+        .sector { text-align: center; margin-bottom: 15px; }
+        .sector-title {
+            font-size: 26px; font-weight: 700; margin: 20px 0 15px 0; border-bottom: 2px dashed black; display: inline-block; padding-bottom: 3px; min-height: 1.2em;
+        }
+        .student-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 12px; }
+        .student-box { border: 1px solid black; padding: 8px 5px; text-align: center; font-size: 12px; min-height: 75px; display: flex; flex-direction: column; justify-content: space-around; }
+        .student-name { font-weight: 700; font-size: 13.5px; margin-bottom: 2px; min-height: 1.2em; }
+        .student-school { font-size: 11.5px; margin-bottom: 2px; min-height: 1.2em; }
+        .student-id { font-size: 12.5px; font-weight: 500; letter-spacing: 0.5px; min-height: 1.2em; }
+        .manager-name-display { text-align: left; margin-top: 15px; padding-left: 5mm; font-size: 12px; font-weight: 500; min-height: 1.2em; }
+
+        /* --- NEW: Tooltip Styles --- */
+        .label-with-tooltip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tooltip-icon {
+            display: inline-block;
+            position: relative;
+            cursor: help;
+            color: #0056b3;
+            border: 1px solid #0056b3;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 13px;
+            line-height: 17px;
+            text-align: center;
+            font-weight: bold;
+            font-family: sans-serif;
+            margin-right: auto; /* Push to the left in RTL context */
+            margin-left: 5px;
+            flex-shrink: 0;
+        }
+        .input-table .tooltip-icon {
+             margin-right: 5px;
+             margin-left: 0;
+             vertical-align: middle;
+        }
+        .tooltip-icon .tooltip-text {
+            visibility: hidden;
+            width: 240px;
+            background-color: #3a4147;
+            color: #fff;
+            text-align: right; /* For RTL */
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 150%;
+            left: 50%;
+            margin-left: -120px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .tooltip-icon .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #3a4147 transparent transparent transparent;
+        }
+        .tooltip-icon:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* --- End Tooltip Styles --- */
+
+        @media (max-width: 768px) {
+            .a4-page { width: 98%; min-height: 0; padding: 10mm 8mm; margin-top: 10px; }
+            .title-and-stats-line { flex-direction: column; align-items: center; margin-bottom: 15px; }
+            .stats-inline-group { align-items: center; margin-bottom: 5px; font-size: 12px; }
+            .page-main-title { font-size: 28px; }
+            .student-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .sector-title { font-size: 22px; }
+            .header-title { font-size: 15px; }
+            .header-subtitle { font-size: 12px; }
+        }
+
+       
+
+        @media print {
+            body { background-color: white; padding: 0; margin: 0; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+            .general-settings-section, .data-input-section, .controls { display: none !important; }
+            .a4-page { width: 100% !important; height: auto !important; min-height: 270mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; }
+            .page-container { margin: 0; }
+            .a4-page + .a4-page { margin-top: 0 !important; page-break-before: always; }
+            @page { size: A4; margin: 12mm 15mm; }
+            .header-title:empty::before, .header-subtitle:empty::before,
+            .page-stats-males:empty::before, .page-stats-females:empty::before,
+            .page-main-title:empty::before,
+            .page-stats-top-school1:empty::before, .page-stats-top-school2:empty::before,
+            .page-sector-a-title:empty::before, .page-sector-b-title:empty::before,
+            .manager-name-display:empty::before,
+            .student-name:empty::before, .student-school:empty::before, .student-id:empty::before {
+                content: ""; 
+            }
+            .title-and-stats-line { display: flex !important; justify-content: space-between !important; align-items: center !important; flex-direction: row !important; }
+            .tooltip-icon { display: none !important; } /* Hide tooltips on print */
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 35px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+    <!-- General Settings Section -->
+    <div class="general-settings-section">
+        <h3>خرائط توزيع التلاميذ</h3>
+        <p>خدمة مجانية لعمل خرائط توزيع للتلاميذ وحسب عدد القاعات المحددة قم بتوزيع التلاميذ بسهولة ودقة عالية في الخرائط الامتحانية الوزارية</p>
+     
+        <div class="settings-grid">
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingExamCenter">إدارة المركز الامتحاني:</label><span class="tooltip-icon">?<span class="tooltip-text">أدخل اسم المركز الامتحاني، سيظهر هذا في رأس كل صفحة.</span></span></div>
+                <input type="text" id="settingExamCenter">
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingExamTitle">عنوان الامتحان:</label><span class="tooltip-icon">?<span class="tooltip-text">عنوان الامتحان، مثل "امتحانات الصف السادس الابتدائي"، يظهر تحت اسم المركز.</span></span></div>
+                <input type="text" id="settingExamTitle">
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingHallNumber">رقم القاعة الرئيسي (يبدأ من):</label><span class="tooltip-icon">?<span class="tooltip-text">الرقم الذي ستبدأ به القاعات. إذا أدخلت 5، ستكون القاعات 5، 6، 7...</span></span></div>
+                <input type="number" id="settingHallNumber" value="1">
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingTotalMalesCount">الذكور (إجمالي القائمة):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض العدد الإجمالي للطلاب الذكور في القائمة المدخلة.</span></span></div>
+                <input type="text" id="settingTotalMalesCount" value="0" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingTotalFemalesCount">الاناث (إجمالي القائمة):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض العدد الإجمالي للطالبات الإناث في القائمة المدخلة.</span></span></div>
+                <input type="text" id="settingTotalFemalesCount" value="0" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingTopSchool1Name">المدرسة الأكثر تكرارًا (1 - إجمالي):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض اسم المدرسة الأكثر تكراراً في القائمة كلها.</span></span></div>
+                <input type="text" id="settingTopSchool1Name" value="-" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingTopSchool1Count">عدد طلابها (إجمالي):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض عدد طلاب المدرسة الأكثر تكراراً.</span></span></div>
+                <input type="text" id="settingTopSchool1Count" value="0" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingTopSchool2Name">المدرسة الأكثر تكرارًا (2 - إجمالي):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض اسم ثاني أكثر مدرسة تكراراً.</span></span></div>
+                <input type="text" id="settingTopSchool2Name" value="-" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingTopSchool2Count">عدد طلابها (إجمالي):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض عدد طلاب ثاني أكثر مدرسة تكراراً.</span></span></div>
+                <input type="text" id="settingTopSchool2Count" value="0" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingOtherSchools">مدارس أخرى وعددها (إجمالي):</label><span class="tooltip-icon">?<span class="tooltip-text">إحصائية تلقائية، تعرض باقي المدارس وعدد طلابها.</span></span></div>
+                <input type="text" id="settingOtherSchools" value="-" readonly>
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingSectorAName">اسم قطاع (أ):</label><span class="tooltip-icon">?<span class="tooltip-text">اسم للقطاع الأول في القاعة (مثلاً: أ، يمين، ...).</span></span></div>
+                <input type="text" id="settingSectorAName">
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingSectorBName">اسم قطاع (ب):</label><span class="tooltip-icon">?<span class="tooltip-text">اسم للقطاع الثاني في القاعة (مثلاً: ب، يسار، ...).</span></span></div>
+                <input type="text" id="settingSectorBName">
+            </div>
+            <div class="settings-field">
+                <div class="label-with-tooltip"><label for="settingManagerName">اسم مدير المركز:</label><span class="tooltip-icon">?<span class="tooltip-text">اسم مدير المركز، يظهر في تذييل كل صفحة.</span></span></div>
+                <input type="text" id="settingManagerName">
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Input Section -->
+    <div class="data-input-section">
+        <h3>إدخال بيانات الطلاب</h3>
+        <table class="input-table">
+            <thead>
+                <tr>
+                    <th>اسم الطالب<span class="tooltip-icon">?<span class="tooltip-text">أدخل اسم الطالب الرباعي كما في الوثائق الرسمية.</span></span></th>
+                    <th>المدرسة<span class="tooltip-icon">?<span class="tooltip-text">أدخل اسم مدرسة الطالب الحالية.</span></span></th>
+                    <th>الرمز الامتحاني<span class="tooltip-icon">?<span class="tooltip-text">أدخل الرقم الامتحاني الخاص بالطالب.</span></span></th>
+                    <th>الجنس<span class="tooltip-icon">?<span class="tooltip-text">حدد جنس الطالب، هذا الحقل مهم للإحصائيات.</span></span></th>
+                </tr>
+            </thead>
+            <tbody><tr>
+                <td><input type="text" id="newStudentName" placeholder="أحمد علي"></td>
+                <td><input type="text" id="newStudentSchool" placeholder="مدرسة اليرموك"></td>
+                <td><input type="text" id="newStudentId" placeholder="1234567890"></td>
+                <td>
+                    <select id="newStudentGender">
+                        <option value="غير محدد">غير محدد</option>
+                        <option value="ذكر">ذكر</option>
+                        <option value="أنثى">أنثى</option>
+                    </select>
+                </td>
+            </tr></tbody>
+        </table>
+        <div class="add-student-button-container">
+            <button id="addStudentToListButton">إضافة / تحديث طالب</button>
+            <button id="clearStudentListButton">حذف كل الطلاب</button> <!-- NEW BUTTON -->
+            <input type="hidden" id="editingStudentIndex" value="-1">
+        </div>
+        <h4>الطلاب المضافون: <span id="studentCountDisplay">0</span></h4>
+        <div id="enteredStudentsList"></div>
+    </div>
+
+    <div class="controls">
+        <button id="distributeStudentsButton">توزيع الطلاب على النماذج</button>
+        <button id="downloadAllPdfsButton">تحميل PDF (كل الصفحات)</button>
+        <button id="downloadAllImagesButton">تحميل صور (كل الصفحات)</button>
+        <button id="printButton">طباعة</button>
+        <button id="clearFormsButton">إفراغ النماذج الموزعة</button>
+    </div>
+
+    <div class="page-container" id="pageContainer">
+        <!-- A4 Page Template - Hidden by default, content will be set by JS -->
+        <div class="a4-page" id="a4PageContent_TEMPLATE" style="display: none;">
+            <div class="header">
+                <div class="header-title" data-placeholder="إدارة المركز..."></div>
+                <div class="header-subtitle" data-placeholder="القاعات الامتحانية لـ..."></div>
+            </div>
+            <div class="title-and-stats-line">
+                <div class="stats-inline-group stats-group-males-females">
+                    <span class="page-stats-males" data-placeholder="الذكور (في هذه الصفحة) = ..."></span>
+                    <span class="page-stats-females" data-placeholder="الاناث (في هذه الصفحة) = ..."></span>
+                </div>
+                <div class="main-title-container-inline">
+                    <h1 class="page-main-title" data-placeholder="قاعـة رقـم (...)"></h1>
+                </div>
+                <div class="stats-inline-group stats-group-yarmouk-yaqout">
+                    <span class="page-stats-top-school1" data-placeholder="المدرسة (1 - هذه الصفحة) = ..."></span>
+                    <span class="page-stats-top-school2" data-placeholder="المدرسة (2 - هذه الصفحة) = ..."></span>
+                </div>
+            </div>
+            <div class="sector">
+                <div class="sector-title page-sector-a-title" data-placeholder="قطاع (...)"></div>
+                <div class="student-grid page-student-grid-sector-a">
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                </div>
+            </div>
+            <div class="sector">
+                <div class="sector-title page-sector-b-title" data-placeholder="قطاع (...)"></div>
+                <div class="student-grid page-student-grid-sector-b">
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                    <div class="student-box"><div class="student-name" data-placeholder="اسم الطالب"></div><div class="student-school" data-placeholder="المدرسة"></div><div class="student-id" data-placeholder="الرقم"></div></div>
+                </div>
+            </div>
+            <div class="manager-name-display page-manager-name-display" data-placeholder="مدير المركز: ..."></div>
+        </div>
+    </div>
+
+    <script>
+        let studentMasterList = [];
+        const STUDENTS_PER_PAGE = 21; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const pageContainer = document.getElementById('pageContainer');
+            const initialPageTemplate = document.getElementById('a4PageContent_TEMPLATE');
+            
+            const generalSettingsInputs = {
+                examCenter: document.getElementById('settingExamCenter'),
+                examTitle: document.getElementById('settingExamTitle'),
+                hallNumber: document.getElementById('settingHallNumber'),
+                totalMalesCountDisplay: document.getElementById('settingTotalMalesCount'),
+                totalFemalesCountDisplay: document.getElementById('settingTotalFemalesCount'),
+                topSchool1NameDisplay: document.getElementById('settingTopSchool1Name'),
+                topSchool1CountDisplay: document.getElementById('settingTopSchool1Count'),
+                topSchool2NameDisplay: document.getElementById('settingTopSchool2Name'),
+                topSchool2CountDisplay: document.getElementById('settingTopSchool2Count'),
+                otherSchoolsDisplay: document.getElementById('settingOtherSchools'),
+                sectorAName: document.getElementById('settingSectorAName'),
+                sectorBName: document.getElementById('settingSectorBName'),
+                managerName: document.getElementById('settingManagerName'),
+            };
+
+            function saveGeneralSettings() {
+                localStorage.setItem('setting_examCenter', generalSettingsInputs.examCenter.value);
+                localStorage.setItem('setting_examTitle', generalSettingsInputs.examTitle.value);
+                localStorage.setItem('setting_hallNumber', generalSettingsInputs.hallNumber.value);
+                localStorage.setItem('setting_sectorAName', generalSettingsInputs.sectorAName.value);
+                localStorage.setItem('setting_sectorBName', generalSettingsInputs.sectorBName.value);
+                localStorage.setItem('setting_managerName', generalSettingsInputs.managerName.value);
+            }
+
+            function loadGeneralSettings() {
+                generalSettingsInputs.examCenter.value = localStorage.getItem('setting_examCenter') || "إدارة المركز الامتحاني رقم (۳۲۹)";
+                generalSettingsInputs.examTitle.value = localStorage.getItem('setting_examTitle') || "القاعات الامتحانية للامتحانات العامة/ الفرع الابتدائي ( السادس ) للعام الدراسي ٢٠٢٣ / ٢٠٢٤";
+                generalSettingsInputs.hallNumber.value = localStorage.getItem('setting_hallNumber') || "1";
+                generalSettingsInputs.sectorAName.value = localStorage.getItem('setting_sectorAName') || "أ";
+                generalSettingsInputs.sectorBName.value = localStorage.getItem('setting_sectorBName') || "ب";
+                generalSettingsInputs.managerName.value = localStorage.getItem('setting_managerName') || "اسم المدير هنا";
+                
+                ['examCenter', 'examTitle', 'hallNumber', 'sectorAName', 'sectorBName', 'managerName'].forEach(key => {
+                    if (generalSettingsInputs[key]) {
+                        generalSettingsInputs[key].addEventListener('input', saveGeneralSettings);
+                    }
+                });
+            }
+            loadGeneralSettings();
+            
+            const addStudentToListButton = document.getElementById('addStudentToListButton');
+            const clearStudentListButton = document.getElementById('clearStudentListButton'); // Get the new button
+            const newStudentNameInput = document.getElementById('newStudentName');
+            const newStudentSchoolInput = document.getElementById('newStudentSchool');
+            const newStudentIdInput = document.getElementById('newStudentId');
+            const newStudentGenderSelect = document.getElementById('newStudentGender');
+            const enteredStudentsListDiv = document.getElementById('enteredStudentsList');
+            const studentCountDisplay = document.getElementById('studentCountDisplay');
+            const editingStudentIndexInput = document.getElementById('editingStudentIndex');
+
+            const savedStudentMasterList = localStorage.getItem('studentMasterList');
+            if (savedStudentMasterList) {
+                studentMasterList = JSON.parse(savedStudentMasterList);
+                renderEnteredStudentsList();
+            } else {
+                 updateOverallStatsDisplay(); 
+            }
+
+            addStudentToListButton.addEventListener('click', () => {
+                const name = newStudentNameInput.value.trim();
+                const school = newStudentSchoolInput.value.trim();
+                const id = newStudentIdInput.value.trim();
+                const gender = newStudentGenderSelect.value;
+                const editingIndex = parseInt(editingStudentIndexInput.value);
+
+                if (name && school && id) {
+                    const studentData = { name, school, id, gender };
+                    if (editingIndex > -1) {
+                        studentMasterList[editingIndex] = studentData;
+                        editingStudentIndexInput.value = -1;
+                        addStudentToListButton.textContent = 'إضافة طالب';
+                    } else {
+                        studentMasterList.push(studentData);
+                    }
+                    localStorage.setItem('studentMasterList', JSON.stringify(studentMasterList));
+                    renderEnteredStudentsList();
+                    newStudentNameInput.value = ''; newStudentSchoolInput.value = '';
+                    newStudentIdInput.value = ''; newStudentGenderSelect.value = 'غير محدد';
+                    newStudentNameInput.focus();
+                } else {
+                    alert('يرجى ملء اسم الطالب، المدرسة، والرمز الامتحاني.');
+                }
+            });
+
+            clearStudentListButton.addEventListener('click', () => {
+                if (studentMasterList.length === 0) {
+                    alert("قائمة الطلاب فارغة بالفعل.");
+                    return;
+                }
+                if (confirm("هل أنت متأكد أنك تريد حذف جميع الطلاب من القائمة؟ هذا الإجراء لا يمكن التراجع عنه.")) {
+                    studentMasterList = [];
+                    localStorage.removeItem('studentMasterList');
+                    renderEnteredStudentsList(); // This will also call updateOverallStatsDisplay
+                    alert("تم حذف جميع الطلاب من القائمة.");
+                }
+            });
+
+            function renderEnteredStudentsList() {
+                enteredStudentsListDiv.innerHTML = '';
+                studentMasterList.forEach((student, index) => {
+                    const studentDiv = document.createElement('div');
+                    studentDiv.innerHTML = `<span>${index + 1}. ${student.name} (${student.gender}) - ${student.school} - ${student.id}</span>`;
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'student-actions';
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'تعديل'; editBtn.className = 'edit-btn';
+                    editBtn.onclick = () => {
+                        newStudentNameInput.value = student.name; newStudentSchoolInput.value = student.school;
+                        newStudentIdInput.value = student.id; newStudentGenderSelect.value = student.gender;
+                        editingStudentIndexInput.value = index; addStudentToListButton.textContent = 'تحديث بيانات الطالب';
+                        newStudentNameInput.focus();
+                    };
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'حذف'; deleteBtn.className = 'delete-btn';
+                    deleteBtn.onclick = () => {
+                        studentMasterList.splice(index, 1);
+                        localStorage.setItem('studentMasterList', JSON.stringify(studentMasterList));
+                        renderEnteredStudentsList();
+                        if (parseInt(editingStudentIndexInput.value) === index) {
+                            editingStudentIndexInput.value = -1; addStudentToListButton.textContent = 'إضافة طالب';
+                            newStudentNameInput.value = ''; newStudentSchoolInput.value = '';
+                            newStudentIdInput.value = ''; newStudentGenderSelect.value = 'غير محدد';
+                        }
+                    };
+                    actionsDiv.appendChild(editBtn); actionsDiv.appendChild(deleteBtn);
+                    studentDiv.appendChild(actionsDiv); enteredStudentsListDiv.appendChild(studentDiv);
+                });
+                studentCountDisplay.textContent = studentMasterList.length;
+                updateOverallStatsDisplay();
+            }
+            
+            function updateOverallStatsDisplay() {
+                let males = 0; let females = 0; const schoolCounts = {};
+                studentMasterList.forEach(student => {
+                    if (student.gender === 'ذكر') males++;
+                    else if (student.gender === 'أنثى') females++;
+                    schoolCounts[student.school.trim()] = (schoolCounts[student.school.trim()] || 0) + 1;
+                });
+                generalSettingsInputs.totalMalesCountDisplay.value = males;
+                generalSettingsInputs.totalFemalesCountDisplay.value = females;
+                const sortedSchools = Object.entries(schoolCounts).sort(([,aCount], [,bCount]) => bCount - aCount);
+                
+                if (sortedSchools.length > 0) {
+                    generalSettingsInputs.topSchool1NameDisplay.value = sortedSchools[0][0];
+                    generalSettingsInputs.topSchool1CountDisplay.value = sortedSchools[0][1];
+                } else {
+                    generalSettingsInputs.topSchool1NameDisplay.value = "-"; generalSettingsInputs.topSchool1CountDisplay.value = 0;
+                }
+                if (sortedSchools.length > 1) {
+                    generalSettingsInputs.topSchool2NameDisplay.value = sortedSchools[1][0];
+                    generalSettingsInputs.topSchool2CountDisplay.value = sortedSchools[1][1];
+                } else {
+                    generalSettingsInputs.topSchool2NameDisplay.value = "-"; generalSettingsInputs.topSchool2CountDisplay.value = 0;
+                }
+                let otherSchoolsText = "";
+                for(let i = 2; i < sortedSchools.length; i++){
+                    otherSchoolsText += `${sortedSchools[i][0]}: ${sortedSchools[i][1]}, `;
+                }
+                generalSettingsInputs.otherSchoolsDisplay.value = otherSchoolsText.slice(0, -2) || "-";
+            }
+
+            const distributeStudentsButton = document.getElementById('distributeStudentsButton');
+            distributeStudentsButton.addEventListener('click', () => {
+                if (studentMasterList.length === 0) { alert("يرجى إضافة طلاب إلى القائمة أولاً."); return; }
+                pageContainer.innerHTML = ''; let studentIndex = 0; let pageCount = 0;
+                
+                while(studentIndex < studentMasterList.length) {
+                    pageCount++; 
+                    const newPage = initialPageTemplate.cloneNode(true);
+                    newPage.id = `a4PageContent_${pageCount}`; 
+                    newPage.style.display = 'block';
+                    
+                    let studentsForThisPage = [];
+                    const studentBoxesSectorA = newPage.querySelectorAll(`.page-student-grid-sector-a .student-box`);
+                    const studentBoxesSectorB = newPage.querySelectorAll(`.page-student-grid-sector-b .student-box`);
+                    const allStudentBoxesOnPage = Array.from(studentBoxesSectorA).concat(Array.from(studentBoxesSectorB));
+
+                    for (let i = 0; i < allStudentBoxesOnPage.length; i++) {
+                        if (studentIndex < studentMasterList.length) {
+                            const box = allStudentBoxesOnPage[i]; 
+                            const student = studentMasterList[studentIndex];
+                            studentsForThisPage.push(student);
+                            box.querySelector('.student-name').textContent = student.name;
+                            box.querySelector('.student-school').textContent = student.school;
+                            box.querySelector('.student-id').textContent = student.id;
+                            studentIndex++;
+                        } else {
+                            const box = allStudentBoxesOnPage[i];
+                            box.querySelector('.student-name').textContent = '';
+                            box.querySelector('.student-school').textContent = '';
+                            box.querySelector('.student-id').textContent = '';
+                        }
+                    }
+                    populateGeneralInfoOnPage(newPage, pageCount, studentsForThisPage);
+                    pageContainer.appendChild(newPage);
+                }
+                alert(`تم توزيع ${studentMasterList.length} طالب على ${pageCount} صفحة.`);
+            });
+
+            function populateGeneralInfoOnPage(pageElement, currentPageNum, studentsOnThisPage) {
+                pageElement.querySelector(`.header-title`).textContent = generalSettingsInputs.examCenter.value;
+                let examTitleValue = generalSettingsInputs.examTitle.value;
+                if (examTitleValue.includes('( السادس )')) { 
+                     examTitleValue = examTitleValue.replace('( السادس )', '<br>( السادس )');
+                }
+                pageElement.querySelector(`.header-subtitle`).innerHTML = examTitleValue;
+                
+                let malesOnPage = 0; let femalesOnPage = 0; const schoolCountsOnPage = {};
+                studentsOnThisPage.forEach(student => {
+                    if (student.gender === 'ذكر') malesOnPage++;
+                    else if (student.gender === 'أنثى') femalesOnPage++;
+                    schoolCountsOnPage[student.school.trim()] = (schoolCountsOnPage[student.school.trim()] || 0) + 1;
+                });
+                const sortedSchoolsOnPage = Object.entries(schoolCountsOnPage).sort(([,aCount], [,bCount]) => bCount - aCount);
+
+                pageElement.querySelector(`.page-stats-males`).textContent = `الذكور = ${malesOnPage}`;
+                pageElement.querySelector(`.page-stats-females`).textContent = `الاناث = ${femalesOnPage}`;
+                
+                let baseHallNumber = parseInt(generalSettingsInputs.hallNumber.value) || 1;
+                // --- MODIFIED: Changed text to prevent rendering issues in PDF ---
+                pageElement.querySelector(`.page-main-title`).textContent = `قاعة رقم ( ${baseHallNumber + currentPageNum - 1} )`;
+                
+                const topSchool1NamePage = sortedSchoolsOnPage.length > 0 ? sortedSchoolsOnPage[0][0] : "-";
+                const topSchool1CountPage = sortedSchoolsOnPage.length > 0 ? sortedSchoolsOnPage[0][1] : 0;
+                pageElement.querySelector(`.page-stats-top-school1`).textContent = topSchool1NamePage !== "-" ? `${topSchool1NamePage} = ${topSchool1CountPage}` : "-";
+
+                const topSchool2NamePage = sortedSchoolsOnPage.length > 1 ? sortedSchoolsOnPage[1][0] : "-";
+                const topSchool2CountPage = sortedSchoolsOnPage.length > 1 ? sortedSchoolsOnPage[1][1] : 0;
+                pageElement.querySelector(`.page-stats-top-school2`).textContent = topSchool2NamePage !== "-" ? `${topSchool2NamePage} = ${topSchool2CountPage}` : "-";
+
+                pageElement.querySelector(`.page-sector-a-title`).textContent = `قطاع ( ${generalSettingsInputs.sectorAName.value} )`;
+                pageElement.querySelector(`.page-sector-b-title`).textContent = `قطاع ( ${generalSettingsInputs.sectorBName.value} )`;
+                pageElement.querySelector(`.page-manager-name-display`).textContent = `مدير المركز: ${generalSettingsInputs.managerName.value}`;
+            }
+
+            document.getElementById('clearFormsButton').addEventListener('click', () => {
+                if (confirm('هل أنت متأكد أنك تريد إفراغ جميع النماذج الموزعة؟')) {
+                    pageContainer.innerHTML = ''; alert('تم إفراغ النماذج.');
+                }
+            });
+
+            document.getElementById('printButton').addEventListener('click', () => window.print());
+        
+            // --- دالة التقاط الصورة (معدلة لزيادة الدقة) ---
+            // --- دالة التقاط الصورة (معدلة لزيادة الدقة مع تحسين النصوص العربية) ---
+async function capturePageAsCanvas(pageElement) {
+    const placeholdersToRemove = [];
+    pageElement.querySelectorAll('[data-placeholder]:empty').forEach(el => {
+        placeholdersToRemove.push({el, ph: el.getAttribute('data-placeholder')}); 
+        el.removeAttribute('data-placeholder');
+    });
+    
+    const activeElement = document.activeElement;
+    if (activeElement && typeof activeElement.blur === 'function') activeElement.blur();
+    pageElement.querySelectorAll('*:focus').forEach(el => el.blur());
+
+    const inputsToResetBorder = [];
+    pageElement.querySelectorAll('input, select').forEach(inp => {
+        inputsToResetBorder.push({el: inp, border: inp.style.border});
+        inp.style.border = '1px solid transparent';
+    });
+
+    // إضافة خط Tajawal للعناصر النصية لضمان وضوحها
+    pageElement.querySelectorAll('.page-main-title, .header-title, .header-subtitle, .student-name, .student-school, .student-id').forEach(el => {
+        el.style.fontFamily = "'Tajawal', sans-serif";
+        el.style.fontWeight = "700";
+    });
+
+    const canvas = await html2canvas(pageElement, {
+        scale: 3,
+        useCORS: true,
+        removeContainer: false,
+        logging: false,
+        letterRendering: true, // تمكين تحسين عرض الحروف
+        onclone: (clonedDoc) => {
+            const clonedPage = clonedDoc.querySelector('.a4-page');
+            if(clonedPage) {
+                clonedPage.style.boxShadow = 'none';
+                clonedPage.style.border = 'none';
+                clonedPage.style.margin = '0';
+                clonedPage.style.padding = '12mm 15mm';
+            }
+            clonedPage.querySelectorAll('[data-placeholder]:empty').forEach(el => el.removeAttribute('data-placeholder'));
+            clonedDoc.querySelectorAll('input, select').forEach(inp => {
+                inp.style.border = '1px solid transparent';
+                inp.style.boxShadow = 'none';
+            });
+            // ضبط الخط للنسخة المستنسخة
+            clonedDoc.querySelectorAll('.page-main-title, .header-title, .header-subtitle, .student-name, .student-school, .student-id').forEach(el => {
+                el.style.fontFamily = "'Tajawal', sans-serif";
+                el.style.fontWeight = "500";
+            });
+        }
+    });
+
+    inputsToResetBorder.forEach(item => item.el.style.border = item.border);
+    placeholdersToRemove.forEach(item => item.el.setAttribute('data-placeholder', item.ph));
+    return canvas;
+}
+
+// --- تحميل PDF (معدل لضمان عرض النصوص العربية) ---
+document.getElementById('downloadAllPdfsButton').addEventListener('click', async () => {
+    const allPagesToPrint = document.querySelectorAll('.page-container .a4-page');
+    if (allPagesToPrint.length === 0) { 
+        alert("يرجى توزيع الطلاب على النماذج أولاً لإنشاء PDF."); 
+        return; 
+    }
+    
+    alert(`جاري تحضير ملف PDF لـ ${allPagesToPrint.length} صفحة... قد يستغرق الأمر بعض الوقت.`);
+
+    const { jsPDF } = window.jspdf; 
+    const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: false,
+        putOnlyUsedFonts: true
+    }); 
+    
+    try {
+        // حل خاص لتحسين النصوص العربية
+        const arabicTextFix = (element) => {
+            element.querySelectorAll('.page-main-title, .header-title, .header-subtitle, .student-name, .student-school, .student-id').forEach(el => {
+                el.style.fontFamily = "'Tajawal', sans-serif";
+                el.style.fontWeight = "700";
+                el.style.letterSpacing = "0";
+                el.style.textRendering = "optimizeLegibility";
+            });
+        };
+
+        for (let i = 0; i < allPagesToPrint.length; i++) {
+            const pageElement = allPagesToPrint[i];
+            
+            // تطبيق الإصلاح على النصوص العربية قبل التقاط الصورة
+            arabicTextFix(pageElement);
+            
+            if (i > 0) pdf.addPage();
+
+            const canvas = await html2canvas(pageElement, {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true,
+                allowTaint: true,
+                logging: false,
+                onclone: (clonedDoc) => {
+                    arabicTextFix(clonedDoc.querySelector('.a4-page'));
+                    clonedDoc.querySelectorAll('input, select').forEach(inp => {
+                        inp.style.border = '1px solid transparent';
+                    });
+                }
+            });
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            
+            const imgWidth = 190; // عرض ثابت لتحسين المحاذاة
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const x = (pdf.internal.pageSize.getWidth() - imgWidth) / 2;
+            const y = 10;
+
+            pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+            
+            // إضافة تأخير بين الصفحات لضمان الاستقرار
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        pdf.save('قائمة_القاعات_الكاملة.pdf');
+    } catch (error) {
+        console.error("Error during PDF generation:", error);
+        alert("حدث خطأ أثناء إنشاء ملف PDF. الرجاء المحاولة مرة أخرى أو تقليل عدد الصفحات.");
+    }
+});
+            
+            // --- تحميل الصور (معدل لزيادة الدقة) ---
+            document.getElementById('downloadAllImagesButton').addEventListener('click', async () => {
+                const allPagesToCapture = document.querySelectorAll('.page-container .a4-page');
+                if (allPagesToCapture.length === 0) { alert("يرجى توزيع الطلاب على النماذج أولاً لتحميل الصور."); return; }
+                
+                alert(`جاري تحميل صور لـ ${allPagesToCapture.length} صفحة...`);
+
+                try {
+                    for (let i = 0; i < allPagesToCapture.length; i++) {
+                         console.log(`Processing page ${i + 1} for Image...`);
+                        const canvas = await capturePageAsCanvas(allPagesToCapture[i]);
+                        const image = canvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        link.href = image; link.download = `قائمة_القاعات_صفحة_${i + 1}_عالية_الدقة.png`;
+                        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                        if (i < allPagesToCapture.length -1) await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                     alert(`اكتمل تحميل صور ${allPagesToCapture.length} صفحة.`);
+                 } catch (error) {
+                     console.error("Error during Image generation:", error);
+                     alert("حدث خطأ أثناء إنشاء الصور. قد تكون البيانات كثيرة جدًا. حاول تقليل عدد الصفحات أو تحقق من الكونسول.");
+                 }
+            });
+
+        });
+    </script>
+</body>
+</html>

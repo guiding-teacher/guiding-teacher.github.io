@@ -1,0 +1,1110 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام تسجيل الدرجات الديناميكي</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    /* --- Base Styles (mostly unchanged) --- */
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #393838;
+      padding: 20px;
+      transition: background-color 0.3s;
+    }
+    body.printing-mode { background-color: white !important; padding: 0 !important; margin: 0 !important; }
+    .container { max-width: 960px; margin: auto; }
+    .grade-section { background: white; padding: 25px; margin-bottom: 40px; border-radius: 10px; border: 2px solid #333; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); transition: opacity 0.3s, transform 0.3s; page-break-inside: avoid; }
+    .header { text-align: center; margin-bottom: 25px; }
+    .header h2 { margin: 0; font-size: 22px; color: #222; }
+    .subject-name-display { font-weight: bold; color: #2980b9; }
+    .form-group { display: flex; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; }
+    .form-group label { min-width: 100px; font-weight: bold; font-size: 14px; }
+    .form-group input, .form-group select { flex: 1; min-width: 150px; padding: 7px 10px; border-radius: 6px; border: 1px solid #aaa; font-size: 14px; font-family: 'Cairo', sans-serif; }
+    .form-actions { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; }
+    .grade-section .form-actions { justify-content: flex-start; }
+    button { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-family: 'Cairo', sans-serif; transition: background-color 0.2s, padding 0.2s, font-size 0.2s; }
+    button:disabled { background-color: #bdc3c7 !important; cursor: not-allowed; }
+    .add-btn { background: #27ae60; color: white; }
+    .pdf-btn { background: #3498db; color: white; }
+    .new-table-btn { background: #8e44ad; color: white; }
+    .print-btn { background: #f39c12; color: white; }
+    .print-section-btn { background: #16a085; color: white; }
+    .toggle-decimals-btn { background: #7f8c8d; color: white; }
+    .delete-section-btn { background: #c0392b; color: white; }
+    .add-column-btn { background: #2980b9; color: white; } /* Style for Add Column */
+    .delete-col-btn { background: #e74c3c; color: white; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-right: 5px; cursor: pointer; border: none;} /* Style for delete col button */
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: auto; /* Allow table to expand */ page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    th, td { border: 1px solid #999; padding: 8px; text-align: center; font-size: 14px; transition: padding 0.2s, font-size 0.2s; }
+    th { background-color: #f0f0f0; font-weight: bold; position: relative; /* For positioning delete button */ }
+    th span.col-header-text { /* Wrap header text */
+        display: inline-block;
+        padding: 2px 5px; /* Add some padding */
+        cursor: pointer; /* Indicate editable */
+        border: 1px dashed transparent; /* Show border on hover/focus */
+        min-width: 50px; /* Ensure minimum width */
+    }
+    th span.col-header-text:hover,
+    th span.col-header-text:focus {
+        border: 1px dashed #777;
+        background-color: #f9f9f9;
+    }
+
+    /* Make first cell (sequence) narrow */
+    td:first-child, th:first-child { width: 40px; font-weight: normal; }
+    /* Make Name column wider and right-aligned */
+    th[data-col-id="name"], td[data-col-id="name"] { width: 200px; text-align: right; padding-right: 10px; }
+    /* Default width for dynamic columns */
+    th:not([data-col-id="seq"]):not([data-col-id="name"]):not(.action-col-header),
+    td:not([data-col-id="seq"]):not([data-col-id="name"]):not(.action-col-cell) {
+        width: 100px; /* Adjust default width as needed */
+    }
+     /* Ensure Grade column keeps its style if present */
+    th[data-col-id="grade"], td[data-col-id="grade"] { width: 80px; }
+
+    /* Action column header/cell (for row delete button) */
+    th.action-col-header, td.action-col-cell { width: 60px; }
+
+    .delete-btn { background: #c0392b; color: white; padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; }
+    .teacher-section { margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; }
+    .teacher-display { font-weight: bold; font-size: 15px; text-align: left; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+    .hide-in-pdf-print { /* Class to mark elements for removal before PDF/print */ }
+
+    /* --- PDF/Print Specific Styles (Adapting for dynamic columns) --- */
+     .pdf-render-staging-area, .pdf-prepared-element, @media print { /* ... other styles ... */ }
+    .pdf-prepared-element th, .pdf-prepared-element td,
+    @media print th, @media print td {
+         /* Adjust PDF/Print styles if needed for potentially many columns */
+         font-size: 10pt;
+         padding: 5px;
+     }
+    /* Ensure action column is hidden in PDF/Print */
+    .pdf-prepared-element .action-col-header, .pdf-prepared-element .action-col-cell,
+    @media print .action-col-header, @media print .action-col-cell { display: none !important; }
+
+    /* --- Responsive Styles (Adapting for dynamic columns) --- */
+    @media (max-width: 768px) {
+        /* ... other responsive styles ... */
+        th, td { font-size: 12px; padding: 5px; }
+        th[data-col-id="name"], td[data-col-id="name"] { width: 150px; }
+        th.action-col-header, td.action-col-cell { width: 50px; }
+        /* Default dynamic columns might need adjustment */
+        th:not([data-col-id="seq"]):not([data-col-id="name"]):not(.action-col-header),
+        td:not([data-col-id="seq"]):not([data-col-id="name"]):not(.action-col-cell) {
+            width: 80px;
+        }
+    }
+     @media (max-width: 480px) {
+         /* ... other responsive styles ... */
+         th, td { font-size: 11px; padding: 4px; }
+         th[data-col-id="name"], td[data-col-id="name"] { width: 120px; padding-right: 5px;}
+         /* Further adjust widths if needed */
+     }
+    /* Added style for column input area */
+    .student-column-inputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid */
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        margin-bottom: 15px;
+    }
+
+    /* Footer Styles */
+    footer {
+        width: 100%; padding: 15px 0; text-align: center; background-color: #434343;
+        color: #ccc; /* Lighter color for contrast */ font-size: 0.85em; margin-top: 40px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    footer a { color: #61dafb; /* Light blue link color */ text-decoration: none; transition: color 0.3s ease; }
+    footer a:hover { color: #fafa45; /* Yellow hover color */ }
+
+  </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 21px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+<div class="container" id="mainContainer">
+  <!-- Grade sections will be loaded/created here -->
+</div>
+
+<!-- Global action buttons container -->
+<div class="form-actions global-actions hide-in-pdf-print" style="text-align:center; margin-top: 30px;">
+  <button id="new-table-btn" class="new-table-btn" onclick="createGradeSection()">إضافة مادة جديدة</button>
+  <button id="download-all-btn" class="pdf-btn" onclick="downloadAllPDF()">تحميل PDF لجميع المواد</button>
+  <button id="print-all-btn" class="print-btn" onclick="printAllSections()">طباعة كل المواد</button>
+</div>
+
+<footer>
+     <p>© 2025 جميع الحقوق محفوظة لموقع <a href="index.html">المعلم المرشد</a>. تصميم وتطوير.</p>
+</footer>
+
+<!-- NO staging area here initially -->
+
+<script>
+// --- Global Variables and State ---
+let sectionCount = 0;
+let printCleanupTimeout;
+let saveTimeout;
+let pdfGenerating = false;
+const STAGING_AREA_ID = 'pdf-staging-area';
+let sectionsData = {}; // Central object to hold state for each section
+
+// --- Default Column Definitions ---
+const defaultColumns = [
+    { id: 'seq', header: 'ت', type: 'sequence', fixed: true, editable: false },
+    { id: 'name', header: 'اسم الطالب', type: 'text', fixed: true, editable: false },
+    { id: 'grade', header: 'الدرجة', type: 'number', fixed: false, editable: true, min: 0, max: 100, step: 'any' }
+];
+
+// --- Utility Functions ---
+function setPdfButtonsDisabled(disabled) { /* ... (unchanged) ... */ }
+function ensureStagingArea() { /* ... (unchanged) ... */ }
+function cleanupStagingArea() { /* ... (unchanged) ... */ }
+function generateUniqueId(prefix = 'col') { return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`; }
+
+// --- Debounced Auto Save ---
+function autoSave(sectionId = null) {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveAllData();
+    // console.log("Auto-saved data.", sectionId ? `Triggered by section ${sectionId}` : '');
+  }, 1500);
+}
+
+// --- Create Grade Section (Major Refactor) ---
+function createGradeSection(savedData = null) {
+    sectionCount++;
+    const sectionId = `section-${sectionCount}`;
+    const container = document.getElementById('mainContainer');
+    const section = document.createElement('div');
+    section.className = 'grade-section';
+    section.id = sectionId;
+    section.setAttribute('data-section-id', sectionId); // Store ID for easy access
+
+    // --- Initialize Section Data ---
+    const initialData = savedData || {
+        subject: '',
+        teacher: '',
+        showDecimals: true,
+        columns: JSON.parse(JSON.stringify(defaultColumns)), // Deep copy defaults
+        students: []
+    };
+    // Ensure backward compatibility if old data format is loaded
+    if (savedData && !savedData.columns) {
+        initialData.columns = JSON.parse(JSON.stringify(defaultColumns));
+        initialData.students = (savedData.grades || []).map((g, index) => ({
+            id: generateUniqueId('student'),
+            data: { name: g.name, grade: g.grade }
+        }));
+    }
+    // Ensure students have IDs
+     initialData.students.forEach(s => { if (!s.id) s.id = generateUniqueId('student'); });
+
+
+    sectionsData[sectionId] = {
+        subject: initialData.subject,
+        teacher: initialData.teacher,
+        showDecimals: initialData.showDecimals,
+        columns: initialData.columns,
+        students: initialData.students
+    };
+
+    const currentSectionData = sectionsData[sectionId];
+    const buttonText = currentSectionData.showDecimals ? 'إخفاء الأعشار' : 'إظهار الأعشار';
+
+    section.innerHTML = `
+    <div class="header">
+      <h2 class="subject-title">نظام الامتحان المتعدد لمادة: <span class="subject-name-display">${currentSectionData.subject || 'غير محدد'}</span></h2>
+      <div class="form-group hide-in-pdf-print">
+        <label for="subject-${sectionId}">اسم المادة:</label>
+        <input type="text" id="subject-${sectionId}" class="subject" value="${currentSectionData.subject}" placeholder="مثال: رياضيات" oninput="updateSubjectTitle(this); updateSectionData(this.closest('.grade-section').dataset.sectionId, 'subject', this.value); autoSave('${sectionId}');">
+      </div>
+    </div>
+
+    <!-- Student Input Area (Dynamically Generated) -->
+    <div class="student-input-area hide-in-pdf-print">
+        <p style="font-weight:bold; margin-bottom:5px;">إدخال بيانات طالب جديد:</p>
+        <div class="student-column-inputs" id="inputs-${sectionId}">
+            <!-- Input fields will be rendered here by renderStudentInputArea -->
+        </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="form-actions hide-in-pdf-print">
+      <button class="add-btn" onclick="addStudent(this)">إضافة الطالب</button>
+      <button class="add-column-btn" onclick="addColumn(this)">إضافة عمود</button> <!-- New Button -->
+      <button class="pdf-btn" onclick="downloadSinglePDF(this)">تحميل PDF</button>
+      <button class="print-section-btn" onclick="printSection(this)">طباعة</button>
+      <button class="toggle-decimals-btn" onclick="toggleDecimals(this)">${buttonText}</button>
+      <button class="delete-section-btn" onclick="deleteGradeSection(this)">حذف المادة</button>
+    </div>
+
+    <!-- Table Structure (Header and Body are dynamic) -->
+    <table>
+      <thead id="thead-${sectionId}">
+        <!-- Header row will be rendered here by renderTableHeader -->
+      </thead>
+      <tbody id="tbody-${sectionId}">
+        <!-- Student rows will be rendered here by renderTableBody -->
+      </tbody>
+    </table>
+
+    <!-- Teacher Section -->
+    <div class="teacher-section">
+        <div class="form-group hide-in-pdf-print">
+            <label for="teacher-${sectionId}">اسم المعلم:</label>
+            <input type="text" id="teacher-${sectionId}" class="teacher" value="${currentSectionData.teacher}" placeholder="مثال: أ. وسام" oninput="updateTeacherDisplay(this); updateSectionData(this.closest('.grade-section').dataset.sectionId, 'teacher', this.value); autoSave('${sectionId}');">
+        </div>
+        <div class="teacher-display">
+            المعلم: <span class="teacher-name-display">${currentSectionData.teacher || 'غير محدد'}</span>
+        </div>
+    </div>
+  `;
+
+    container.appendChild(section);
+
+    // --- Initial Rendering ---
+    renderTableHeader(sectionId);
+    renderStudentInputArea(sectionId);
+    renderTableBody(sectionId); // Render existing students
+
+    // Sort and save if it's a new section (not loaded)
+    if (!savedData) {
+      sortTable(sectionId); // Sort by name initially
+      autoSave(sectionId);
+    } else {
+      updateRowNumbers(sectionId); // Ensure row numbers are correct on load
+    }
+}
+
+// --- Data Update Helper ---
+function updateSectionData(sectionId, key, value) {
+    if (sectionsData[sectionId]) {
+        sectionsData[sectionId][key] = value;
+        // If updating columns or students, might need specific handling,
+        // but for subject/teacher/showDecimals, this is enough.
+    } else {
+        console.error(`Section data not found for ID: ${sectionId}`);
+    }
+}
+
+
+// --- UI Update Functions ---
+function updateTeacherDisplay(inputElement) { /* ... (unchanged) ... */ }
+function updateSubjectTitle(inputElement) { /* ... (unchanged) ... */ }
+
+// --- Dynamic Rendering Functions ---
+
+function renderTableHeader(sectionId) {
+    const thead = document.getElementById(`thead-${sectionId}`);
+    const sectionData = sectionsData[sectionId];
+    if (!thead || !sectionData) return;
+
+    thead.innerHTML = ''; // Clear existing header
+    const tr = thead.insertRow();
+
+    sectionData.columns.forEach(col => {
+        const th = document.createElement('th');
+        th.setAttribute('data-col-id', col.id);
+
+        // Add editable span for header text
+        const span = document.createElement('span');
+        span.className = 'col-header-text';
+        span.textContent = col.header;
+        if (col.editable !== false) { // Only make editable if not explicitly false
+             span.contentEditable = true;
+             span.addEventListener('blur', (e) => editColumnHeader(e.target, sectionId, col.id));
+             span.addEventListener('keydown', (e) => { // Handle Enter key
+                  if (e.key === 'Enter') {
+                      e.preventDefault(); // Prevent new line
+                      e.target.blur(); // Trigger blur to save
+                  }
+             });
+        } else {
+            span.contentEditable = false;
+        }
+
+        // Add delete button for non-fixed columns
+        if (col.fixed !== true) {
+             const deleteBtn = document.createElement('button');
+             deleteBtn.className = 'delete-col-btn hide-in-pdf-print';
+             deleteBtn.innerHTML = '×'; // Multiplication sign X
+             deleteBtn.title = `حذف عمود "${col.header}"`;
+             deleteBtn.onclick = () => deleteColumn(sectionId, col.id);
+             th.appendChild(deleteBtn); // Add button before text
+        }
+
+        th.appendChild(span); // Add text span
+        tr.appendChild(th);
+    });
+
+    // Add header for the Action column (Delete Student)
+    const actionTh = document.createElement('th');
+    actionTh.className = 'action-col-header hide-in-pdf-print';
+    actionTh.textContent = 'إجراء';
+    tr.appendChild(actionTh);
+}
+
+function renderStudentInputArea(sectionId) {
+    const inputContainer = document.getElementById(`inputs-${sectionId}`);
+    const sectionData = sectionsData[sectionId];
+    if (!inputContainer || !sectionData) return;
+
+    inputContainer.innerHTML = ''; // Clear existing inputs
+
+    sectionData.columns.forEach(col => {
+        // Create inputs only for non-sequence and non-fixed columns (like name)
+        // OR specific editable columns like 'grade'
+        if (col.type !== 'sequence' && col.editable !== false ) {
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.setAttribute('for', `input-${sectionId}-${col.id}`);
+            label.textContent = `${col.header}:`;
+
+            const input = document.createElement('input');
+            input.id = `input-${sectionId}-${col.id}`;
+            input.setAttribute('data-col-id', col.id); // Link input to column id
+            input.className = 'student-dynamic-input'; // Class for easy selection
+
+            if (col.type === 'number') {
+                input.type = 'number';
+                if (col.min !== undefined) input.min = col.min;
+                if (col.max !== undefined) input.max = col.max;
+                if (col.step !== undefined) input.step = col.step;
+                input.placeholder = `${col.min !== undefined ? col.min : 0} - ${col.max !== undefined ? col.max : 100}`;
+            } else {
+                input.type = 'text';
+                input.placeholder = `أدخل ${col.header}`;
+            }
+
+            // Special handling for name - maybe make it wider?
+             if (col.id === 'name') {
+                  input.placeholder = 'مثال: علي محمد';
+             }
+
+
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+            inputContainer.appendChild(formGroup);
+        }
+    });
+}
+
+function renderStudentInputArea(sectionId) {
+    const inputContainer = document.getElementById(`inputs-${sectionId}`);
+    const sectionData = sectionsData[sectionId];
+    if (!inputContainer || !sectionData) return;
+
+    inputContainer.innerHTML = ''; // Clear existing inputs
+
+    // --- 1. Explicitly Create "اسم الطالب" Input ---
+    const nameColumn = sectionData.columns.find(col => col.id === 'name');
+    if (nameColumn) { // Should always exist with default setup
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+
+        const label = document.createElement('label');
+        label.setAttribute('for', `input-${sectionId}-${nameColumn.id}`);
+        label.textContent = `${nameColumn.header}:`; // Use header text
+
+        const input = document.createElement('input');
+        input.id = `input-${sectionId}-${nameColumn.id}`;
+        input.setAttribute('data-col-id', nameColumn.id);
+        input.className = 'student-dynamic-input student-name-input'; // Add specific class
+        input.type = 'text';
+        input.placeholder = 'مثال: علي محمد'; // Specific placeholder
+        // Make the name input required conceptually (validation happens in addStudent)
+        input.required = true;
+
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+        inputContainer.appendChild(formGroup);
+    } else {
+        console.warn(`Column with id 'name' not found for section ${sectionId}. Cannot create name input.`);
+    }
+
+
+    // --- 2. Create Inputs for OTHER Editable Columns ---
+    sectionData.columns.forEach(col => {
+        // Skip sequence, skip the name column (already added), and skip non-editable columns
+        if (col.type !== 'sequence' && col.id !== 'name' && col.editable !== false ) {
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+
+            const label = document.createElement('label');
+            label.setAttribute('for', `input-${sectionId}-${col.id}`);
+            label.textContent = `${col.header}:`;
+
+            const input = document.createElement('input');
+            input.id = `input-${sectionId}-${col.id}`;
+            input.setAttribute('data-col-id', col.id);
+            input.className = 'student-dynamic-input'; // General class
+
+            if (col.type === 'number') {
+                input.type = 'number';
+                if (col.min !== undefined) input.min = col.min;
+                if (col.max !== undefined) input.max = col.max;
+                if (col.step !== undefined) input.step = col.step;
+                input.placeholder = `${col.min !== undefined ? col.min : ''}${col.min !== undefined && col.max !== undefined ? ' - ' : ''}${col.max !== undefined ? col.max : ''}`;
+                if (input.placeholder === '') input.placeholder = 'أدخل قيمة رقمية'; // Fallback placeholder
+            } else {
+                input.type = 'text';
+                input.placeholder = `أدخل ${col.header}`;
+            }
+
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+            inputContainer.appendChild(formGroup);
+        }
+    });
+}
+// --- Column Management ---
+
+function addColumn(button) {
+    const section = button.closest('.grade-section');
+    const sectionId = section.dataset.sectionId;
+    if (!sectionsData[sectionId]) return;
+
+    const newHeader = prompt("أدخل اسم العمود الجديد:", "ملاحظات");
+    if (newHeader === null || newHeader.trim() === '') {
+        return; // User cancelled or entered empty name
+    }
+
+    const newColId = generateUniqueId('col');
+    const newColumn = {
+        id: newColId,
+        header: newHeader.trim(),
+        type: 'text', // Default to text, could ask user later
+        fixed: false,
+        editable: true
+    };
+
+    sectionsData[sectionId].columns.push(newColumn);
+
+    // Re-render header, input area, and body (to add empty cells)
+    renderTableHeader(sectionId);
+    renderStudentInputArea(sectionId);
+    renderTableBody(sectionId); // This will re-render all rows with the new empty cell
+
+    autoSave(sectionId);
+}
+
+function deleteColumn(sectionId, columnIdToDelete) {
+    const sectionData = sectionsData[sectionId];
+    if (!sectionData) return;
+
+    const columnIndex = sectionData.columns.findIndex(col => col.id === columnIdToDelete);
+    if (columnIndex === -1 || sectionData.columns[columnIndex].fixed) {
+        alert("لا يمكن حذف هذا العمود.");
+        return;
+    }
+
+    const columnName = sectionData.columns[columnIndex].header;
+    if (!confirm(`هل أنت متأكد من حذف عمود "${columnName}" وكل البيانات الموجودة فيه؟`)) {
+        return;
+    }
+
+    // Remove column definition
+    sectionData.columns.splice(columnIndex, 1);
+
+    // Remove corresponding data from all students
+    sectionData.students.forEach(student => {
+        if (student.data && student.data.hasOwnProperty(columnIdToDelete)) {
+            delete student.data[columnIdToDelete];
+        }
+    });
+
+    // Re-render header, input area, and body
+    renderTableHeader(sectionId);
+    renderStudentInputArea(sectionId);
+    renderTableBody(sectionId);
+
+    autoSave(sectionId);
+}
+
+function editColumnHeader(spanElement, sectionId, columnId) {
+    const sectionData = sectionsData[sectionId];
+    if (!sectionData) return;
+
+    const newHeader = spanElement.textContent.trim();
+    const columnIndex = sectionData.columns.findIndex(col => col.id === columnId);
+
+    if (columnIndex !== -1 && sectionData.columns[columnIndex].header !== newHeader) {
+        if (newHeader === '') {
+             alert("اسم العمود لا يمكن أن يكون فارغاً.");
+             spanElement.textContent = sectionData.columns[columnIndex].header; // Revert
+             return;
+         }
+        sectionData.columns[columnIndex].header = newHeader;
+        // Also update the corresponding label in the input area
+        renderStudentInputArea(sectionId); // Easiest way to update label
+        autoSave(sectionId);
+        // console.log(`Updated header for ${columnId} to ${newHeader}`);
+    }
+}
+
+
+// --- Student Add/Delete/Sort (Refactored) ---
+
+function addStudentRowInternal(tbody, studentData, columns, showDecimals) {
+    const row = tbody.insertRow();
+    row.setAttribute('data-student-id', studentData.id);
+
+    columns.forEach(col => {
+        const cell = row.insertCell();
+        cell.setAttribute('data-col-id', col.id); // Add data attribute for easier targeting
+
+        if (col.type === 'sequence') {
+            // Sequence number is handled by updateRowNumbers
+            cell.textContent = '';
+        } else {
+            let value = studentData.data[col.id] !== undefined ? studentData.data[col.id] : ''; // Get value or empty string
+
+            // Apply decimal formatting *only* to the 'grade' column (or potentially others marked as numeric)
+            if (col.id === 'grade' && col.type === 'number') {
+                const gradeValue = parseFloat(value);
+                if (!isNaN(gradeValue)) {
+                    value = showDecimals ? gradeValue.toFixed(1) : Math.round(gradeValue).toString();
+                }
+            }
+            cell.textContent = value;
+
+            // Special alignment for name
+            if(col.id === 'name') {
+                cell.style.textAlign = 'right';
+                 cell.style.paddingRight = '10px';
+            }
+        }
+    });
+
+    // Add Delete button cell
+    const actionCell = row.insertCell();
+    actionCell.className = 'action-col-cell hide-in-pdf-print';
+    actionCell.innerHTML = `<button class="delete-btn" onclick="deleteStudentRow(this)">حذف</button>`;
+}
+
+
+function addStudent(btn) {
+    const section = btn.closest('.grade-section');
+    const sectionId = section.dataset.sectionId;
+    const sectionData = sectionsData[sectionId];
+    const tbody = section.querySelector("tbody");
+    const inputContainer = section.querySelector('.student-column-inputs');
+    if (!sectionData || !tbody || !inputContainer) return;
+
+    const inputs = inputContainer.querySelectorAll('.student-dynamic-input');
+    const newStudentData = { id: generateUniqueId('student'), data: {} };
+    let isValid = true;
+    let firstInvalidInput = null;
+
+    inputs.forEach(input => {
+        const colId = input.dataset.colId;
+        const columnDef = sectionData.columns.find(c => c.id === colId);
+        let value = input.value.trim();
+
+        if (columnDef) {
+             // Validation
+            if (columnDef.id === 'name' && value === '') {
+                 alert("يرجى إدخال اسم الطالب.");
+                 isValid = false;
+                 if (!firstInvalidInput) firstInvalidInput = input;
+             } else if (columnDef.type === 'number') {
+                 if (value !== '') { // Allow empty number fields unless required
+                     const numValue = parseFloat(value);
+                     if (isNaN(numValue)) {
+                         alert(`يرجى إدخال قيمة رقمية صحيحة لـ "${columnDef.header}".`);
+                         isValid = false;
+                          if (!firstInvalidInput) firstInvalidInput = input;
+                     } else if ((columnDef.min !== undefined && numValue < columnDef.min) || (columnDef.max !== undefined && numValue > columnDef.max)) {
+                         alert(`قيمة "${columnDef.header}" يجب أن تكون بين ${columnDef.min !== undefined ? columnDef.min : 'غير محدد'} و ${columnDef.max !== undefined ? columnDef.max : 'غير محدد'}.`);
+                         isValid = false;
+                         if (!firstInvalidInput) firstInvalidInput = input;
+                     } else {
+                         // Store the number itself for potential calculations later
+                         newStudentData.data[colId] = numValue;
+                     }
+                 } else {
+                      newStudentData.data[colId] = ''; // Store empty string if input is empty
+                 }
+             } else {
+                 newStudentData.data[colId] = value; // Store text value
+             }
+        }
+        if (!isValid && firstInvalidInput) {
+             firstInvalidInput.focus();
+             return; // Stop processing further inputs if one is invalid
+        }
+    });
+
+    if (!isValid) {
+        return;
+    }
+
+    // Add student to data store
+    sectionData.students.push(newStudentData);
+
+    // Add row to table
+    addStudentRowInternal(tbody, newStudentData, sectionData.columns, sectionData.showDecimals);
+
+    // Clear inputs
+    inputs.forEach(input => input.value = '');
+    // Focus the 'name' input if available
+    const nameInput = inputContainer.querySelector('input[data-col-id="name"]');
+    if (nameInput) nameInput.focus();
+    else if(inputs.length > 0) inputs[0].focus(); // Fallback to first input
+
+    sortTable(sectionId); // Sort and update numbers
+    autoSave(sectionId);
+    checkEmptyTable(sectionId); // Hide message if needed
+}
+
+
+function deleteStudentRow(btn) {
+    const row = btn.closest('tr');
+    const section = btn.closest('.grade-section');
+    const sectionId = section.dataset.sectionId;
+    const studentId = row.dataset.studentId;
+
+    if (!sectionId || !studentId || !sectionsData[sectionId]) return;
+
+    // Find index and remove from data
+    const studentIndex = sectionsData[sectionId].students.findIndex(s => s.id === studentId);
+    if (studentIndex > -1) {
+        sectionsData[sectionId].students.splice(studentIndex, 1);
+        row.remove(); // Remove from DOM
+        sortTable(sectionId); // Re-sort and re-number
+        autoSave(sectionId);
+        checkEmptyTable(sectionId); // Show message if needed
+    } else {
+        console.warn("Student data not found for deletion:", studentId);
+         row.remove(); // Remove from DOM anyway
+         sortTable(sectionId);
+         checkEmptyTable(sectionId);
+    }
+}
+
+function sortTable(sectionId) {
+    const sectionData = sectionsData[sectionId];
+    const tbody = document.getElementById(`tbody-${sectionId}`);
+    if (!sectionData || !tbody) return;
+
+    // Sort the data array based on the 'name' column
+    sectionData.students.sort((a, b) => {
+        const nameA = a.data['name'] || '';
+        const nameB = b.data['name'] || '';
+        return nameA.localeCompare(nameB, 'ar');
+    });
+
+    // Re-render the table body based on the sorted data
+    renderTableBody(sectionId);
+    // updateRowNumbers is called within renderTableBody
+}
+
+function updateRowNumbers(sectionId) {
+    const tbody = document.getElementById(`tbody-${sectionId}`);
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll("tr");
+    rows.forEach((tr, i) => {
+        const seqCell = tr.querySelector('td[data-col-id="seq"]'); // Target sequence cell
+        if (seqCell) {
+            seqCell.textContent = i + 1;
+        }
+    });
+}
+
+function checkEmptyTable(sectionId) {
+     const tbody = document.getElementById(`tbody-${sectionId}`);
+     const sectionData = sectionsData[sectionId];
+     if (!tbody || !sectionData) return;
+
+     // Remove existing message first
+     const existingMsgRow = tbody.querySelector('.empty-table-message');
+     if (existingMsgRow) existingMsgRow.remove();
+
+     if (sectionData.students.length === 0) {
+         const colCount = sectionData.columns.length + 1; // +1 for action column
+         const emptyRow = tbody.insertRow();
+         emptyRow.className = 'empty-table-message';
+         const cell = emptyRow.insertCell();
+         cell.colSpan = colCount;
+         cell.textContent = 'لا يوجد طلاب مضافون لهذه المادة بعد.';
+         cell.style.textAlign = 'center';
+         cell.style.fontStyle = 'italic';
+         cell.style.padding = '20px';
+         cell.style.color = '#777';
+     }
+}
+
+// --- Delete Grade Section (Refactored to use sectionId) ---
+function deleteGradeSection(btn) {
+    const section = btn.closest('.grade-section');
+    const sectionId = section.dataset.sectionId;
+    if (!section || !sectionId || !sectionsData[sectionId]) {
+        console.error("Could not find the section or its data to delete.");
+        return;
+    }
+
+    const subjectName = sectionsData[sectionId].subject || 'هذه المادة';
+    const finalSubjectName = (subjectName === 'غير محدد' || subjectName === '') ? 'هذه المادة' : subjectName;
+
+    if (confirm(`هل أنت متأكد من رغبتك في حذف '${finalSubjectName}' وكل بياناتها؟\nلا يمكن التراجع عن هذا الإجراء.`)) {
+        delete sectionsData[sectionId]; // Remove data from our state object
+        section.remove(); // Remove the element from the DOM
+        autoSave(); // Save the overall state after deletion
+    }
+}
+
+
+// --- Decimal Toggle Functionality (Refactored) ---
+function toggleDecimals(button) {
+    const section = button.closest('.grade-section');
+    const sectionId = section.dataset.sectionId;
+    if (!sectionId || !sectionsData[sectionId]) return;
+
+    const sectionData = sectionsData[sectionId];
+    sectionData.showDecimals = !sectionData.showDecimals;
+
+    button.textContent = sectionData.showDecimals ? 'إخفاء الأعشار' : 'إظهار الأعشار';
+
+    // Re-render the table body to apply the change
+    renderTableBody(sectionId);
+
+    autoSave(sectionId);
+}
+// updateGradeDisplay is no longer needed as renderTableBody handles it
+
+// --- Print Functions (Mostly Unchanged, rely on CSS) ---
+function printSection(btn) { /* ... (unchanged, uses printing-mode classes) ... */ }
+function printAllSections() { /* ... (unchanged, uses @media print) ... */ }
+
+
+// --- PDF Preparation (Adapted for Dynamic Structure) ---
+function prepareElementForPdf(originalElement) {
+    const sectionId = originalElement.dataset.sectionId;
+    const sectionData = sectionsData[sectionId];
+    if (!originalElement || !sectionId || !sectionData) {
+        console.error("prepareElementForPdf: Invalid element or missing data for ID:", sectionId);
+        return null;
+    }
+
+    // Create a temporary container div to build the PDF version
+    const pdfContainer = document.createElement('div');
+    pdfContainer.classList.add('pdf-prepared-element'); // Apply base PDF styles
+    pdfContainer.style.fontFamily = "'Cairo', sans-serif";
+    pdfContainer.style.backgroundColor = 'white';
+    pdfContainer.style.color = '#000';
+    pdfContainer.style.width = '210mm'; // A4 width
+    pdfContainer.style.padding = '15mm';
+    pdfContainer.style.boxSizing = 'border-box';
+
+    // 1. Add Header (Subject)
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'header'; // Use existing class for potential styling
+    headerDiv.style.textAlign = 'center'; // Ensure center alignment
+    headerDiv.style.marginBottom = '20px';
+    const h2 = document.createElement('h2');
+    h2.style.fontSize = '16pt';
+    h2.innerHTML = `نظام الامتحان المتعدد لمادة: <span class="subject-name-display" style="font-weight: bold; color: #2980b9;">${sectionData.subject || 'غير محدد'}</span>`;
+    headerDiv.appendChild(h2);
+    pdfContainer.appendChild(headerDiv);
+
+    // 2. Add Table
+    const table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.marginTop = '15px';
+
+    // 2a. Table Header (based on current columns)
+    const thead = table.createTHead();
+    const headerRow = thead.insertRow();
+    sectionData.columns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col.header;
+        // Apply PDF styles for TH
+        th.style.border = '1px solid #666';
+        th.style.padding = '6px';
+        th.style.fontSize = '11pt';
+        th.style.textAlign = 'center';
+        th.style.backgroundColor = '#e0e0e0';
+        th.style.fontWeight = 'bold';
+         // Add specific styles like width if needed, mirroring CSS
+        if (col.id === 'seq') th.style.width = '40px';
+        if (col.id === 'name') { th.style.width = '200px'; th.style.textAlign = 'right'; th.style.paddingRight = '10px';}
+        // Add other column widths if necessary for PDF layout
+        headerRow.appendChild(th);
+    });
+    // DO NOT add the action column header to PDF
+
+    // 2b. Table Body (based on current students and columns)
+    const tbody = table.createTBody();
+    if (sectionData.students.length === 0) {
+        // Handle empty table case specifically for PDF
+        const emptyRow = tbody.insertRow();
+        emptyRow.className = 'empty-pdf-table-message';
+        const cell = emptyRow.insertCell();
+        cell.colSpan = sectionData.columns.length; // Span across defined columns
+        cell.textContent = 'لا توجد درجات مسجلة لهذه المادة.';
+        cell.style.textAlign = 'center';
+        cell.style.fontStyle = 'italic';
+        cell.style.padding = '20px';
+        cell.style.border = '1px solid #ccc';
+        cell.style.color = '#555';
+    } else {
+        // Use sorted students for PDF consistency
+        const sortedStudents = [...sectionData.students].sort((a, b) => (a.data['name'] || '').localeCompare(b.data['name'] || '', 'ar'));
+
+        sortedStudents.forEach((student, index) => {
+            const row = tbody.insertRow();
+            sectionData.columns.forEach(col => {
+                const cell = row.insertCell();
+                 // Apply PDF styles for TD
+                 cell.style.border = '1px solid #666';
+                 cell.style.padding = '6px';
+                 cell.style.fontSize = '11pt';
+                 cell.style.textAlign = 'center';
+
+                let value = '';
+                if (col.type === 'sequence') {
+                    value = index + 1;
+                } else {
+                    value = student.data[col.id] !== undefined ? student.data[col.id] : '';
+                    if (col.id === 'grade' && col.type === 'number') {
+                        const gradeValue = parseFloat(value);
+                        if (!isNaN(gradeValue)) {
+                            value = sectionData.showDecimals ? gradeValue.toFixed(1) : Math.round(gradeValue).toString();
+                        }
+                    }
+                }
+                cell.textContent = value;
+
+                // Apply specific TD styles
+                if(col.id === 'name') {
+                   cell.style.textAlign = 'right';
+                   cell.style.paddingRight = '10px';
+                }
+            });
+        });
+    }
+    pdfContainer.appendChild(table);
+
+
+    // 3. Add Teacher Name
+    const teacherDiv = document.createElement('div');
+    teacherDiv.className = 'teacher-display'; // Use existing class
+    teacherDiv.style.textAlign = 'left';
+    teacherDiv.style.marginTop = '25px';
+    teacherDiv.style.paddingTop = '10px';
+    teacherDiv.style.borderTop = '1px solid #ccc';
+    teacherDiv.style.fontSize = '12pt';
+    teacherDiv.style.fontWeight = 'bold';
+    teacherDiv.innerHTML = `المعلم: <span class="teacher-name-display" style="font-weight: normal;">${sectionData.teacher || 'غير محدد'}</span>`;
+    pdfContainer.appendChild(teacherDiv);
+
+    return pdfContainer; // Return the fully constructed element for PDF generation
+}
+
+
+// --- PDF Generation Functions (Use the new prepareElementForPdf) ---
+async function downloadSinglePDF(btn) {
+  if (pdfGenerating) { /* ... */ return; }
+  setPdfButtonsDisabled(true);
+
+  const originalSection = btn.closest('.grade-section');
+  const sectionId = originalSection?.dataset?.sectionId; // Get sectionId
+
+  if (!originalSection || !sectionId || !sectionsData[sectionId]) {
+      console.error("downloadSinglePDF: Source section or data not found.");
+      alert("حدث خطأ: لم يتم العثور على القسم المصدر أو بياناته.");
+      setPdfButtonsDisabled(false);
+      return;
+  }
+
+  const sectionData = sectionsData[sectionId];
+  const subjectName = sectionData.subject || 'مادة';
+  const finalSubjectName = (subjectName === 'غير محدد' || subjectName === '') ? 'مادة' : subjectName;
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const fileName = `سجل_${finalSubjectName}_${timestamp}.pdf`;
+
+  try {
+    const stagingArea = ensureStagingArea();
+    // Prepare the element specifically for PDF rendering using the NEW function
+    const pdfElement = prepareElementForPdf(originalSection); // Pass the original section element
+    if (!pdfElement) {
+      throw new Error("Failed to prepare element for PDF.");
+    }
+    stagingArea.appendChild(pdfElement);
+
+    const pdfOptions = {
+      margin: 0, // Margin handled by padding in pdf-prepared-element
+      filename: fileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', onclone: (doc) => { doc.body.style.fontFamily = "'Cairo', sans-serif"; } },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', putOnlyUsedFonts: true },
+      pagebreak: { mode: ['avoid-all', 'css'] } // Avoid breaking inside the element
+    };
+
+    await html2pdf().from(pdfElement).set(pdfOptions).save();
+
+  } catch (error) { /* ... error handling ... */ }
+  finally { cleanupStagingArea(); setPdfButtonsDisabled(false); }
+}
+
+async function downloadAllPDF() {
+    if (pdfGenerating) { /* ... */ return; }
+    setPdfButtonsDisabled(true);
+
+    const allSectionElements = document.querySelectorAll("#mainContainer .grade-section");
+    if (allSectionElements.length === 0) { /* ... */ return; }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `سجل_جميع_المواد_${timestamp}.pdf`;
+
+    try {
+        const stagingArea = ensureStagingArea();
+        const pdfContentWrapper = document.createElement('div');
+        stagingArea.appendChild(pdfContentWrapper);
+
+        for (const originalSection of allSectionElements) {
+             // Prepare each section using the NEW function
+            const pdfElement = prepareElementForPdf(originalSection);
+            if (pdfElement) {
+                pdfElement.style.marginBottom = '0'; // Remove margin, page break handles spacing
+                pdfElement.style.pageBreakBefore = 'always'; // Start each section on a new page
+                pdfElement.style.pageBreakInside = 'avoid';
+                pdfContentWrapper.appendChild(pdfElement);
+            }
+        }
+        if (pdfContentWrapper.firstChild) {
+           pdfContentWrapper.firstChild.style.pageBreakBefore = 'auto'; // No page break before the very first one
+        }
+
+        const pdfOptions = {
+            margin: 0,
+            filename: fileName,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', onclone: (doc) => { doc.body.style.fontFamily = "'Cairo', sans-serif"; } },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', putOnlyUsedFonts: true },
+             // Let html2pdf handle breaks based on CSS properties set above
+            pagebreak: { mode: ['css'], before: '.pdf-prepared-element' }
+        };
+
+        await html2pdf().from(pdfContentWrapper).set(pdfOptions).save();
+
+    } catch (error) { /* ... error handling ... */ }
+    finally { cleanupStagingArea(); setPdfButtonsDisabled(false); }
+}
+
+// --- Data Save/Load Logic (Refactored for new structure) ---
+function saveAllData() {
+    // Convert sectionsData object into an array for saving
+    const dataToSave = Object.values(sectionsData);
+    // console.log("Saving data:", dataToSave);
+    try {
+        const jsonData = JSON.stringify(dataToSave);
+        localStorage.setItem("gradeSectionsData", jsonData); // Use a new key
+    } catch (e) {
+        console.error("Error saving data to localStorage:", e);
+        alert("تحذير: لم يتمكن من حفظ البيانات. قد تكون مساحة التخزين ممتلئة.");
+    }
+}
+
+function loadData() {
+    const savedJson = localStorage.getItem("gradeSectionsData"); // Use the new key
+    let loadedDataArray = [];
+
+    if (savedJson) {
+        try {
+            const parsed = JSON.parse(savedJson);
+            // Basic validation: Check if it's an array and items look like section data
+            if (Array.isArray(parsed) && parsed.every(item =>
+                typeof item === 'object' && item !== null &&
+                item.hasOwnProperty('subject') && // Check for essential keys
+                item.hasOwnProperty('columns') &&
+                item.hasOwnProperty('students') &&
+                Array.isArray(item.columns) &&
+                Array.isArray(item.students)
+            )) {
+                loadedDataArray = parsed;
+                 // console.log(`Loaded ${loadedDataArray.length} sections from localStorage.`);
+            } else {
+                console.warn("Invalid data format found in localStorage. Resetting.");
+                localStorage.removeItem("gradeSectionsData");
+                 // Try loading old format if new one fails? Optional.
+                 // loadOldFormatData(); return;
+            }
+        } catch (e) {
+            console.error("Error parsing saved data from localStorage:", e);
+            localStorage.removeItem("gradeSectionsData");
+             // Try loading old format if new one fails? Optional.
+             // loadOldFormatData(); return;
+        }
+    } else {
+         // console.log("No saved data found in localStorage.");
+         // Check for old format data if new doesn't exist? Optional.
+         // loadOldFormatData(); return;
+    }
+
+    // Clear existing sections and state before loading
+    document.getElementById('mainContainer').innerHTML = '';
+    sectionsData = {}; // Reset state object
+    sectionCount = 0; // Reset counter
+
+    if (loadedDataArray.length > 0) {
+        loadedDataArray.forEach(sectionData => {
+            createGradeSection(sectionData); // Create section with loaded data
+        });
+    } else {
+        // If no valid data loaded, create one empty section
+        createGradeSection();
+        // console.log("Created initial empty section.");
+    }
+}
+
+/* // Optional: Function to try loading old format if needed
+function loadOldFormatData() {
+    const savedJson = localStorage.getItem("gradeSections"); // Old key
+    // ... (logic from previous version's loadData to parse old format) ...
+    // ... (then convert old format to new format before calling createGradeSection) ...
+    // ... (remember to clear the old localStorage item: localStorage.removeItem("gradeSections")) ...
+}
+*/
+
+
+// --- Initial Load and Save on Exit ---
+window.onload = () => {
+    loadData(); // Load data using the new format logic
+    setPdfButtonsDisabled(false);
+};
+window.addEventListener('beforeunload', (event) => {
+    try {
+        clearTimeout(saveTimeout);
+        saveAllData(); // Save using the new format logic
+    } catch (e) { /* ... */ }
+});
+
+</script>
+
+</body>
+</html>

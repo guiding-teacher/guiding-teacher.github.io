@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>تواصل معنا</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0f0f0f, #1e1e1e);
+      font-family: 'Cairo', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    .form-container {
+      background-color: #2e2d2d;
+      padding: 40px 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(209, 247, 23, 0.43);
+      width: 100%;
+      max-width: 500px;
+      animation: fadeIn 1s ease;
+    }
+
+    .form-container h2 {
+      text-align: center;
+      color: #d9f140;
+      margin-bottom: 15px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #a0a0a0;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+
+    .form-container input,
+    .form-container textarea {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      background-color: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      transition: 0.3s;
+    }
+
+    .form-container input:focus,
+    .form-container textarea:focus {
+      border-color: #00e0ff;
+      background-color: #333;
+      outline: none;
+    }
+
+    .form-container button {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(to right, #00c8ff, #0088ff);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .form-container button:hover {
+      background: linear-gradient(to right, #00a3cc, #006dcc);
+    }
+
+    #success-message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg,#0C272E,#1C4B44);
+      color: white;
+      padding: 30px 20px;
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(0,255,255,0.3);
+      text-align: center;
+      font-size: 1.2rem;
+      z-index: 9999;
+border: 1px solid #DFD6D6;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .form-container {
+        padding: 25px 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<button onclick="window.location.href='index.html'" 
+  style="
+    all: unset;
+    position: fixed;
+    top: 10px;
+    left: 20px;
+         font-size: 30px;
+         color: #b7b63c;
+         text-shadow: 1px 1px 1px #52484a;
+    cursor: pointer;
+    justify-content: center;
+    z-index: 9999;">
+      <i class="fas fa-home" > </i> 
+</button>
+  <!-- رسالة النجاح -->
+  <div id="success-message">
+    <p>تم إرسال رسالتك بنجاح!</p>
+    <p>سوف نقوم بالرد عليك في أقرب وقت ممكن.</p>
+  </div>
+
+  <!-- النموذج -->
+  <form class="form-container" action="https://formsubmit.co/rawrtk2@gmail.com" method="POST">
+    <h2>تواصل معنا 🙂</h2>
+    <p class="subtitle">نسعد بتلقي استفساراتكم ومقترحاتكم.</p>
+
+    <input type="text" name="name" placeholder="اسمك الكامل" required>
+    <input type="email" name="email" placeholder="بريدك الإلكتروني" required>
+    <textarea name="message" rows="5" placeholder="اكتب رسالتك هنا..." required></textarea>
+
+    <!-- خيارات تحكم -->
+    <input type="hidden" name="_captcha" value="false">
+
+    <button type="submit">إرسال</button>
+  </form>
+
+  <!-- كود التحكم -->
+  <script>
+    
+    const form = document.querySelector("form");
+
+    form.addEventListener("submit", function(e) {
+      const now = new Date();
+      const lastSent = localStorage.getItem("lastSent");
+      const monthlyCount = parseInt(localStorage.getItem("monthlyCount") || "0");
+      const lastMonth = localStorage.getItem("lastMonth");
+      const currentMonth = now.getMonth();
+
+      if (lastMonth != currentMonth) {
+        localStorage.setItem("monthlyCount", "0");
+        localStorage.setItem("lastMonth", currentMonth);
+      }
+
+      if (monthlyCount >= 5) {
+        alert("لقد أرسلت الحد الأقصى (5 رسائل) لهذا الشهر.");
+        e.preventDefault();
+        return;
+      }
+
+      if (lastSent) {
+        const lastDate = new Date(lastSent);
+        const hoursDiff = (now - lastDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          const remaining = Math.ceil(24 - hoursDiff);
+          alert(`يجب الانتظار ${remaining} ساعة قبل إرسال رسالة جديدة.`);
+          e.preventDefault();
+          return;
+        }
+      }
+
+      e.preventDefault();
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form)
+      }).then(response => {
+        localStorage.setItem("lastSent", now.toISOString());
+        localStorage.setItem("monthlyCount", (monthlyCount + 1).toString());
+        localStorage.setItem("lastMonth", currentMonth);
+        document.getElementById("success-message").style.display = "block";
+        setTimeout(() => {
+          window.location.href = "index.html"; // عدّل هذه حسب صفحتك الرئيسية
+        }, 5000);
+      }).catch(error => {
+        alert("حدث خطأ أثناء الإرسال. حاول مرة أخرى.");
+      });
+    });
+  </script>
+
+</body>
+</html>
