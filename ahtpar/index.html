@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة الاستفتاءات التفاعلية</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            /* --- الوضع المختلط (الافتراضي الأولي قبل التعديل) --- */
+            --bg-color: #f1f5f9; /* Slate 100 */
+            --text-color: #0f172a; /* Slate 900 */
+            --medium-text-color: #475569; /* Slate 600 */
+            --primary-color: #2dd4bf; /* Teal 400 */
+            --primary-hover: #5eead4; /* Teal 300 */
+            --secondary-color: #a78bfa; /* Violet 400 */
+            --secondary-hover: #c4b5fd; /* Violet 300 */
+            --danger-color: #fb7185; /* Rose 400 */
+            --danger-hover: #fda4af; /* Rose 300 */
+            
+            --card-bg: rgba(15, 23, 42, 0.75); /* Darker Glass */
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-text: #e2e8f0; /* Light Text for Cards */
+            --card-medium-text: #94a3b8; /* Medium Text for Cards */
+            
+            --input-bg: rgba(30, 41, 59, 0.8); /* Slate 800 with alpha */
+            --input-border: var(--card-border);
+            --input-text: var(--card-text);
+            --input-placeholder: var(--card-medium-text);
+            --input-focus-border: var(--primary-color);
+        }
+
+        body.theme-dark {
+            --bg-color: #0f172a; /* Slate 900 */
+            --text-color: #e2e8f0; /* Slate 200 */
+            --medium-text-color: #94a3b8; /* Slate 400 */
+            --primary-color: #2dd4bf; /* Teal 400 */
+            --primary-hover: #5eead4; /* Teal 300 */
+            --card-bg: rgba(30, 41, 59, 0.6); /* Slate 800 with alpha */
+            --card-border: rgba(255, 255, 255, 0.1);
+            --card-text: #e2e8f0;
+            --card-medium-text: #94a3b8;
+            --input-bg: rgba(15, 23, 42, 0.8);
+            --input-border: var(--card-border);
+            --input-text: var(--card-text);
+            --input-placeholder: var(--card-medium-text);
+            --input-focus-border: var(--primary-color);
+        }
+
+        /* --- تعديل: ألوان الوضع الفاتح الجديدة --- */
+        body.theme-light {
+            --bg-color: #f0f9ff; /* sky-50 */
+            --text-color: #0369a1; /* sky-800 */
+            --medium-text-color: #475569; /* slate-600 */
+            --primary-color: #0ea5e9; /* sky-500 */
+            --primary-hover: #38bdf8; /* sky-400 */
+            --secondary-color: #a78bfa; /* Violet 400 */
+            --secondary-hover: #c4b5fd; /* Violet 300 */
+            --danger-color: #fb7185; /* Rose 400 */
+            --danger-hover: #fda4af; /* Rose 300 */
+
+            --card-bg: rgba(249, 246, 246, 0.85);
+            --card-border: rgba(14, 165, 233, 0.2); /* sky-500 with alpha */
+            --card-text: #093680; /* Slate 800 */
+            --card-medium-text: #64748b; /* Slate 500 */
+
+            --input-bg: #e0f2fe; /* sky-100 */
+            --input-border: #234252; /* sky-200 */
+            --input-text: #0c4a6e; /* sky-900 */
+            --input-placeholder: #131280; /* sky-300 */
+            --input-focus-border: var(--primary-color);
+        }
+
+        /* --- إعدادات الجسم والخلفية --- */
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+
+        #aurora-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            opacity: 0.5;
+        }
+        body.theme-light #aurora-background { opacity: 0.4; }
+
+
+        #aurora-background .aurora-shape { position: absolute; border-radius: 50%; filter: blur(100px); animation: move 25s infinite alternate; }
+        #aurora-background .shape1 { background-color: var(--primary-color); width: 400px; height: 400px; top: 10%; left: 15%; animation-duration: 20s; }
+        #aurora-background .shape2 { background-color: var(--secondary-color); width: 350px; height: 350px; top: 40%; left: 60%; animation-duration: 25s; }
+        #aurora-background .shape3 { background-color: #2dd4bf; width: 300px; height: 300px; bottom: 5%; right: 15%; animation-duration: 30s; }
+
+        @keyframes move {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, -120px) scale(1.2); }
+            100% { transform: translate(-40px, 40px) scale(0.9); }
+        }
+
+        /* --- العروض والانتقالات --- */
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* --- البطاقات الزجاجية --- */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--card-text);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* --- الأزرار العصرية --- */
+        .btn { padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: 700; transition: all 0.3s ease-out; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid transparent; cursor: pointer; transform: scale(1); }
+        .btn:hover:not(:disabled) { transform: scale(1.05); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background-image: linear-gradient(to right, var(--primary-color), var(--primary-hover)); color: #fff; border-color: var(--primary-hover); }
+        body.theme-light .btn-primary { color: #fff;}
+        body.theme-dark .btn-primary { color: #0f172a;}
+        .btn-primary:hover:not(:disabled) { box-shadow: 0 0 25px -5px var(--primary-hover); }
+        .btn-secondary { background-image: linear-gradient(to right, var(--secondary-color), var(--secondary-hover)); color: #0f172a; border-color: var(--secondary-hover); }
+        body.theme-light .btn-secondary { color: #fff;}
+        .btn-secondary:hover:not(:disabled) { box-shadow: 0 0 25px -5px var(--secondary-hover); }
+        .btn-danger { background-image: linear-gradient(to right, var(--danger-color), var(--danger-hover)); color: #0f172a; border-color: var(--danger-hover); }
+        body.theme-light .btn-danger { color: #fff;}
+        .btn-danger:hover:not(:disabled) { box-shadow: 0 0 25px -5px var(--danger-hover); }
+        .btn-outline { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        .btn-outline:hover:not(:disabled) { background-color: var(--primary-color); color: #fff; box-shadow: 0 0 25px -5px var(--primary-color); }
+        body.theme-dark .btn-outline:hover:not(:disabled) { color: #0f172a; }
+
+        /* --- حقول الإدخال --- */
+        .form-input, .form-textarea, .form-select {
+            width: 100%; padding: 0.85rem 1.2rem; border: 1px solid var(--input-border); border-radius: 0.75rem; transition: all 0.3s ease;
+            background: var(--input-bg); color: var(--input-text);
+        }
+        .form-input::placeholder, .form-textarea::placeholder { color: var(--input-placeholder); }
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none; border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--input-focus-border) 30%, transparent);
+        }
+        
+        /* --- تأثيرات وحركات --- */
+        .fade-in { animation: fadeIn 0.7s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #customAlert { background: var(--card-bg); border: 1px solid var(--card-border); backdrop-filter: blur(10px); color: var(--card-text); }
+        
+        /* --- ستايل خاص للوحة الصدارة --- */
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            background: color-mix(in srgb, var(--secondary-color) 10%, transparent);
+            border-radius: 0.75rem;
+            border: 1px solid color-mix(in srgb, var(--secondary-color) 20%, transparent);
+            transition: all 0.3s ease;
+        }
+        .leaderboard-item:nth-child(1) { background: color-mix(in srgb, #f59e0b 40%, transparent); border-color: #f59e0b; font-weight: bold; } /* Gold */
+        .leaderboard-item:nth-child(2) { background: color-mix(in srgb, #d1d5db 30%, transparent); border-color: #d1d5db; } /* Silver */
+        .leaderboard-item:nth-child(3) { background: color-mix(in srgb, #f09a5d 30%, transparent); border-color: #f09a5d; } /* Bronze */
+
+        /* --- ستايل لوحة التحكم --- */
+        .admin-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .admin-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .admin-tab-content { display: none; }
+        .admin-tab-content.active { display: block; }
+
+        /* --- تعديل: ستايلات جديدة لصفحة الاختبار --- */
+        .quiz-question-block {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--input-border);
+            border-radius: 1rem;
+            background: color-mix(in srgb, var(--bg-color) 50%, transparent);
+        }
+        .quiz-option-label {
+            display: block;
+            padding: 0.75rem 1.25rem;
+            border: 2px solid var(--input-border);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .quiz-option-label:hover {
+            border-color: var(--primary-color);
+            background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+        }
+        input[type="radio"]:checked + .quiz-option-label {
+            border-color: var(--primary-color);
+            background: color-mix(in srgb, var(--primary-color) 25%, transparent);
+            font-weight: bold;
+        }
+        /* Styles for review mode */
+        .review-mode .quiz-option-label { cursor: default; }
+        .review-mode .quiz-option-label.correct {
+            border-color: #22c55e; /* green-500 */
+            background: color-mix(in srgb, #22c55e 25%, transparent);
+        }
+        .review-mode .quiz-option-label.incorrect {
+            border-color: #ef4444; /* red-500 */
+            background: color-mix(in srgb, #ef4444 25%, transparent);
+            text-decoration: line-through;
+        }
+        /* --- تعديل: ستايل جديد لخانة التوضيح --- */
+        .explanation-box {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            background: color-mix(in srgb, var(--primary-color) 10%, transparent);
+            border-inline-start: 4px solid var(--primary-color);
+            border-radius: 0 0.5rem 0.5rem 0;
+            color: var(--card-text);
+        }
+        
+        footer {
+            background: #22373e; /* Darker footer */
+            color: #ccc; /* Lighter text */
+            padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 1.5);
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: calc(var(--spacing-unit) * 3); /* More space before footer */
+            border-top: 4px solid var(--accent-color); /* Thicker border */
+        }
+        
+        a{
+           text-decoration: none; 
+            color: inherit;
+        }
+        
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="aurora-background">
+        <div class="aurora-shape shape1"></div>
+        <div class="aurora-shape shape2"></div>
+        <div class="aurora-shape shape3"></div>
+    </div>
+    
+    <div id="theme-switcher" class="fixed top-4 left-4 z-50">
+        <button id="theme-toggle-btn" class="p-2 rounded-full bg-slate-500/30 text-white backdrop-blur-sm">
+            <svg id="theme-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+    </div>
+
+    <div id="app-container" class="container mx-auto p-4 md:p-6 max-w-6xl relative z-10">
+        
+        <div id="loadingView" class="view active text-center py-20">
+             <svg class="spinner h-12 w-12 text-teal-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+             <p class="mt-4 text-lg text-medium-text-color">جاري التحميل...</p>
+        </div>
+
+        <div id="errorView" class="view card text-center fade-in">
+             <h2 id="errorTitle" class="text-3xl font-bold text-red-400">خطأ</h2>
+             <p id="errorMessage" class="mt-2 text-slate-300 text-lg">لم نتمكن من العثور على ما تبحث عنه.</p>
+             <a href="#" class="btn btn-primary mt-6">العودة للصفحة الرئيسية</a>
+        </div>
+
+        <div id="homeView" class="view text-center py-16 px-6 fade-in">
+             <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-sky-400 to-violet-400" style="text-shadow: 0 0 20px rgba(167, 139, 250, 0.3);">
+                 منصة الاستفتاءات التفاعلية
+             </h1>
+             <p class="mt-6 max-w-2xl mx-auto text-xl text-medium-text-color">
+                 أنشئ استطلاعات رأي واختبارات تفاعلية بتصميم يخطف الأنظار وشاركها بضغطة زر.
+             </p>
+             <div class="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
+                 <a href="#create" class="btn btn-primary text-lg shadow-lg">أنشئ محتوى جديد ✨</a>
+                 <a href="#admin" class="btn btn-outline text-lg">إدارة محتوى</a>
+             </div>
+        </div>
+
+        <div id="createView" class="view fade-in">
+             <div class="card">
+                 <h2 class="text-4xl font-bold mb-6 border-b border-slate-700 pb-4">إنشاء محتوى جديد</h2>
+                 <form id="createForm" class="space-y-6"></form>
+             </div>
+        </div>
+        
+        <div id="creationSuccessView" class="view card fade-in text-center">
+             <div id="creationSuccessContent"></div>
+        </div>
+
+        <div id="artifactView" class="view card fade-in">
+            <div id="artifactContent"></div>
+        </div>
+        
+        <div id="resultsView" class="view card fade-in">
+            <div id="resultsContent"></div>
+        </div>
+        
+        <div id="adminLoginView" class="view card fade-in max-w-md mx-auto">
+            <h2 class="text-3xl font-bold mb-6 text-center">إدارة المحتوى</h2>
+            <div id="savedLoginsContainer" class="mb-6"></div>
+            <form id="adminLoginForm" class="space-y-4">
+                <div>
+                    <label for="pollIdInput" class="font-semibold block mb-2">معرّف المحتوى (ID)</label>
+                    <input type="text" id="pollIdInput" class="form-input" required>
+                </div>
+                <div>
+                    <label for="adminCodeInput" class="font-semibold block mb-2">رمز الدخول</label>
+                    <input type="password" id="adminCodeInput" class="form-input" required>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="btn btn-primary w-full">دخول</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="adminView" class="view fade-in">
+             <div id="adminContent" class="card"></div>
+        </div>
+        
+    </div>
+    
+    <div id="customAlert" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 py-3 px-6 rounded-full shadow-xl z-50 text-sm"></div>
+    
+    <div id="modal-overlay" class="hidden fixed top-0 left-0 right-0 bottom-0 bg-slate-900 bg-opacity-80 backdrop-blur-sm z-40"></div>
+    <div id="modal-content" class="hidden card text-center fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-md z-50">
+         <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
+         <p id="modal-text" class="text-slate-300 mb-6"></p>
+         <div class="flex justify-center gap-4">
+             <button id="modal-cancel" class="btn btn-outline">إلغاء</button>
+             <button id="modal-confirm" class="btn btn-danger">تأكيد</button>
+         </div>
+    </div>
+    
+   
+    <footer> 
+    <p>© 2025  
+        جميع الحقوق محفوظة 
+        
+         <a href="/index.html" style="color:#ead11eff"> لمنصة المعلم المرشد </a>
+    
+        </p>
+    <a href="siasthsosea.html" style="color: aqua">سياسة الخصوصية</a>
+     <h4> الاصدار : 4.6.0</h4>
+    
+</footer>
+    
+    <script type="module">
+    // ============================  **-- الإعدادات الأساسية --** ============================
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getFirestore, collection, doc, addDoc, getDoc, getDocs, onSnapshot, runTransaction, deleteDoc, serverTimestamp, Timestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCY2nBQhXkNHTOsBaLrT6pbHXAFqdD-MV8",
+  authDomain: "asdasd-89aa5.firebaseapp.com",
+  projectId: "asdasd-89aa5",
+  storageBucket: "asdasd-89aa5.firebasestorage.app",
+  messagingSenderId: "3171201565",
+  appId: "1:3171201565:web:d12df72c2b9b1b62bf0cf4",
+  measurementId: "G-CSJQ492X8Y"
+};
+    // =================================================================================
+
+    const APP_ID = 'interactive-platform-v7';
+    const SAVED_ADMIN_LOGINS_KEY = `${APP_ID}-savedLogins`;
+    let app, db;
+
+    try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+    } catch (e) {
+        console.error("Firebase Init Error:", e);
+        document.getElementById('loadingView').innerHTML = `<div class="card text-red-400">خطأ في الاتصال بقاعدة البيانات. يرجى مراجعة إعدادات Firebase في الكود.</div>`;
+    }
+
+    const artifactsCollectionRef = db ? collection(db, `/artifacts/${APP_ID}/public/data/artifacts`) : null;
+
+    let voterId = localStorage.getItem('voterId') || crypto.randomUUID();
+    localStorage.setItem('voterId', voterId);
+    let currentArtifactUnsubscribe = null;
+    let activeModalConfirmation = null;
+
+    // --- THEME MANAGEMENT ---
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themes = ['theme-mixed', 'theme-dark', 'theme-light'];
+    let currentThemeIndex = localStorage.getItem('themeIndex') ? parseInt(localStorage.getItem('themeIndex')) : 1;
+
+    const applyTheme = () => {
+        document.body.className = 'antialiased'; // Reset classes
+        const currentTheme = themes[currentThemeIndex] || 'theme-light'; // Fallback to light
+        document.body.classList.add(currentTheme);
+        localStorage.setItem('themeIndex', currentThemeIndex);
+    };
+    themeToggleBtn.addEventListener('click', () => {
+        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+        applyTheme();
+    });
+    applyTheme();
+
+
+    // --- GLOBAL STATE & UTILS ---
+    const views = document.querySelectorAll('.view');
+    const customAlert = document.getElementById('customAlert');
+
+    const showAlert = (message, duration = 3000) => {
+        customAlert.textContent = message;
+        customAlert.classList.remove('hidden');
+        customAlert.classList.add('fade-in');
+        setTimeout(() => {
+            customAlert.classList.add('hidden');
+            customAlert.classList.remove('fade-in');
+        }, duration);
+    };
+
+    const showView = (viewId) => {
+        views.forEach(view => view.classList.remove('active'));
+        const activeView = document.getElementById(viewId);
+        if (activeView) activeView.classList.add('active');
+        else {
+            document.getElementById('errorTitle').textContent = 'صفحة غير موجودة';
+            document.getElementById('errorMessage').textContent = 'الرابط الذي اتبعته قد يكون غير صالح أو أن الصفحة قد حُذفت.';
+            document.getElementById('errorView').classList.add('active');
+        }
+        window.scrollTo(0, 0);
+    };
+
+    const showModal = (title, text, onConfirm) => {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-text').textContent = text;
+        document.getElementById('modal-overlay').classList.remove('hidden');
+        document.getElementById('modal-content').classList.remove('hidden');
+        activeModalConfirmation = onConfirm;
+    };
+
+    const hideModal = () => {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        document.getElementById('modal-content').classList.add('hidden');
+        activeModalConfirmation = null;
+    };
+
+    document.getElementById('modal-confirm').addEventListener('click', () => {
+        if (typeof activeModalConfirmation === 'function') {
+            activeModalConfirmation();
+        }
+        hideModal();
+    });
+    document.getElementById('modal-cancel').addEventListener('click', hideModal);
+
+    // --- ROUTING ---
+    const handleRouting = () => {
+        if (currentArtifactUnsubscribe) {
+            currentArtifactUnsubscribe();
+            currentArtifactUnsubscribe = null;
+        }
+        const hash = window.location.hash.replace(/^#/, '');
+        const [path, id] = hash.split('/');
+
+        if (!db) { showView('loadingView'); return; }
+
+        switch (path) {
+            case 'create':
+                renderCreateForm();
+                showView('createView');
+                break;
+            case 'view':
+                if (id) loadArtifactView(id);
+                else showView('homeView');
+                break;
+            case 'results':
+                if (id) loadResultsView(id);
+                else showView('homeView');
+                break;
+            case 'admin':
+                renderSavedLogins();
+                showView('adminLoginView');
+                break;
+            case 'panel':
+                const adminId = sessionStorage.getItem('adminId');
+                const adminCode = sessionStorage.getItem('adminCode');
+                if (id && adminId === id && adminCode) {
+                    loadAdminView(id, adminCode);
+                } else {
+                    showAlert('جلسة الإدارة غير صالحة، يرجى تسجيل الدخول مرة أخرى.');
+                    window.location.hash = 'admin';
+                }
+                break;
+            default:
+                showView('homeView');
+        }
+    };
+
+    // --- CREATE VIEW LOGIC ---
+    // ============================  **-- الإضافة والتعديل هنا --** ============================
+    function renderCreateForm() {
+        const form = document.getElementById('createForm');
+        form.innerHTML = '';
+        delete form.dataset.listenersAttached;
+        updateCreateFormUI('poll');
+        attachDynamicFormListeners(form);
+    }
+
+    function updateCreateFormUI(type) {
+        const formContainer = document.getElementById('createForm');
+        
+        // حقول التوقيت الجديدة
+        const timingFields = `
+            <div class="p-4 bg-black/20 rounded-lg space-y-4">
+                 <h3 class="text-lg font-bold">تحديد فترة الصلاحية (اختياري)</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="startDate" class="block font-semibold mb-2">تاريخ البدء</label>
+                        <input type="datetime-local" id="startDate" name="startDate" class="form-input">
+                    </div>
+                    <div>
+                        <label for="endDate" class="block font-semibold mb-2">تاريخ الانتهاء</label>
+                        <input type="datetime-local" id="endDate" name="endDate" class="form-input">
+                    </div>
+                 </div>
+            </div>
+        `;
+        
+        const commonFields = `
+                <div class="space-y-2">
+                    <label for="artifactTitle" class="font-semibold text-lg">عنوان ${type === 'poll' ? 'الاستفتاء' : 'الاختبار'}</label>
+                    <input type="text" id="artifactTitle" class="form-input" placeholder="اكتب العنوان هنا..." required>
+                </div>
+                <div class="space-y-2">
+                    <label for="artifactDescription" class="font-semibold text-lg">الوصف (اختياري)</label>
+                    <textarea id="artifactDescription" class="form-textarea" rows="3" placeholder="أضف تفاصيل أكثر..."></textarea>
+                </div>
+                 <div>
+                    <label for="adminCode" class="block font-semibold mb-2 text-lg">رمز الدخول للإدارة <span class="text-red-400">*</span></label>
+                    <input type="password" id="adminCode" class="form-input" placeholder="اختر رمزًا سريًا لإدارة المحتوى" required>
+                </div>
+            `;
+
+        const typeSelector = `
+                <div class="p-4 bg-black/20 rounded-lg">
+                    <label class="font-semibold text-lg mb-2 block">اختر نوع المحتوى:</label>
+                    <div class="flex gap-4">
+                        <label class="flex-1 text-center p-3 rounded-lg cursor-pointer border-2 ${type === 'poll' ? 'border-teal-400 bg-teal-400/20' : 'border-slate-600'}">
+                            <input type="radio" name="artifactType" value="poll" class="sr-only" ${type === 'poll' ? 'checked' : ''}>
+                            📊 استفتاء (تصويت)
+                        </label>
+                        <label class="flex-1 text-center p-3 rounded-lg cursor-pointer border-2 ${type === 'quiz' ? 'border-violet-400 bg-violet-400/20' : 'border-slate-600'}">
+                            <input type="radio" name="artifactType" value="quiz" class="sr-only" ${type === 'quiz' ? 'checked' : ''}>
+                            🎓 اختبار تعليمي (Quiz)
+                        </label>
+                    </div>
+                </div>
+            `;
+
+        let typeSpecificFields = '';
+        if (type === 'poll') {
+            typeSpecificFields = `
+                    <div class="space-y-2">
+                        <label class="font-semibold text-lg">الخيارات</label>
+                        <div id="optionsContainer" class="space-y-3">
+                            <div class="flex items-center gap-2"><input type="text" name="option" class="form-input" placeholder="الخيار 1" required><button type="button" class="remove-option-btn text-red-400 p-1">×</button></div>
+                            <div class="flex items-center gap-2"><input type="text" name="option" class="form-input" placeholder="الخيار 2" required><button type="button" class="remove-option-btn text-red-400 p-1">×</button></div>
+                        </div>
+                        <button type="button" id="addOptionBtn" class="mt-2 text-sm text-teal-400 font-semibold hover:underline">+ إضافة خيار</button>
+                    </div>
+                `;
+        } else { // Quiz
+            typeSpecificFields = `
+                    <div>
+                        <h3 class="text-xl font-bold mb-4">أسئلة الاختبار</h3>
+                        <div id="questionsContainer" class="space-y-6"></div>
+                        <button type="button" id="addQuestionBtn" class="mt-4 btn btn-outline"> + أضف سؤالاً</button>
+                    </div>
+                    <div class="p-4 bg-black/20 rounded-lg space-y-4">
+                        <h3 class="text-lg font-bold">إعدادات الاختبار</h3>
+                        <label class="flex items-center cursor-pointer"><input type="checkbox" id="requestName" class="form-checkbox h-5 w-5 text-violet-400" checked><span class="mr-3 text-slate-200">طلب اسم المشارك قبل البدء</span></label>
+                        <label class="flex items-center cursor-pointer"><input type="checkbox" id="showLeaderboard" class="form-checkbox h-5 w-5 text-violet-400" checked><span class="mr-3 text-slate-200">إظهار لوحة الصدارة للمجيبين</span></label>
+                    </div>
+                `;
+        }
+
+        formContainer.innerHTML = `
+                ${typeSelector}
+                ${commonFields}
+                ${timingFields}
+                ${typeSpecificFields}
+                <div class="mt-8 text-center">
+                    <button type="submit" id="submitBtn" class="btn btn-secondary text-lg w-full sm:w-auto">
+                        <span>إنشاء والنشر</span>
+                        <svg class="spinner hidden h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                </div>
+            `;
+
+        if (type === 'quiz') {
+            const questionsContainer = formContainer.querySelector('#questionsContainer');
+            addQuestionCard(null, null, questionsContainer);
+        }
+    }
+
+    async function handleCreate(e) {
+        e.preventDefault();
+        if (!db) return showAlert("خطأ في الاتصال بقاعدة البيانات.");
+
+        const submitBtn = document.getElementById('submitBtn');
+        const spinner = submitBtn.querySelector('.spinner');
+        submitBtn.disabled = true;
+        spinner.classList.remove('hidden');
+
+        try {
+            const type = document.querySelector('input[name="artifactType"]:checked').value;
+            const title = document.getElementById('artifactTitle').value.trim();
+            const adminCode = document.getElementById('adminCode').value.trim();
+            if (!title || !adminCode) throw new Error("يرجى ملء العنوان ورمز الدخول.");
+
+            let artifactData = {
+                type,
+                title,
+                adminCode,
+                description: document.getElementById('artifactDescription').value.trim(),
+                createdAt: serverTimestamp(),
+                settings: {}
+            };
+
+            // حفظ التوقيتات
+            const startDateValue = document.getElementById('startDate').value;
+            const endDateValue = document.getElementById('endDate').value;
+            if (startDateValue) artifactData.startDate = Timestamp.fromDate(new Date(startDateValue));
+            if (endDateValue) artifactData.endDate = Timestamp.fromDate(new Date(endDateValue));
+            
+            if (startDateValue && endDateValue && new Date(startDateValue) >= new Date(endDateValue)) {
+                 throw new Error("تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء.");
+            }
+
+            if (type === 'poll') {
+                const options = Array.from(document.querySelectorAll('#createForm input[name="option"]')).map(opt => opt.value.trim()).filter(Boolean);
+                if (options.length < 2) throw new Error("الاستفتاء يجب أن يحتوي على خيارين على الأقل.");
+                artifactData.options = options.map(opt => ({ text: opt, votes: 0 }));
+                artifactData.voters = {};
+            } else { // Quiz
+                artifactData.settings.requestName = document.getElementById('requestName').checked;
+                artifactData.settings.showLeaderboard = document.getElementById('showLeaderboard').checked;
+                artifactData.questions = [];
+                artifactData.submissionCount = 0;
+
+                const questionCards = document.querySelectorAll('#createForm #questionsContainer > div');
+                if (questionCards.length < 1) throw new Error("الاختبار يجب أن يحتوي على سؤال واحد على الأقل.");
+
+                questionCards.forEach((card, i) => {
+                    const questionText = card.querySelector('input[name="questionText"]').value.trim();
+                    const options = Array.from(card.querySelectorAll('input[name^="q-option-"]')).map(opt => opt.value.trim()).filter(Boolean);
+                    const correctOptionIndex = parseInt(card.querySelector('select[name="correctOption"]').value, 10);
+                    const points = parseInt(card.querySelector('input[name="points"]').value, 10);
+                    const explanation = card.querySelector('textarea[name="explanation"]').value.trim();
+                    if (!questionText || options.length < 2 || isNaN(correctOptionIndex) || isNaN(points) || points < 1) {
+                        throw new Error(`بيانات السؤال ${i + 1} غير مكتملة أو غير صالحة.`);
+                    }
+                    artifactData.questions.push({ id: `q${i}`, text: questionText, options, correctOptionIndex, points, explanation });
+                });
+            }
+
+            const newDocRef = await addDoc(artifactsCollectionRef, artifactData);
+            sessionStorage.setItem('adminId', newDocRef.id);
+            sessionStorage.setItem('adminCode', adminCode);
+            saveAdminCredentials(newDocRef.id, adminCode, title);
+            showCreationSuccess(newDocRef.id, adminCode);
+
+        } catch (error) {
+            console.error("Create Error:", error);
+            showAlert(`حدث خطأ: ${error.message}`);
+        } finally {
+            submitBtn.disabled = false;
+            spinner.classList.add('hidden');
+        }
+    }
+    
+    // --- ARTIFACT VIEW LOGIC (POLL & QUIZ) ---
+    async function loadArtifactView(id) {
+        showView('loadingView');
+        try {
+            const docRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, id);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                document.getElementById('errorMessage').textContent = 'المحتوى الذي تبحث عنه غير موجود أو تم حذفه.';
+                return showView('errorView');
+            }
+
+            const artifact = { id: docSnap.id, ...docSnap.data() };
+
+            if (artifact.type === 'poll') {
+                renderPoll(artifact);
+            } else if (artifact.type === 'quiz') {
+                renderQuiz(artifact);
+            } else {
+                document.getElementById('errorMessage').textContent = 'نوع المحتوى غير معروف.';
+                return showView('errorView');
+            }
+            showView('artifactView');
+
+        } catch (error) {
+            console.error("Error loading artifact:", error);
+            document.getElementById('errorMessage').textContent = 'حدث خطأ أثناء تحميل المحتوى. يرجى المحاولة مرة أخرى.';
+            showView('errorView');
+        }
+    }
+    
+    // دالة مساعدة لتحويل التاريخ إلى صيغة مقروءة
+    function formatFirestoreTimestamp(timestamp) {
+        if (!timestamp) return null;
+        return timestamp.toDate().toLocaleString('ar-EG', {
+            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    // دالة للتحقق من الصلاحية الزمنية
+    function checkArtifactAvailability(artifact) {
+        const now = new Date();
+        const start = artifact.startDate ? artifact.startDate.toDate() : null;
+        const end = artifact.endDate ? artifact.endDate.toDate() : null;
+
+        if (end && now > end) {
+            return { available: false, reason: `انتهت صلاحية هذا المحتوى في ${formatFirestoreTimestamp(artifact.endDate)}.` };
+        }
+        if (start && now < start) {
+            return { available: false, reason: `سيكون هذا المحتوى متاحًا في ${formatFirestoreTimestamp(artifact.startDate)}.` };
+        }
+        return { available: true };
+    }
+    
+    function renderTimingInfo(artifact, container) {
+        const start = formatFirestoreTimestamp(artifact.startDate);
+        const end = formatFirestoreTimestamp(artifact.endDate);
+        if(!start && !end) return;
+
+        container.innerHTML = `
+            <div class="text-sm text-center text-slate-400 mt-2 mb-6 border-t border-b border-slate-700/50 py-2">
+                ${start ? `<span>يبدأ: <strong>${start}</strong></span>` : ''}
+                ${start && end ? `<span class="mx-2">|</span>` : ''}
+                ${end ? `<span>ينتهي: <strong>${end}</strong></span>` : ''}
+            </div>
+        `;
+    }
+
+    function renderPoll(poll) {
+        const content = document.getElementById('artifactContent');
+        const hasVoted = poll.voters && poll.voters[voterId];
+
+        const availability = checkArtifactAvailability(poll);
+        
+        let timingHtmlContainer = document.createElement('div');
+        renderTimingInfo(poll, timingHtmlContainer);
+
+        if (hasVoted) {
+            renderPollResults(poll, content);
+            content.insertAdjacentElement('afterbegin', timingHtmlContainer);
+            return;
+        }
+
+        if (!availability.available) {
+             content.innerHTML = `
+                <h2 class="text-3xl font-bold mb-2 text-center">${poll.title}</h2>
+                <p class="text-slate-300 text-center mb-8">${poll.description}</p>
+                ${timingHtmlContainer.outerHTML}
+                <div class="text-center p-6 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <p class="text-xl font-bold text-red-300">${availability.reason}</p>
+                </div>
+             `;
+             return;
+        }
+
+        const optionsHtml = poll.options.map((opt, index) =>
+            `<button data-index="${index}" class="btn-vote w-full text-lg p-4 text-center btn btn-outline">${opt.text}</button>`
+        ).join('');
+
+        content.innerHTML = `
+                <h2 class="text-3xl font-bold mb-2 text-center">${poll.title}</h2>
+                <p class="text-slate-300 text-center mb-8">${poll.description}</p>
+                ${timingHtmlContainer.outerHTML}
+                <div class="space-y-4">${optionsHtml}</div>
+                <div id="vote-spinner" class="hidden text-center mt-4">
+                    <svg class="spinner h-8 w-8 text-teal-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </div>
+            `;
+
+        content.querySelectorAll('.btn-vote').forEach(btn => {
+            btn.addEventListener('click', async e => {
+                const selectedIndex = parseInt(e.currentTarget.dataset.index);
+                e.currentTarget.parentElement.innerHTML = '';
+                document.getElementById('vote-spinner').classList.remove('hidden');
+
+                try {
+                    const docRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, poll.id);
+                    await runTransaction(db, async (transaction) => {
+                        const sfDoc = await transaction.get(docRef);
+                        if (!sfDoc.exists()) throw "Document does not exist!";
+
+                        const currentPoll = sfDoc.data();
+                        if (currentPoll.voters && currentPoll.voters[voterId]) {
+                            showAlert("لقد قمت بالتصويت بالفعل!");
+                            return;
+                        }
+
+                        const newOptions = currentPoll.options.map((opt, i) => i === selectedIndex ? { ...opt, votes: opt.votes + 1 } : opt);
+                        const newVoters = { ...(currentPoll.voters || {}),
+                            [voterId]: true
+                        };
+
+                        transaction.update(docRef, { options: newOptions, voters: newVoters });
+                    });
+
+                    const updatedDoc = await getDoc(docRef);
+                    renderPollResults(updatedDoc.data(), content);
+                } catch (err) {
+                    console.error("Vote Transaction failed: ", err);
+                    showAlert("فشل التصويت، يرجى المحاولة مرة أخرى.");
+                    renderPoll(poll); // Re-render poll on failure
+                }
+            });
+        });
+    }
+
+    function renderQuiz(quiz) {
+        const content = document.getElementById('artifactContent');
+        const submissions = JSON.parse(localStorage.getItem('quizSubmissions') || '{}');
+        
+        let timingHtmlContainer = document.createElement('div');
+        renderTimingInfo(quiz, timingHtmlContainer);
+        const timingHtml = timingHtmlContainer.outerHTML;
+
+        if (submissions[quiz.id] && submissions[quiz.id].includes(voterId)) {
+            content.innerHTML = `<h2 class="text-2xl font-bold text-center">لقد أكملت هذا الاختبار بالفعل.</h2>
+                                 ${timingHtml}
+                                 <a href="#results/${quiz.id}" class="btn btn-primary mt-4 mx-auto">عرض نتيجتك والترتيب</a>`;
+            return;
+        }
+
+        const availability = checkArtifactAvailability(quiz);
+        if (!availability.available) {
+             content.innerHTML = `
+                <h2 class="text-3xl font-bold mb-2 text-center">${quiz.title}</h2>
+                <p class="text-slate-300 text-center mb-8">${quiz.description}</p>
+                ${timingHtml}
+                <div class="text-center p-6 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <p class="text-xl font-bold text-red-300">${availability.reason}</p>
+                </div>
+             `;
+             return;
+        }
+
+        const requestName = quiz.settings?.requestName !== false;
+
+        if (requestName) {
+            content.innerHTML = `
+                <div id="quiz-name-prompt">
+                    <h2 class="text-3xl font-bold text-center">${quiz.title}</h2>
+                    <p class="text-center my-4 text-slate-300">${quiz.description}</p>
+                    ${timingHtml}
+                    <hr class="border-slate-700 my-6">
+                    <label for="studentName" class="font-semibold block mb-2 text-lg">الرجاء إدخال اسمك للبدء:</label>
+                    <input type="text" id="studentName" class="form-input text-center text-xl" required>
+                    <button id="startQuizBtn" class="btn btn-primary w-full mt-4 text-lg">بدء الاختبار!</button>
+                </div>
+                <div id="quiz-area" class="hidden"></div>
+            `;
+
+            document.getElementById('startQuizBtn').addEventListener('click', () => {
+                const name = document.getElementById('studentName').value.trim();
+                if (!name) return showAlert('الاسم مطلوب.');
+                document.getElementById('quiz-name-prompt').classList.add('hidden');
+                document.getElementById('quiz-area').classList.remove('hidden');
+                renderFullQuizPage(quiz, name);
+            });
+        } else {
+            content.innerHTML = `
+                <div id="quiz-start-prompt">
+                    <h2 class="text-3xl font-bold text-center">${quiz.title}</h2>
+                    <p class="text-center my-4 text-slate-300">${quiz.description}</p>
+                    ${timingHtml}
+                     <p class="text-center my-4 text-sm text-slate-400">هذا الاختبار لا يتطلب إدخال اسم.</p>
+                    <hr class="border-slate-700 my-6">
+                    <button id="startQuizBtn" class="btn btn-primary w-full mt-4 text-lg">بدء الاختبار!</button>
+                </div>
+                <div id="quiz-area" class="hidden"></div>
+            `;
+            document.getElementById('startQuizBtn').addEventListener('click', () => {
+                document.getElementById('quiz-start-prompt').classList.add('hidden');
+                document.getElementById('quiz-area').classList.remove('hidden');
+                renderFullQuizPage(quiz, 'مشارك مجهول');
+            });
+        }
+    }
+    
+    // --- ADMIN PANEL LOGIC ---
+    // دالة مساعدة لتحويل التاريخ إلى الصيغة المناسبة لحقل datetime-local
+    function formatTimestampForInput(timestamp) {
+        if (!timestamp) return '';
+        const date = timestamp.toDate();
+        // خدعة بسيطة لتعديل التوقيت المحلي ليتوافق مع UTC الذي يتوقعه الحقل
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        return date.toISOString().slice(0, 16);
+    }
+    
+    function renderEditForm(artifact) {
+        const commonFields = `
+                 <div class="space-y-2">
+                    <label for="artifactTitle" class="font-semibold text-lg">العنوان</label>
+                    <input type="text" id="artifactTitle" class="form-input" value="${artifact.title.replace(/"/g, '"')}" required>
+                </div>
+                <div class="space-y-2">
+                    <label for="artifactDescription" class="font-semibold text-lg">الوصف</label>
+                    <textarea id="artifactDescription" class="form-textarea" rows="3">${artifact.description}</textarea>
+                </div>
+            `;
+            
+        // حقول التوقيت مع ملء القيم الحالية
+        const timingFields = `
+            <div class="p-4 bg-black/20 rounded-lg space-y-4">
+                 <h3 class="text-lg font-bold">تحديد فترة الصلاحية (اختياري)</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="startDate" class="block font-semibold mb-2">تاريخ البدء</label>
+                        <input type="datetime-local" id="startDate" name="startDate" class="form-input" value="${formatTimestampForInput(artifact.startDate)}">
+                    </div>
+                    <div>
+                        <label for="endDate" class="block font-semibold mb-2">تاريخ الانتهاء</label>
+                        <input type="datetime-local" id="endDate" name="endDate" class="form-input" value="${formatTimestampForInput(artifact.endDate)}">
+                    </div>
+                 </div>
+            </div>
+        `;
+
+        let typeSpecificFields = '';
+        if (artifact.type === 'poll') {
+            typeSpecificFields = `
+                    <div class="space-y-2">
+                        <label class="font-semibold text-lg">الخيارات</label>
+                        <div id="optionsContainer" class="space-y-3">
+                             ${artifact.options.map(opt => `
+                                <div class="flex items-center gap-2">
+                                    <input type="text" name="option" class="form-input" value="${opt.text.replace(/"/g, '"')}" required>
+                                    <button type="button" class="remove-option-btn text-red-400 p-1">×</button>
+                                </div>
+                             `).join('')}
+                        </div>
+                        <button type="button" id="addOptionBtn" class="mt-2 text-sm text-teal-400 font-semibold hover:underline">+ إضافة خيار</button>
+                    </div>
+                `;
+        } else { // Quiz
+            const settings = artifact.settings || {};
+            typeSpecificFields = `
+                    <div>
+                        <h3 class="text-xl font-bold mb-4">أسئلة الاختبار</h3>
+                        <div id="questionsContainer" class="space-y-6"></div>
+                        <button type="button" id="addQuestionBtn" class="mt-4 btn btn-outline"> + أضف سؤالاً</button>
+                    </div>
+                    <div class="p-4 bg-black/20 rounded-lg space-y-4">
+                        <h3 class="text-lg font-bold">إعدادات الاختبار</h3>
+                        <label class="flex items-center cursor-pointer"><input type="checkbox" id="requestName" class="form-checkbox h-5 w-5 text-violet-400" ${settings.requestName !== false ? 'checked' : ''}><span class="mr-3 text-slate-200">طلب اسم المشارك</span></label>
+                        <label class="flex items-center cursor-pointer"><input type="checkbox" id="showLeaderboard" class="form-checkbox h-5 w-5 text-violet-400" ${settings.showLeaderboard !== false ? 'checked' : ''}><span class="mr-3 text-slate-200">إظهار لوحة الصدارة</span></label>
+                    </div>
+                `;
+        }
+
+        return `
+                <form id="editArtifactForm" class="space-y-6" data-id="${artifact.id}">
+                    <input type="hidden" name="artifactType" value="${artifact.type}">
+                    ${commonFields}
+                    ${timingFields}
+                    ${typeSpecificFields}
+                    <div class="mt-8 pt-6 border-t border-slate-700">
+                        <button type="submit" id="updateBtn" class="btn btn-secondary text-lg">
+                            <span>حفظ التعديلات</span>
+                            <svg class="spinner hidden h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </button>
+                    </div>
+                </form>
+            `;
+    }
+
+    async function handleUpdateArtifact(e, artifactId) {
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('#updateBtn');
+        const spinner = submitBtn.querySelector('.spinner');
+        submitBtn.disabled = true;
+        spinner.classList.remove('hidden');
+
+        try {
+            const form = e.target;
+            const type = form.querySelector('input[name="artifactType"]').value;
+            const title = form.querySelector('#artifactTitle').value.trim();
+            let updatedData = {
+                title,
+                description: form.querySelector('#artifactDescription').value.trim()
+            };
+            
+            // حفظ التوقيتات المحدثة
+            const startDateValue = form.querySelector('#startDate').value;
+            const endDateValue = form.querySelector('#endDate').value;
+            updatedData.startDate = startDateValue ? Timestamp.fromDate(new Date(startDateValue)) : null;
+            updatedData.endDate = endDateValue ? Timestamp.fromDate(new Date(endDateValue)) : null;
+
+            if (startDateValue && endDateValue && new Date(startDateValue) >= new Date(endDateValue)) {
+                 throw new Error("تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء.");
+            }
+
+            if (type === 'poll') {
+                const options = Array.from(form.querySelectorAll('input[name="option"]')).map(opt => opt.value.trim()).filter(Boolean);
+                if (options.length < 2) throw new Error("يجب وجود خيارين على الأقل.");
+                const oldDoc = await getDoc(doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, artifactId));
+                const oldOptions = oldDoc.data().options;
+                updatedData.options = options.map(optText => {
+                    const existing = oldOptions.find(oldOpt => oldOpt.text === optText);
+                    return { text: optText, votes: existing ? existing.votes : 0 };
+                });
+            } else { // Quiz
+                updatedData.settings = {
+                    requestName: form.querySelector('#requestName').checked,
+                    showLeaderboard: form.querySelector('#showLeaderboard').checked,
+                };
+                updatedData.questions = [];
+                const questionCards = form.querySelectorAll('#questionsContainer > div');
+                questionCards.forEach((card, i) => {
+                    const questionText = card.querySelector('input[name="questionText"]').value.trim();
+                    const options = Array.from(card.querySelectorAll('input[name^="q-option-"]')).map(opt => opt.value.trim()).filter(Boolean);
+                    const correctOptionIndex = parseInt(card.querySelector('select[name="correctOption"]').value, 10);
+                    const points = parseInt(card.querySelector('input[name="points"]').value, 10);
+                    const explanation = card.querySelector('textarea[name="explanation"]').value.trim();
+                    if (!questionText || options.length < 2 || isNaN(correctOptionIndex) || isNaN(points) || points < 1) {
+                        throw new Error(`بيانات السؤال ${i + 1} غير مكتملة أو غير صالحة.`);
+                    }
+                    updatedData.questions.push({ id: `q${i}`, text: questionText, options, correctOptionIndex, points, explanation });
+                });
+            }
+
+            const docRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, artifactId);
+            await updateDoc(docRef, updatedData);
+            showAlert('تم حفظ التعديلات بنجاح!');
+
+        } catch (error) {
+            console.error("Update Error:", error);
+            showAlert(`فشل الحفظ: ${error.message}`);
+        } finally {
+            submitBtn.disabled = false;
+            spinner.classList.add('hidden');
+        }
+    }
+    
+    // ======================================================================================
+    // --- بقية الكود تبقى كما هي ---
+    // (الدوال التي لم تتأثر بالتغيير)
+    // ...
+    // ... (هنا تأتي بقية الدوال مثل addQuestionCard, showCreationSuccess, renderSavedLogins, ...إلخ)
+    // ======================================================================================
+    function addQuestionCard(question = null, index = null, container) {
+        if (!container) return;
+        const questionIndex = index ?? container.children.length;
+        const card = document.createElement('div');
+        card.className = 'p-5 bg-black/20 rounded-xl border border-slate-700 space-y-4 relative fade-in';
+        card.dataset.index = questionIndex;
+
+        const questionText = question ? question.text : '';
+        const points = question ? question.points : 10;
+        const options = question ? question.options : ['', ''];
+        const explanation = question ? question.explanation : '';
+
+        const optionsHTML = options.map(opt =>
+            `<div class="flex items-center gap-2"><input type="text" name="q-option-${questionIndex}" class="form-input" value="${opt.replace(/"/g, '"')}" required><button type="button" class="remove-option-btn text-red-400 p-1">×</button></div>`
+        ).join('');
+
+        card.innerHTML = `
+                <button type="button" class="remove-question-btn absolute top-2 left-2 text-red-400 hover:text-red-300 text-2xl font-bold">×</button>
+                <div class="space-y-2">
+                    <label for="q-text-${questionIndex}" class="font-semibold">نص السؤال ${questionIndex + 1}</label>
+                    <input type="text" id="q-text-${questionIndex}" name="questionText" class="form-input" value="${questionText.replace(/"/g, '"')}" required>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="font-semibold">الخيارات</label>
+                        <div class="question-options-container space-y-2">${optionsHTML}</div>
+                        <button type="button" class="add-q-option-btn mt-2 text-sm text-teal-400 font-semibold hover:underline">+ إضافة خيار</button>
+                    </div>
+                    <div class="space-y-4">
+                         <div>
+                            <label for="q-correct-${questionIndex}" class="font-semibold">الإجابة الصحيحة</label>
+                            <select id="q-correct-${questionIndex}" name="correctOption" class="form-select" required></select>
+                        </div>
+                        <div>
+                            <label for="q-points-${questionIndex}" class="font-semibold">النقاط</label>
+                            <input type="number" id="q-points-${questionIndex}" name="points" class="form-input" value="${points}" min="1" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label for="q-explanation-${questionIndex}" class="font-semibold">توضيح الإجابة (اختياري)</label>
+                    <textarea id="q-explanation-${questionIndex}" name="explanation" class="form-textarea" rows="2" placeholder="اشرح لماذا هذه الإجابة هي الصحيحة...">${explanation}</textarea>
+                </div>
+            `;
+        container.appendChild(card);
+        updateCorrectOptionDropdown(card, question ? question.correctOptionIndex : 0);
+        updateRemoveQuestionButtons(container);
+    }
+
+    function updateCorrectOptionDropdown(questionCard, selectedIndex = 0) {
+        const select = questionCard.querySelector('select[name="correctOption"]');
+        const options = questionCard.querySelectorAll(`input[name^="q-option-"]`);
+        const currentSelectedValue = select.value;
+        select.innerHTML = '';
+        let validOptionsExist = false;
+        options.forEach((opt, idx) => {
+            const text = opt.value.trim();
+            if (text) {
+                const newSelectItem = document.createElement('option');
+                newSelectItem.value = idx;
+                newSelectItem.textContent = text;
+                if (idx === selectedIndex) newSelectItem.selected = true;
+                select.appendChild(newSelectItem);
+                validOptionsExist = true;
+            }
+        });
+        select.value = validOptionsExist ? (select.querySelector(`option[value="${currentSelectedValue}"]`) ? currentSelectedValue : selectedIndex) : '';
+    }
+
+    function updateRemoveQuestionButtons(container) {
+        const buttons = container.querySelectorAll('.remove-question-btn');
+        buttons.forEach(btn => btn.classList.toggle('hidden', buttons.length <= 1));
+    }
+
+    function attachDynamicFormListeners(form) {
+        if (!form || form.dataset.listenersAttached) return;
+        form.dataset.listenersAttached = 'true';
+
+        form.addEventListener('change', e => {
+            if (e.target.name === 'artifactType') {
+                updateCreateFormUI(e.target.value);
+            }
+        });
+
+        form.addEventListener('click', e => {
+            if (e.target.id === 'addOptionBtn') {
+                const container = form.querySelector('#optionsContainer');
+                container.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-2"><input type="text" name="option" class="form-input" required><button type="button" class="remove-option-btn text-red-400 p-1">×</button></div>`);
+            }
+            if (e.target.id === 'addQuestionBtn') {
+                const container = form.querySelector('#questionsContainer');
+                addQuestionCard(null, null, container);
+            }
+            if (e.target.classList.contains('add-q-option-btn')) {
+                const container = e.target.previousElementSibling;
+                const questionCard = e.target.closest('[data-index]');
+                const qIndex = questionCard.dataset.index;
+                container.insertAdjacentHTML('beforeend', `<div class="flex items-center gap-2"><input type="text" name="q-option-${qIndex}" class="form-input" required><button type="button" class="remove-option-btn text-red-400 p-1">×</button></div>`);
+                updateCorrectOptionDropdown(questionCard);
+            }
+            if (e.target.classList.contains('remove-question-btn')) {
+                const questionCard = e.target.closest('[data-index]');
+                const container = questionCard.parentElement;
+                questionCard.remove();
+                updateRemoveQuestionButtons(container);
+            }
+            if (e.target.classList.contains('remove-option-btn')) {
+                const optionDiv = e.target.parentElement;
+                const questionCard = optionDiv.closest('[data-index]');
+                optionDiv.remove();
+                if (questionCard) {
+                    updateCorrectOptionDropdown(questionCard);
+                }
+            }
+        });
+
+        form.addEventListener('input', e => {
+            const questionCard = e.target.closest('[data-index]');
+            if (questionCard && e.target.name.startsWith('q-option-')) {
+                updateCorrectOptionDropdown(questionCard);
+            }
+        });
+
+        form.addEventListener('submit', e => {
+            if (form.id === 'createForm') handleCreate(e);
+            if (form.id === 'editArtifactForm') handleUpdateArtifact(e, form.dataset.id);
+        });
+    }
+
+    function showCreationSuccess(id, adminCode) {
+        const baseUrl = window.location.href.split('#')[0];
+        const shareUrl = `${baseUrl}#view/${id}`;
+        const adminUrl = `${baseUrl}#panel/${id}`;
+        const content = document.getElementById('creationSuccessContent');
+
+        content.innerHTML = `
+                 <h2 class="text-3xl font-bold text-teal-300 mb-2">🎉 تم الإنشاء بنجاح!</h2>
+                 <p class="text-slate-300 mb-6">هام: احتفظ بهذه المعلومات جيداً لإدارة المحتوى الخاص بك.</p>
+                 <div class="space-y-4 text-right bg-slate-900/50 p-6 rounded-lg border border-slate-700 max-w-2xl mx-auto">
+                     <div>
+                         <label class="font-bold block mb-1 text-lg text-violet-300">رابط المشاركة (للمستخدمين):</label>
+                         <div class="flex"><input type="text" value="${shareUrl}" readonly class="form-input bg-slate-800"><button class="copy-btn btn btn-primary -mr-1">نسخ</button></div>
+                     </div>
+                     <hr class="border-slate-600 my-4">
+                     <div>
+                         <label class="font-bold block mb-1 text-lg text-rose-300">معرّف المحتوى (ID):</label>
+                         <div class="flex"><input type="text" value="${id}" readonly class="form-input bg-slate-800"><button class="copy-btn btn btn-primary -mr-1">نسخ</button></div>
+                     </div>
+                     <div>
+                         <label class="font-bold block mb-1 text-lg text-rose-300">رمز الدخول الخاص بك:</label>
+                         <div class="flex"><input type="text" value="${adminCode}" readonly class="form-input bg-slate-800"><button class="copy-btn btn-primary -mr-1">نسخ</button></div>
+                     </div>
+                 </div>
+                 <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                     <a href="${adminUrl}" class="btn btn-secondary text-lg">الانتقال إلى لوحة التحكم</a>
+                     <a href="${shareUrl}" target="_blank" class="btn btn-outline text-lg">عرض المحتوى المنشور</a>
+                 </div>
+             `;
+
+        content.addEventListener('click', e => {
+            if (e.target.classList.contains('copy-btn')) {
+                const input = e.target.previousElementSibling;
+                navigator.clipboard.writeText(input.value)
+                    .then(() => showAlert('تم النسخ إلى الحافظة!'))
+                    .catch(err => showAlert('فشل النسخ.'));
+            }
+        });
+
+        showView('creationSuccessView');
+    }
+
+    const getSavedAdminCredentials = () => JSON.parse(localStorage.getItem(SAVED_ADMIN_LOGINS_KEY) || '[]');
+
+    function saveAdminCredentials(id, code, title) {
+        let saved = getSavedAdminCredentials();
+        saved = saved.filter(item => item.id !== id);
+        saved.unshift({ id, code, title, lastAccess: new Date().toISOString() });
+        if (saved.length > 5) saved.pop();
+        localStorage.setItem(SAVED_ADMIN_LOGINS_KEY, JSON.stringify(saved));
+    }
+
+    function renderSavedLogins() {
+        const container = document.getElementById('savedLoginsContainer');
+        const saved = getSavedAdminCredentials();
+        if (saved.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        const loginsHtml = saved.map(cred => `
+                <div class="saved-login-item flex justify-between items-center p-3 mb-2 bg-slate-800/50 hover:bg-slate-700/50 rounded-lg cursor-pointer" data-id="${cred.id}" data-code="${cred.code}">
+                    <span class="font-bold truncate">${cred.title || 'محتوى بدون عنوان'}</span>
+                    <span class="text-xs text-slate-400">${cred.id.substring(0, 6)}...</span>
+                </div>
+            `).join('');
+        container.innerHTML = `<h3 class="font-semibold mb-2 text-slate-300">الدخول السريع:</h3>${loginsHtml}`;
+
+        container.querySelectorAll('.saved-login-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.getElementById('pollIdInput').value = item.dataset.id;
+                document.getElementById('adminCodeInput').value = item.dataset.code;
+                showAlert('تم ملء البيانات. اضغط دخول.');
+            });
+        });
+    }
+
+    document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('pollIdInput').value.trim();
+        const code = document.getElementById('adminCodeInput').value.trim();
+        if (!id || !code) return showAlert('يرجى ملء كافة الحقول');
+
+        showView('loadingView');
+        try {
+            const docRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, id);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists() || docSnap.data().adminCode !== code) {
+                showView('adminLoginView');
+                renderSavedLogins();
+                showAlert('المعرّف أو رمز الدخول غير صحيح.');
+                return;
+            }
+            sessionStorage.setItem('adminId', id);
+            sessionStorage.setItem('adminCode', code);
+            saveAdminCredentials(id, code, docSnap.data().title);
+            window.location.hash = `#panel/${id}`;
+        } catch (error) {
+            console.error("Admin Login Error:", error);
+            showView('adminLoginView');
+            renderSavedLogins();
+            showAlert('حدث خطأ أثناء محاولة تسجيل الدخول.');
+        }
+    });
+
+    function renderPollResults(poll, container) {
+        const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
+        const resultsHtml = poll.options.map(opt => {
+            const percentage = totalVotes > 0 ? ((opt.votes / totalVotes) * 100).toFixed(1) : 0;
+            return `
+                    <div class="p-4 rounded-lg bg-slate-800/50">
+                        <div class="flex justify-between items-center mb-1 font-bold">
+                            <span>${opt.text}</span>
+                            <span>${opt.votes} صوت (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-700 rounded-full h-4">
+                            <div class="bg-gradient-to-r from-teal-400 to-sky-500 h-4 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `
+        }).join('');
+
+        container.innerHTML = `
+                <h2 class="text-3xl font-bold mb-2 text-center">${poll.title}</h2>
+                <p class="text-slate-300 text-center mb-8">شكراً لمشاركتك! هذه هي النتائج الحالية.</p>
+                <div class="space-y-4">${resultsHtml}</div>
+                <p class="text-center mt-4 text-slate-400">إجمالي الأصوات: ${totalVotes}</p>
+            `;
+    }
+
+    function renderFullQuizPage(quiz, name) {
+        const area = document.getElementById('quiz-area');
+        const questionsHtml = quiz.questions.map((q, qIndex) => {
+            const optionsHtml = q.options.map((opt, oIndex) => `
+                    <div>
+                        <input type="radio" name="question-${qIndex}" id="q${qIndex}o${oIndex}" value="${oIndex}" class="sr-only" required>
+                        <label for="q${qIndex}o${oIndex}" class="quiz-option-label">${opt}</label>
+                    </div>
+                `).join('');
+
+            return `
+                    <div class="quiz-question-block fade-in" style="animation-delay: ${qIndex * 100}ms">
+                        <p class="font-bold text-lg mb-4">${qIndex + 1}. ${q.text} (${q.points} نقطة)</p>
+                        <div class="space-y-3">${optionsHtml}</div>
+                    </div>
+                `;
+        }).join('');
+
+        area.innerHTML = `
+                <form id="full-quiz-form">
+                    ${questionsHtml}
+                    <div class="text-center mt-8">
+                        <button type="submit" class="btn btn-primary text-lg">إنهاء الاختبار</button>
+                    </div>
+                </form>
+            `;
+
+        document.getElementById('full-quiz-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            showModal(
+                'تأكيد إنهاء الاختبار',
+                'هل أنت متأكد من جميع إجاباتك؟ لا يمكنك تغييرها بعد التأكيد.',
+                () => processQuizSubmission(quiz, name)
+            );
+        });
+    }
+
+    async function processQuizSubmission(quiz, name) {
+        const form = document.getElementById('full-quiz-form');
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.innerHTML = `<span>جاري الحفظ...</span><svg class="spinner h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+        const formData = new FormData(form);
+        let score = 0;
+        const userAnswers = [];
+
+        quiz.questions.forEach((q, qIndex) => {
+            const userAnswer = formData.get(`question-${qIndex}`);
+            const answerIndex = (userAnswer !== null) ? parseInt(userAnswer, 10) : -1;
+            userAnswers.push(answerIndex);
+            if (answerIndex === q.correctOptionIndex) {
+                score += q.points;
+            }
+        });
+
+        try {
+            await finishQuiz(quiz, name, score, userAnswers);
+            showQuizReview(quiz, userAnswers, score, name);
+        } catch (error) {
+            console.error("Failed to process submission:", error);
+            submitButton.disabled = false;
+            submitButton.innerHTML = 'إنهاء الاختبار';
+        }
+    }
+
+    async function finishQuiz(quiz, name, score, userAnswers) {
+        const quizDocRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, quiz.id);
+        const submissionsColRef = collection(quizDocRef, 'submissions');
+
+        const newSubmissionData = {
+            name,
+            score,
+            userAnswers,
+            submittedAt: serverTimestamp(),
+            voterId: voterId
+        };
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const quizDoc = await transaction.get(quizDocRef);
+                if (!quizDoc.exists()) {
+                    throw new Error("المستند الهدف غير موجود!");
+                }
+                const newCount = (quizDoc.data().submissionCount || 0) + 1;
+                transaction.update(quizDocRef, { submissionCount: newCount });
+
+                const newSubmissionRef = doc(submissionsColRef);
+                transaction.set(newSubmissionRef, newSubmissionData);
+            });
+
+            const localSubmissions = JSON.parse(localStorage.getItem('quizSubmissions') || '{}');
+            if (!localSubmissions[quiz.id]) localSubmissions[quiz.id] = [];
+            localSubmissions[quiz.id].push(voterId);
+            localStorage.setItem('quizSubmissions', JSON.stringify(localSubmissions));
+
+        } catch (error) {
+            console.error("Finish Quiz Transaction Error:", error);
+            if (error.code === 'permission-denied') {
+                showAlert("خطأ في الصلاحيات. يرجى مراجعة قواعد الأمان (Security Rules) في Firebase للسماح بإنشاء المستندات في مجموعة 'submissions' الفرعية.");
+            } else {
+                showAlert("حدث خطأ أثناء تسجيل مشاركتك. الرجاء التأكد من اتصالك بالإنترنت.");
+            }
+            throw error;
+        }
+    }
+
+    function showQuizReview(quiz, userAnswers, score, name) {
+        const area = document.getElementById('quiz-area');
+        const totalPoints = quiz.questions.reduce((sum, q) => sum + q.points, 0);
+
+        const questionsHtml = quiz.questions.map((q, qIndex) => {
+            const userAnswerIndex = userAnswers[qIndex];
+
+            const optionsHtml = q.options.map((opt, oIndex) => {
+                let classes = 'quiz-option-label';
+                if (oIndex === q.correctOptionIndex) {
+                    classes += ' correct';
+                } else if (oIndex === userAnswerIndex) {
+                    classes += ' incorrect';
+                }
+                return `<div><label class="${classes}">${opt}</label></div>`;
+            }).join('');
+
+            const explanationHtml = q.explanation ? `
+                    <div class="explanation-box">
+                        <p class="font-bold text-sm" style="color: var(--primary-color);">توضيح:</p>
+                        <p>${q.explanation}</p>
+                    </div>
+                ` : '';
+
+            return `
+                    <div class="quiz-question-block">
+                        <p class="font-bold text-lg mb-4">${qIndex + 1}. ${q.text}</p>
+                        <div class="space-y-3">${optionsHtml}</div>
+                        ${explanationHtml}
+                    </div>
+                `;
+        }).join('');
+
+        area.innerHTML = `
+                <div class="review-mode">
+                    <div class="text-center bg-slate-800/50 p-6 rounded-2xl mb-8">
+                        <h3 class="text-xl font-bold text-violet-300">انتهى الاختبار! نتيجتك هي:</h3>
+                        <p class="text-5xl font-black my-2">${score} <span class="text-2xl font-semibold">/ ${totalPoints}</span></p>
+                        <p class="text-slate-300">أحسنت يا ${name}!</p>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-center">مراجعة الإجابات</h3>
+                    ${questionsHtml}
+                    <div class="text-center mt-8">
+                         <a href="#results/${quiz.id}" class="btn btn-secondary text-lg">عرض نتيجتك والترتيب</a>
+                    </div>
+                </div>
+            `;
+    }
+
+    async function getSubmissions(quizId) {
+        const submissionsColRef = collection(db, `/artifacts/${APP_ID}/public/data/artifacts/${quizId}/submissions`);
+        const querySnapshot = await getDocs(submissionsColRef);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async function loadResultsView(id) {
+        showView('loadingView');
+        try {
+            const docRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, id);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) {
+                document.getElementById('errorMessage').textContent = 'لم يتم العثور على نتائج الاختبار.';
+                return showView('errorView');
+            }
+
+            const artifact = { id: docSnap.id, ...docSnap.data() };
+            const container = document.getElementById('resultsContent');
+
+            if (artifact.type !== 'quiz') {
+                container.innerHTML = `<h2 class="text-2xl font-bold">هذه الصفحة خاصة بنتائج الاختبارات فقط.</h2><a href="#view/${id}" class="btn btn-primary mt-4">العودة</a>`;
+                showView('resultsView');
+                return;
+            }
+
+            const allSubmissions = await getSubmissions(artifact.id);
+            const sortedSubmissions = [...allSubmissions].sort((a, b) => b.score - a.score);
+            const lastSubmission = allSubmissions.find(sub => sub.voterId === voterId);
+            const totalPoints = artifact.questions.reduce((sum, q) => sum + q.points, 0);
+
+            let leaderboardHtml = `<p class="text-center text-slate-400 py-4">لا توجد مشاركات لعرضها بعد.</p>`;
+            if (sortedSubmissions.length > 0) {
+                leaderboardHtml = `
+                        <div class="space-y-3">
+                            ${sortedSubmissions.map((sub, index) => {
+                                const isMySubmission = sub.voterId === voterId;
+                                return `
+                                <div class="leaderboard-item ${isMySubmission ? 'ring-2 ring-violet-400' : ''}">
+                                    <div class="flex items-center gap-4">
+                                        <span class="font-bold text-lg w-8 text-center">${index + 1}</span>
+                                        <span>${sub.name} ${isMySubmission ? '(أنت)' : ''}</span>
+                                    </div>
+                                    <span class="font-bold text-lg">${sub.score} نقطة</span>
+                                </div>
+                                `
+                            }).join('')}
+                        </div>
+                    `;
+            }
+
+            container.innerHTML = `
+                    <h2 class="text-3xl font-bold text-center mb-4">نتائج اختبار: ${artifact.title}</h2>
+                    ${lastSubmission ? `
+                    <div class="text-center bg-slate-800/50 p-6 rounded-2xl mb-8">
+                        <h3 class="text-xl font-bold text-violet-300">نتيجتك المسجلة</h3>
+                        <p class="text-5xl font-black my-2">${lastSubmission.score} <span class="text-2xl font-semibold">/ ${totalPoints}</span></p>
+                        <p class="text-slate-300">للمشارك: ${lastSubmission.name}!</p>
+                    </div>
+                    ` : ''}
+
+                    ${(artifact.settings.showLeaderboard !== false) ? `
+                    <h3 class="text-2xl font-bold mb-4">لوحة الصدارة</h3>
+                    ${leaderboardHtml}
+                    ` : '<p class="text-center text-slate-400">لوحة الصدارة غير مفعلة لهذا الاختبار.</p>'}
+                    
+                    <div class="text-center mt-8">
+                        <a href="#" class="btn btn-primary">العودة للرئيسية</a>
+                    </div>
+                `;
+
+            showView('resultsView');
+        } catch (error) {
+            console.error("Load results error:", error);
+            document.getElementById('errorMessage').textContent = 'حدث خطأ أثناء تحميل النتائج.';
+            showView('errorView');
+        }
+    }
+
+    async function loadAdminView(id, adminCode) {
+        showView('loadingView');
+        try {
+            if (currentArtifactUnsubscribe) currentArtifactUnsubscribe();
+            const docRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, id);
+
+            currentArtifactUnsubscribe = onSnapshot(docRef, async (docSnap) => {
+                if (!docSnap.exists() || docSnap.data().adminCode !== adminCode) {
+                    sessionStorage.clear();
+                    window.location.hash = 'admin';
+                    showAlert('لم يعد لديك صلاحية الوصول.');
+                    return;
+                }
+
+                const artifact = { id: docSnap.id, ...docSnap.data() };
+                const submissions = artifact.type === 'quiz' ? await getSubmissions(artifact.id) : [];
+
+                await renderAdminPanel(artifact, submissions);
+                showView('adminView');
+
+            }, (error) => {
+                console.error("Admin Snapshot Error:", error);
+                showAlert("خطأ في تحديث البيانات تلقائياً.");
+                showView('errorView');
+            });
+
+        } catch (error) {
+            console.error("Load Admin Error:", error);
+            showAlert('لا يمكن تحميل لوحة التحكم.');
+            showView('errorView');
+        }
+    }
+
+    async function renderAdminPanel(artifact, submissions) {
+        const container = document.getElementById('adminContent');
+        const typeText = artifact.type === 'poll' ? 'استفتاء' : 'اختبار';
+        const viewUrl = `${window.location.href.split('#')[0]}#view/${artifact.id}`;
+
+        const exportStatsButtonHtml = artifact.type === 'quiz' ?
+            `<button id="exportStatsBtn" class="btn btn-outline text-sm p-2">تصدير إحصائيات الأسئلة</button>` : '';
+
+        container.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6 pb-4 border-b border-slate-700">
+                    <div>
+                        <h2 class="text-3xl font-bold">${artifact.title}</h2>
+                        <p class="text-slate-400">لوحة تحكم ${typeText} - ID: <span class="font-mono">${artifact.id}</span></p>
+                    </div>
+                    <div class="flex gap-2 flex-wrap justify-start">
+                        <a href="${viewUrl}" target="_blank" class="btn btn-primary text-sm p-2">عرض المحتوى</a>
+                        <button id="exportBtn" class="btn btn-outline text-sm p-2">تصدير المشاركين (CSV)</button>
+                        ${exportStatsButtonHtml}
+                        <button id="deleteBtn" class="btn btn-danger text-sm p-2">حذف</button>
+                    </div>
+                </div>
+
+                <div id="admin-tabs" class="flex gap-4 border-b border-slate-700 mb-6">
+                    <button class="admin-tab active" data-tab="results">النتائج</button>
+                    <button class="admin-tab" data-tab="edit">عرض وتعديل البيانات</button>
+                </div>
+
+                <div id="admin-tab-content-container">
+                    <div id="results-tab" class="admin-tab-content active">${renderAdminResults(artifact, submissions)}</div>
+                    <div id="edit-tab" class="admin-tab-content">${renderEditForm(artifact)}</div>
+                </div>
+            `;
+
+        document.getElementById('exportBtn').addEventListener('click', () => exportParticipantResultsToCSV(artifact, submissions));
+        if (artifact.type === 'quiz') {
+            document.getElementById('exportStatsBtn').addEventListener('click', () => exportQuestionStatsToCSV(artifact, submissions));
+        }
+        document.getElementById('deleteBtn').addEventListener('click', () => openDeleteModal(artifact.id));
+
+        container.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                container.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                container.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+
+        const editForm = document.getElementById('editArtifactForm');
+        if (editForm) {
+            if (artifact.type === 'quiz') {
+                const questionsContainer = editForm.querySelector('#questionsContainer');
+                if (questionsContainer && artifact.questions) {
+                    artifact.questions.forEach((q, i) => addQuestionCard(q, i, questionsContainer));
+                }
+            }
+            attachDynamicFormListeners(editForm);
+        }
+    }
+
+    function calculateQuestionStats(questions, submissions) {
+        if (!questions || !submissions) return [];
+
+        return questions.map((question, qIndex) => {
+            const stats = {
+                totalAnswers: 0,
+                correct: 0,
+                distribution: new Array(question.options.length).fill(0)
+            };
+
+            submissions.forEach(sub => {
+                const answerIndex = sub.userAnswers ? sub.userAnswers[qIndex] : -1;
+                if (answerIndex !== undefined && answerIndex > -1) {
+                    stats.totalAnswers++;
+                    stats.distribution[answerIndex]++;
+                    if (answerIndex === question.correctOptionIndex) {
+                        stats.correct++;
+                    }
+                }
+            });
+            return stats;
+        });
+    }
+
+    function renderAdminResults(artifact, submissions) {
+        if (artifact.type === 'poll') {
+            const totalVotes = artifact.options.reduce((sum, opt) => sum + opt.votes, 0);
+            return `
+                    <h3 class="text-2xl font-bold mb-4">نتائج التصويت (${totalVotes} إجمالي الأصوات)</h3>
+                    <div class="space-y-4">
+                        ${artifact.options.map(opt => {
+                            const percentage = totalVotes > 0 ? ((opt.votes / totalVotes) * 100).toFixed(1) : 0;
+                            return `
+                                <div class="p-4 rounded-lg bg-slate-800/50">
+                                    <div class="flex justify-between items-center mb-1 font-bold">
+                                        <span>${opt.text}</span>
+                                        <span>${opt.votes} صوت (${percentage}%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-700 rounded-full h-4">
+                                        <div class="bg-gradient-to-r from-teal-400 to-sky-500 h-4 rounded-full" style="width: ${percentage}%"></div>
+                                    </div>
+                                </div>
+                            `
+                        }).join('')}
+                    </div>
+                `;
+        } else { // Quiz
+            const sortedSubmissions = [...submissions].sort((a, b) => b.score - a.score);
+
+            let participantsHtml = `<p class="text-center text-slate-400 py-8">لا توجد مشاركات حتى الآن.</p>`;
+            if (sortedSubmissions.length > 0) {
+                participantsHtml = `
+                        <h3 class="text-2xl font-bold mb-4">قائمة المشاركين (${sortedSubmissions.length} مشارك)</h3>
+                        <div class="space-y-3">
+                            ${sortedSubmissions.map((sub, index) => `
+                                <div class="leaderboard-item">
+                                    <div class="flex items-center gap-4">
+                                        <span class="font-bold text-lg w-8 text-center">${index + 1}</span>
+                                        <span>${sub.name}</span>
+                                    </div>
+                                    <span class="font-bold text-lg">${sub.score} نقطة</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+            }
+
+            const questionStats = calculateQuestionStats(artifact.questions, submissions);
+            let statsHtml = '';
+            if (submissions.length > 0) {
+                statsHtml = `
+                        <h3 class="text-2xl font-bold mt-10 mb-4">تحليل إجابات الأسئلة</h3>
+                        <div class="space-y-6">
+                            ${artifact.questions.map((q, qIndex) => {
+                                const stats = questionStats[qIndex];
+                                const incorrect = stats.totalAnswers - stats.correct;
+                                const correctPercent = stats.totalAnswers > 0 ? (stats.correct / stats.totalAnswers * 100).toFixed(1) : 0;
+                                const incorrectPercent = stats.totalAnswers > 0 ? (incorrect / stats.totalAnswers * 100).toFixed(1) : 0;
+
+                                return `
+                                <div class="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                                    <p class="font-bold text-lg mb-3">${qIndex + 1}. ${q.text}</p>
+                                    <div class="flex gap-4 mb-4 text-sm">
+                                        <span class="text-green-400">صحيحة: ${stats.correct} (${correctPercent}%)</span>
+                                        <span class="text-red-400">خاطئة: ${incorrect} (${incorrectPercent}%)</span>
+                                        <span class="text-slate-400">إجمالي المجيبين: ${stats.totalAnswers}</span>
+                                    </div>
+                                    <div class="space-y-2">
+                                    ${q.options.map((opt, oIndex) => {
+                                        const voteCount = stats.distribution[oIndex];
+                                        const votePercent = stats.totalAnswers > 0 ? (voteCount / stats.totalAnswers * 100).toFixed(1) : 0;
+                                        const isCorrect = oIndex === q.correctOptionIndex;
+                                        return `
+                                        <div>
+                                            <div class="flex justify-between items-center text-sm mb-1">
+                                                <span class="${isCorrect ? 'text-green-300 font-bold' : ''}">
+                                                    ${opt} ${isCorrect ? ' (صحيح) ✔' : ''}
+                                                </span>
+                                                <span class="font-mono">${voteCount} (${votePercent}%)</span>
+                                            </div>
+                                            <div class="w-full bg-slate-700 rounded-full h-2.5">
+                                                <div class="${isCorrect ? 'bg-green-500' : 'bg-violet-500'} h-2.5 rounded-full" style="width: ${votePercent}%"></div>
+                                            </div>
+                                        </div>
+                                        `;
+                                    }).join('')}
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
+                     `;
+            }
+
+            return participantsHtml + statsHtml;
+        }
+    }
+
+    function openDeleteModal(id) {
+        showModal(
+            'تأكيد الحذف',
+            'هل أنت متأكد من رغبتك في حذف هذا المحتوى؟ سيتم حذف جميع المشاركات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.',
+            () => handleDeleteArtifact(id)
+        );
+    }
+
+    async function handleDeleteArtifact(id) {
+        showAlert('جاري الحذف...');
+        try {
+            await deleteDoc(doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, id));
+            showAlert('تم حذف المحتوى بنجاح.');
+            window.location.hash = '#';
+        } catch (error) {
+            console.error("Delete Error:", error);
+            showAlert('فشل حذف المحتوى.');
+        }
+    }
+
+    function exportParticipantResultsToCSV(artifact, submissions) {
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        let rows = [];
+
+        if (artifact.type === 'poll') {
+            rows.push(["الخيار", "عدد الأصوات"]);
+            artifact.options.forEach(opt => {
+                rows.push([`"${opt.text.replace(/"/g, '""')}"`, opt.votes]);
+            });
+        } else { // Quiz
+            rows.push(["الاسم", "النتيجة", "تاريخ المشاركة"]);
+            const sortedSubmissions = [...submissions].sort((a, b) => b.score - a.score);
+            sortedSubmissions.forEach(sub => {
+                const date = sub.submittedAt ? sub.submittedAt.toDate().toLocaleString('ar-EG') : 'N/A';
+                rows.push([`"${sub.name.replace(/"/g, '""')}"`, sub.score, `"${date}"`]);
+            });
+        }
+
+        rows.forEach(rowArray => {
+            let row = rowArray.join(",");
+            csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${artifact.title.replace(/ /g,"_")}_participants_results.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function exportQuestionStatsToCSV(artifact, submissions) {
+        const stats = calculateQuestionStats(artifact.questions, submissions);
+        let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+        let rows = [];
+
+        const headers = ["السؤال", "مجموع الإجابات", "الإجابات الصحيحة", "الإجابات الخاطئة"];
+        artifact.questions[0].options.forEach((_, oIndex) => {
+            headers.push(`إجابات الخيار ${oIndex + 1}`);
+        });
+        rows.push(headers);
+
+        artifact.questions.forEach((q, qIndex) => {
+            const qStat = stats[qIndex];
+            const row = [
+                `"${q.text.replace(/"/g, '""')}"`,
+                qStat.totalAnswers,
+                qStat.correct,
+                qStat.totalAnswers - qStat.correct
+            ];
+            q.options.forEach((opt, oIndex) => {
+                row.push(qStat.distribution[oIndex]);
+            });
+            rows.push(row);
+        });
+
+        rows.forEach(rowArray => {
+            let row = rowArray.join(",");
+            csvContent += row + "\r\n";
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${artifact.title.replace(/ /g,"_")}_questions_stats.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    window.addEventListener('hashchange', handleRouting);
+    window.addEventListener('load', () => setTimeout(handleRouting, 100));
+
+    
+    
+    </script>
+</body>
+</html>
