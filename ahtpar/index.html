@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -124,10 +125,16 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-radius: 1.5rem;
-            padding: 2.5rem;
+            padding: 1.5rem; /* p-6 for mobile */
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
         }
+        @media (min-width: 768px) { /* Tailwind's 'md' breakpoint */
+             .card {
+                padding: 2.5rem; /* p-10 for md and up */
+            }
+        }
+
 
         /* --- الأزرار العصرية --- */
         .btn { padding: 0.75rem 1.75rem; border-radius: 0.75rem; font-weight: 700; transition: all 0.3s ease-out; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid transparent; cursor: pointer; transform: scale(1); }
@@ -195,7 +202,7 @@
         .admin-tab-content { display: none; }
         .admin-tab-content.active { display: block; }
 
-        /* --- تعديل: ستايلات جديدة لصفحة الاختبار --- */
+        /* --- ستايلات جديدة لصفحة الاختبار --- */
         .quiz-question-block {
             padding: 1.5rem;
             margin-bottom: 1.5rem;
@@ -231,7 +238,6 @@
             background: color-mix(in srgb, #ef4444 25%, transparent);
             text-decoration: line-through;
         }
-        /* --- تعديل: ستايل جديد لخانة التوضيح --- */
         .explanation-box {
             margin-top: 1rem;
             padding: 0.75rem 1rem;
@@ -287,10 +293,10 @@
 
         <div id="homeView" class="view text-center py-16 px-6 fade-in">
              <h1 class="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-sky-400 to-violet-400" style="text-shadow: 0 0 20px rgba(167, 139, 250, 0.3);">
-                 منصة الاستفتاءات التفاعلية
+                 منصة الاختبارات التفاعلية
              </h1>
              <p class="mt-6 max-w-2xl mx-auto text-xl text-medium-text-color">
-                 أنشئ استطلاعات رأي واختبارات تفاعلية بتصميم يخطف الأنظار وشاركها بضغطة زر.
+                 أنشئ استطلاعات رأي واختبارات تفاعلية مع المجيبين للاجابة عليها بتصميم يخطف الأنظار وشاركها بضغطة زر.
              </p>
              <div class="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
                  <a href="#create" class="btn btn-primary text-lg shadow-lg">أنشئ محتوى جديد ✨</a>
@@ -362,7 +368,7 @@
     
         </p>
     <a href="siasthsosea.html" style="color: aqua">سياسة الخصوصية</a>
-     <h4> الاصدار : 4.6.0</h4>
+     <h4> الاصدار : 4.9.0</h4>
     
 </footer>
     
@@ -371,6 +377,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getFirestore, collection, doc, addDoc, getDoc, getDocs, onSnapshot, runTransaction, deleteDoc, serverTimestamp, Timestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        
     // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCY2nBQhXkNHTOsBaLrT6pbHXAFqdD-MV8",
@@ -401,6 +408,7 @@ const firebaseConfig = {
     localStorage.setItem('voterId', voterId);
     let currentArtifactUnsubscribe = null;
     let activeModalConfirmation = null;
+    let currentQuizTimerInterval = null;
 
     // --- THEME MANAGEMENT ---
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
@@ -423,6 +431,14 @@ const firebaseConfig = {
     // --- GLOBAL STATE & UTILS ---
     const views = document.querySelectorAll('.view');
     const customAlert = document.getElementById('customAlert');
+
+    const formatTime = (ms) => {
+        if (typeof ms !== 'number' || ms < 0) return '-';
+        const totalSeconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
 
     const showAlert = (message, duration = 3000) => {
         customAlert.textContent = message;
@@ -474,6 +490,11 @@ const firebaseConfig = {
             currentArtifactUnsubscribe();
             currentArtifactUnsubscribe = null;
         }
+        if (currentQuizTimerInterval) {
+            clearInterval(currentQuizTimerInterval);
+            currentQuizTimerInterval = null;
+        }
+
         const hash = window.location.hash.replace(/^#/, '');
         const [path, id] = hash.split('/');
 
@@ -512,7 +533,6 @@ const firebaseConfig = {
     };
 
     // --- CREATE VIEW LOGIC ---
-    // ============================  **-- الإضافة والتعديل هنا --** ============================
     function renderCreateForm() {
         const form = document.getElementById('createForm');
         form.innerHTML = '';
@@ -524,7 +544,6 @@ const firebaseConfig = {
     function updateCreateFormUI(type) {
         const formContainer = document.getElementById('createForm');
         
-        // حقول التوقيت الجديدة
         const timingFields = `
             <div class="p-4 bg-black/20 rounded-lg space-y-4">
                  <h3 class="text-lg font-bold">تحديد فترة الصلاحية (اختياري)</h3>
@@ -595,6 +614,16 @@ const firebaseConfig = {
                         <h3 class="text-lg font-bold">إعدادات الاختبار</h3>
                         <label class="flex items-center cursor-pointer"><input type="checkbox" id="requestName" class="form-checkbox h-5 w-5 text-violet-400" checked><span class="mr-3 text-slate-200">طلب اسم المشارك قبل البدء</span></label>
                         <label class="flex items-center cursor-pointer"><input type="checkbox" id="showLeaderboard" class="form-checkbox h-5 w-5 text-violet-400" checked><span class="mr-3 text-slate-200">إظهار لوحة الصدارة للمجيبين</span></label>
+                        <div>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="enableTimer" class="form-checkbox h-5 w-5 text-violet-400">
+                                <span class="mr-3 text-slate-200">تفعيل مؤقت للاختبار (طابع زمني)</span>
+                            </label>
+                            <div id="timer-duration-container" class="hidden mt-3 pl-8">
+                                <label for="timerDuration" class="block font-semibold mb-1 text-sm">مدة الاختبار (بالدقائق):</label>
+                                <input type="number" id="timerDuration" class="form-input" min="1" placeholder="مثال: 15">
+                            </div>
+                        </div>
                     </div>
                 `;
         }
@@ -642,7 +671,6 @@ const firebaseConfig = {
                 settings: {}
             };
 
-            // حفظ التوقيتات
             const startDateValue = document.getElementById('startDate').value;
             const endDateValue = document.getElementById('endDate').value;
             if (startDateValue) artifactData.startDate = Timestamp.fromDate(new Date(startDateValue));
@@ -660,6 +688,17 @@ const firebaseConfig = {
             } else { // Quiz
                 artifactData.settings.requestName = document.getElementById('requestName').checked;
                 artifactData.settings.showLeaderboard = document.getElementById('showLeaderboard').checked;
+                artifactData.settings.enableTimer = document.getElementById('enableTimer').checked;
+                if (artifactData.settings.enableTimer) {
+                    const duration = parseInt(document.getElementById('timerDuration').value, 10);
+                    if (!duration || duration < 1) {
+                        throw new Error("يرجى تحديد مدة صالحة للمؤقت بالدقائق (رقم أكبر من صفر).");
+                    }
+                    artifactData.settings.timerDuration = duration;
+                } else {
+                    artifactData.settings.timerDuration = null;
+                }
+
                 artifactData.questions = [];
                 artifactData.submissionCount = 0;
 
@@ -725,7 +764,6 @@ const firebaseConfig = {
         }
     }
     
-    // دالة مساعدة لتحويل التاريخ إلى صيغة مقروءة
     function formatFirestoreTimestamp(timestamp) {
         if (!timestamp) return null;
         return timestamp.toDate().toLocaleString('ar-EG', {
@@ -733,7 +771,6 @@ const firebaseConfig = {
         });
     }
 
-    // دالة للتحقق من الصلاحية الزمنية
     function checkArtifactAvailability(artifact) {
         const now = new Date();
         const start = artifact.startDate ? artifact.startDate.toDate() : null;
@@ -870,6 +907,14 @@ const firebaseConfig = {
 
         const requestName = quiz.settings?.requestName !== false;
 
+        const startQuizAction = (name) => {
+            const quizStartTime = Date.now();
+            document.getElementById('quiz-name-prompt')?.classList.add('hidden');
+            document.getElementById('quiz-start-prompt')?.classList.add('hidden');
+            document.getElementById('quiz-area').classList.remove('hidden');
+            renderFullQuizPage(quiz, name, quizStartTime);
+        };
+
         if (requestName) {
             content.innerHTML = `
                 <div id="quiz-name-prompt">
@@ -887,9 +932,7 @@ const firebaseConfig = {
             document.getElementById('startQuizBtn').addEventListener('click', () => {
                 const name = document.getElementById('studentName').value.trim();
                 if (!name) return showAlert('الاسم مطلوب.');
-                document.getElementById('quiz-name-prompt').classList.add('hidden');
-                document.getElementById('quiz-area').classList.remove('hidden');
-                renderFullQuizPage(quiz, name);
+                startQuizAction(name);
             });
         } else {
             content.innerHTML = `
@@ -904,19 +947,15 @@ const firebaseConfig = {
                 <div id="quiz-area" class="hidden"></div>
             `;
             document.getElementById('startQuizBtn').addEventListener('click', () => {
-                document.getElementById('quiz-start-prompt').classList.add('hidden');
-                document.getElementById('quiz-area').classList.remove('hidden');
-                renderFullQuizPage(quiz, 'مشارك مجهول');
+                startQuizAction('مشارك مجهول');
             });
         }
     }
     
     // --- ADMIN PANEL LOGIC ---
-    // دالة مساعدة لتحويل التاريخ إلى الصيغة المناسبة لحقل datetime-local
     function formatTimestampForInput(timestamp) {
         if (!timestamp) return '';
         const date = timestamp.toDate();
-        // خدعة بسيطة لتعديل التوقيت المحلي ليتوافق مع UTC الذي يتوقعه الحقل
         date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
         return date.toISOString().slice(0, 16);
     }
@@ -933,7 +972,6 @@ const firebaseConfig = {
                 </div>
             `;
             
-        // حقول التوقيت مع ملء القيم الحالية
         const timingFields = `
             <div class="p-4 bg-black/20 rounded-lg space-y-4">
                  <h3 class="text-lg font-bold">تحديد فترة الصلاحية (اختياري)</h3>
@@ -978,6 +1016,16 @@ const firebaseConfig = {
                         <h3 class="text-lg font-bold">إعدادات الاختبار</h3>
                         <label class="flex items-center cursor-pointer"><input type="checkbox" id="requestName" class="form-checkbox h-5 w-5 text-violet-400" ${settings.requestName !== false ? 'checked' : ''}><span class="mr-3 text-slate-200">طلب اسم المشارك</span></label>
                         <label class="flex items-center cursor-pointer"><input type="checkbox" id="showLeaderboard" class="form-checkbox h-5 w-5 text-violet-400" ${settings.showLeaderboard !== false ? 'checked' : ''}><span class="mr-3 text-slate-200">إظهار لوحة الصدارة</span></label>
+                        <div>
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="enableTimer" class="form-checkbox h-5 w-5 text-violet-400" ${settings.enableTimer ? 'checked' : ''}>
+                                <span class="mr-3 text-slate-200">تفعيل مؤقت للاختبار (طابع زمني)</span>
+                            </label>
+                            <div id="timer-duration-container" class="${settings.enableTimer ? '' : 'hidden'} mt-3 pl-8">
+                                <label for="timerDuration" class="block font-semibold mb-1 text-sm">مدة الاختبار (بالدقائق):</label>
+                                <input type="number" id="timerDuration" class="form-input" min="1" value="${settings.timerDuration || ''}" placeholder="مثال: 15">
+                            </div>
+                        </div>
                     </div>
                 `;
         }
@@ -1014,7 +1062,6 @@ const firebaseConfig = {
                 description: form.querySelector('#artifactDescription').value.trim()
             };
             
-            // حفظ التوقيتات المحدثة
             const startDateValue = form.querySelector('#startDate').value;
             const endDateValue = form.querySelector('#endDate').value;
             updatedData.startDate = startDateValue ? Timestamp.fromDate(new Date(startDateValue)) : null;
@@ -1038,6 +1085,17 @@ const firebaseConfig = {
                     requestName: form.querySelector('#requestName').checked,
                     showLeaderboard: form.querySelector('#showLeaderboard').checked,
                 };
+                updatedData.settings.enableTimer = form.querySelector('#enableTimer').checked;
+                if (updatedData.settings.enableTimer) {
+                    const duration = parseInt(form.querySelector('#timerDuration').value, 10);
+                    if (!duration || duration < 1) {
+                         throw new Error("يرجى تحديد مدة صالحة للمؤقت بالدقائق (رقم أكبر من صفر).");
+                    }
+                    updatedData.settings.timerDuration = duration;
+                } else {
+                    updatedData.settings.timerDuration = null;
+                }
+
                 updatedData.questions = [];
                 const questionCards = form.querySelectorAll('#questionsContainer > div');
                 questionCards.forEach((card, i) => {
@@ -1066,11 +1124,6 @@ const firebaseConfig = {
         }
     }
     
-    // ======================================================================================
-    // --- بقية الكود تبقى كما هي ---
-    // (الدوال التي لم تتأثر بالتغيير)
-    // ...
-    // ... (هنا تأتي بقية الدوال مثل addQuestionCard, showCreationSuccess, renderSavedLogins, ...إلخ)
     // ======================================================================================
     function addQuestionCard(question = null, index = null, container) {
         if (!container) return;
@@ -1153,6 +1206,12 @@ const firebaseConfig = {
         form.addEventListener('change', e => {
             if (e.target.name === 'artifactType') {
                 updateCreateFormUI(e.target.value);
+            }
+            if (e.target.id === 'enableTimer') {
+                const container = form.querySelector('#timer-duration-container');
+                if (container) {
+                    container.classList.toggle('hidden', !e.target.checked);
+                }
             }
         });
 
@@ -1300,7 +1359,7 @@ const firebaseConfig = {
         } catch (error) {
             console.error("Admin Login Error:", error);
             showView('adminLoginView');
-            renderSavedLogins();
+renderSavedLogins();
             showAlert('حدث خطأ أثناء محاولة تسجيل الدخول.');
         }
     });
@@ -1330,7 +1389,7 @@ const firebaseConfig = {
             `;
     }
 
-    function renderFullQuizPage(quiz, name) {
+    function renderFullQuizPage(quiz, name, quizStartTime) {
         const area = document.getElementById('quiz-area');
         const questionsHtml = quiz.questions.map((q, qIndex) => {
             const optionsHtml = q.options.map((opt, oIndex) => `
@@ -1348,7 +1407,15 @@ const firebaseConfig = {
                 `;
         }).join('');
 
+        const timerHtml = (quiz.settings?.enableTimer && quiz.settings?.timerDuration > 0) ?
+            `
+            <div id="quiz-timer" class="sticky top-4 bg-slate-900/80 backdrop-blur-sm p-3 rounded-2xl mb-6 text-center z-20 border border-slate-700 shadow-lg">
+                <p class="text-xl font-bold">الوقت المتبقي: <span id="timer-display" class="font-mono text-2xl text-teal-300">--:--</span></p>
+            </div>
+            ` : '';
+
         area.innerHTML = `
+                ${timerHtml}
                 <form id="full-quiz-form">
                     ${questionsHtml}
                     <div class="text-center mt-8">
@@ -1362,13 +1429,55 @@ const firebaseConfig = {
             showModal(
                 'تأكيد إنهاء الاختبار',
                 'هل أنت متأكد من جميع إجاباتك؟ لا يمكنك تغييرها بعد التأكيد.',
-                () => processQuizSubmission(quiz, name)
+                () => processQuizSubmission(quiz, name, quizStartTime)
             );
         });
+        
+        if (quiz.settings?.enableTimer && quiz.settings?.timerDuration > 0) {
+            startQuizTimer(quiz.settings.timerDuration, quiz, name, quizStartTime);
+        }
     }
 
-    async function processQuizSubmission(quiz, name) {
+    function startQuizTimer(durationMinutes, quiz, name, quizStartTime) {
+        if (currentQuizTimerInterval) clearInterval(currentQuizTimerInterval);
+
+        const timerDisplay = document.getElementById('timer-display');
+        if (!timerDisplay) return;
+
+        let totalSeconds = durationMinutes * 60;
+
+        const updateTimer = () => {
+            const minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+
+            if (totalSeconds <= 0) {
+                clearInterval(currentQuizTimerInterval);
+                currentQuizTimerInterval = null;
+                showAlert('انتهى الوقت! سيتم تسليم إجاباتك الآن.', 5000);
+                
+                setTimeout(() => processQuizSubmission(quiz, name, quizStartTime), 500);
+            }
+            totalSeconds--;
+        };
+
+        updateTimer();
+        currentQuizTimerInterval = setInterval(updateTimer, 1000);
+    }
+
+    async function processQuizSubmission(quiz, name, quizStartTime) {
+        if (currentQuizTimerInterval) {
+            clearInterval(currentQuizTimerInterval);
+            currentQuizTimerInterval = null;
+        }
+
         const form = document.getElementById('full-quiz-form');
+        if (!form) return; 
+
+        const timeTakenMs = Date.now() - quizStartTime;
+
         const submitButton = form.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.innerHTML = `<span>جاري الحفظ...</span><svg class="spinner h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
@@ -1387,7 +1496,7 @@ const firebaseConfig = {
         });
 
         try {
-            await finishQuiz(quiz, name, score, userAnswers);
+            await finishQuiz(quiz, name, score, userAnswers, timeTakenMs);
             showQuizReview(quiz, userAnswers, score, name);
         } catch (error) {
             console.error("Failed to process submission:", error);
@@ -1396,7 +1505,7 @@ const firebaseConfig = {
         }
     }
 
-    async function finishQuiz(quiz, name, score, userAnswers) {
+    async function finishQuiz(quiz, name, score, userAnswers, timeTakenMs) {
         const quizDocRef = doc(db, `/artifacts/${APP_ID}/public/data/artifacts`, quiz.id);
         const submissionsColRef = collection(quizDocRef, 'submissions');
 
@@ -1405,7 +1514,8 @@ const firebaseConfig = {
             score,
             userAnswers,
             submittedAt: serverTimestamp(),
-            voterId: voterId
+            voterId: voterId,
+            timeTakenMs
         };
 
         try {
@@ -1463,7 +1573,7 @@ const firebaseConfig = {
 
             return `
                     <div class="quiz-question-block">
-                        <p class="font-bold text-lg mb-4">${qIndex + 1}. ${q.text}</p>
+                        <p class="font-bold text-lg mb-4">${qIndex + 1}. ${q.text} (${q.points} نقطة)</p>
                         <div class="space-y-3">${optionsHtml}</div>
                         ${explanationHtml}
                     </div>
@@ -1512,7 +1622,12 @@ const firebaseConfig = {
             }
 
             const allSubmissions = await getSubmissions(artifact.id);
-            const sortedSubmissions = [...allSubmissions].sort((a, b) => b.score - a.score);
+            const sortedSubmissions = [...allSubmissions].sort((a, b) => {
+                const scoreDiff = b.score - a.score;
+                if (scoreDiff !== 0) return scoreDiff;
+                return (a.timeTakenMs || Infinity) - (b.timeTakenMs || Infinity);
+            });
+            
             const lastSubmission = allSubmissions.find(sub => sub.voterId === voterId);
             const totalPoints = artifact.questions.reduce((sum, q) => sum + q.points, 0);
 
@@ -1528,7 +1643,10 @@ const firebaseConfig = {
                                         <span class="font-bold text-lg w-8 text-center">${index + 1}</span>
                                         <span>${sub.name} ${isMySubmission ? '(أنت)' : ''}</span>
                                     </div>
-                                    <span class="font-bold text-lg">${sub.score} نقطة</span>
+                                    <div class="text-left">
+                                        <span class="font-bold text-lg">${sub.score} نقطة</span>
+                                        <small class="block text-slate-400 font-normal">(${formatTime(sub.timeTakenMs)})</small>
+                                    </div>
                                 </div>
                                 `
                             }).join('')}
@@ -1543,6 +1661,7 @@ const firebaseConfig = {
                         <h3 class="text-xl font-bold text-violet-300">نتيجتك المسجلة</h3>
                         <p class="text-5xl font-black my-2">${lastSubmission.score} <span class="text-2xl font-semibold">/ ${totalPoints}</span></p>
                         <p class="text-slate-300">للمشارك: ${lastSubmission.name}!</p>
+                        <p class="text-slate-400 mt-2">الوقت المستغرق: ${formatTime(lastSubmission.timeTakenMs)}</p>
                     </div>
                     ` : ''}
 
@@ -1704,7 +1823,11 @@ const firebaseConfig = {
                     </div>
                 `;
         } else { // Quiz
-            const sortedSubmissions = [...submissions].sort((a, b) => b.score - a.score);
+            const sortedSubmissions = [...submissions].sort((a, b) => {
+                 const scoreDiff = b.score - a.score;
+                if (scoreDiff !== 0) return scoreDiff;
+                return (a.timeTakenMs || Infinity) - (b.timeTakenMs || Infinity);
+            });
 
             let participantsHtml = `<p class="text-center text-slate-400 py-8">لا توجد مشاركات حتى الآن.</p>`;
             if (sortedSubmissions.length > 0) {
@@ -1717,7 +1840,10 @@ const firebaseConfig = {
                                         <span class="font-bold text-lg w-8 text-center">${index + 1}</span>
                                         <span>${sub.name}</span>
                                     </div>
-                                    <span class="font-bold text-lg">${sub.score} نقطة</span>
+                                    <div class="text-left">
+                                         <span class="font-bold text-lg">${sub.score} نقطة</span>
+                                         <small class="block text-slate-400 font-normal">(${formatTime(sub.timeTakenMs)})</small>
+                                    </div>
                                 </div>
                             `).join('')}
                         </div>
@@ -1739,7 +1865,7 @@ const firebaseConfig = {
                                 return `
                                 <div class="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
                                     <p class="font-bold text-lg mb-3">${qIndex + 1}. ${q.text}</p>
-                                    <div class="flex gap-4 mb-4 text-sm">
+                                    <div class="flex gap-4 mb-4 text-sm flex-wrap">
                                         <span class="text-green-400">صحيحة: ${stats.correct} (${correctPercent}%)</span>
                                         <span class="text-red-400">خاطئة: ${incorrect} (${incorrectPercent}%)</span>
                                         <span class="text-slate-400">إجمالي المجيبين: ${stats.totalAnswers}</span>
@@ -1805,11 +1931,20 @@ const firebaseConfig = {
                 rows.push([`"${opt.text.replace(/"/g, '""')}"`, opt.votes]);
             });
         } else { // Quiz
-            rows.push(["الاسم", "النتيجة", "تاريخ المشاركة"]);
-            const sortedSubmissions = [...submissions].sort((a, b) => b.score - a.score);
+            rows.push(["الاسم", "النتيجة", "الوقت المستغرق", "تاريخ المشاركة"]);
+            const sortedSubmissions = [...submissions].sort((a, b) => {
+                const scoreDiff = b.score - a.score;
+                if (scoreDiff !== 0) return scoreDiff;
+                return (a.timeTakenMs || Infinity) - (b.timeTakenMs || Infinity);
+            });
             sortedSubmissions.forEach(sub => {
                 const date = sub.submittedAt ? sub.submittedAt.toDate().toLocaleString('ar-EG') : 'N/A';
-                rows.push([`"${sub.name.replace(/"/g, '""')}"`, sub.score, `"${date}"`]);
+                rows.push([
+                    `"${sub.name.replace(/"/g, '""')}"`, 
+                    sub.score, 
+                    `"${formatTime(sub.timeTakenMs)}"`, 
+                    `"${date}"`
+                ]);
             });
         }
 
@@ -1833,9 +1968,11 @@ const firebaseConfig = {
         let rows = [];
 
         const headers = ["السؤال", "مجموع الإجابات", "الإجابات الصحيحة", "الإجابات الخاطئة"];
-        artifact.questions[0].options.forEach((_, oIndex) => {
-            headers.push(`إجابات الخيار ${oIndex + 1}`);
-        });
+        if (artifact.questions && artifact.questions.length > 0 && artifact.questions[0].options) {
+             artifact.questions[0].options.forEach((_, oIndex) => {
+                headers.push(`إجابات الخيار ${oIndex + 1}`);
+            });
+        }
         rows.push(headers);
 
         artifact.questions.forEach((q, qIndex) => {
@@ -1846,9 +1983,11 @@ const firebaseConfig = {
                 qStat.correct,
                 qStat.totalAnswers - qStat.correct
             ];
-            q.options.forEach((opt, oIndex) => {
-                row.push(qStat.distribution[oIndex]);
-            });
+            if(q.options){
+                q.options.forEach((opt, oIndex) => {
+                    row.push(qStat.distribution[oIndex] || 0);
+                });
+            }
             rows.push(row);
         });
 
@@ -1868,8 +2007,6 @@ const firebaseConfig = {
 
     window.addEventListener('hashchange', handleRouting);
     window.addEventListener('load', () => setTimeout(handleRouting, 100));
-
-    
     
     </script>
 </body>
