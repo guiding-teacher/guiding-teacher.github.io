@@ -13,10 +13,26 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 </head>
 <body>
-    <header>
-        <h1>منصة المعلم المرشد</h1>
-        <p id="header-description">إنشاء وتعديل الاستبيانات</p>
-    </header>
+    <!-- In admin.html -->
+<header>
+    <div class="header-top-row">
+        <!-- Right Side: Ministry/Department Info -->
+        <div class="header-info-right">
+            <span>مبادرون للتنمية والتطوير </span>
+        </div>
+
+        <!-- Center: Main Title -->
+        <div class="header-main-title">
+             <h1>منصة المعلم المرشد</h1>
+             <p id="header-description">إنشاء وتعديل الاستبيانات</p>
+        </div>
+
+        <!-- Left Side: Logo -->
+        <div class="header-logo-left">
+            <img src="/images/logoart.png" alt="شعار وزارة التربية">
+        </div>
+    </div>
+</header>
 
     <main>
         <div id="loading-spinner" class="loader"></div>
@@ -73,7 +89,7 @@
 
                 <div class="form-group">
                     <label for="background-color">لون خلفية صفحة الاستبيان (للمجيب):</label>
-                    <input type="color" id="background-color" value="#1a1a1a">
+                    <input type="color" id="background-color" value="#d3f7fa">
                 </div>
 
                 <div class="form-group checkbox-group">

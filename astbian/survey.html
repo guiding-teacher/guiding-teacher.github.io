@@ -13,13 +13,29 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 </head>
 <body>
-    <header>
-        <img id="survey-main-logo" src="#" alt="شعار الاستبيان" style="display: none; max-height: 100px; margin-bottom: 10px; border-radius: 8px;">
-        <div class="header-text-content">
-            <h1 id="survey-main-title">اسم الاستبيان</h1>
-            <p id="survey-main-description">وصف الاستبيان هنا.</p>
+    <!-- In survey.html -->
+<header>
+    <div class="header-top-row">
+        <!-- Right Side: Ministry/Department Info -->
+        <div class="header-info-right">
+            <span>   مبادرون للتنمية والتطوير</span>
         </div>
-    </header>
+
+        <!-- Center: Main Title -->
+        <div class="header-main-title">
+            <img id="survey-main-logo" src="#" alt="شعار الاستبيان" style="display: none;">
+            <div class="header-text-content">
+                <h1 id="survey-main-title">اسم الاستبيان</h1>
+                <p id="survey-main-description">وصف الاستبيان هنا.</p>
+            </div>
+        </div>
+
+        <!-- Left Side: Logo -->
+        <div class="header-logo-left">
+            <img src="/images/logoart.png" alt="شعار وزارة التعليم">
+        </div>
+    </div>
+</header>
 
     <main>
         <div id="loading-spinner" class="loader"></div>
