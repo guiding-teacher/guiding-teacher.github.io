@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>حمى النجوم الفضائية</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #020208; overflow: hidden; overscroll-behavior: none; font-family: 'Cairo', 'Tajawal', sans-serif; }
+        canvas { display: block; box-shadow: 0 0 30px rgba(210, 210, 240, 0.3); }
+    </style>
+</head>
+<body>
+    <script>
+        // --- المتغيرات الأساسية ---
+        let particles = [];
+        let backgroundStars = [];
+        let pressEmitters = [];
+        const NUM_PARTICLES = 60;
+        const NUM_BACKGROUND_STARS = 180;
+
+        let topBarHeightRatio = 0.12;
+        let progressBarHeight = 10; // Fixed pixel height for progress bar
+        let titleYRatio = 0.065;
+        let buttonZoneTopRatio = 0.80;
+        let buttonHeightRatio = 0.07;
+        let buttonSpacingRatio = 0.025;
+        let mainFont = 'Cairo';
+
+        let astronautImg, spaceshipImg, bonusStarImg, asteroidImg;
+        let astronautX, astronautY;
+        let spaceshipX, spaceshipY;
+
+        let score = 0;
+        let totalClicks = 0;
+        let clicksInInterval = 0;
+        let clickIntervalStart = 0;
+        const CLICK_INTERVAL_DURATION = 1000;
+        let currentClickRate = 0;
+        let progressBasedOnClickRate = 0;
+
+        let bonusStar = null;
+        let lastBonusStarTime = 0;
+        const BONUS_STAR_INTERVAL = 10000;
+        const BONUS_STAR_DURATION = 3500;
+        const BONUS_STAR_POINTS = 500;
+        let continuousPressStartTime = 0;
+        let bonusStarsCollected = 0;
+
+        let asteroid = null;
+        const ASTEROID_POINTS_DEDUCTION = 200;
+        const ASTEROID_DURATION = 8000;
+        let asteroidTriggerCount = 2;
+
+        let highScore = 0;
+        let highestClickRate = 0; // Will be session-based
+
+        let setupComplete = false;
+
+        let clickZoomEffect = {
+            active: false, text: "", size: 0, alpha: 0,
+            targetSize: 0, startTime: 0, duration: 1500
+        };
+        let lastZoomTriggerClickCount = 0;
+
+        function preload() {
+            console.log("Preload: Started.");
+            try {
+                astronautImg = loadImage('astronaut.png', () => console.log("Preload: Astronaut loaded."), (e) => { console.error("Preload Error: Astronaut fail:", e); astronautImg = null; });
+                spaceshipImg = loadImage('spaceship.png', () => console.log("Preload: Spaceship loaded."), (e) => { console.error("Preload Error: Spaceship fail:", e); spaceshipImg = null; });
+                bonusStarImg = loadImage('bonus_star.png', () => console.log("Preload: Bonus star loaded."), (e) => { console.error("Preload Error: Bonus star fail:", e); bonusStarImg = null; });
+                asteroidImg = loadImage('asteroid.png', () => console.log("Preload: Asteroid loaded."), (e) => { console.error("Preload Error: Asteroid fail:", e); asteroidImg = null; });
+            } catch (e) { console.error("Preload: Critical error in preload function: ", e); }
+            console.log("Preload: Finished.");
+        }
+
+        function setup() {
+            console.log("Setup: Started.");
+            try {
+                createCanvas(windowWidth, windowHeight);
+                textFont(mainFont);
+                colorMode(HSB, 360, 100, 100, 100);
+                textAlign(CENTER, CENTER);
+                imageMode(CENTER);
+
+                loadGameData(); // highScore is loaded here
+
+                astronautImg = astronautImg || createGraphics(1,1);
+                spaceshipImg = spaceshipImg || createGraphics(1,1);
+                bonusStarImg = bonusStarImg || createGraphics(1,1);
+                asteroidImg = asteroidImg || createGraphics(1,1);
+
+                for (let i = 0; i < NUM_BACKGROUND_STARS; i++) {
+                    backgroundStars.push({ x: random(width), y: random(height), size: random(0.3, 1.8), hue: random(200, 240), saturation: random(5, 15), brightness: random(80, 100), alpha: random(40, 90) });
+                }
+
+                let buttonTotalHeight = (buttonHeightRatio * 2) + buttonSpacingRatio;
+                let particleStartY = height * (buttonZoneTopRatio + buttonTotalHeight + 0.02);
+                for (let i = 0; i < NUM_PARTICLES; i++) {
+                    particles.push(new Particle(random(width), random(particleStartY, height * 0.98)));
+                }
+
+                astronautX = width * 0.25; astronautY = height * 0.65;
+                spaceshipX = width * 0.75; spaceshipY = height * 0.35;
+
+                let canvasElement = document.getElementById('defaultCanvas0');
+                if (canvasElement) {
+                    canvasElement.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
+                    canvasElement.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+                }
+
+                clickIntervalStart = millis();
+                setupComplete = true;
+                console.log("Setup: Finished successfully.");
+            } catch (e) {
+                console.error("Setup: Critical error in setup function: ", e);
+                console.error("Error stack:", e.stack);
+            }
+        }
+
+        function windowResized() {
+            if (!setupComplete) return;
+            console.log("Window Resized.");
+            try {
+                resizeCanvas(windowWidth, windowHeight);
+                if (mainFont) textFont(mainFont);
+                imageMode(CENTER);
+                astronautX = width * 0.25; astronautY = height * 0.65;
+                spaceshipX = width * 0.75; spaceshipY = height * 0.35;
+            } catch (e) { console.error("WindowResized Error:", e); }
+        }
+
+        function draw() {
+            if (!setupComplete) {
+                background(0); fill(255); textAlign(CENTER,CENTER); textSize(20);
+                text("جاري التحضير أو حدث خطأ...", width/2, height/2);
+                return;
+            }
+
+            try {
+                background(235, 80, 8, 100); // Dark space background
+                noStroke();
+
+                // Draw background stars
+                for (let star of backgroundStars) {
+                    fill(star.hue, star.saturation, star.brightness, star.alpha);
+                    ellipse(star.x, star.y, star.size, star.size);
+                    star.y += star.size * 0.02; // Slow parallax
+                    if (star.y > height + star.size) { star.y = -star.size; star.x = random(width); }
+                }
+
+                // Draw spaceship
+                if (spaceshipImg && typeof spaceshipImg.width === 'number' && spaceshipImg.width > 1 && typeof spaceshipImg.height === 'number') {
+                    let spaceshipWidth = min(width * 0.35, 250);
+                    let aspRatio = (spaceshipImg.height > 0 && spaceshipImg.width > 0) ? (spaceshipImg.height / spaceshipImg.width) : 1;
+                    let spaceshipHeight = spaceshipWidth * aspRatio;
+                    let currentSpaceshipX = spaceshipX + sin(frameCount * 0.01) * (width * 0.002);
+                    let currentSpaceshipY = spaceshipY + cos(frameCount * 0.015) * (height * 0.0015);
+                    push(); translate(currentSpaceshipX, currentSpaceshipY); rotate(sin(frameCount * 0.005) * 0.05);
+                    image(spaceshipImg, 0, 0, spaceshipWidth, spaceshipHeight); pop();
+                }
+
+                // Draw top bar (gradient)
+                let topBarActualHeight = height * topBarHeightRatio;
+                let gradientStart = color(260, 85, 75, 70); let gradientEnd = color(220, 85, 75, 40);
+                for (let i = 0; i < topBarActualHeight; i++) {
+                    let inter = map(i, 0, topBarActualHeight, 0, 1);
+                    let c = lerpColor(gradientStart, gradientEnd, inter);
+                    stroke(c); line(0, i, width, i);
+                }
+                noStroke();
+
+                // Draw title
+                let titleSize = min(width / 10, height / 17, 40);
+                textSize(titleSize); fill(50, 60, 100); // Bright title color
+                text("حمى النجوم الفضائية", width / 2, height * titleYRatio);
+
+                // Handle and draw bonus star
+                if (typeof handleBonusStar === 'function') handleBonusStar();
+                if (bonusStar) { bonusStar.update(); bonusStar.display(); if (bonusStar.isOffScreen()) bonusStar = null; }
+
+                // Handle and draw asteroid
+                if (typeof handleAsteroid === 'function') handleAsteroid();
+                if (asteroid) { asteroid.update(); asteroid.display(); if (asteroid.isOffScreen() || asteroid.hit) asteroid = null; }
+
+                // Draw progress bar
+                let progressBarY = topBarActualHeight; // Positioned directly below the top bar gradient
+                fill(220, 20, 85, 40); // Container color for progress bar
+                rectMode(CORNER);
+                let progressBarContainerWidth = width * 0.75;
+                let progressBarContainerX = (width - progressBarContainerWidth) / 2;
+                rect(progressBarContainerX, progressBarY, progressBarContainerWidth, progressBarHeight, progressBarHeight / 2); // Rounded corners
+                if (progressBasedOnClickRate > 0) {
+                    fill(map(progressBasedOnClickRate, 0, 1, 60, 120), 80, 90); // Progress fill color (changes with rate)
+                    rect(progressBarContainerX, progressBarY, progressBarContainerWidth * progressBasedOnClickRate, progressBarHeight, progressBarHeight / 2);
+                }
+                
+                // Update and display particles (main clickable items)
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    if (p) {
+                        p.update(); p.display();
+                        // Check if particle reached score zone
+                        if (!p.counted && p.pos && typeof p.pos.y === 'number' && p.pos.y <= progressBarY + progressBarHeight + p.size) { // Score zone adjusted
+                            score += 10; p.counted = true;
+                            if (score > highScore) {
+                                highScore = score;
+                                saveGameData(); // Save highScore if it's updated
+                            }
+                        }
+                        if (p.isOffScreen()) { // Reset particle if it goes off screen (top)
+                            let btnTotalH = (buttonHeightRatio * 2) + buttonSpacingRatio;
+                            let pStartY = height * (buttonZoneTopRatio + btnTotalH + 0.02);
+                            p.reset(random(width), pStartY + random(height * 0.05));
+                        }
+                    }
+                }
+
+                // Draw astronaut (follows mouse)
+                if (astronautImg && typeof astronautImg.width === 'number' && astronautImg.width > 1 && typeof astronautImg.height === 'number') {
+                    let astroBaseX = width * 0.25; let astroBaseY = height * 0.7;
+                    let targetAX = astroBaseX + map(mouseX, 0, width, -width*0.05, width*0.05, true);
+                    let targetAY = astroBaseY + map(mouseY, height*0.5, height, -height*0.05, height*0.05, true);
+                    astronautX = lerp(astronautX, targetAX, 0.05); astronautY = lerp(astronautY, targetAY, 0.05);
+                    let astroW = min(width * 0.18, 120);
+                    let astroAspRatio = (astronautImg.height > 0 && astronautImg.width > 0) ? (astronautImg.height / astronautImg.width) : 1;
+                    let astroH = astroW * astroAspRatio;
+                    astronautX = constrain(astronautX, astroW/2 , width - astroW/2); 
+                    astronautY = constrain(astronautY, astroH/2, height - astroH/2);
+                    push(); translate(astronautX, astronautY); rotate(sin(frameCount*0.02) * 0.1);
+                    image(astronautImg, 0, 0, astroW, astroH); pop();
+                }
+                
+                // Draw press emitters (visual feedback for clicks/taps)
+                for (let i = pressEmitters.length - 1; i >= 0; i--) {
+                    let emitter = pressEmitters[i];
+                    if(emitter) { emitter.update(); emitter.display(); if (emitter.isFinished()) pressEmitters.splice(i,1); }
+                }
+
+                // Display stats (NEW DESIGN)
+                if (typeof displayStats === 'function') displayStats();
+                
+                // Display click zoom effect (e.g., "100 Clicks!")
+                if (typeof displayClickZoomEffect === 'function') displayClickZoomEffect();
+
+                // Draw buttons
+                rectMode(CENTER); // Set rectMode for buttons
+                let btnW = constrain(width * 0.6, 160, 280); let btnH = constrain(height * buttonHeightRatio, 48, 65);
+                let btnRadius = btnH * 0.35; let btnFontSize = min(btnW / 10, btnH / 2.6, 20);
+                textSize(btnFontSize);
+                let btnY1 = height * buttonZoneTopRatio + btnH / 2;
+                let btnY2 = btnY1 + btnH + (height * buttonSpacingRatio);
+                // Button 1
+                fill(25, 85, 90, 95); stroke(0,0,100,40); strokeWeight(1.5); rect(width/2, btnY1, btnW, btnH, btnRadius);
+                noStroke(); fill(0,0,100); text("ابدأ المغامرة!", width/2, btnY1);
+                // Button 2
+                fill(320,75,95,95); stroke(0,0,100,40); strokeWeight(1.5); rect(width/2, btnY2, btnW, btnH, btnRadius);
+                noStroke(); fill(0,0,100); text("الشارات اللامعة", width/2, btnY2);
+
+                // Update click rate and progress bar value
+                if (typeof updateClickRateAndProgress === 'function') updateClickRateAndProgress();
+
+            } catch (e) {
+                console.error("Draw: Critical error in draw loop:", e); console.error("Error stack:", e.stack);
+                noLoop(); background(0); fill(255); textAlign(CENTER,CENTER); textSize(18);
+                text("حدث خطأ في الرسم. يرجى التحقق من وحدة التحكم.", width/2, height/2);
+            }
+        }
+
+        function updateClickRateAndProgress() {
+            if (millis() - clickIntervalStart > CLICK_INTERVAL_DURATION) {
+                currentClickRate = clicksInInterval; clicksInInterval = 0; clickIntervalStart = millis();
+                if (currentClickRate > highestClickRate) {
+                    highestClickRate = currentClickRate; // Update session-based highestClickRate
+                    // saveGameData(); // No longer saving highestClickRate
+                }
+            }
+            progressBasedOnClickRate = constrain(map(currentClickRate, 0, 15, 0, 1), 0, 1);
+        }
+
+        function handleBonusStar() {
+            if (mouseIsPressed) {
+                if (continuousPressStartTime === 0) continuousPressStartTime = millis();
+                if (!bonusStar && (millis() - (lastBonusStarTime || continuousPressStartTime)) > BONUS_STAR_INTERVAL) {
+                    if (bonusStarImg && typeof bonusStarImg.width === 'number' && bonusStarImg.width > 1) {
+                        bonusStar = new BonusItem(random(width*0.2, width*0.8), random(height*0.2, height*0.4), bonusStarImg, BONUS_STAR_POINTS, BONUS_STAR_DURATION, false);
+                        lastBonusStarTime = millis(); console.log("Bonus Star Appeared!");
+                    } else { lastBonusStarTime = millis(); }
+                }
+            } else { continuousPressStartTime = 0; }
+
+            if (bonusStar && bonusStar.pos && mouseIsPressed) {
+                if (dist(mouseX, mouseY, bonusStar.pos.x, bonusStar.pos.y) < bonusStar.size / 1.5) {
+                    score += bonusStar.points; bonusStarsCollected++; bonusStar = null;
+                    if (score > highScore) {
+                        highScore = score;
+                        saveGameData(); // Save highScore if it's updated
+                    }
+                }
+            }
+        }
+
+        function handleAsteroid() {
+            if (!asteroid && bonusStarsCollected >= asteroidTriggerCount) {
+                if (asteroidImg && typeof asteroidImg.width ==='number' && asteroidImg.width > 1) {
+                    asteroid = new BonusItem(random(width), 0 - asteroidImg.height/2 -10, asteroidImg, -ASTEROID_POINTS_DEDUCTION, ASTEROID_DURATION, true);
+                    bonusStarsCollected = 0; asteroidTriggerCount++; console.log("Asteroid Incoming!");
+                } else { bonusStarsCollected = 0; }
+            }
+
+            if (asteroid && asteroid.pos && !asteroid.hit && mouseIsPressed) {
+                if (dist(mouseX, mouseY, asteroid.pos.x, asteroid.pos.y) < asteroid.size / 1.2) {
+                    asteroid.hit = true; score += 50;
+                    if (score > highScore) {
+                        highScore = score;
+                        saveGameData(); // Save highScore if it's updated
+                    }
+                    console.log("Asteroid Deflected!");
+                }
+            }
+            
+            if (asteroid && asteroid.pos && !asteroid.hit && astronautImg && typeof astronautImg.width === 'number' && astronautImg.width > 1) {
+                if (typeof astronautX === 'number' && typeof astronautY === 'number' && 
+                    dist(asteroid.pos.x, asteroid.pos.y, astronautX, astronautY) < (asteroid.size/2 + min(width * 0.18, 120)/3)) {
+                    score += asteroid.points;
+                    if (score < 0) score = 0;
+                    asteroid.hit = true; 
+                    if (score > highScore) {
+                        highScore = score;
+                        saveGameData(); // Save highScore if it's updated
+                    }
+                    console.log("Asteroid Hit Player! Score:", score);
+                }
+            }
+        }
+
+        function displayStats() {
+            push();
+            textFont(mainFont);
+
+            let topBarActualHeight = height * topBarHeightRatio;
+            let statsRowY = topBarActualHeight + progressBarHeight + (height * 0.012); 
+
+            let statBoxHeight = height * 0.048; 
+            let statBoxCornerRadius = statBoxHeight * 0.25;
+
+            const statLabels = ["النجوم", "أعلى نجوم", "النقرات", "سرعة الضغط", "أعلى سرعة"];
+            const displayStatValues = [ 
+                score.toString(),
+                highScore.toString(),
+                totalClicks.toString(),
+                `${currentClickRate} ن/ث`,
+                `${highestClickRate} ن/ث` // Displays session-based highest click rate
+            ];
+            const numStats = statLabels.length;
+
+            let availableWidthForStats = width * 0.94; 
+            let gapBetweenBoxes = width * 0.008; 
+            let totalGapWidth = (numStats - 1) * gapBetweenBoxes;
+            let statBoxWidth = (availableWidthForStats - totalGapWidth) / numStats;
+
+            let currentX = (width - availableWidthForStats) / 2; 
+
+            let baseTextSize = min(statBoxWidth / 8, statBoxHeight / 2.9, 14.5); 
+
+            for (let i = 0; i < numStats; i++) {
+                fill(240, 50, 30, 70); 
+                stroke(220, 60, 88, 75); 
+                strokeWeight(1.5);
+                rectMode(CORNER);
+                rect(currentX, statsRowY, statBoxWidth, statBoxHeight, statBoxCornerRadius);
+
+                noStroke();
+                fill(0, 0, 100, 95); 
+                textAlign(CENTER, CENTER);
+                
+                let labelText = statLabels[i] + ":";
+                let valueText = displayStatValues[i];
+
+                textSize(baseTextSize * 0.82); 
+                text(labelText, currentX + statBoxWidth / 2, statsRowY + statBoxHeight * 0.34);
+
+                textSize(baseTextSize); 
+                text(valueText, currentX + statBoxWidth / 2, statsRowY + statBoxHeight * 0.72);
+                
+                currentX += statBoxWidth + gapBetweenBoxes;
+            }
+            pop();
+        }
+
+        function displayClickZoomEffect() {
+            if (clickZoomEffect.active) {
+                let elapsed = millis() - clickZoomEffect.startTime;
+                let progress = constrain(elapsed / clickZoomEffect.duration, 0, 1);
+                let currentSizeRatio = 0;
+                if (progress < 0.3) { currentSizeRatio = map(progress, 0, 0.3, 0.2, 1); } 
+                else if (progress < 0.7) { currentSizeRatio = 1; } 
+                else { currentSizeRatio = map(progress, 0.7, 1, 1, 0.5); } 
+                clickZoomEffect.size = clickZoomEffect.targetSize * currentSizeRatio;
+                
+                clickZoomEffect.alpha = map(progress, 0.5, 1, 255, 0, true); 
+
+                if (progress >= 1 || clickZoomEffect.alpha <=0) { clickZoomEffect.active = false; }
+                else {
+                    push(); textAlign(CENTER, CENTER); textSize(clickZoomEffect.size);
+                    fill(50, 90, 100, clickZoomEffect.alpha); 
+                    stroke(0,0,0, clickZoomEffect.alpha * 0.4); 
+                    strokeWeight(max(1, clickZoomEffect.size / 35));
+                    text(clickZoomEffect.text, width / 2, height / 2); 
+                    pop();
+                }
+            }
+        }
+
+        function mousePressed() {
+            if (!setupComplete) return;
+            totalClicks++; clicksInInterval++;
+            if (totalClicks >= lastZoomTriggerClickCount + 100) { 
+                clickZoomEffect.active = true; clickZoomEffect.text = totalClicks.toString();
+                clickZoomEffect.targetSize = min(width / 2.5, height / 3.5, 180); 
+                clickZoomEffect.startTime = millis(); clickZoomEffect.alpha = 255;
+                lastZoomTriggerClickCount = totalClicks - (totalClicks % 100); 
+            }
+            if (mouseY > height * topBarHeightRatio + progressBarHeight + (height*0.06)) { 
+                 if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) { 
+                     pressEmitters.push(new PressEmitter(mouseX, mouseY));
+                 }
+            }
+            for (let p of particles) { if(p && typeof p.applyForce === 'function') p.applyForce(createVector(0, -p.liftForce * random(1.2, 2.0))); }
+        }
+        function touchStarted() {
+            if (!setupComplete) return;
+            if (touches.length > 0) {
+                if (touches.length === 1 || (typeof event !== 'undefined' && event && !event.defaultPrevented) ) {
+                     totalClicks++; clicksInInterval++;
+                    if (totalClicks >= lastZoomTriggerClickCount + 100) {
+                        clickZoomEffect.active = true; clickZoomEffect.text = totalClicks.toString();
+                        clickZoomEffect.targetSize = min(width / 2.5, height / 3.5, 180);
+                        clickZoomEffect.startTime = millis(); clickZoomEffect.alpha = 255;
+                        lastZoomTriggerClickCount = totalClicks - (totalClicks % 100);
+                    }
+                }
+                let touchX = touches[0].x; let touchY = touches[0].y;
+                if (touchY > height * topBarHeightRatio + progressBarHeight + (height*0.06)) { 
+                    if (touchX > 0 && touchX < width && touchY > 0 && touchY < height) {
+                        pressEmitters.push(new PressEmitter(touchX, touchY));
+                    }
+                }
+            }
+            for (let p of particles) { if(p && typeof p.applyForce === 'function') p.applyForce(createVector(0, -p.liftForce * random(1.2, 2.0))); }
+            return false; 
+        }
+
+        // --- MODIFIED saveGameData FUNCTION ---
+        function saveGameData() {
+            try {
+                localStorage.setItem('spaceFeverHighScore', highScore.toString());
+                // highestClickRate is no longer saved
+            } catch (e) { console.error("Error saving game data:", e); }
+        }
+        // --- MODIFIED loadGameData FUNCTION ---
+        function loadGameData() {
+            try {
+                const savedHS = localStorage.getItem('spaceFeverHighScore');
+                if (savedHS !== null) {
+                    highScore = parseInt(savedHS, 10) || 0;
+                } else {
+                    highScore = 0; // Default if not found
+                }
+                // highestClickRate is not loaded, it will remain its initial value (0) for each new session
+                highestClickRate = 0; 
+            } catch (e) {
+                console.error("Error loading game data:", e);
+                highScore = 0; // Default on error
+                highestClickRate = 0;
+            }
+        }
+
+        class Particle {
+            constructor(x, y) { this.basePos = createVector(x, y); this.pos = this.basePos.copy(); this.vel = createVector(random(-0.15, 0.15) * (width/400), random(-0.9, -0.4) * (height/600)); this.acc = createVector(0, 0); this.size = random(width / 85, width / 45); this.setSilverColor(); this.alpha = random(70, 95); this.maxSpeed = 7.5 * (height/600); this.gravityForce = 0.038 * (height/600); this.liftForce = 0.7 * (height/600); this.trail = []; this.trailLength = 4; this.counted = false; }
+            setSilverColor() { this.hue = random(180, 240); this.saturation = random(0, 10); this.brightness = random(75, 95); }
+            applyForce(force) { if(this.acc && force) this.acc.add(force); }
+            update() { let gravity = createVector(0, this.gravityForce); this.applyForce(gravity); if(this.vel && this.acc) this.vel.add(this.acc); if(this.vel) this.vel.limit(this.maxSpeed); if(this.pos && this.vel) this.pos.add(this.vel); if(this.acc) this.acc.mult(0); if(this.trail && this.pos) this.trail.push(this.pos.copy()); if(this.trail && this.trail.length > this.trailLength) { this.trail.splice(0, 1); } if (this.pos && (this.pos.x < this.size / 2 || this.pos.x > width - this.size / 2)) { this.pos.x = constrain(this.pos.x, this.size/2, width - this.size/2); if(this.vel) this.vel.x *= -0.5; } if (this.pos && this.vel && this.pos.y > height - this.size / 2 && this.vel.y > 0) { this.pos.y = height - this.size / 2; this.vel.y *= -0.3; } }
+            display() { noStroke(); for (let i = 0; i < this.trail.length; i++) { let tPos = this.trail[i]; if(!tPos) continue; let tAlpha = map(i, 0, this.trail.length -1 , 0, this.alpha * 0.35); let tSize = map(i, 0, this.trail.length -1, this.size * 0.1, this.size * 0.65); this.drawStarShape(tPos.x, tPos.y, tSize / 2, tSize / 4, 5, this.hue, this.saturation, this.brightness, tAlpha); } if(this.pos) this.drawStarShape(this.pos.x, this.pos.y, this.size / 1.8, this.size / 3.6, 5, this.hue, this.saturation, this.brightness, this.alpha); }
+            drawStarShape(x, y, radius1, radius2, npoints, h, s, b, a) { fill(h,s,b,a); let angle = TWO_PI / npoints; let halfAngle = angle / 2.0; beginShape(); for (let ang = -PI/2; ang < TWO_PI - PI/2; ang += angle) { let sx = x + cos(ang) * radius1; let sy = y + sin(ang) * radius1; vertex(sx, sy); sx = x + cos(ang + halfAngle) * radius2; sy = y + sin(ang + halfAngle) * radius2; vertex(sx, sy); } endShape(CLOSE); }
+            isOffScreen() { return (this.pos && this.pos.y < -this.size * 3); } 
+            reset(x,y) { if(this.pos) this.pos.set(x,y); if(this.vel) this.vel.set(random(-0.15, 0.15) * (width/400), random(-1.3, -0.7) * (height/600)); if(this.acc) this.acc.mult(0); this.setSilverColor(); this.trail = []; this.counted = false; }
+            resetSpeed() { if(this.vel) this.vel.set(random(-0.15, 0.15) * (width/400), random(-1.3, -0.7) * (height/600)); }
+        }
+
+        class BonusItem {
+            constructor(x, y, img, points, duration, isMalus = false) { this.pos = createVector(x, y); this.img = (img && typeof img.width === 'number' && img.width > 1 && typeof img.height === 'number') ? img : null; this.points = points; this.duration = duration; this.spawnTime = millis(); this.isMalus = isMalus; this.size = isMalus ? min(width * 0.15, 80) : min(width * 0.12, 70); this.vel = createVector(random(-0.5,0.5) * (width/400), random(0.8, 1.8) * (height/600)); if (isMalus && this.vel) this.vel.y *= 1.3; this.rotation = 0; this.rotationSpeed = random(-0.02, 0.02); this.hit = false; }
+            update() { if (this.pos && this.vel) {this.pos.add(this.vel);} this.rotation += this.rotationSpeed; }
+            display() { push(); if (this.pos) {translate(this.pos.x, this.pos.y);} rotate(this.rotation); if (this.img) { let aspRatio = (this.img.height > 0 && this.img.width > 0) ? (this.img.height / this.img.width) : 1; image(this.img, 0, 0, this.size, this.size * aspRatio); } else { fill(this.isMalus ? color(0,80,80, 80) : color(60,80,100, 80) ); ellipse(0, 0, this.size, this.size); } pop(); } 
+            isOffScreen() { if (!this.pos) return true; return (millis() - this.spawnTime > this.duration || this.pos.y > height + this.size || this.pos.y < -this.size || this.pos.x < -this.size || this.pos.x > width + this.size || this.hit); }
+        }
+
+        class PressEmitter {
+            constructor(x, y) { this.pos = createVector(x, y); this.particles = []; this.numParticles = floor(random(8, 15)); this.hue = random(30, 60); this.saturation = 90; this.brightness = 100; for (let i = 0; i < this.numParticles; i++) { if(this.pos) this.particles.push(new EmitterParticle(this.pos.x, this.pos.y, this.hue, this.saturation, this.brightness)); } }
+            update() { for (let i = this.particles.length - 1; i >= 0; i--) { let p = this.particles[i]; if(p) {p.update(); if (p.isFinished()) { this.particles.splice(i, 1); }}}}
+            display() { for (let p of this.particles) { if(p) p.display(); } }
+            isFinished() { return this.particles.length === 0; }
+        }
+        class EmitterParticle {
+            constructor(x, y, hue, saturation, brightness) { this.pos = createVector(x, y); let angle = random(TWO_PI); let speed = random(1, 3.8) * (height/600); this.vel = createVector(cos(angle) * speed, sin(angle) * speed); this.size = random(3, 8) * (width/400); this.alpha = 100; this.hue = hue; this.saturation = saturation; this.brightness = brightness; this.decay = random(1.8,4.5); }
+            update() { if(this.vel) this.vel.mult(0.965); if(this.pos && this.vel) this.pos.add(this.vel); this.alpha -= this.decay; this.size *= 0.97; }
+            display() { noStroke(); fill(this.hue, this.saturation, this.brightness, this.alpha); if(this.pos) ellipse(this.pos.x, this.pos.y, this.size, this.size); }
+            isFinished() { return this.alpha <= 0 || this.size <= 0.3; }
+        }
+    </script>
+</body>
+</html>

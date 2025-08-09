@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ar">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> {/* Added for mobile responsiveness */}
+  <title>رحلة الفضاء المذهلة - تعلم الحروف</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000010; font-family: 'Cairo', sans-serif; direction: rtl; }
+    canvas { display: block; }
+
+    #uiContainer {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      color: white;
+      pointer-events: none; 
+    }
+
+    .screen {
+      background: rgba(10, 20, 50, 0.9);
+      padding: 20px; /* Reduced padding for smaller screens */
+      border-radius: 15px;
+      border: 2px solid #00ffff;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+      text-align: center;
+      display: none; 
+      width: 90%;
+      max-width: 600px; /* Slightly reduced max-width */
+      max-height: 90vh;
+      overflow-y: auto;
+      pointer-events: auto; 
+      position: relative; 
+    }
+
+    #startScreen h1, #endScreen h1 { 
+        font-size: 28px; /* Reduced font size */
+        margin-bottom: 15px; /* Reduced margin */
+        color: #ffdd00; 
+        text-shadow: 0 0 10px #ffdd00; 
+    }
+    #startScreen p, #endScreen p { 
+        font-size: 16px; /* Reduced font size */
+        margin-bottom: 25px; /* Reduced margin */
+        line-height: 1.5; 
+    }
+    #startScreen button, #endScreen button {
+      background-color: #ff9900;
+      color: black;
+      padding: 12px 25px; /* Reduced padding */
+      font-size: 18px; /* Reduced font size */
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+      box-shadow: 0 0 10px #ff9900;
+    }
+    #startScreen button:hover, #endScreen button:hover { background-color: #ffcc66; transform: scale(1.05); }
+
+    #questionBox {
+      width: 90%;
+      max-width: 600px; 
+      flex-direction: column; /* Changed to column */
+      align-items: center;   /* Center items */
+      gap: 10px; /* Adjusted gap */
+    }
+    #questionContent {
+        flex-grow: 1; 
+        width: 100%; /* Ensure it takes full width */
+        text-align: center; /* Center text inside */
+    }
+    #questionAstronaut {
+        width: 80px; /* Reduced size */
+        height: auto;
+        border-radius: 10px;
+        border: 2px solid #00aaff;
+        margin-bottom: 10px; /* Added margin below astronaut */
+    }
+    #closeQuestionButton {
+        position: absolute;
+        top: 8px; /* Adjusted */
+        left: 10px; /* Adjusted (will be on the right due to RTL) */
+        font-size: 28px; /* Adjusted */
+        color: #ff6666;
+        cursor: pointer;
+        font-weight: bold;
+        transition: color 0.2s;
+        z-index: 1; /* Ensure it's above other elements in the box if needed */
+    }
+    #closeQuestionButton:hover {
+        color: #ff0000;
+    }
+
+    #question {
+      font-size: 20px; /* Reduced font size */
+      margin-bottom: 15px; /* Reduced margin */
+      color: #00ffff;
+      font-weight: bold;
+      text-shadow: 0 0 8px #00ffff;
+    }
+    #feedback {
+        font-size: 16px; /* Reduced font size */
+        margin-top: 10px; /* Reduced margin */
+        height: 25px; /* Adjusted height */
+        font-weight: bold;
+    }
+    .correct { color: #33ff33; text-shadow: 0 0 8px #33ff33;}
+    .incorrect { color: #ff4444; text-shadow: 0 0 8px #ff4444;}
+
+    #answers {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px; /* Reduced gap */
+    }
+    #answers button {
+      background-color: #0077cc;
+      color: white;
+      padding: 10px 15px; /* Reduced padding */
+      font-size: 16px; /* Reduced font size */
+      border: 1px solid #00aaff;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+      min-width: 90px; /* Reduced min-width */
+      box-shadow: 0 0 5px #0077cc;
+    }
+    #answers button:hover {
+      background-color: #0099e6;
+      transform: scale(1.05);
+      box-shadow: 0 0 10px #00aaff;
+    }
+    #scoreDisplay {
+        position: absolute;
+        top: 10px; /* Adjusted */
+        right: 10px; /* Adjusted */
+        font-size: 18px; /* Reduced font size */
+        color: #ffdd00;
+        background: rgba(0,0,0,0.7);
+        padding: 8px 12px; /* Reduced padding */
+        border-radius: 8px;
+        border: 1px solid #ffdd00;
+        z-index: 5;
+        pointer-events: auto;
+        text-shadow: 0 0 5px #ffdd00;
+        display: none; 
+    }
+    #loadingScreen {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    #loadingScreen p { font-size: 18px; color: #00ffff; } /* Reduced font size */
+    .loader {
+        border: 6px solid #f3f3f3; /* Reduced border */
+        border-top: 6px solid #00ffff; /* Reduced border */
+        border-radius: 50%;
+        width: 50px; /* Reduced size */
+        height: 50px; /* Reduced size */
+        animation: spin 1.5s linear infinite;
+        margin-top: 15px; /* Reduced margin */
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="uiContainer">
+  <div id="loadingScreen" class="screen"> 
+    <p>جاري تحميل رحلتك الفضائية...</p>
+    <div class="loader"></div>
+    <p id="loadingProgress"></p>
+  </div>
+
+  <div id="startScreen" class="screen">
+    <h1>رحلة الفضاء لتعلم الحروف</h1>
+    <p>هل أنت مستعد لاستكشاف الكواكب وتعلم الحروف العربية بأسلوب ممتع وشيق في أعماق الفضاء؟</p>
+    <button id="startButton">ابدأ الرحلة!</button>
+  </div>
+
+  
+  <div id="questionBox" class="screen">
+    <span id="closeQuestionButton">×</span>
+    <img id="questionAstronaut" src="https://i.ibb.co/PFFL07T/astronaut-question.png" alt="رائد فضاء السؤال">
+    <div id="questionContent">
+        <div id="question">أي كلمة تبدأ بالحرف...؟</div>
+        <div id="answers"></div>
+        <div id="feedback"></div>
+    </div>
+  </div>
+
+  <div id="endScreen" class="screen">
+    <h1>أحسنت يا رائد الفضاء الصغير!</h1>
+    <p>لقد أكملت رحلتك التعليمية بنجاح! نتمنى لك المزيد من الاكتشافات والمعرفة.</p>
+    <p id="finalScore"></p>
+    <button id="restartButton">العب مرة أخرى</button>
+  </div>
+</div>
+<div id="scoreDisplay">النقاط: 0</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 3000);
+const renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const loadingManager = new THREE.LoadingManager();
+const textureLoader = new THREE.TextureLoader(loadingManager);
+
+const loadingScreen = document.getElementById('loadingScreen');
+const loadingProgressText = document.getElementById('loadingProgress');
+const startScreen = document.getElementById('startScreen');
+const questionBox = document.getElementById('questionBox');
+const endScreen = document.getElementById('endScreen');
+const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
+const questionText = document.getElementById('question');
+const answersDiv = document.getElementById('answers');
+const feedbackText = document.getElementById('feedback');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const finalScoreText = document.getElementById('finalScore');
+const closeQuestionButton = document.getElementById('closeQuestionButton');
+
+
+let hero, starField, currentPlanetIndex = 0, moving = false, gameStarted = false, score = 0, sceneReady = false;
+let planetsData = [];
+const enemyShips = [];
+let animationFrameIdTravel;
+let initialCameraFov; 
+
+const bgSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_3ad61e13a2.mp3?filename=space-loop-112538.mp3');
+bgSound.loop = true; bgSound.volume = 0.15;
+const correctSound = new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_c87092d72a.mp3');
+const wrongSound = new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_c6907c83f3.mp3');
+correctSound.volume = 0.4; wrongSound.volume = 0.4;
+
+const astronautTextureUrl = 'https://i.ibb.co/yWmj5M8/astronaut-sprite.png';
+const asteroidTextureUrl = 'https://i.ibb.co/DK0sVjD/asteroid.png';
+
+let arabicLettersFull = [
+  'أ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص',
+  'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'هـ', 'و', 'ي'
+];
+let shuffledArabicLetters = [];
+
+const planetTextures = {
+  'أ': 'https://i.ibb.co/hXJ3P9b/planet-alef.png', 'ب': 'https://i.ibb.co/qD4x4q3/planet-baa.png',
+  'ت': 'https://i.ibb.co/Y7X2sF8/planet-taa.png', 'ث': 'https://i.ibb.co/SxwFqPc/planet-thaa.png',
+  'ج': 'https://i.ibb.co/yYt0BqH/planet-jeem.png', 'ح': 'https://i.ibb.co/VvkqLqg/planet-haa.png', 
+  'خ': 'https://i.ibb.co/XyT8xYk/planet-khaa.png', 'د': 'https://i.ibb.co/QvL9FfW/planet-daal.png',   
+  'ذ': 'https://i.ibb.co/QMQN0Sj/planet-thaal.png', 'ر': 'https://i.ibb.co/hRqJ0X7/planet-raa.png', 
+  'ز': 'https://i.ibb.co/NCz81L2/planet-zayn.png', 'س': 'https://i.ibb.co/gMg0L0Y/planet-seen.png', 
+  'ش': 'https://i.ibb.co/dBV0BHY/planet-sheen.png', 'ص': 'https://i.ibb.co/2Zn0T6K/planet-saad.png', 
+  'ض': 'https://i.ibb.co/bH01Jjq/planet-daad.png', 'ط': 'https://i.ibb.co/Zxjx7rQ/planet-tah.png', 
+  'ظ': 'https://i.ibb.co/jvx1sF0/planet-zah.png', 'ع': 'https://i.ibb.co/FqW56bQ/planet-ain.png',   
+  'غ': 'https://i.ibb.co/dK2GZ2F/planet-ghain.png', 'ف': 'https://i.ibb.co/PNB2wW3/planet-faa.png', 
+  'ق': 'https://i.ibb.co/xSN017d/planet-qaaf.png', 'ك': 'https://i.ibb.co/xM1gQTb/planet-kaaf.png', 
+  'ل': 'https://i.ibb.co/yQWqj6R/planet-laam.png', 'م': 'https://i.ibb.co/G9pF8Nq/planet-meem.png', 
+  'ن': 'https://i.ibb.co/9bfxQxZ/planet-noon.png', 'هـ': 'https://i.ibb.co/jD76Jmf/planet-haa2.png',
+  'و': 'https://i.ibb.co/hZjJZcx/planet-waw.png', 'ي': 'https://i.ibb.co/pnpwLcC/planet-yaa.png'
+};
+
+const questions = {
+  'أ': { q: 'أي كلمة تبدأ بالحرف (أ)؟', options: ['أرنب', 'باب', 'تاج'], answer: 'أرنب' },
+  'ب': { q: 'أي كلمة تبدأ بالحرف (ب)؟', options: ['تفاح', 'بطة', 'أسد'], answer: 'بطة' },
+  'ت': { q: 'أي كلمة تبدأ بالحرف (ت)؟', options: ['جمل', 'بيت', 'تمر'], answer: 'تمر' },
+  'ث': { q: 'أي كلمة تبدأ بالحرف (ث)؟', options: ['ثعلب', 'دب', 'حصان'], answer: 'ثعلب' },
+  'ج': { q: 'أي كلمة تبدأ بالحرف (ج)؟', options: ['خروف', 'جزر', 'سمكة'], answer: 'جزر' },
+  'ح': { q: 'أي كلمة تبدأ بالحرف (ح)؟', options: ['حصان', 'باب', 'تاج'], answer: 'حصان' },
+  'خ': { q: 'أي كلمة تبدأ بالحرف (خ)؟', options: ['خروف', 'بطة', 'أسد'], answer: 'خروف' },
+  'د': { q: 'أي كلمة تبدأ بالحرف (د)؟', options: ['ديك', 'بيت', 'تمر'], answer: 'ديك' },
+  'ذ': { q: 'أي كلمة تبدأ بالحرف (ذ)؟', options: ['ذرة', 'دب', 'حصان'], answer: 'ذرة' },
+  'ر': { q: 'أي كلمة تبدأ بالحرف (ر)؟', options: ['رمان', 'جزر', 'سمكة'], answer: 'رمان' },
+  'ز': { q: 'أي كلمة تبدأ بالحرف (ز)؟', options: ['زرافة', 'باب', 'تاج'], answer: 'زرافة' },
+  'س': { q: 'أي كلمة تبدأ بالحرف (س)؟', options: ['تفاح', 'سمكة', 'أسد'], answer: 'سمكة' },
+  'ش': { q: 'أي كلمة تبدأ بالحرف (ش)؟', options: ['شمس', 'بيت', 'تمر'], answer: 'شمس' },
+  'ص': { q: 'أي كلمة تبدأ بالحرف (ص)؟', options: ['صقر', 'دب', 'حصان'], answer: 'صقر' },
+  'ض': { q: 'أي كلمة تبدأ بالحرف (ض)؟', options: ['خروف', 'ضفدع', 'سمكة'], answer: 'ضفدع' },
+  'ط': { q: 'أي كلمة تبدأ بالحرف (ط)؟', options: ['طائرة', 'باب', 'تاج'], answer: 'طائرة' },
+  'ظ': { q: 'أي كلمة تبدأ بالحرف (ظ)؟', options: ['تفاح', 'ظبي', 'أسد'], answer: 'ظبي' },
+  'ع': { q: 'أي كلمة تبدأ بالحرف (ع)؟', options: ['جمل', 'بيت', 'عنب'], answer: 'عنب' },
+  'غ': { q: 'أي كلمة تبدأ بالحرف (غ)؟', options: ['غزال', 'دب', 'حصان'], answer: 'غزال' },
+  'ف': { q: 'أي كلمة تبدأ بالحرف (ف)؟', options: ['خروف', 'فيل', 'سمكة'], answer: 'فيل' },
+  'ق': { q: 'أي كلمة تبدأ بالحرف (ق)؟', options: ['قمر', 'باب', 'تاج'], answer: 'قمر' },
+  'ك': { q: 'أي كلمة تبدأ بالحرف (ك)؟', options: ['تفاح', 'كلب', 'أسد'], answer: 'كلب' },
+  'ل': { q: 'أي كلمة تبدأ بالحرف (ل)؟', options: ['جمل', 'بيت', 'ليمون'], answer: 'ليمون' },
+  'م': { q: 'أي كلمة تبدأ بالحرف (م)؟', options: ['موز', 'دب', 'حصان'], answer: 'موز' },
+  'ن': { q: 'أي كلمة تبدأ بالحرف (ن)؟', options: ['خروف', 'نمر', 'سمكة'], answer: 'نمر' },
+  'هـ': { q: 'أي كلمة تبدأ بالحرف (هـ)؟', options: ['هدهد', 'باب', 'تاج'], answer: 'هدهد' },
+  'و': { q: 'أي كلمة تبدأ بالحرف (و)؟', options: ['تفاح', 'وردة', 'أسد'], answer: 'وردة' },
+  'ي': { q: 'أي كلمة تبدأ بالحرف (ي)؟', options: ['جمل', 'بيت', 'يد'], answer: 'يد' }
+};
+
+const comets = [];
+const MAX_COMETS = 10;
+const cometMaterial = new THREE.LineBasicMaterial({ color: 0xffcc33, linewidth: 2.5, transparent: true, opacity: 0.9, fog: false });
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+loadingManager.onStart = function (url, itemsLoaded, itemsTotal) {
+    console.log(`LoadingManager: onStart. First item in new/current batch (approx): ${url}. Items loaded so far: ${itemsLoaded}. Total items to load for this manager instance: ${itemsTotal}`);
+    loadingScreen.style.display = 'flex'; 
+    loadingProgressText.textContent = `جاري تحميل الملفات...`; 
+};
+
+loadingManager.onProgress = function (url, itemsLoaded, itemsTotal) {
+    console.log(`LoadingManager: onProgress. File: ${url}, Loaded: ${itemsLoaded} / ${itemsTotal}`);
+    const progress = itemsTotal > 0 ? Math.round((itemsLoaded / itemsTotal) * 100) : 0;
+    loadingProgressText.textContent = `جاري تحميل (${progress}%)... ${itemsLoaded}/${itemsTotal}`;
+};
+
+loadingManager.onError = function (url) {
+    console.error('LoadingManager: onError. Failed to load: ' + url);
+    loadingProgressText.textContent = `حدث خطأ أثناء تحميل: ${url}. جاري المتابعة...`;
+};
+
+loadingManager.onLoad = function () {
+    console.log('LoadingManager: onLoad. All assets managed by this instance are loaded.');
+    loadingScreen.style.display = 'none';
+    sceneReady = true;
+    
+    console.log("onLoad: sceneReady =", sceneReady, "gameStarted (before reset) =", gameStarted);
+
+    if (!hero) console.error("onLoad: Hero object is not yet defined!");
+    if (initialCameraFov === undefined) {
+        console.error("onLoad: initialCameraFov is undefined! This is critical. It should be set in setupScene.");
+        initialCameraFov = 75; 
+        console.warn("onLoad: initialCameraFov was undefined, defaulted to 75. Check setupScene.");
+    }
+
+    resetGameUIVisibilityAndCamera(); 
+    resetGameLogicState();          
+    
+    console.log("onLoad: After resets. gameStarted =", gameStarted);
+    console.log("onLoad: planetsData length:", planetsData ? planetsData.length : 'undefined');
+
+    startScreen.style.display = 'flex'; 
+    console.log("onLoad: Start screen should be visible now.");
+};
+
+
+function initializeGameElements() {
+    console.log("Initializing game elements (planets, letters)...");
+    planetsData.forEach(pData => {
+        if (pData.mesh) scene.remove(pData.mesh);
+        if (pData.letterSprite) scene.remove(pData.letterSprite);
+    });
+    planetsData = []; 
+
+    shuffledArabicLetters = [...arabicLettersFull];
+    shuffleArray(shuffledArabicLetters);
+
+    const planetRadius = 10;
+    const baseOrbitRadius = 80;
+    const radialSeparation = 12;
+    const angularSeparationFactor = 0.40;
+
+    shuffledArabicLetters.forEach((letter, i) => {
+        const currentRadius = baseOrbitRadius + i * radialSeparation;
+        const angle = i * angularSeparationFactor + Math.PI / 1.5;
+        const x = Math.cos(angle) * currentRadius;
+        const z = Math.sin(angle) * currentRadius - i * 10;
+
+        const planetTexturePath = planetTextures[letter] || planetTextures['أ']; 
+        const planetTexture = textureLoader.load(planetTexturePath); 
+        const planetGeo = new THREE.SphereGeometry(planetRadius, 32, 32);
+        const planetMat = new THREE.MeshStandardMaterial({ map: planetTexture, roughness: 0.6, metalness: 0.3 });
+        const planet = new THREE.Mesh(planetGeo, planetMat);
+        planet.position.set(x, THREE.MathUtils.randFloatSpread(20), z);
+        planet.name = letter;
+        planet.rotation.y = Math.random() * Math.PI * 2;
+        scene.add(planet);
+
+        const canvas = document.createElement('canvas');
+        const size = 256;
+        canvas.width = canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.font = `bold ${size * 0.6}px Cairo`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText(letter, size / 2, size / 2 + size * 0.05); 
+        ctx.shadowBlur = 8;
+        ctx.fillText(letter, size / 2, size / 2 + size * 0.05);
+        ctx.shadowColor = 'transparent';
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, fog: false, sizeAttenuation: true });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.scale.set(planetRadius * 2, planetRadius * 2, 1);
+        scene.add(sprite);
+        planetsData.push({ mesh: planet, letterSprite: sprite, initialLetterOffset: new THREE.Vector3(0, planetRadius * 1.8, 0) });
+    });
+    console.log("Planet elements initialized/re-initialized. planetsData length:", planetsData.length);
+}
+
+function setupScene() {
+  console.log("Setting up scene (hero, asteroids, lights, static stars)...");
+  initialCameraFov = camera.fov; 
+  console.log("setupScene: initialCameraFov set to", initialCameraFov);
+
+  scene.fog = new THREE.FogExp2(0x000010, 0.0035);
+  scene.add(new THREE.AmbientLight(0x8080a0));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  dirLight.position.set(30, 40, 50);
+  scene.add(dirLight);
+
+  const starsGeometry = new THREE.BufferGeometry();
+  const starVertices = [];
+  for (let i = 0; i < 35000; i++) {
+    starVertices.push(
+      THREE.MathUtils.randFloatSpread(2800),
+      THREE.MathUtils.randFloatSpread(2800),
+      THREE.MathUtils.randFloatSpread(2800)
+    );
+  }
+  starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+  const starsMaterial = new THREE.PointsMaterial({ color: 0xddeeff, size: 0.75, transparent: true, opacity: 0.8, fog: false });
+  starField = new THREE.Points(starsGeometry, starsMaterial);
+  scene.add(starField);
+
+  const heroBaseMaterial = new THREE.SpriteMaterial({ color: 0xffffff, fog: false, transparent: true });
+  hero = new THREE.Sprite(heroBaseMaterial);
+  textureLoader.load(astronautTextureUrl,
+    (texture) => { 
+        hero.material.map = texture; 
+        hero.material.needsUpdate = true; 
+        console.log("Astronaut texture loaded and applied to hero.");
+    }, 
+    undefined,
+    (err) => { 
+        console.error('Failed to load astronaut texture:', err); 
+        hero.material.color.setHex(0x00ff00); 
+        hero.material.needsUpdate = true; 
+    }
+  );
+  hero.scale.set(4.5, 4.5, 1);
+  scene.add(hero);
+  console.log("Hero object created and added to scene.", hero);
+
+
+  const asteroidTexture = textureLoader.load(asteroidTextureUrl, 
+    () => console.log("Asteroid texture loaded."), 
+    undefined, 
+    (err) => console.error("Failed to load asteroid texture:", err)
+  ); 
+  const asteroidMaterial = new THREE.MeshStandardMaterial({ map: asteroidTexture, roughness: 0.95, metalness: 0.05});
+  for (let i = 0; i < 250; i++) {
+    const size = Math.random() * 2.5 + 0.6;
+    const asteroidGeo = new THREE.IcosahedronGeometry(size, Math.random() > 0.2 ? 1 : 0);
+    const asteroid = new THREE.Mesh(asteroidGeo, asteroidMaterial);
+    asteroid.position.set(
+      THREE.MathUtils.randFloatSpread(900),
+      THREE.MathUtils.randFloatSpread(350),
+      THREE.MathUtils.randFloatSpread(900) - 250
+    );
+    asteroid.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+    scene.add(asteroid);
+  }
+  
+  for (let i = 0; i < MAX_COMETS; i++) {
+    comets.push(createCometInstance());
+  }
+  console.log("Scene setup complete.");
+}
+
+function createCometInstance() {
+    const startX = camera.position.x + THREE.MathUtils.randFloatSpread(1000);
+    const startY = camera.position.y + THREE.MathUtils.randFloatSpread(600);
+    const startZ = camera.position.z - THREE.MathUtils.randFloat(1200, 1800);
+    const length = THREE.MathUtils.randFloat(50, 100);
+    const targetPoint = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z + 200);
+    const direction = targetPoint.clone().sub(new THREE.Vector3(startX, startY, startZ)).normalize();
+    const speed = THREE.MathUtils.randFloat(25, 40);
+    const velocity = direction.multiplyScalar(speed);
+    const points = [];
+    points.push(new THREE.Vector3(0, 0, 0));
+    points.push(new THREE.Vector3(0, 0, -length));
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const line = new THREE.Line(geometry, cometMaterial.clone());
+    line.material.opacity = Math.random() * 0.5 + 0.5;
+    line.position.set(startX, startY, startZ);
+    line.userData = { velocity: velocity, initialZ: startZ, initialOpacity: line.material.opacity };
+    const lookAtPos = line.position.clone().add(velocity.clone().multiplyScalar(-1));
+    line.lookAt(lookAtPos);
+    scene.add(line);
+    return line;
+}
+
+function resetGameUIVisibilityAndCamera() {
+    console.log("resetGameUIVisibilityAndCamera: Called.");
+    if (hero) {
+        hero.position.set(0, 10, 40);
+        console.log("resetGameUIVisibilityAndCamera: Hero position set to x:", hero.position.x, "y:", hero.position.y, "z:", hero.position.z);
+    } else {
+        console.error("resetGameUIVisibilityAndCamera: Hero is null or undefined!");
+    }
+    
+    camera.position.set(0, 20, 60);
+    if (hero) {
+        camera.lookAt(hero.position);
+        console.log("resetGameUIVisibilityAndCamera: Camera position set to x:", camera.position.x, "y:", camera.position.y, "z:", camera.position.z, "looking at hero.");
+    } else {
+        camera.lookAt(new THREE.Vector3(0,0,0));
+        console.warn("resetGameUIVisibilityAndCamera: Camera looking at origin because hero is undefined.");
+    }
+    
+    if (initialCameraFov !== undefined) { 
+        camera.fov = initialCameraFov; 
+        camera.updateProjectionMatrix();
+        console.log("resetGameUIVisibilityAndCamera: Camera FOV reset to", camera.fov);
+    } else {
+        console.error("resetGameUIVisibilityAndCamera: initialCameraFov is undefined, FOV not reset. This is a critical error.");
+    }
+
+    startScreen.style.display = 'none'; 
+    questionBox.style.display = 'none';
+    endScreen.style.display = 'none';
+    scoreDisplay.style.display = 'none'; 
+    console.log("resetGameUIVisibilityAndCamera: UI screens hidden.");
+}
+
+function resetGameLogicState() {
+    console.log("resetGameLogicState: Called.");
+    gameStarted = false;
+    currentPlanetIndex = 0;
+    score = 0;
+    updateScoreDisplay(); 
+
+    if(bgSound) {
+        bgSound.pause();
+        bgSound.currentTime = 0;
+    }
+    if (animationFrameIdTravel) {
+        cancelAnimationFrame(animationFrameIdTravel);
+        animationFrameIdTravel = null;
+    }
+    moving = false;
+    console.log("resetGameLogicState: Game state reset. gameStarted:", gameStarted, "currentPlanetIndex:", currentPlanetIndex, "score:", score);
+}
+
+function startGame() {
+    console.log("startGame: Called.");
+    startScreen.style.display = 'none';
+    scoreDisplay.style.display = 'block'; 
+    gameStarted = true;
+    console.log("startGame: gameStarted set to true. Score display should be visible.");
+    console.log("startGame: Current score:", score, "Current planet index:", currentPlanetIndex);
+    console.log("startGame: planetsData length:", planetsData ? planetsData.length : 'undefined', "Is hero defined?", !!hero);
+
+
+    bgSound.play().catch(e => console.warn("BG sound autoplay prevented:", e));
+    
+    if (planetsData && planetsData.length > 0 && hero) {
+        console.log("startGame: Attempting to move to the first planet.");
+        moveToNextPlanet();
+    } else {
+        console.error("startGame: Cannot move to next planet due to missing prerequisites.");
+        if (!planetsData || planetsData.length === 0) console.error("Reason: planetsData is empty or undefined. Length:", planetsData ? planetsData.length : 'N/A');
+        if (!hero) console.error("Reason: hero is undefined.");
+    }
+}
+
+startButton.addEventListener('click', () => {
+    console.log("Start button clicked.");
+    startGame();
+});
+
+restartButton.addEventListener('click', () => {
+    console.log("Restart button clicked.");
+    endScreen.style.display = 'none';
+    
+    resetGameUIVisibilityAndCamera(); 
+    resetGameLogicState();          
+    initializeGameElements(); 
+    
+    // Crucially, after re-initializing game elements, if the game logic expects
+    // to start immediately (or if a user might expect it to start),
+    // we might need to call startGame() or display the start screen again.
+    // For now, it resets to the start screen via onLoad logic.
+    // If startScreen wasn't shown by onLoad (e.g. if assets were cached), show it:
+    if (startScreen.style.display === 'none' && !gameStarted) {
+         startScreen.style.display = 'flex';
+    }
+});
+
+closeQuestionButton.addEventListener('click', () => {
+    console.log("Close question button clicked.");
+    questionBox.style.display = 'none';
+    feedbackText.textContent = ''; 
+
+    currentPlanetIndex++;
+    console.log("CloseQuestion: Advancing to planet index:", currentPlanetIndex);
+    if (currentPlanetIndex < planetsData.length) {
+        moveToNextPlanet();
+    } else {
+        console.log("CloseQuestion: No more planets, showing end screen.");
+        showEndScreen();
+    }
+});
+
+function askQuestion(letter) {
+  console.log(`askQuestion: Called for letter '${letter}'.`);
+  moving = false;
+  if (initialCameraFov !== undefined) {
+      camera.fov = initialCameraFov;
+      camera.updateProjectionMatrix();
+  } else {
+      console.error("askQuestion: initialCameraFov is undefined!");
+  }
+
+  const qData = questions[letter];
+  if (!qData) { console.error("askQuestion: No question data for letter:", letter); return; }
+  questionText.textContent = qData.q;
+  answersDiv.innerHTML = '';
+  feedbackText.textContent = '';
+  feedbackText.className = '';
+
+  const options = [...qData.options].sort(() => Math.random() - 0.5);
+
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.textContent = opt;
+    btn.onclick = () => {
+      console.log(`Answer chosen: '${opt}'. Correct answer: '${qData.answer}'`);
+      Array.from(answersDiv.getElementsByTagName('button')).forEach(b => b.disabled = true);
+      if (opt === qData.answer) {
+        feedbackText.textContent = 'إجابة صحيحة! رائع!';
+        feedbackText.className = 'correct';
+        correctSound.play();
+        score += 10;
+        updateScoreDisplay();
+        console.log("Correct answer. New score:", score);
+        setTimeout(() => {
+            questionBox.style.display = 'none';
+            currentPlanetIndex++;
+            console.log("CorrectAnswerTimeout: Advancing to planet index:", currentPlanetIndex);
+            if (currentPlanetIndex < planetsData.length) {
+                moveToNextPlanet();
+            } else {
+                console.log("CorrectAnswerTimeout: No more planets, showing end screen.");
+                showEndScreen();
+            }
+        }, 1800);
+      } else {
+        feedbackText.textContent = 'إجابة خاطئة، فكر جيدًا!';
+        feedbackText.className = 'incorrect';
+        wrongSound.play();
+        score = Math.max(0, score - 3);
+        updateScoreDisplay();
+        console.log("Incorrect answer. New score:", score);
+        btn.style.backgroundColor = '#cc3333';
+        setTimeout(() => {
+             Array.from(answersDiv.getElementsByTagName('button')).forEach(b => {
+                b.disabled = false;
+                b.style.backgroundColor = ''; 
+             });
+             feedbackText.textContent = 'حاول مرة أخرى!';
+             feedbackText.className = '';
+             console.log("IncorrectAnswerTimeout: Enabling buttons for retry.");
+        }, 1500);
+      }
+    };
+    answersDiv.appendChild(btn);
+  });
+  questionBox.style.display = 'flex';
+  console.log("askQuestion: Question box displayed for letter:", letter);
+}
+
+function updateScoreDisplay() {
+    scoreDisplay.textContent = `النقاط: ${score}`;
+}
+function showEndScreen() {
+  console.log("showEndScreen: Called. Final score:", score);
+  gameStarted = false;
+  moving = false;
+  if (animationFrameIdTravel) {
+    cancelAnimationFrame(animationFrameIdTravel);
+    animationFrameIdTravel = null;
+  }
+
+  if(bgSound) bgSound.pause();
+  if (initialCameraFov !== undefined) {
+      camera.fov = initialCameraFov;
+      camera.updateProjectionMatrix();
+  } else {
+      console.error("showEndScreen: initialCameraFov is undefined!");
+  }
+
+  finalScoreText.textContent = `نقاطك النهائية: ${score} نقطة!`;
+  endScreen.style.display = 'flex';
+  questionBox.style.display = 'none';
+  scoreDisplay.style.display = 'none'; 
+  console.log("showEndScreen: End screen displayed.");
+}
+
+function moveToNextPlanet() {
+  console.log(`moveToNextPlanet: Called. currentPlanetIndex = ${currentPlanetIndex}`);
+  if (!gameStarted) {
+    console.warn("moveToNextPlanet: Called when game has not started. Aborting.");
+    return;
+  }
+  if (!planetsData || planetsData.length === 0) {
+    console.error("moveToNextPlanet: planetsData is empty or undefined. Cannot move.");
+    if (gameStarted) showEndScreen(); 
+    return;
+  }
+  if (currentPlanetIndex >= planetsData.length) {
+    console.log("moveToNextPlanet: All planets visited. Showing end screen.");
+    showEndScreen();
+    return;
+  }
+
+  moving = true;
+  const targetPlanetData = planetsData[currentPlanetIndex];
+
+  if (!targetPlanetData || !targetPlanetData.mesh) {
+      console.error(`moveToNextPlanet: Target planet data or mesh is missing for index: ${currentPlanetIndex}.`);
+      moving = false;
+      currentPlanetIndex++;
+      if (currentPlanetIndex < planetsData.length) {
+          console.warn("Attempting to move to the NEXT planet after a missing one.");
+          moveToNextPlanet();
+      } else {
+          console.error("No more planets to move to after a missing one. Showing end screen.");
+          showEndScreen();
+      }
+      return;
+  }
+  const targetPlanetMesh = targetPlanetData.mesh;
+  console.log(`moveToNextPlanet: Target planet is '${targetPlanetMesh.name}' at position x:${targetPlanetMesh.position.x.toFixed(2)}, y:${targetPlanetMesh.position.y.toFixed(2)}, z:${targetPlanetMesh.position.z.toFixed(2)}`);
+
+
+  const heroTargetPos = targetPlanetMesh.position.clone().add(new THREE.Vector3(0, targetPlanetMesh.geometry.parameters.radius * 0.5, targetPlanetMesh.geometry.parameters.radius * 2.5));
+  const cameraTargetOffset = new THREE.Vector3(0, 15, 30);
+  console.log("moveToNextPlanet: Hero target position: x:", heroTargetPos.x.toFixed(2), "y:", heroTargetPos.y.toFixed(2), "z:", heroTargetPos.z.toFixed(2));
+
+  if (!hero) {
+      console.error("moveToNextPlanet: Hero object is undefined! Cannot animate hero.");
+      moving = false;
+      return;
+  }
+
+  function travel() {
+    if (!moving) {
+        if(animationFrameIdTravel) cancelAnimationFrame(animationFrameIdTravel);
+        animationFrameIdTravel = null;
+        return;
+    }
+
+    if (!hero) {
+        console.error("travel: Hero became undefined during travel! Stopping.");
+        moving = false;
+        if(animationFrameIdTravel) cancelAnimationFrame(animationFrameIdTravel);
+        animationFrameIdTravel = null;
+        return;
+    }
+
+    hero.position.lerp(heroTargetPos, 0.028);
+    const cameraIdealPosition = hero.position.clone().add(cameraTargetOffset);
+    camera.position.lerp(cameraIdealPosition, 0.03);
+    camera.lookAt(hero.position.clone().add(new THREE.Vector3(0,0,-15)));
+
+    const distToTarget = hero.position.distanceTo(heroTargetPos);
+
+
+    if (initialCameraFov !== undefined) { 
+        if (distToTarget > 20) { camera.fov = initialCameraFov + Math.min(10, 500 / distToTarget); }
+        else if (distToTarget > 2.5) { camera.fov = initialCameraFov + (distToTarget / 20) * 5; }
+        else { camera.fov = initialCameraFov; }
+        camera.updateProjectionMatrix();
+    } else {
+        console.error("travel: initialCameraFov is undefined during travel!");
+    }
+
+
+    if (distToTarget < 2.5) {
+      console.log("travel: Arrived at target planet. Hero position:", hero.position);
+      hero.position.copy(heroTargetPos);
+      const finalCamPos = hero.position.clone().add(cameraTargetOffset);
+      camera.position.copy(finalCamPos);
+      camera.lookAt(hero.position.clone().add(new THREE.Vector3(0,0,-15)));
+      moving = false;
+      if(initialCameraFov !== undefined) camera.fov = initialCameraFov;
+      camera.updateProjectionMatrix();
+      if (animationFrameIdTravel) cancelAnimationFrame(animationFrameIdTravel);
+      animationFrameIdTravel = null;
+      console.log("travel: Asking question for planet:", targetPlanetMesh.name);
+      askQuestion(targetPlanetMesh.name);
+    } else {
+      animationFrameIdTravel = requestAnimationFrame(travel);
+    }
+  }
+
+  if (animationFrameIdTravel) cancelAnimationFrame(animationFrameIdTravel);
+  console.log("moveToNextPlanet: Starting travel animation loop.");
+  animationFrameIdTravel = requestAnimationFrame(travel); 
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = 0.016; 
+
+  if (starField) {
+    starField.rotation.y += 0.00004; 
+    starField.rotation.x += 0.000015;
+    if (moving && hero && hero.position) { 
+        starField.position.z += 0.35;
+        if (!isNaN(starField.position.z) && !isNaN(hero.position.z) && starField.position.z > hero.position.z + 200) {
+             starField.position.z = hero.position.z - (starField.geometry.attributes.position.array.length > 0 ? 1200 : 300);
+        }
+    }
+  }
+
+  if (planetsData && planetsData.length > 0) { 
+      planetsData.forEach(pData => {
+          if(pData.mesh && pData.letterSprite) { 
+            pData.mesh.rotation.y += 0.0012;
+            pData.letterSprite.position.copy(pData.mesh.position).add(pData.initialLetterOffset);
+            pData.letterSprite.lookAt(camera.position);
+          }
+      });
+  }
+
+  if (sceneReady) {
+    comets.forEach(comet => {
+        if (comet.userData && comet.userData.velocity) {
+            comet.position.add(comet.userData.velocity.clone().multiplyScalar(delta * 60)); 
+            
+            const distToCamZ = comet.position.z - camera.position.z;
+            if (distToCamZ > 50) { 
+                comet.material.opacity -= 0.05;
+            } else if (distToCamZ < -1500) { 
+                comet.material.opacity = 0; 
+            }
+
+            if (comet.material.opacity <= 0 || comet.position.y < camera.position.y - 500 || Math.abs(comet.position.x - camera.position.x) > 800 ) {
+                comet.position.x = camera.position.x + THREE.MathUtils.randFloatSpread(1000);
+                comet.position.y = camera.position.y + THREE.MathUtils.randFloatSpread(600);
+                comet.position.z = camera.position.z - THREE.MathUtils.randFloat(1200, 1800);
+                
+                const targetPoint = new THREE.Vector3(camera.position.x + THREE.MathUtils.randFloatSpread(100), camera.position.y + THREE.MathUtils.randFloatSpread(100) , camera.position.z + 200);
+                const direction = targetPoint.clone().sub(comet.position).normalize();
+                const speed = THREE.MathUtils.randFloat(25, 40);
+                comet.userData.velocity = direction.multiplyScalar(speed);
+                
+                comet.material.opacity = Math.random() * 0.5 + 0.5; 
+                const lookAtPos = comet.position.clone().add(comet.userData.velocity.clone().multiplyScalar(-1));
+                comet.lookAt(lookAtPos);
+            }
+        }
+    });
+  }
+
+  if (scene && camera && renderer) {
+    renderer.render(scene, camera);
+  } else {
+    console.error("animate: Scene, camera, or renderer is undefined! Rendering cannot occur.");
+  }
+}
+
+window.addEventListener('resize', () => {
+    console.log("Window resized.");
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+console.log("Script execution started. Setting up scene...");
+setupScene();
+console.log("Scene setup potentially complete. Initializing game elements...");
+initializeGameElements(); 
+console.log("Game elements initialization potentially complete. Starting animation loop...");
+animate(); 
+console.log("Animation loop started. Loading manager will handle UI changes after assets load.");
+
+</script>
+</body>
+</html>

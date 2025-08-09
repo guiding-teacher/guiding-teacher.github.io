@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>لعبة تكوين الكلمات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+         :root,:host{--fa-font-solid:normal 900 1em/1 "Font Awesome 6 Free"}.svg-inline--fa{display:var(--fa-display,inline-block);height:1em;overflow:visible;vertical-align:-.125em}@font-face{font-family:"Font Awesome 6 Free";font-style:normal;font-weight:900;font-display:block;src:url(data:font/woff2;base64,d09GMgABAAAAAAn4AA0AAAAAETgAAAmFAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABk4ALAoUNAE2AiQDCAsEAAE2AiQDCAaGDUgeBcg+C4k1iGqK6h21yE0q4bQhAE9y9M8gXz/93iU74S3O3t3V7G3n5N3d3e23N3s/N1d3J5k07QxQApRYCrAAsAAug8gB/qWp1R9/bE7+9v3v/t/V3V5dI+rKqG7XG1h5z9y/m9O5fO5P9J/QY08rBCAk15S37RkP79u/f+7v79l+L32+v3526vKzD/v3767t6V3e3Xv/rKx+3fX16+vX1v37d/97w6+vr9/dr7/de19/f3366u333x9+ff329ff3d+9/ff/5/e1/9+/d3f9kS2L//651J15XgJ43F3P15fG9/37rP/86+y/s61/Z+b/e//3w7e2n1+n/+k/f3u/u/10xR3D9R+9O3S+/3795u7048K796tXf/+q/b3v/9X9/+ve/v3+u8+r22/Pvt+///sX8e0//uV2f/f19T/qX/8u/89r7L98/u+v+7t3/X3b1t98f/n33//n/f7z6f7311f93f7736q3f79/9/5/839/e3+/f5/37/r7377+98sLd7d0t3t/z//08/+9f/3+L/iM/t//2f3d99+5/8H9kS1/f/7vj4j4352528W3+7u3x//8/v397f393/f3f/37+q/3+/f3n1l3vP72u/fvfvv/f/33r72+vuvrv/19/ffXv331/f/rP+8//b///v76/feP31/+P/u/+fP//9t/+Pj/X1//+/3f9f3/r9/fvf3/t+//fX3//++P33/+fv3973//6+2v9//v72+v/vf1/b/7X3737r+//vP/4/v6v9///vb///9P//5//P9/ffvf/f3+9v/v39/ff3/9/b8m5W7/u//39//e/P+v39//+25L+f/y5+l/+Q/+v/5/yH/z//b/f/3///8f/33//f9W7b//+vr/ff//+f/+f71+e//v/r//v2//97+//f/p//2397+f/j8v/7+l/vrv2t//+/+9/l/fv///8/f/p///d//ff3z7//+7++/////P7+efn5v//9r/vfv//f////qV+///+v/+v///vXl7///1/+///+9//f9v3//31z+r/+9//n7//+v6/v/6v///7/v//f//f///8v///39v////+39/////v//X+//////8P8f6BCAe4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4H+B/gf4eE9k08JAAAD+QJv//YfV+b+vvv3+v37+l//+9f/vP316/f/3337/1//+//f/v/2v2/+9///9/f//z7++8///u39+/n/+/9fX//v/3v1+fv+X/9+7P3//6/b/f//+/vf///3/v/6v//9f//+///e///f8l/+f/+v6///39/6+//v+v3+f9+/3v/7/v/3t//f379r//9/P6v/+v9v///99/e//r/f/n+X//f/+///3397+/+89/v/2/f3/f9//+f8D/A3wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8D/A/wP8-AQAAAAAAA==')}.fa-solid, .fas{font-weight:900}}
+    </style>
+    
+    <style>
+        :root {
+            --primary-color: #6a5acd;
+            --secondary-color: #9370db;
+            --accent-color: #ffd700;
+            --text-color: #2c3e50;
+            --light-color: #f8f9fa;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --header-bg: #4a4a8a; /* Darker purple */
+            --container-bg: #f3e5f5; /* Light lavender */
+            --syllable-bg: #8e44ad; /* Amethyst purple */
+            --button-bg: #9b59b6; /* Wisteria purple */
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Amiri', serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            height: 100vh;
+            max-height: 100vh; /* Prevent bouncing on iOS */
+            overflow: hidden; /* Prevent scrolling on the entire page */
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align content to the top */
+            padding: 10px;
+            color: var(--text-color);
+            touch-action: manipulation;
+        }
+        
+        .header {
+            width: 100%;
+            max-width: 600px;
+            background: var(--header-bg);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 2;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Header should not shrink */
+        }
+
+        .score-container {
+            font-size: 18px;
+            background-color: #3a380b;
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--container-bg);
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.3);
+            flex: 1; /* Allow container to grow and fill available space */
+            min-height: 0; /* Important fix for flexbox overflow */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around; /* Distribute elements vertically */
+        }
+        
+        /* --- NEW: Word Construction Area --- */
+        .word-construction-area {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            align-items: stretch;
+        }
+
+        .word-box {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            padding: 10px;
+            border: 2px dashed var(--secondary-color);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .word-box-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .word-box-display {
+            font-size: 35px;
+            font-weight: bold;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 5px;
+            flex-grow: 1;
+        }
+
+        #inputWord { /* This now shows the target word */
+            color: #7f8c8d; /* Muted color for the target word */
+        }
+
+        #targetWord { /* This is the user's construction area */
+            color: var(--primary-color);
+        }
+        /* --- END: Word Construction Area --- */
+        
+        .icon-container {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.2));
+            border-radius: 20px;
+            border: 3px dotted var(--primary-color);
+        }
+        
+        .icon-container i {
+            font-size: 100px;
+            color: var(--primary-color);
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.5s;
+        }
+
+        .icon-container i.dance {
+             animation: dance 1s ease-in-out;
+        }
+        
+        .syllables-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px 0;
+        }
+        
+        .syllable {
+            background-color: var(--syllable-bg);
+            color: white;
+            font-size: 28px;
+            padding: 12px 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+        
+        .syllable:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+        
+        .syllable:active {
+            transform: translateY(1px);
+        }
+
+        .syllable.correct-flash {
+            animation: flash-green 1s;
+        }
+        
+        .syllable.wrong {
+            background-color: var(--error-color);
+            animation: shake 0.5s;
+        }
+        
+        .message {
+            margin-top: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            min-height: 30px;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        
+        .success-message { color: var(--success-color); animation: bounce-text 1s; }
+        .encouragement-message { color: var(--primary-color); }
+        
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        button {
+            background-color:#3b3908;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        button:hover {
+            background-color: #5a4abc;
+            transform: translateY(-2px);
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 10px 0 5px;
+            overflow: hidden;
+            border: 1px solid #ccc;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #6a5acd, #9370db);
+            width: 0%;
+            transition: width 0.5s ease-in-out;
+            border-radius: 10px;
+        }
+        
+        .stats-display {
+            display: flex;
+            justify-content: space-around;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 5px;
+            color: var(--text-color);
+        }
+        
+        /* Animations */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25%, 75% { transform: translateX(-8px); } 50% { transform: translateX(8px); } }
+        @keyframes bounce-text { 0%, 20%, 50%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-20px); } 60% { transform: translateY(-10px); } }
+        @keyframes dance { 0%, 100% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(10deg) scale(1.1); } 75% { transform: rotate(-10deg) scale(1.1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes flash-green { 0% { background-color: var(--syllable-bg); } 50% { background-color: var(--success-color); } 100% { background-color: var(--syllable-bg); } }
+
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.5s;
+            padding: 15px;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #6a5acd, #9370db);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90%;
+            color: white;
+            box-shadow: 0 0 50px rgba(255,255,255,0.5);
+            animation: bounce-text 1s;
+        }
+        
+        .modal-content h2 { font-size: 32px; margin-bottom: 20px; }
+        .modal-content p { font-size: 24px; margin-bottom: 30px; line-height: 1.5; }
+        .modal-content .modal-icon { font-size: 80px; margin-bottom: 20px; animation: pulse 2s infinite; }
+        .modal-btn {
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 20px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn:hover { transform: scale(1.05); }
+
+        .sound-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .sound-toggle:hover { transform: scale(1.1); }
+        .sound-toggle i { font-size: 22px; color: var(--primary-color); }
+        
+        /* Mobile Enhancements */
+        @media (max-height: 700px), (max-width: 400px) {
+            body { padding: 5px; }
+            .header { font-size: 16px; padding: 8px 12px; border-radius: 15px 15px 0 0;}
+            .container { padding: 10px; border-radius: 0 0 15px 15px; }
+            .word-box-display { font-size: 24px; min-height: 50px; letter-spacing: 3px; }
+            .word-box-label { font-size: 14px; }
+            .icon-container { height: 120px; margin: 5px 0; }
+            .icon-container i { font-size: 70px; }
+            .syllables-container { gap: 8px; margin-top: 5px; }
+            .syllable { font-size: 22px; padding: 8px 15px; }
+            button { padding: 10px 20px; font-size: 16px; }
+            .message { font-size: 16px; min-height: 24px; }
+            .stats-display { font-size: 14px; }
+            .controls { margin-top: 10px; }
+            .modal-content h2 { font-size: 22px; }
+            .modal-content p { font-size: 16px; }
+            .modal-content .modal-icon { font-size: 60px; }
+        }
+
+        .fa, .fa-brands, .fa-classic, .fa-regular, .fa-sharp, .fa-solid, .fab, .far, .fas {
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-font-smoothing: antialiased;
+            display: var(--fa-display,inline-block);
+            font-style: normal;
+            font-variant: normal;
+            line-height: 1;
+            text-rendering: auto;
+        }
+        .fa-apple-whole:before{content:"\f5d1"}.fa-baby:before{content:"\f77c"}.fa-banana:before{content:"\e2e4"}.fa-bed:before{content:"\f236"}.fa-bee:before{content:"\e0d3"}.fa-bell:before{content:"\f0f3"}.fa-book-open:before{content:"\f518"}.fa-box-archive:before{content:"\f187"}.fa-bread-slice:before{content:"\f7ec"}.fa-bug:before{content:"\f188"}.fa-building-shield:before{content:"\e4d8"}.fa-camel:before{content:"\f6f0"}.fa-car-side:before{content:"\f5e4"}.fa-carrot:before{content:"\f787"}.fa-cat:before{content:"\f6be"}.fa-chair:before{content:"\f6c0"}.fa-chalkboard-user:before{content:"\f51d"}.fa-child:before{content:"\f1ae"}.fa-child-dress:before{content:"\e59c"}.fa-clock:before{content:"\f017"}.fa-cloud:before{content:"\f0c2"}.fa-cloud-bolt:before{content:"\f76c"}.fa-cloud-rain:before{content:"\f73d"}.fa-cow:before{content:"\f6c8"}.fa-crow:before{content:"\f520"}.fa-dog:before{content:"\f6d3"}.fa-door-open:before{content:"\f52b"}.fa-duck:before{content:"\f6d8"}.fa-ear-listen:before{content:"\f2a2"}.fa-elephant:before{content:"\f6da"}.fa-eye:before{content:"\f06e"}.fa-face-smile:before{content:"\f118"}.fa-fan:before{content:"\f863"}.fa-fire:before{content:"\f06d"}.fa-fish-fins:before{content:"\e588"}.fa-flag:before{content:"\f024"}.fa-futbol:before{content:"\f1e3"}.fa-gift:before{content:"\f06b"}.fa-giraffe:before{content:"\f6f4"}.fa-glasses:before{content:"\f530"}.fa-glass-water:before{content:"\e4f4"}.fa-hand:before{content:"\f256"}.fa-hat-wizard:before{content:"\f6e8"}.fa-heart:before{content:"\f004"}.fa-hippo:before{content:"\f6ed"}.fa-horse:before{content:"\f6f0"}.fa-house:before{content:"\f015"}.fa-house-chimney:before{content:"\e3b1"}.fa-key:before{content:"\f084"}.fa-lemon:before{content:"\f094"}.fa-lion:before{content:"\f6f8"}.fa-mobile-screen-button:before{content:"\f3cd"}.fa-moon:before{content:"\f186"}.fa-mosque:before{content:"\f678"}.fa-moth:before{content:"\e52e"}.fa-mountain-sun:before{content:"\e52f"}.fa-mug-saucer:before{content:"\f0f4"}.fa-mushroom:before{content:"\e425"}.fa-palette:before{content:"\f53f"}.fa-paw:before{content:"\f1b0"}.fa-pencil:before{content:"\f303"}.fa-person:before{content:"\f183"}.fa-person-cane:before{content:"\e53d"}.fa-person-dress:before{content:"\f182"}.fa-plane:before{content:"\f072"}.fa-rocket:before{content:"\f135"}.fa-school:before{content:"\f549"}.fa-scissors:before{content:"\f0c4"}.fa-seedling:before{content:"\f4d8"}.fa-shirt:before{content:"\f553"}.fa-shoe-prints:before{content:"\f54b"}.fa-snowflake:before{content:"\f2dc"}.fa-socks:before{content:"\f696"}.fa-star:before{content:"\f005"}.fa-store:before{content:"\f54e"}.fa-sun:before{content:"\f185"}.fa-train-subway:before{content:"\f239"}.fa-tree:before{content:"\f1bb"}.fa-trophy:before{content:"\f091"}.fa-user:before{content:"\f007"}.fa-user-doctor:before{content:"\f0f0"}.fa-user-tie:before{content:"\f508"}.fa-utensils:before{content:"\f2e7"}.fa-volume-mute:before{content:"\f6a9"}.fa-volume-up:before{content:"\f028"}.fa-water:before{content:"\f773"}.fa-watermelon-slice:before{content:"\e307"}.fa-window-maximize:before{content:"\f2d0"}
+    </style>
+</head>
+<body>
+    <div class="sound-toggle" id="soundToggle">
+        <i class="fas fa-volume-up"></i>
+    </div>
+    
+    <div class="header">
+        <div class="score-container">
+            أعلى نتيجة: <span id="highScoreDisplay">0</span>
+        </div>
+        <span>لعبة تكوين الكلمات</span>
+        <div class="score-container">
+            النقاط: <span id="scoreDisplay">0</span>
+        </div>
+    </div>
+    
+    <div class="container">
+        
+        <!-- MODIFIED: Word Display Area -->
+        <div class="word-construction-area">
+            <div class="word-box">
+                <div class="word-box-label">الكلمة المطلوبة</div>
+                <div id="inputWord" class="word-box-display"></div>
+            </div>
+            <div class="word-box">
+                <div class="word-box-label">تكوينك</div>
+                <div id="targetWord" class="word-box-display"></div>
+            </div>
+        </div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="stats-display">
+             <div>المستوى: <span id="levelDisplay">1</span></div>
+             <div>الكلمات: <span id="completedWordsDisplay">0/0</span></div>
+             <div>السلسلة: <span id="streakDisplay">0</span> 🔥</div>
+        </div>
+        
+        <div class="icon-container">
+            <i id="wordIcon"></i>
+        </div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="syllables-container" id="syllablesContainer"></div>
+        
+        <div class="controls">
+            <button id="nextBtn">تخطي</button>
+            <button id="hintBtn">مساعدة</button>
+        </div>
+    </div>
+
+    <!-- Audio files from external source (Mixkit) -->
+    <audio id="correctSound" src="https://assets.mixkit.co/sfx/preview/mixkit-quick-positive-video-game-notification-interface-265.mp3" preload="auto"></audio>
+    <audio id="wrongSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-losing-or-failing-2042.mp3" preload="auto"></audio>
+    <audio id="successSound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+    <audio id="levelUpSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+
+    <!-- Confetti Library (embedded for self-containment) -->
+    <script>
+        !function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t.confetti=e())}(this,function(){"use strict";var t=function(){return(t=Object.assign||function(t){for(var e,i=1,n=arguments.length;i<n;i++)for(var o in e=arguments[i])Object.prototype.hasOwnProperty.call(e,o)&&(t[o]=e[o]);return t}).apply(this,arguments)};function e(t,e,i){var n=e.slice(),o=n.length,a=o;while(a--)n[a]=t(n[a],a,i);return n}var i={};function n(t){return i[t]}function o(t,e){return i[t]=e}function a(t,e){return t.map(n).map(e)}function r(t,e,i){for(var n,o=0;o<t.length;o++){var a=t[o],r=e[o],l=i[o],s=Math.floor(Math.random()*(r-a+1)+a);for(n=l.length;n--;)l[n].origin=l[n].origin||{},l[n].origin.x=s/t.length}return i}function l(t,e){return t.map(n).map(e)}var s={particleCount:50,angle:90,spread:45,startVelocity:45,decay:.9,gravity:1,drift:0,ticks:200,x: .5,y:.5,shapes:["square","circle"],zIndex:100,colors:["#26ccff","#a25afd","#ff5e7e","#88ff5a","#fcff42","#ffa62d","#ff36ff"],disableForReducedMotion:!0};function c(t){return parseFloat(t)}function h(t,e){return c(t)*e}function u(t,e){return t.map(function(t){return h(t,e)})}function d(t,i){i||(i={});var n=document.createElement("canvas");return n.width=i.width||300,n.height=i.height||300,t.appendChild(n),n}function f(t){return t?"screen"===t.type?t.screen.width:t.innerWidth:"undefined"==typeof window?null:window.innerWidth}function g(t){return t?"screen"===t.type?t.screen.height:t.innerHeight:"undefined"==typeof window?null:window.innerHeight}function p(i,n,l){var s=t({},n);s.shapes&&(s.shapes=a(s.shapes,function(t){return t.call(i,n)})),s.colors&&(s.colors=e(function(t){var e=t.match(/((?:rgb|hsl)a?)\s*\(([^)]*)\)/);if(e)return function(t,e,i){var n,o,a;if("rgb"===i[1].substring(0,3)){var r=i[2].split(",");n=parseInt(r[0],10),o=parseInt(r[1],10),a=parseInt(r[2],10)}else{var l=i[2].replace(/%/g,"").split(",");n=parseFloat(l[0]),o=parseFloat(l[1]),a=parseFloat(l[2])}return{r:n,g:o,b:a}}({},0,e);var s=t.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);return s?function(t,e,i){return{r:parseInt(i[1],16),g:parseInt(i[2],16),b:parseInt(i[3],16)}}({},0,s):null}({},0,t)),s.colors)),s.particleCount=s.particleCount&&c(s.particleCount),s.angle=s.angle&&c(s.angle),s.spread=s.spread&&c(s.spread),s.startVelocity=s.startVelocity&&c(s.startVelocity),s.decay=s.decay&&c(s.decay),s.gravity=s.gravity&&c(s.gravity),s.drift=s.drift&&c(s.drift),s.ticks=s.ticks&&c(s.ticks),s.zIndex=s.zIndex&&c(s.zIndex),s.x=s.x&&c(s.x),s.y=s.y&&c(s.y),s.width=s.width&&h(s.width,l.width),s.height=s.height&&h(s.height,l.height),s.shapes&&(s.shapes=l(s.shapes)),s.scalar=s.scalar&&c(s.scalar),s.wobble=s.wobble&&c(s.wobble),s.origin&&(s.origin.x=s.origin.x&&h(s.origin.x,l.width),s.origin.y=s.origin.y&&h(s.origin.y,l.height));var d={width:l.width,height:l.height};return s.flat&&(s.gravity=0,s.startVelocity=0,s.decay=1),s.origin||(s.origin={x:h(n.x,l.width),y:h(n.y,l.height)}),s.spread=h(s.spread,Math.PI),s.angle=h(s.angle,Math.PI/180),s.velocity=h(s.startVelocity,s.scalar),s.particles=e(Array.from({length:s.particleCount}),function(){return function(e,i){var n=e.colors[Math.floor(Math.random()*e.colors.length)],o=e.shapes[Math.floor(Math.random()*e.shapes.length)],a=(e.angle-e.spread/2+Math.random()*e.spread)/Math.PI*180,r=e.angle+Math.random()*e.spread-e.spread/2;return{x:e.origin.x,y:e.origin.y,angle:a,color:n,shape:o,tick:0,velocity:e.velocity* (.5+Math.random()/2),wobble:Math.random()*10,drift:e.drift,gravity:e.gravity,decay:e.decay,tilt:Math.random()*10-10,totalTicks:e.ticks,scalar:e.scalar,rotation:Math.random()*e.spread-e.spread/2+e.angle,sin:Math.sin(r),cos:Math.cos(r)}}(s,0)}),r([0,d.width],[0,0],s.particles),s}function m(t,e){return{get:function(){return t?t[e]:void 0},set:function(i){t[e]=i}}}function y(t,i){return i.reduce(function(t,i){return t[i]=m(t,i),t},function(t){var i=e;for(var n in t)i[n]=m(t,n);return i})}var v=function(){function t(e,i){this.options=i,this.canvas=e,this.physics=function(t,e){var i=Math.sin(t.angle2D+t.tick/t.wobble)/4,n=t.tilt,o=Math.cos(t.angle2D)*t.velocity+t.drift+i,a=Math.sin(t.angle2D)*t.velocity+t.gravity+i;return t.velocity*=t.decay,t.tilt+=.1,t.x+=o,t.y+=a,t.tick+=1,t}}this.update = function() {
+        if (this.canvas && this.context) {
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            var particles = this.options.particles || [];
+            particles.forEach(function(particle, i) {
+                this.physics(particle);
+                if (particle.y < this.canvas.height && particle.x > -this.canvas.width && particle.x < 2 * this.canvas.width) {
+                    this.options.shape.call(this, this.context, particle);
+                } else {
+                    particles.splice(i, 1);
+                }
+            }, this);
+        }
+    };this.context=this.canvas.getContext("2d")}var w={},b={};function M(i){var n=w[i];return n||(n=w[i]=t({},s)),y(n,Object.keys(s))}function x(t,e,i){var n;n=t,Promise.resolve().then(function(){var o,a;n.style.position="fixed",n.style.top="0px",n.style.left="0px",n.style["pointer-events"]="none",n.style.zIndex=e.zIndex,o=n,a=e.resize?function(){var t=f(window),e=g(window);o.width=t,o.height=e,o.style.width=t+"px",o.style.height=e+"px"}:function(){};window.addEventListener("resize",a),a();var r=new v(n,p(i,e,n));!function t(){(r.update()||[]).length?requestAnimationFrame(t):(window.removeEventListener("resize",a),i.remove(n))}()})}function C(t,e){var i;return i=t,new Promise(function(t){if(!e.disableForReducedMotion||!("undefined"!=typeof matchMedia&&matchMedia("(prefers-reduced-motion)").matches))return i?t(i):t(d(document.body))})}var A={};function k(e,i){var n,o=M((n=i&&i.canvas)?n.id||n:"__confetti_canvas__"+Date.now());return function(e,i){var n=t({},s,e),o=t({},b,i);return{options:n,size:{width:n.width||f(n.canvas),height:n.height||g(n.canvas)},props:o}}(e,i),C(o.canvas(),o.options).then(function(e){return x(e,o.options,{add:function(t,e,i){return o.add(t,e),i(t)},remove:function(t){o.remove(t)}})})}return o("circle",function(t,e){t.beginPath(),t.arc(e.x,e.y,e.scalar/2,0,2*Math.PI),t.fillStyle=function(t){var e=t.r+","+t.g+","+t.b;return t.opacity?"rgba("+e+", "+t.opacity+")":"rgb("+e+")"}(e.color),t.fill(),t.closePath()}),o("square",function(t,e){var i=e.tilt,n=Math.sin(i),o=Math.cos(i);t.fillStyle=function(t){var e=t.r+","+t.g+","+t.b;return t.opacity?"rgba("+e+", "+t.opacity+")":"rgb("+e+")"}(e.color),t.beginPath(),t.moveTo(e.x-e.scalar/2*n,e.y-e.scalar/2*o),t.lineTo(e.x+e.scalar/2*n,e.y+e.scalar/2*o),t.lineTo(e.x+e.scalar/2*o,e.y-e.scalar/2*n),t.lineTo(e.x-e.scalar/2*o,e.y+e.scalar/2*n),t.closePath(),t.fill()}),o("star",function(t,e){var i,n,o=Math.PI/5,a=e.scalar;for(t.fillStyle=function(t){var e=t.r+","+t.g+","+t.b;return t.opacity?"rgba("+e+", "+t.opacity+")":"rgb("+e+")"}(e.color),t.beginPath(),i=0;i<10;i++){var r=i%2==0?a:a/2;n=i%2==0?e.rotation:e.rotation+o,t.lineTo(e.x+r*Math.cos(n),e.y+r*Math.sin(n))}t.closePath(),t.fill()}),k.create=function(t,e){return function i(n){return k(Object.assign({},e,n),{canvas:t})}},k.reset=function(){for(var t in w)delete w[t]},k});
+    </script>
+
+    <script>
+        const wordsData = [
+            // --- حيوانات ---
+            { word: "أسد", syllables: ["أ", "سد"], icon: "fa-solid fa-lion" }, { word: "قطة", syllables: ["قط", "ة"], icon: "fa-solid fa-cat" }, { word: "فيل", syllables: ["فيل"], icon: "fa-solid fa-elephant" }, { word: "حصان", syllables: ["ح", "صان"], icon: "fa-solid fa-horse" }, { word: "سمكة", syllables: ["س", "م", "كة"], icon: "fa-solid fa-fish-fins" }, { word: "بطة", syllables: ["بط", "ة"], icon: "fa-solid fa-duck" }, { word: "أرنب", syllables: ["أر", "نب"], icon: "fa-solid fa-carrot" }, { word: "كلب", syllables: ["كلب"], icon: "fa-solid fa-dog" }, { word: "دب", syllables: ["دب"], icon: "fa-solid fa-paw" }, { word: "نمر", syllables: ["ن", "مر"], icon: "fa-solid fa-paw" }, { word: "زرافة", syllables: ["ز", "را", "فة"], icon: "fa-solid fa-giraffe" }, { word: "بقرة", syllables: ["بق", "رة"], icon: "fa-solid fa-cow" }, { word: "خروف", syllables: ["خ", "روف"], icon: "fa-solid fa-hippo" }, { word: "فراشة", syllables: ["ف", "را", "شة"], icon: "fa-solid fa-moth" }, { word: "دجاجة", syllables: ["د", "جا", "جة"], icon: "fa-solid fa-crow" }, { word: "جمل", syllables: ["ج", "مل"], icon: "fa-solid fa-camel" }, { word: "نملة", syllables: ["نم", "لة"], icon: "fa-solid fa-bug" }, { word: "نحلة", syllables: ["نح", "لة"], icon: "fa-solid fa-bee" },
+            // --- نباتات وطعام ---
+            { word: "تفاحة", syllables: ["تف", "ا", "حة"], icon: "fa-solid fa-apple-whole" }, { word: "موز", syllables: ["موز"], icon: "fa-solid fa-banana" }, { word: "جزر", syllables: ["ج", "زر"], icon: "fa-solid fa-carrot" }, { word: "شجرة", syllables: ["ش", "ج", "رة"], icon: "fa-solid fa-tree" }, { word: "وردة", syllables: ["ور", "دة"], icon: "fa-solid fa-fan" }, { word: "خبز", syllables: ["خبز"], icon: "fa-solid fa-bread-slice" }, { word: "ماء", syllables: ["ماء"], icon: "fa-solid fa-glass-water" }, { word: "تمر", syllables: ["تمر"], icon: "fa-solid fa-seedling" }, { word: "عنب", syllables: ["ع", "نب"], icon: "fa-solid fa-seedling" }, { word: "تين", syllables: ["تين"], icon: "fa-solid fa-lemon" }, { word: "بطيخ", syllables: ["بط", "يخ"], icon: "fa-solid fa-watermelon-slice" }, { word: "ليمون", syllables: ["لي", "مون"], icon: "fa-solid fa-lemon" }, { word: "فطر", syllables: ["فطر"], icon: "fa-solid fa-mushroom" }, { word: "ذرة", syllables: ["ذ", "رة"], icon: "fa-solid fa-ear-listen" },
+            // --- جماد وأشياء ---
+            { word: "سيارة", syllables: ["س", "يا", "رة"], icon: "fa-solid fa-car-side" }, { word: "قلم", syllables: ["ق", "لم"], icon: "fa-solid fa-pencil" }, { word: "كتاب", syllables: ["ك", "تاب"], icon: "fa-solid fa-book-open" }, { word: "باب", syllables: ["باب"], icon: "fa-solid fa-door-open" }, { word: "بيت", syllables: ["بيت"], icon: "fa-solid fa-house" }, { word: "كرسي", syllables: ["كر", "سي"], icon: "fa-solid fa-chair" }, { word: "كرة", syllables: ["ك", "رة"], icon: "fa-solid fa-futbol" }, { word: "هاتف", syllables: ["ها", "تف"], icon: "fa-solid fa-mobile-screen-button" }, { word: "مفتاح", syllables: ["مف", "تاح"], icon: "fa-solid fa-key" }, { word: "ساعة", syllables: ["سا", "عة"], icon: "fa-solid fa-clock" }, { word: "سرير", syllables: ["س", "رير"], icon: "fa-solid fa-bed" }, { word: "شباك", syllables: ["شب", "اك"], icon: "fa-solid fa-window-maximize" }, { word: "طائرة", syllables: ["طا", "ئ", "رة"], icon: "fa-solid fa-plane" }, { word: "قطار", syllables: ["ق", "طار"], icon: "fa-solid fa-train-subway" }, { word: "صاروخ", syllables: ["صا", "روخ"], icon: "fa-solid fa-rocket" }, { word: "منزل", syllables: ["من", "زل"], icon: "fa-solid fa-house-chimney" }, { word: "جرس", syllables: ["ج", "رس"], icon: "fa-solid fa-bell" }, { word: "هدية", syllables: ["ه", "دي", "ة"], icon: "fa-solid fa-gift" }, { word: "مقص", syllables: ["م", "قص"], icon: "fa-solid fa-scissors" }, { word: "كوب", syllables: ["كوب"], icon: "fa-solid fa-mug-saucer" }, { word: "شوكة", syllables: ["شو", "كة"], icon: "fa-solid fa-utensils" }, { word: "نظارة", syllables: ["ن", "ظا", "رة"], icon: "fa-solid fa-glasses" }, { word: "صندوق", syllables: ["صن", "دوق"], icon: "fa-solid fa-box-archive" }, { word: "علم", syllables: ["ع", "لم"], icon: "fa-solid fa-flag" },
+            // --- أماكن ---
+            { word: "مدرسة", syllables: ["مد", "ر", "سة"], icon: "fa-solid fa-school" }, { word: "مسجد", syllables: ["مس", "جد"], icon: "fa-solid fa-mosque" }, { word: "سوق", syllables: ["سوق"], icon: "fa-solid fa-store" }, { word: "بحر", syllables: ["بحر"], icon: "fa-solid fa-water" }, { word: "حديقة", syllables: ["ح", "دي", "قة"], icon: "fa-solid fa-tree" }, { word: "جبل", syllables: ["ج", "بل"], icon: "fa-solid fa-mountain-sun" }, { word: "نهر", syllables: ["نهر"], icon: "fa-solid fa-water" }, { word: "صحراء", syllables: ["صح", "راء"], icon: "fa-solid fa-mountain-sun" },
+            // --- إنسان ومهن ---
+            { word: "ولد", syllables: ["و", "لد"], icon: "fa-solid fa-child" }, { word: "بنت", syllables: ["بنت"], icon: "fa-solid fa-child-dress" }, { word: "رجل", syllables: ["ر", "جل"], icon: "fa-solid fa-person" }, { word: "طبيب", syllables: ["ط", "بيب"], icon: "fa-solid fa-user-doctor" }, { word: "معلم", syllables: ["م", "عل", "م"], icon: "fa-solid fa-chalkboard-user" }, { word: "شرطي", syllables: ["شر", "طي"], icon: "fa-solid fa-building-shield" }, { word: "خباز", syllables: ["خب", "از"], icon: "fa-solid fa-bread-slice" }, { word: "فلاح", syllables: ["فل", "اح"], icon: "fa-solid fa-seedling" }, { word: "رسام", syllables: ["رس", "ام"], icon: "fa-solid fa-palette" }, { word: "جد", syllables: ["جد"], icon: "fa-solid fa-person-cane" }, { word: "جدة", syllables: ["جد", "ة"], icon: "fa-solid fa-person-dress" }, { word: "طفل", syllables: ["طفل"], icon: "fa-solid fa-baby" },
+            // --- طبيعة وجسم ---
+            { word: "شمس", syllables: ["شمس"], icon: "fa-solid fa-sun" }, { word: "قمر", syllables: ["ق", "مر"], icon: "fa-solid fa-moon" }, { word: "نجمة", syllables: ["نج", "مة"], icon: "fa-solid fa-star" }, { word: "سحاب", syllables: ["س", "حاب"], icon: "fa-solid fa-cloud" }, { word: "غيمة", syllables: ["غي", "مة"], icon: "fa-solid fa-cloud" }, { word: "مطر", syllables: ["م", "طر"], icon: "fa-solid fa-cloud-rain" }, { word: "ثلج", syllables: ["ثلج"], icon: "fa-solid fa-snowflake" }, { word: "برق", syllables: ["برق"], icon: "fa-solid fa-cloud-bolt" }, { word: "نار", syllables: ["نار"], icon: "fa-solid fa-fire" }, { word: "عين", syllables: ["عين"], icon: "fa-solid fa-eye" }, { word: "يد", syllables: ["يد"], icon: "fa-solid fa-hand" }, { word: "فم", syllables: ["فم"], icon: "fa-solid fa-face-smile" }, { word: "رأس", syllables: ["رأس"], icon: "fa-solid fa-child" }, { word: "وجه", syllables: ["وجه"], icon: "fa-solid fa-face-smile" }, { word: "قدم", syllables: ["ق", "دم"], icon: "fa-solid fa-shoe-prints" }, { word: "قلب", syllables: ["قلب"], icon: "fa-solid fa-heart" }, { word: "شعر", syllables: ["شعر"], icon: "fa-solid fa-user" }, { word: "أذن", syllables: ["أ", "ذن"], icon: "fa-solid fa-ear-listen" },
+            // --- ملابس ---
+            { word: "قميص", syllables: ["ق", "ميص"], icon: "fa-solid fa-shirt" }, { word: "بنطال", syllables: ["بن", "طال"], icon: "fa-solid fa-user-tie" }, { word: "حذاء", syllables: ["ح", "ذاء"], icon: "fa-solid fa-shoe-prints" }, { word: "قبعة", syllables: ["قب", "عة"], icon: "fa-solid fa-hat-wizard" }, { word: "جورب", syllables: ["جو", "رب"], icon: "fa-solid fa-socks" }
+        ];
+
+        // --- DOM Elements & Audio ---
+        const DOMElements = {
+            targetWord: document.getElementById('targetWord'),
+            inputWord: document.getElementById('inputWord'),
+            wordIcon: document.getElementById('wordIcon'),
+            syllablesContainer: document.getElementById('syllablesContainer'),
+            message: document.getElementById('message'),
+            nextBtn: document.getElementById('nextBtn'),
+            hintBtn: document.getElementById('hintBtn'),
+            progressBar: document.getElementById('progressBar'),
+            soundToggle: document.getElementById('soundToggle'),
+            scoreDisplay: document.getElementById('scoreDisplay'),
+            highScoreDisplay: document.getElementById('highScoreDisplay'),
+            levelDisplay: document.getElementById('levelDisplay'),
+            completedWordsDisplay: document.getElementById('completedWordsDisplay'),
+            streakDisplay: document.getElementById('streakDisplay'),
+        };
+
+        const sounds = {
+            correct: document.getElementById('correctSound'),
+            wrong: document.getElementById('wrongSound'),
+            success: document.getElementById('successSound'),
+            levelUp: document.getElementById('levelUpSound'),
+        };
+
+        // --- Game State ---
+        let state = {};
+        const initialState = {
+            currentWordData: null,
+            correctSyllables: [],
+            shuffledWords: [],
+            currentWordIndex: -1,
+            score: 0,
+            highScore: 0,
+            level: 1,
+            completedWords: 0,
+            streak: 0,
+            soundEnabled: true,
+            hintUsed: false,
+            wordsPerLevel: 10,
+        };
+
+        // --- Core Game Logic ---
+        function initGame() {
+            if (!loadState()) {
+                resetGame();
+                if (localStorage.getItem('wordBuilderHasVisited') !== 'true') {
+                    showWelcomeModal();
+                    localStorage.setItem('wordBuilderHasVisited', 'true');
+                }
+            }
+            updateDisplay();
+            nextWord();
+        }
+
+        function resetGame() {
+            state = JSON.parse(JSON.stringify(initialState)); // Deep copy
+            state.highScore = localStorage.getItem('wordBuilderHighScore') || 0;
+            state.shuffledWords = [...wordsData];
+            shuffleArray(state.shuffledWords);
+            saveState();
+        }
+        
+        function saveState() {
+            localStorage.setItem('wordBuilderState', JSON.stringify(state));
+            localStorage.setItem('wordBuilderHighScore', state.highScore);
+        }
+
+        function loadState() {
+            const savedState = localStorage.getItem('wordBuilderState');
+            if (savedState) {
+                state = JSON.parse(savedState);
+                state = Object.assign({}, initialState, state);
+                return true;
+            }
+            return false;
+        }
+
+        function nextWord() {
+            state.currentWordIndex++;
+
+            if (state.currentWordIndex >= state.shuffledWords.length) {
+                showFinalCelebration();
+                return;
+            }
+
+            state.currentWordData = state.shuffledWords[state.currentWordIndex];
+            state.correctSyllables = [];
+            state.hintUsed = false;
+            
+            // MODIFIED: Update both display boxes
+            DOMElements.targetWord.textContent = 'ـ'.repeat(state.currentWordData.word.length);
+            DOMElements.inputWord.textContent = state.currentWordData.word; // Show the target word
+            
+            DOMElements.wordIcon.className = `fas ${state.currentWordData.icon}`;
+            DOMElements.wordIcon.classList.remove('dance');
+            
+            createSyllables();
+            DOMElements.message.textContent = 'كوّن الكلمة باختيار المقاطع الصحيحة!';
+            DOMElements.message.className = 'message';
+            
+            updateDisplay();
+            saveState();
+        }
+
+        function handleSyllableClick(syllable, element) {
+            if (element.style.pointerEvents === 'none') return;
+
+            const expectedSyllable = state.currentWordData.syllables[state.correctSyllables.length];
+
+            if (syllable === expectedSyllable) {
+                playSound(sounds.correct);
+                state.correctSyllables.push(syllable);
+                element.style.backgroundColor = 'var(--success-color)';
+                element.style.pointerEvents = 'none';
+                updateWordDisplay();
+
+                if (state.correctSyllables.length === state.currentWordData.syllables.length) {
+                    setTimeout(completeWord, 300);
+                } else {
+                    const encouragements = ['أحسنت!', 'رائع!', 'استمر!', 'ممتاز!'];
+                    DOMElements.message.textContent = encouragements[Math.floor(Math.random() * encouragements.length)];
+                    DOMElements.message.className = 'message encouragement-message';
+                }
+            } else {
+                playSound(sounds.wrong);
+                state.streak = 0;
+                updateDisplay();
+                element.classList.add('wrong');
+                DOMElements.message.textContent = 'حاول مرة أخرى!';
+                DOMElements.message.className = 'message';
+                setTimeout(() => element.classList.remove('wrong'), 500);
+            }
+            saveState();
+        }
+        
+        function completeWord() {
+            playSound(sounds.success);
+            DOMElements.message.textContent = `أحسنت! لقد كونت الكلمة!`;
+            DOMElements.message.className = 'message success-message';
+            DOMElements.wordIcon.classList.add('dance');
+
+            if (!state.hintUsed) {
+                state.streak++;
+                state.score += 10 + (state.streak * 2);
+            }
+            state.completedWords++;
+
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+            }
+            
+            const justLeveledUp = state.completedWords > 0 && 
+                                  state.completedWords % state.wordsPerLevel === 0 && 
+                                  state.completedWords < wordsData.length;
+
+            if (justLeveledUp) {
+                state.level++;
+                showLevelUpModal();
+            }
+            
+            triggerConfetti();
+            updateDisplay();
+            saveState();
+            
+            DOMElements.syllablesContainer.querySelectorAll('.syllable').forEach(el => el.style.pointerEvents = 'none');
+            setTimeout(nextWord, justLeveledUp ? 4000 : 3000);
+        }
+
+        function skipWord() {
+             state.streak = 0;
+             updateDisplay();
+             saveState();
+             nextWord();
+        }
+
+        function showHint() {
+            if (state.correctSyllables.length >= state.currentWordData.syllables.length) return;
+            
+            state.hintUsed = true;
+            state.streak = 0;
+            updateDisplay();
+
+            const nextSyllable = state.currentWordData.syllables[state.correctSyllables.length];
+            DOMElements.syllablesContainer.querySelectorAll('.syllable').forEach(el => {
+                if (el.style.pointerEvents !== 'none' && el.textContent === nextSyllable) {
+                    el.classList.add('correct-flash');
+                    setTimeout(() => el.classList.remove('correct-flash'), 1000);
+                }
+            });
+            DOMElements.message.textContent = `تلميح: المقطع التالي هو "${nextSyllable}"`;
+            saveState();
+        }
+
+        // --- UI, Effects & Helpers ---
+        function playSound(sound) {
+            if (!state.soundEnabled || !sound) return;
+            sound.currentTime = 0;
+            sound.play().catch(e => console.error("Audio play failed:", e));
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function createSyllables() {
+            DOMElements.syllablesContainer.innerHTML = '';
+            const correctSylls = state.currentWordData.syllables;
+            let wrongSylls = [];
+            const allPossibleSylls = wordsData.flatMap(w => w.syllables);
+            while (wrongSylls.length < 5) {
+                const randomSyll = allPossibleSylls[Math.floor(Math.random() * allPossibleSylls.length)];
+                if (!correctSylls.includes(randomSyll) && !wrongSylls.includes(randomSyll)) {
+                    wrongSylls.push(randomSyll);
+                }
+            }
+            const allSylls = [...correctSylls, ...wrongSylls];
+            shuffleArray(allSylls);
+            allSylls.forEach(syllable => {
+                const el = document.createElement('div');
+                el.className = 'syllable';
+                el.textContent = syllable;
+                el.addEventListener('click', () => handleSyllableClick(syllable, el));
+                DOMElements.syllablesContainer.appendChild(el);
+            });
+        }
+        
+        function updateWordDisplay() {
+            let currentText = state.correctSyllables.join('');
+            let remainingLength = state.currentWordData.word.length - currentText.length;
+            DOMElements.targetWord.textContent = currentText + 'ـ'.repeat(remainingLength > 0 ? remainingLength : 0);
+        }
+
+        function updateDisplay() {
+            DOMElements.scoreDisplay.textContent = state.score;
+            DOMElements.highScoreDisplay.textContent = state.highScore;
+            DOMElements.levelDisplay.textContent = state.level;
+            DOMElements.streakDisplay.textContent = `${state.streak} 🔥`;
+            DOMElements.completedWordsDisplay.textContent = `${state.completedWords}/${wordsData.length}`;
+            const progress = (state.completedWords / wordsData.length) * 100;
+            DOMElements.progressBar.style.width = `${progress}%`;
+        }
+        
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const icon = DOMElements.soundToggle.querySelector('i');
+            icon.className = state.soundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+            saveState();
+        }
+
+        // --- Modals and Celebrations ---
+        function createModal(title, text, iconClass, buttonText, onButtonClick) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <i class="modal-icon ${iconClass}"></i>
+                    <h2>${title}</h2>
+                    <p>${text}</p>
+                    <button class="modal-btn">${buttonText}</button>
+                </div>
+            `;
+            modal.querySelector('.modal-btn').addEventListener('click', () => {
+                modal.remove();
+                if (onButtonClick) onButtonClick();
+            });
+            document.body.appendChild(modal);
+        }
+        
+        function showWelcomeModal() {
+            createModal(
+                'أهلاً بك في لعبة الكلمات!',
+                'هدفك هو تكوين الكلمة الصحيحة بالضغط على المقاطع بالترتيب. هل أنت مستعد للتحدي؟',
+                'fas fa-gamepad',
+                'هيا بنا!',
+                null
+            );
+        }
+
+        function showLevelUpModal() {
+            playSound(sounds.levelUp);
+            triggerConfetti('fireworks');
+            createModal(
+                'مستوى جديد!',
+                `رائع! لقد وصلت إلى المستوى ${state.level}! استمر في التقدم يا بطل!`,
+                'fas fa-star',
+                'أكمل اللعب',
+                null
+            );
+        }
+        
+        function showFinalCelebration() {
+            playSound(sounds.levelUp);
+            triggerConfetti('fireworks');
+            localStorage.removeItem('wordBuilderState');
+            createModal(
+                'تهانينا!',
+                `لقد أكملت جميع الكلمات بنجاح! نتيجتك النهائية هي ${state.score} نقطة.`,
+                'fas fa-trophy',
+                'العب مرة أخرى',
+                () => {
+                    resetGame();
+                    initGame();
+                }
+            );
+        }
+
+        function triggerConfetti(type = 'default') {
+            if (typeof confetti !== 'function') return;
+            const options = { particleCount: 150, spread: 70, origin: { y: 0.6 } };
+            if (type === 'fireworks') {
+                const duration = 2 * 1000, animationEnd = Date.now() + duration;
+                const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+                const interval = setInterval(() => {
+                    const timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) return clearInterval(interval);
+                    const particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            } else {
+                confetti(options);
+            }
+        }
+
+        // --- Event Listeners & Initialization ---
+        DOMElements.nextBtn.addEventListener('click', skipWord);
+        DOMElements.hintBtn.addEventListener('click', showHint);
+        DOMElements.soundToggle.addEventListener('click', toggleSound);
+
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
