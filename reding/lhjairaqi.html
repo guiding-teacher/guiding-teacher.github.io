@@ -1,0 +1,1905 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>مغامرة تعلم اللهجة العراقية</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+   
+     <style>
+    :root {
+        --primary-color: #7E57C2;
+        --secondary-color: #5E35B1;
+        --accent-color: #66BB6A;
+        --text-color: #212121;
+        --text-light: #FFFFFF;
+        --bg-color: #ECEFF1;
+        --app-bg-color-start: #e0f7fa;
+        --app-bg-color-end: #b2ebf2;
+        --card-bg: #ffffff;
+        --button-hover: #4A148C;
+        --correct-color: #4CAF50;
+        --incorrect-color: #F44336;
+        --known-color: #FFB300;
+        --unknown-color: #E53935;
+        --border-radius: 18px;
+        --box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        --font-family: 'Cairo', sans-serif;
+        --hover-glow: 0 0 15px rgba(var(--accent-rgb, 102, 187, 106), 0.5);
+    }
+
+    html,
+    body {
+        min-height: 100vh;
+    }
+
+    body {
+        font-family: var(--font-family);
+        margin: 0;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        transition: background-color 0.5s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    header {
+        background-color: var(--primary-color);
+        color: var(--text-light);
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        z-index: 1000;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
+    }
+
+    header h1 {
+        font-size: 1.3em;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .header-icon {
+        cursor: pointer;
+        margin-left: 18px;
+        font-size: 1.6em;
+        line-height: 1;
+        transition: transform 0.2s ease;
+    }
+
+    .header-icon:hover {
+        transform: scale(1.1);
+    }
+    
+    .version-info {
+       display: none;
+    }
+
+    .app-container {
+        width: 100%;
+        max-width: 600px;
+        background: linear-gradient(145deg, var(--app-bg-color-start) 0%, var(--app-bg-color-end) 100%);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        margin: 20px 10px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        background-color: #ffffff;
+        padding: 8px 5px;
+        border-bottom: 1px solid #CFD8DC;
+        flex-shrink: 0;
+    }
+
+    nav button {
+        background-color: #f5f5f5;
+        color: var(--secondary-color);
+        border: none;
+        padding: 12px 10px;
+        cursor: pointer;
+        font-size: 0.8em;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: background-color 0.2s, color 0.2s, transform 0.1s, box-shadow 0.2s;
+        margin: 0 3px;
+        text-align: center;
+    }
+
+    nav button:hover {
+        box-shadow: var(--hover-glow);
+    }
+
+    nav button.active {
+        background-color: var(--accent-color);
+        color: var(--text-light);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    nav button:hover:not(.active) {
+        background-color: #e0e0e0;
+        transform: translateY(-1px);
+    }
+
+    nav button:active:not(.active) {
+        transform: translateY(0px);
+    }
+
+    .main-content {
+        position: relative;
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .section {
+        display: none;
+        padding: 20px;
+        animation: fadeIn 0.4s ease-out;
+        position: relative;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .section-title {
+        text-align: center;
+        color: var(--secondary-color);
+        font-size: 2em;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    
+    #learn-section .subtitle {
+       display: none;
+    }
+
+    #learn-section .progress-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+    }
+
+    #learn-section .score-display {
+        display: flex;
+        align-items: center;
+        font-size: 1.1em;
+    }
+
+    #learn-section .flame-container {
+        display: flex;
+        align-items: center;
+        background-color: #FFA000;
+        padding: 6px 12px;
+        border-radius: 20px;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #learn-section .flame-icon {
+        font-size: 1.5em;
+        margin-right: 6px;
+    }
+
+    #learn-section .flame-streak {
+        font-weight: 700;
+    }
+
+    #learn-section .learn-progress-text {
+        font-weight: 600;
+        color: var(--secondary-color);
+    }
+
+    .start-game-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        min-height: 400px;
+    }
+
+    #start-game-btn {
+        padding: 20px 40px;
+        font-size: 1.5em;
+        font-weight: 700;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        border: none;
+        color: var(--text-light);
+        background-color: var(--accent-color);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    }
+
+    #start-game-btn:hover {
+        background-color: var(--secondary-color);
+        transform: scale(1.05);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .flashcard-container {
+        perspective: 1200px;
+        width: 100%;
+        height: 300px;
+        margin-bottom: 25px;
+        cursor: pointer;
+    }
+
+    .flashcard {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background: linear-gradient(145deg, var(--primary-color), var(--secondary-color));
+        border-radius: var(--border-radius);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        color: var(--text-light);
+    }
+
+    .flashcard.flipped {
+        transform: rotateY(180deg);
+    }
+
+    .flashcard-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 25px;
+        box-sizing: border-box;
+        border-radius: var(--border-radius);
+    }
+
+    .flashcard-back {
+        transform: rotateY(180deg);
+    }
+
+    .flashcard .flag {
+        width: 55px;
+        margin-bottom: 12px;
+    }
+
+    .flashcard .main-text {
+        font-size: 2.4em;
+        font-weight: 700;
+        margin-bottom: 18px;
+        line-height: 1.3;
+    }
+
+    .flashcard .pronunciation,
+    .flashcard .example {
+        font-size: 1.15em;
+        margin-bottom: 10px;
+        opacity: 0.9;
+    }
+
+    .flashcard .explanation {
+        font-size: 1.05em;
+        margin-top: 12px;
+        font-style: italic;
+        color: #E0E0E0;
+        line-height: 1.5;
+    }
+
+    .audio-button-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .audio-btn {
+        background-color: var(--accent-color);
+        color: var(--text-light);
+        border: none;
+        padding: 10px 18px;
+        font-size: 0.95em;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
+        margin: 5px;
+        transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: auto;
+    }
+    
+    .audio-btn:hover {
+        background-color: #558B2F;
+        transform: translateY(-1px);
+        box-shadow: var(--hover-glow);
+    }
+
+    .audio-btn:active {
+        transform: translateY(0px);
+    }
+
+    .audio-btn:disabled {
+        background-color: #BDBDBD;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+    
+    .learn-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .learn-actions button {
+        padding: 14px 18px;
+        font-size: 1em;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        border: none;
+        color: var(--text-light);
+        margin: 5px;
+        min-width: 100px;
+        transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        flex-grow: 1;
+        max-width: 150px;
+    }
+
+    .learn-actions button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15), var(--hover-glow);
+    }
+
+    .learn-actions button:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #hint-btn {
+        background-color: var(--known-color);
+    }
+
+    #hint-btn:hover {
+        background-color: #FF8F00;
+    }
+
+    #dont-know-btn {
+        background-color: var(--unknown-color);
+    }
+
+    #dont-know-btn:hover {
+        background-color: #C62828;
+    }
+    
+    #next-card-btn {
+        background-color: var(--secondary-color);
+    }
+
+    #next-card-btn:hover {
+        background-color: var(--button-hover);
+    }
+
+    .completion-message {
+        text-align: center;
+        font-size: 1.2em;
+        color: var(--accent-color);
+        margin-top: 20px;
+        font-weight: 600;
+        animation: pulseCorrect 1s infinite alternate;
+    }
+
+    /* --- Quiz Section --- */
+    #quiz-section .section-title {
+        margin-bottom: 15px;
+    }
+
+    .quiz-info-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        margin-bottom: 15px;
+        background-color: rgba(255, 255, 255, 0.6);
+        border-radius: 12px;
+        box-sizing: border-box;
+    }
+    
+    .quiz-info-bar span {
+        margin: 0 5px;
+        font-size: 0.95em;
+        font-weight: 600;
+        color: #455A64;
+        text-align: center;
+    }
+
+    #quiz-question {
+        font-size: 1.35em;
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 18px;
+        background-color: rgba(255, 255, 255, 0.75);
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        line-height: 1.4;
+        min-height: 60px;
+    }
+
+    #audio-en-quiz {
+        min-width: 150px;
+    }
+
+    .options-container {
+        min-height: 200px;
+    }
+
+    .options-container button {
+        display: block;
+        width: 100%;
+        background-color: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid #B0BEC5;
+        padding: 16px;
+        margin-bottom: 12px;
+        font-size: 1.1em;
+        font-weight: 600;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .options-container button:hover:not(:disabled) {
+        background-color: #f1f8e9;
+        border-color: var(--accent-color);
+        transform: translateY(-1px);
+        box-shadow: var(--hover-glow);
+    }
+    
+    .options-container button:disabled {
+        cursor: default;
+    }
+
+    .options-container button.correct {
+        background-color: var(--correct-color) !important;
+        color: var(--text-light);
+        border-color: var(--correct-color);
+        animation: pulseCorrect 0.5s;
+    }
+
+    .options-container button.incorrect {
+        background-color: var(--incorrect-color) !important;
+        color: var(--text-light);
+        border-color: var(--incorrect-color);
+        animation: shakeIncorrect 0.5s;
+    }
+
+    @keyframes pulseCorrect {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes shakeIncorrect {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    #quiz-feedback {
+        text-align: center;
+        font-size: 1.25em;
+        font-weight: 700;
+        margin-top: 18px;
+        min-height: 32px;
+    }
+
+    .quiz-actions {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
+    }
+
+    .quiz-actions button {
+        padding: 14px 22px;
+        font-size: 1.05em;
+        border-radius: 12px;
+        cursor: pointer;
+        border: none;
+        color: var(--text-light);
+        font-weight: 600;
+        transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+
+    .quiz-actions button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--hover-glow);
+    }
+
+    #next-question-btn {
+        background-color: var(--secondary-color);
+    }
+
+    #new-quiz-btn {
+        background-color: var(--accent-color);
+    }
+
+    /* --- Combined Progress & Achievements Section --- */
+    #stats-achievements-section .stat-item {
+        background-color: var(--card-bg);
+        padding: 18px;
+        margin-bottom: 15px;
+        border-radius: 12px;
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #stats-achievements-section .stat-item h3 {
+        margin: 0;
+        font-size: 1.15em;
+        color: var(--secondary-color);
+        font-weight: 600;
+    }
+
+    #stats-achievements-section .stat-item .value {
+        font-size: 1.2em;
+        font-weight: 700;
+        color: var(--accent-color);
+    }
+
+    #stats-achievements-section .progress-chart-container {
+        margin-top: 30px;
+        background-color: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.08);
+    }
+
+    #stats-achievements-section .progress-chart-container h3 {
+        text-align: center;
+        margin-bottom: 15px;
+        color: var(--secondary-color);
+    }
+
+    #stats-achievements-section .chart-bar-outer {
+        background-color: #E0E0E0;
+        border-radius: 10px;
+        height: 25px;
+        overflow: hidden;
+    }
+
+    #stats-achievements-section .chart-bar-inner {
+        background: linear-gradient(90deg, var(--accent-color), #81C784);
+        height: 100%;
+        width: 0%;
+        border-radius: 10px;
+        transition: width 1s ease-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+    }
+
+    #stats-achievements-section .achievement-item {
+        background-color: var(--card-bg);
+        padding: 18px;
+        margin-bottom: 12px;
+        border-radius: 12px;
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.08);
+        border-left: 6px solid var(--secondary-color);
+        transition: border-left-color 0.3s, transform 0.2s;
+    }
+
+    #stats-achievements-section .achievement-item:hover {
+        transform: translateY(-2px);
+    }
+
+    #stats-achievements-section .achievement-item.unlocked {
+        border-left-color: var(--known-color);
+    }
+
+    #stats-achievements-section .achievement-item h3 {
+        margin-top: 0;
+        margin-bottom: 6px;
+        color: var(--secondary-color);
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    #stats-achievements-section .achievement-item.unlocked h3 {
+        color: var(--known-color);
+    }
+
+    #stats-achievements-section .achievement-item h3 .trophy-icon {
+        margin-right: 8px;
+        font-size: 1.2em;
+    }
+
+    #stats-achievements-section .achievement-item p {
+        margin-bottom: 12px;
+        font-size: 0.95em;
+        color: #455A64;
+    }
+
+    #stats-achievements-section .progress-bar-container {
+        background-color: #E0E0E0;
+        border-radius: 8px;
+        height: 12px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    #stats-achievements-section .progress-bar-fill {
+        background-color: var(--accent-color);
+        height: 100%;
+        width: 0%;
+        border-radius: 8px;
+        transition: width 0.6s ease-in-out;
+    }
+
+    #stats-achievements-section .achievement-item.unlocked .progress-bar-fill {
+        background-color: var(--known-color);
+    }
+
+    #stats-achievements-section .difficulty-stats-group {
+        background-color: rgba(255, 255, 255, 0.6);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: var(--border-radius);
+        border: 1px solid #CFD8DC;
+    }
+
+    #stats-achievements-section .difficulty-stats-group h4 {
+        color: var(--secondary-color);
+        font-size: 1.4em;
+        font-weight: 700;
+        margin-top: 0;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--primary-color);
+    }
+
+    #stats-achievements-section .difficulty-stats-group .stat-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.05em;
+        margin-bottom: 10px;
+        padding: 8px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border-radius: 8px;
+    }
+
+    #stats-achievements-section .difficulty-stats-group .stat-line .label {
+        font-weight: 600;
+        color: #37474F;
+    }
+
+    #stats-achievements-section .difficulty-stats-group .stat-line .value {
+        font-weight: 700;
+        color: var(--accent-color);
+    }
+
+    /* --- Settings Section --- */
+    #settings-section .setting-group {
+        margin-bottom: 28px;
+        background-color: rgba(255, 255, 255, 0.75);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    #settings-section .setting-group h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: var(--secondary-color);
+        border-bottom: 1px solid #CFD8DC;
+        padding-bottom: 8px;
+        font-weight: 600;
+    }
+
+    #settings-section .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 10px;
+    }
+
+    .difficulty-options button,
+    .color-options span,
+    .bg-color-options span {
+        padding: 10px 14px;
+        margin: 0;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background-color: #E0E0E0;
+        font-weight: 600;
+        text-align: center;
+        transition: background-color 0.2s, border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+
+    .difficulty-options button:hover,
+    .color-options span:hover,
+    .bg-color-options span:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--hover-glow);
+    }
+
+    .difficulty-options button.active {
+        background-color: var(--accent-color);
+        color: var(--text-light);
+        border-color: var(--accent-color);
+    }
+
+    .color-options span,
+    .bg-color-options span {
+        display: inline-block;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+    }
+
+    .color-options span.active,
+    .bg-color-options span.active {
+        border-color: var(--text-color);
+        box-shadow: 0 0 0 2px var(--text-color) inset;
+    }
+
+    .checkbox-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .checkbox-option label {
+        font-weight: 600;
+        color: #37474F;
+        margin-right: auto;
+    }
+
+    .checkbox-option input[type="checkbox"] {
+        margin-left: 10px;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--accent-color);
+    }
+
+    #reset-progress-btn {
+        background-color: var(--unknown-color);
+        color: var(--text-light);
+        padding: 14px 22px;
+        font-size: 1.05em;
+        border-radius: 12px;
+        cursor: pointer;
+        border: none;
+        display: block;
+        width: 100%;
+        margin-top: 20px;
+        font-weight: 600;
+        transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+
+    #reset-progress-btn:hover {
+        background-color: #C62828;
+        transform: translateY(-2px);
+        box-shadow: var(--hover-glow);
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .learn-content-wrapper.hidden {
+        display: none;
+    }
+    
+    footer {
+        background-color: var(--primary-color);
+        color: var(--text-light);
+        text-align: center;
+        padding: 10px;
+        font-size: 0.8em;
+        flex-shrink: 0;
+        opacity: 0.9;
+    }
+
+    footer p {
+        margin: 0;
+    }
+
+    @media (max-width: 480px) {
+        .app-container {
+            margin: 10px 0 0 0;
+            border-radius: 15px 15px 0 0;
+            height: calc(100% - 10px);
+        }
+
+        body {
+            margin: 0;
+        }
+
+        header {
+            padding: 10px 15px;
+        }
+
+        header h1 {
+            font-size: 1.2em;
+        }
+
+        nav {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+        }
+
+        nav button {
+            font-size: 0.75em;
+            padding: 10px 6px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+        }
+        
+        .section {
+            padding: 15px;
+        }
+
+        .flashcard .main-text {
+            font-size: 1.8em;
+        }
+
+        .flashcard .pronunciation,
+        .flashcard .example {
+            font-size: 1em;
+        }
+
+        .flashcard-container {
+            height: 250px;
+        }
+        
+        .quiz-info-bar {
+            flex-wrap: wrap; 
+            justify-content: center;
+            gap: 10px;
+        }
+        .quiz-info-bar span {
+            font-size: 0.85em;
+        }
+
+        #quiz-question {
+            font-size: 1.1em;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .options-container button {
+            font-size: 0.9em;
+            padding: 12px;
+        }
+
+        .learn-actions button {
+            font-size: 0.9em;
+            padding: 10px 12px;
+            min-width: 90px;
+        }
+    }
+</style>
+    
+</head>
+<body>
+    <header>
+        <h1>
+            <span id="toggle-sound-btn" class="header-icon" title="كتم الصوت">🔊</span>
+            <span class="close-btn-header header-icon" title="العودة للتعلم">✕</span>
+            مغامرة اللهجة
+        </h1>
+        <div class="version-info"></div>
+    </header>
+
+    <div class="app-container">
+        <nav>
+            <button id="nav-learn" class="active">🧠 تعلم</button>
+            <button id="nav-quiz">❓ اختبار</button>
+            <button id="nav-stats-achievements">🏆 تقدمي</button>
+            <button id="nav-settings">⚙️ إعدادات</button>
+        </nav>
+
+        <div class="main-content">
+            <section id="learn-section" class="section active">
+                <h2 class="section-title">مغامرة تعلم</h2>
+                <p class="subtitle" id="learn-difficulty-subtitle"></p>
+                
+                <div class="progress-info">
+                    <div class="score-display">
+                        <div class="flame-container">
+                            <span class="flame-icon">🔥</span>
+                            <span id="learn-streak" class="flame-streak">1</span>
+                        </div>
+                    </div>
+                    <div class="learn-progress-text" id="learn-progress">0/0 :التقدم في المستوى</div>
+                </div>
+
+                <div class="start-game-container" id="start-game-container">
+                    <button id="start-game-btn">🚀 ابدأ التعلم 🚀</button>
+                </div>
+
+                <div id="learn-content-wrapper" class="learn-content-wrapper hidden">
+                    <div class="audio-button-container">
+                        <button class="audio-btn" id="audio-en-learn" disabled>انكليزي 🔊</button>
+                        <button class="audio-btn" id="audio-iq-learn" disabled>عراقي 🔊</button>
+                        <button class="audio-btn" id="audio-sa-learn" disabled>الشرح 🔊</button>
+                    </div>
+
+                    <div class="flashcard-container">
+                        <div class="flashcard" id="flashcard">
+                            <div class="flashcard-face flashcard-front">
+                                <p class="main-text" id="flashcard-front-text"></p>
+                            </div>
+                            <div class="flashcard-face flashcard-back">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Flag_of_Iraq.svg/125px-Flag_of_Iraq.svg.png" alt="Iraq Flag" class="flag">
+                                <p class="main-text" id="flashcard-back-iraqi"></p>
+                                <p class="pronunciation" id="flashcard-pronunciation"></p>
+                                <p class="example" id="flashcard-example"></p>
+                                <p class="explanation" id="flashcard-explanation"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="learn-completion-message" class="completion-message hidden">🎉 رائع! لقد تعلمت كل الكلمات في هذا المستوى! 🎉</div>
+                    
+                    <div class="learn-actions">
+                        <button id="hint-btn">أَعرفُها 👍</button>
+                        <button id="dont-know-btn">لا أَعرفُها ❌</button>
+                        <button id="next-card-btn">تَخَطِّي ⏭️</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quiz-section" class="section">
+                <h2 class="section-title">اختبار اللهجة العراقية</h2>
+                
+                <div class="quiz-info-bar">
+                    <span id="quiz-difficulty-subtitle-inline">(مستوى: سهل)</span>
+                    <span id="quiz-score-display">النتيجة: 0</span>
+                    <span id="quiz-progress">السؤال: 1/0</span>
+                </div>
+
+                <div class="audio-button-container">
+                    <button class="audio-btn" id="audio-en-quiz" disabled>السؤال (انكليزي) 🔊</button>
+                </div>
+
+                <div id="quiz-question">ما هي ترجمة كلمة "Word" باللهجة العراقية؟</div>
+                <div class="options-container" id="quiz-options"></div>
+                <div id="quiz-feedback"></div>
+                <div class="quiz-actions">
+                    <button id="new-quiz-btn" class="hidden">اختبار جديد 🔄</button>
+                    <button id="next-question-btn" class="hidden">السؤال التالي ❯</button>
+                </div>
+            </section>
+
+            <section id="stats-achievements-section" class="section">
+                <h2 class="section-title">📈 إنجازاتي وتقدمي</h2>
+                
+                <h3 style="text-align:center; margin-bottom:15px; color:var(--secondary-color);">ملخص التقدم العام</h3>
+                <div class="stat-item">
+                    <h3>إجمالي الكلمات/الجمل المتعلمة (كل المستويات)</h3>
+                    <span class="value" id="stats-total-learned">0</span>
+                </div>
+                <div class="stat-item">
+                    <h3>أطول سلسلة تعلم (أفضل مستوى)</h3>
+                    <span class="value" id="stats-max-streak">0 🔥</span>
+                </div>
+                <div class="stat-item">
+                    <h3>متوسط الدقة في الاختبارات (إجمالي)</h3>
+                    <span class="value" id="stats-quiz-accuracy">0%</span>
+                </div>
+                <div class="stat-item">
+                    <h3>عدد الاختبارات المكتملة (إجمالي)</h3>
+                    <span class="value" id="stats-quizzes-completed">0</span>
+                </div>
+                <div class="progress-chart-container">
+                    <h3>التقدم العام في تعلم كل المحتوى</h3>
+                    <div class="chart-bar-outer">
+                        <div class="chart-bar-inner" id="stats-overall-progress-bar">0%</div>
+                    </div>
+                </div>
+
+                <h3 style="text-align:center; margin-top:30px; margin-bottom:15px; color:var(--secondary-color);">النتائج التفصيلية لكل مستوى</h3>
+                <div id="difficulty-stats-display"></div>
+
+                <h3 style="text-align:center; margin-top:30px; margin-bottom:15px; color:var(--secondary-color);">الإنجازات العامة</h3>
+                <div id="achievements-list"></div>
+            </section>
+
+            <section id="settings-section" class="section">
+                <h2 class="section-title">الإعدادات</h2>
+                <div class="setting-group">
+                    <h3>مستوى الصعوبة</h3>
+                    <div class="difficulty-options options-grid">
+                        <button data-difficulty="easy" class="active">سَهْل</button>
+                        <button data-difficulty="medium">مُتَوَسِّط</button>
+                        <button data-difficulty="hard">صَعْب</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h3>ألوان التطبيق</h3>
+                    <div class="color-options options-grid">
+                        <span data-color-theme="default" class="active" style="background-color: #7E57C2;" title="بنفسجي (افتراضي)"></span>
+                        <span data-color-theme="green" style="background-color: #66BB6A;" title="أخضر"></span>
+                        <span data-color-theme="blue" style="background-color: #42A5F5;" title="أزرق"></span>
+                        <span data-color-theme="orange" style="background-color: #FFA726;" title="برتقالي"></span>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h3>لون خلفية الصفحة</h3>
+                    <div class="bg-color-options options-grid">
+                        <span data-bg-color="#ECEFF1" class="active" style="background-color: #ECEFF1;" title="رمادي أزرق فاتح (افتراضي)"></span>
+                        <span data-bg-color="#E8F5E9" style="background-color: #E8F5E9;" title="أخضر فاتح"></span>
+                        <span data-bg-color="#E3F2FD" style="background-color: #E3F2FD;" title="أزرق سماوي فاتح"></span>
+                        <span data-bg-color="#FFF3E0" style="background-color: #FFF3E0;" title="برتقالي فاتح"></span>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h3>خيارات أخرى</h3>
+                    <div class="checkbox-option">
+                        <label for="auto-flip-card">قَلْبُ البِطَاقَةِ تِلْقَائِيًّا (3 ثوانٍ)</label>
+                        <input type="checkbox" id="auto-flip-card">
+                    </div>
+                    <div class="checkbox-option">
+                        <label for="show-examples">إِظْهَارُ أَمْثِلَةٍ لِلْكَلِمَاتِ</label>
+                        <input type="checkbox" id="show-examples" checked>
+                    </div>
+                    <div class="checkbox-option">
+                        <label for="enable-vibration">تَفْعِيلُ الِاهْتِزَازِ لِلتَّفَاعُلَاتِ</label>
+                        <input type="checkbox" id="enable-vibration" checked>
+                    </div>
+                    <div class="checkbox-option">
+                        <label for="enable-sound">تَفْعِيلُ الْمُؤَثِّرَاتِ الصَّوْتِيَّةِ</label>
+                        <input type="checkbox" id="enable-sound" checked>
+                    </div>
+                </div>
+                <button id="reset-progress-btn">إِعَادَةُ ضَبْطِ كُلِّ التَّقَدُّمِ (Reset)</button>
+            </section>
+        </div>
+        
+        <footer>
+            <p>&copy; 2024 مغامرة اللهجة. كل الحقوق محفوظة.</p>
+        </footer>
+    </div>
+
+   
+    <script>
+        // --- DATA WITH FULL TASHKEEL ---
+        const wordsData = [
+            { id: 1, difficulty: 'easy', purpose: 'learn', english: "Hello", iraqi: "سَلَام", pronunciation: "سَلَام", example: "سَلَام عَلَيْكُم شْلُونَكُم؟", explanation: "كَلِمَةُ تَرْحِيبٍ شَائِعَةٌ تَعْنِي السَّلَامُ عَلَيْكُم." },
+            { id: 2, difficulty: 'easy', purpose: 'learn', english: "How are you?", iraqi: "شْلُونَك؟", pronunciation: "شْلُونَك (m) / شْلُونِچ (f)", example: "شْلُونَك الْيَوْم؟", explanation: "سُؤَالٌ عَنِ الْحَالِ. 'شْلُونَك' لِلذَّكَرِ وَ 'شْلُونِچ' لِلْأُنْثَى." },
+            { id: 3, difficulty: 'easy', purpose: 'learn', english: "Good morning", iraqi: "صَبَاح الْخَيْر", pronunciation: "صَبَاح الْخَيْر", example: "صَبَاح الْخَيْر يَا جَمَاعَة.", explanation: "تَحِيَّةٌ صَبَاحِيَّةٌ تَعْنِي 'صَبَاحُ الْخَيْر'." },
+            { id: 4, difficulty: 'easy', purpose: 'learn', english: "Please", iraqi: "رَجَاءً", pronunciation: "رَجَاءً", example: "رَجَاءً، انْطِينِي الْمَاي.", explanation: "'رَجَاءً' لِلطَّلَبِ." },
+            { id: 5, difficulty: 'easy', purpose: 'learn', english: "Thank you", iraqi: "شُكْرًا", pronunciation: "شُكْرًا", example: "مَشْكُور مَا قَصَّرْت.", explanation: "كَلِمَةٌ لِلتَّعْبِيرِ عَنِ الشُّكْرِ." },
+            { id: 6, difficulty: 'easy', purpose: 'learn', english: "Yes", iraqi: "إِي", pronunciation: "إِي", example: "إِي، آنِي مُوَافِق.", explanation: "كَلِمَةٌ لِلْمُوَافَقَةِ أَوِ التَّأْكِيدِ." },
+            { id: 7, difficulty: 'easy', purpose: 'learn', english: "No", iraqi: "لَا", pronunciation: "لَا", example: "لَا، مَا أَرِيد.", explanation: "كَلِمَةٌ لِلرَّفْضِ أَوِ النَّفْيِ." },
+            { id: 8, difficulty: 'easy', purpose: 'learn', english: "Water", iraqi: "مَاي", pronunciation: "مَاي", example: "أَرِيد أَشْرَب مَاي.", explanation: "الْمَاءُ الصَّالِحُ لِلشُّرْبِ." },
+            { id: 9, difficulty: 'easy', purpose: 'learn', english: "Food", iraqi: "أَكِل", pronunciation: "أَكِل", example: "الْأَكِل كُلِّش طَيِّب.", explanation: "الطَّعَامُ بِشَكْلٍ عَامٍّ." },
+            { id: 10, difficulty: 'easy', purpose: 'learn', english: "House", iraqi: "بَيْت", pronunciation: "بَيْت", example: "هَذَا بَيْتِي الْجَدِيد.", explanation: "الْمَسْكَنُ أَوِ الْمَنْزِلُ." },
+            { id: 11, difficulty: 'easy', purpose: 'learn', english: "Car", iraqi: "سَيَّارَة", pronunciation: "سَيَّارَة", example: "سَيَّارَتِي لَوْنُهَا أَحْمَر.", explanation: "مَرْكَبَةٌ لِلتَّنَقُّلِ." },
+            { id: 12, difficulty: 'easy', purpose: 'learn', english: "Money", iraqi: "فْلُوس", pronunciation: "فْلُوس", example: "مَا عِنْدِي فْلُوس كَافِيَة.", explanation: "النُّقُودُ." },
+            { id: 13, difficulty: 'easy', purpose: 'learn', english: "Today", iraqi: "الْيَوْم", pronunciation: "الْيَوْم", example: "الْيَوْم الْجَوّ حَارّ.", explanation: "هَذَا النَّهَارُ." },
+            { id: 14, difficulty: 'easy', purpose: 'learn', english: "Tomorrow", iraqi: "بَاچِر", pronunciation: "بَاچِر", example: "بَاچِر عِنْدِي امْتِحَان.", explanation: "الْيَوْمُ الَّذِي يَلِي هَذَا الْيَوْمَ." },
+            { id: 15, difficulty: 'easy', purpose: 'learn', english: "Friend", iraqi: "صَدِيق / صَدِيقَة", pronunciation: "صَدِيق / صَدِيقَة", example: "هُوَ خُوش صَدِيق.", explanation: "شَخْصٌ مُقَرَّبٌ وَمَوْثُوقٌ بِهِ." },
+            { id: 16, difficulty: 'easy', purpose: 'quiz', english: "Big", iraqi: "چْبِير", pronunciation: "چْبِير", example: "هَذَا الْبَيْت چْبِير.", explanation: "صِفَةٌ تَعْنِي كَبِيرَ الْحَجْمِ." },
+            { id: 17, difficulty: 'easy', purpose: 'quiz', english: "Small", iraqi: "صْغَيِّر", pronunciation: "صْغَيِّر", example: "الْقَلَم صْغَيِّرُون.", explanation: "صِفَةٌ تَعْنِي صَغِيرَ الْحَجْمِ." },
+            { id: 18, difficulty: 'easy', purpose: 'quiz', english: "Good", iraqi: "زَيْن", pronunciation: "زَيْن", example: "هَذَا الشِّي زَيْن.", explanation: "صِفَةٌ تَعْنِي جَيِّدًا أَوْ حَسَنًا." },
+            { id: 19, difficulty: 'easy', purpose: 'quiz', english: "Bad", iraqi: "مُو زَيْن", pronunciation: "مُو زَيْن", example: "التَّصَرُّف هَذَا مُو زَيْن.", explanation: "صِفَةٌ تَعْنِي سَيِّئًا أَوْ غَيْرَ جَيِّدٍ." },
+            { id: 20, difficulty: 'easy', purpose: 'quiz', english: "Man", iraqi: "رَجَّال", pronunciation: "رَجَّال", example: "هَذَا رَجَّال طَيِّب.", explanation: "كَلِمَةٌ تَعْنِي رَجُلًا." },
+            { id: 21, difficulty: 'easy', purpose: 'quiz', english: "Woman", iraqi: "مَرَة", pronunciation: "مَرَة", example: "الْمَرَة دِتِشْتِغِل.", explanation: "كَلِمَةٌ تَعْنِي امْرَأَةً." },
+            { id: 22, difficulty: 'easy', purpose: 'quiz', english: "Boy", iraqi: "وَلَد", pronunciation: "وَلَد", example: "الْوَلَد دِيِلْعَب طُوبَة.", explanation: "كَلِمَةٌ تَعْنِي صَبِيًّا." },
+            { id: 23, difficulty: 'easy', purpose: 'quiz', english: "Girl", iraqi: "بْنَيَّة", pronunciation: "بْنَيَّة", example: "الْبْنَيَّة دِتِقْرَا كِتَاب.", explanation: "كَلِمَةٌ تَعْنِي فَتَاةً." },
+            { id: 24, difficulty: 'easy', purpose: 'quiz', english: "Sun", iraqi: "شَمِس", pronunciation: "شَمِس", example: "الشَّمِس حَارَّة الْيَوْم.", explanation: "النَّجْمُ الْمَرْكَزِيُّ فِي مَجْمُوعَتِنَا الشَّمْسِيَّةِ." },
+            { id: 25, difficulty: 'easy', purpose: 'quiz', english: "Moon", iraqi: "گُمَر", pronunciation: "گُمَر", example: "الْگُمَر مْنَوِّر اللَّيْلَة.", explanation: "الْقَمَرُ الطَّبِيعِيُّ لِلْأَرْضِ." },
+            { id: 26, difficulty: 'easy', purpose: 'quiz', english: "Book", iraqi: "كِتَاب", pronunciation: "كِتَاب", example: "أَحِبّ أَقْرَا كُتُب.", explanation: "مَجْمُوعَةٌ مِنَ الْأَوْرَاقِ الْمَكْتُوبَةِ أَوِ الْمَطْبُوعَةِ." },
+            { id: 27, difficulty: 'easy', purpose: 'quiz', english: "Pen", iraqi: "قَلَم", pronunciation: "قَلَم", example: "عِنْدَك قَلَم أَزْرَك؟", explanation: "أَدَاةٌ لِلْكِتَابَةِ." },
+            { id: 28, difficulty: 'easy', purpose: 'quiz', english: "School", iraqi: "مَدْرَسَة", pronunciation: "مَدْرَسَة", example: "بَاچِر أَرُوح لِلْمَدْرَسَة.", explanation: "مَكَانٌ لِلتَّعْلِيمِ." },
+            { id: 29, difficulty: 'easy', purpose: 'quiz', english: "Market", iraqi: "سُوگ", pronunciation: "سُوگ", example: "نْرُوح لِلسُّوگ نِشْتِرِي خُضْرَة.", explanation: "مَكَانٌ لِبَيْعِ وَشِرَاءِ الْبَضَائِعِ." },
+            { id: 30, difficulty: 'easy', purpose: 'quiz', english: "Sleep", iraqi: "نَوْم", pronunciation: "نَوْم", example: "أَحْتَاج نَوْم هْوَايَة.", explanation: "فِعْلُ النَّوْمِ أَوْ حَالَةُ النَّوْمِ." },
+            { id: 31, difficulty: 'medium', purpose: 'learn', english: "What is your name?", iraqi: "شِسْمَك؟", pronunciation: "شِسْمَك (m) / شِسْمِچ (f)", example: "شِسْمَك الْحِلُو؟", explanation: "سُؤَالٌ عَنِ الِاسْمِ." },
+            { id: 32, difficulty: 'medium', purpose: 'learn', english: "I am from Baghdad", iraqi: "آنِي مِنْ بَغْدَاد", pronunciation: "آنِي مِنْ بَغْدَاد", example: "آنِي مِنْ بَغْدَاد وَأَحِبَّهَا كُلِّش.", explanation: "التَّعْبِيرُ عَنِ الْمَكَانِ الْأَصْلِيِّ." },
+            { id: 33, difficulty: 'medium', purpose: 'learn', english: "How much does this cost?", iraqi: "بِيشْ هَذَا؟", pronunciation: "بِيشْ هَذَا؟", example: "بِيشْ هَذَا الْكِتَاب؟", explanation: "سُؤَالٌ عَنِ السِّعْرِ." },
+            { id: 34, difficulty: 'medium', purpose: 'learn', english: "I don't understand", iraqi: "مَا دَأَفْتَهِم", pronunciation: "مَا دَأَفْتَهِم", example: "عَفْوًا، مَا دَأَفْتَهِم قَصْدَك.", explanation: "التَّعْبِيرُ عَنْ عَدَمِ الْفَهْمِ." },
+            { id: 35, difficulty: 'medium', purpose: 'learn', english: "Where is the bathroom?", iraqi: "وَيْن التُّوَالِيت؟", pronunciation: "وَيْن التُّوَالِيت؟", example: "بِلَا زَحْمَة، وَيْن التُّوَالِيت؟", explanation: "سُؤَالٌ عَنْ مَكَانِ الْحَمَّامِ ('تُوَالِيت' أَكْثَرُ اسْتِخْدَامًا)." },
+            { id: 36, difficulty: 'medium', purpose: 'learn', english: "I want to eat", iraqi: "أَرِيد آكِل", pronunciation: "أَرِيد آكِل", example: "جَوْعَان، أَرِيد آكِل.", explanation: "التَّعْبِيرُ عَنِ الرَّغْبَةِ فِي الْأَكْلِ." },
+            { id: 37, difficulty: 'medium', purpose: 'learn', english: "This is delicious", iraqi: "هَذَا كُلِّش طَيِّب", pronunciation: "هَذَا كُلِّش طَيِّب", example: "عَاشَتْ إِيدَك، هَذَا الْأَكِل كُلِّش طَيِّب.", explanation: "التَّعْبِيرُ عَنِ اسْتِحْسَانِ الطَّعَامِ." },
+            { id: 38, difficulty: 'medium', purpose: 'learn', english: "I love you", iraqi: "أَحِبَّك / أَحِبِّچ", pronunciation: "أَحِبَّك (m) / أَحِبِّچ (f)", example: "أَحِبَّك هْوَايَة.", explanation: "التَّعْبِيرُ عَنِ الْحُبِّ." },
+            { id: 39, difficulty: 'medium', purpose: 'learn', english: "What time is it?", iraqi: "بِيشْ السَّاعَة؟", pronunciation: "بِيشْ السَّاعَة؟", example: "بِيشْ السَّاعَة هَسَّة؟", explanation: "سُؤَالٌ عَنِ الْوَقْتِ." },
+            { id: 40, difficulty: 'medium', purpose: 'learn', english: "I'm tired", iraqi: "تَعْبَان / تَعْبَانَة", pronunciation: "تَعْبَان (m) / تَعْبَانَة (f)", example: "كُلِّش تَعْبَان الْيَوْم.", explanation: "التَّعْبِيرُ عَنِ التَّعَبِ." },
+            { id: 41, difficulty: 'medium', purpose: 'learn', english: "Let's go", iraqi: "خَلْ نْرُوح", pronunciation: "خَلْ نْرُوح", example: "يَلَّا خَلْ نْرُوح نِتْمَشَّى شْوَيَّة.", explanation: "دَعْوَةٌ لِلذَّهَابِ." },
+            { id: 42, difficulty: 'medium', purpose: 'learn', english: "Wait a moment", iraqi: "لَحْظَة بِاللَّه", pronunciation: "لَحْظَة بِاللَّه", example: "لَحْظَة بِاللَّه، دَأَخَابِر.", explanation: "طَلَبُ الِانْتِظَارِ قَلِيلًا." },
+            { id: 43, difficulty: 'medium', purpose: 'learn', english: "I'm sorry", iraqi: "آسِف / آسْفَة", pronunciation: "آسِف (m) / آسْفَة (f)", example: "آسِف جِدًّا عَلَى اللِّي صَار.", explanation: "الِاعْتِذَارُ." },
+            { id: 44, difficulty: 'medium', purpose: 'learn', english: "Help me", iraqi: "سَاعِدْنِي / سَاعْدِينِي", pronunciation: "سَاعِدْنِي (m) / سَاعْدِينِي (f)", example: "فَدْوَة سَاعِدْنِي بِهَاي الشَّغْلَة.", explanation: "طَلَبُ الْمُسَاعَدَةِ." },
+            { id: 45, difficulty: 'medium', purpose: 'learn', english: "I don't know", iraqi: "مَا أَدْرِي", pronunciation: "مَا أَدْرِي", example: "سَأَلْتَه بَسّ گَال مَا أَدْرِي.", explanation: "التَّعْبِيرُ عَنْ عَدَمِ الْمَعْرِفَةِ." },
+            { id: 46, difficulty: 'medium', purpose: 'quiz', english: "What's new?", iraqi: "شَكُو مَاكُو؟", pronunciation: "شَكُو مَاكُو؟", example: "هَا، شَكُو مَاكُو الْيَوْم؟", explanation: "سُؤَالٌ عَنِ الْأَخْبَارِ وَالْمُسْتَجِدَّاتِ." },
+            { id: 47, difficulty: 'medium', purpose: 'quiz', english: "Everything is fine", iraqi: "كِلْشِي تَمَام", pronunciation: "كِلْشِي تَمَام", example: "الْحَمْدُ لِلَّه، كِلْشِي تَمَام.", explanation: "رَدٌّ إِيجَابِيٌّ يَعْنِي أَنَّ كُلَّ شَيْءٍ عَلَى مَا يُرَام." },
+            { id: 48, difficulty: 'medium', purpose: 'quiz', english: "See you later", iraqi: "أَشُوفَك بَعْدِين", pronunciation: "أَشُوفَك بَعْدِين (m) / أَشُوفِچ bَعْدِين (f)", example: "يَلَّا مَعَ السَّلَامَة، أَشُوفَك بَعْدِين.", explanation: "لِتَوْدِيعِ شَخْصٍ مَعَ نِيَّةِ رُؤْيَتِهِ لَاحِقًا." },
+            { id: 49, difficulty: 'medium', purpose: 'quiz', english: "How is work?", iraqi: "شْلُون الشُّغُل؟", pronunciation: "شْلُون الشُّغُل؟", example: "طَمِّنِّي عَنْك، شْلُون الشُّغُل وِيَّاك؟", explanation: "سُؤَالٌ عَنْ أَحْوَالِ الْعَمَلِ." },
+            { id: 50, difficulty: 'medium', purpose: 'quiz', english: "I am hungry", iraqi: "آنِي جَوْعَان / جَوْعَانَة", pronunciation: "آنِي جَوْعَان (m) / جَوْعَانَة (f)", example: "مَا تْغَدَّيْت، آنِي كُلِّش جَوْعَان.", explanation: "التَّعْبِيرُ عَنِ الشُّعُورِ بِالْجُوعِ." },
+            { id: 51, difficulty: 'medium', purpose: 'quiz', english: "I am thirsty", iraqi: "آنِي عَطْشَان / عَطْشَانَة", pronunciation: "آنِي عَطْشَان (m) / عَطْشَانَة (f)", example: "الدِّنْيَا حَارَّة، آنِي عَطْشَان.", explanation: "التَّعْبِيرُ عَنِ الشُّعُورِ بِالْعَطَشِ." },
+            { id: 52, difficulty: 'medium', purpose: 'quiz', english: "It's very hot", iraqi: "الدِّنْيَا كُلِّش حَارَّة", pronunciation: "الدِّنْيَا كُلِّش حَارَّة", example: "مَا أَگْدَر أَطْلَع، الدِّنْيَا كُلِّش حَارَّة.", explanation: "وَصْفُ الطَّقْسِ الْحَارِّ جِدًّا." },
+            { id: 53, difficulty: 'medium', purpose: 'quiz', english: "It's very cold", iraqi: "الدِّنْيَا كُلِّش بَارْدَة", pronunciation: "الدِّنْيَا كُلِّش بَارْدَة", example: "الْبَس زِين، الدِّنْيَا كُلِّش بَارْدَة.", explanation: "وَصْفُ الطَّقْسِ الْبَارِدِ جِدًّا." },
+            { id: 54, difficulty: 'medium', purpose: 'quiz', english: "I need a doctor", iraqi: "أَحْتَاج طَبِيب", pronunciation: "أَحْتَاج طَبِيب", example: "اتْأَذَّيْت، أَحْتَاج طَبِيب بِسُرْعَة.", explanation: "التَّعْبِيرُ عَنِ الْحَاجَةِ إِلَى طَبِيبٍ." },
+            { id: 55, difficulty: 'medium', purpose: 'quiz', english: "Are you married?", iraqi: "مِتْزَوِّج / مِتْزَوِّجَة؟", pronunciation: "مِتْزَوِّج (m) / مِتْزَوِّجَة (f)؟", example: "سُؤَالٌ شَخْصِيٌّ: حَضْرَتَك مِتْزَوِّج؟", explanation: "سُؤَالٌ عَنِ الْحَالَةِ الِاجْتِمَاعِيَّةِ." },
+            { id: 56, difficulty: 'medium', purpose: 'quiz', english: "How old are you?", iraqi: "شْگَد عُمْرَk؟", pronunciation: "شْگَد عُمْرَك (m) / عُمْرِچ (f)؟", example: "إِذَا مَاكُو إِحْرَاج، شْگَد عُمْرَك؟", explanation: "سُؤَالٌ عَنِ الْعُمْرِ." },
+            { id: 57, difficulty: 'medium', purpose: 'quiz', english: "Welcome", iraqi: "أَهْلًا وَسَهْلًا", pronunciation: "أَهْلًا وَسَهْلًا", example: "أَهْلًا وَسَهْلًا بِيكُم بِبَيْتْنَا.", explanation: "عِبَارَةُ تَرْحِيبٍ بِالضُّيُوفِ." },
+            { id: 58, difficulty: 'medium', purpose: 'quiz', english: "Never mind / It's okay", iraqi: "مَيْخَالِف", pronunciation: "مَيْخَالِف", example: "كْسَرْت الْقَلَم بِالْغَلَط. الرَّدُّ: مَيْخَالِف، عَادِي.", explanation: "تُقَالُ لِلتَّعْبِيرِ عَنْ عَدَمِ الِاهْتِمَامِ أَوْ أَنَّ الْأَمْرَ لَا بَأْسَ بِهِ." },
+            { id: 59, difficulty: 'medium', purpose: 'quiz', english: "Really? / Seriously?", iraqi: "صَدُگ؟", pronunciation: "صَدُگ؟", example: "نِجَحْت بِالِامْتِحَان! الرَّدُّ: صَدُگ؟ أَلْف مَبْرُوك!", explanation: "لِلتَّعْبِيرِ عَنِ التَّفَاجُؤِ أَوْ لِطَلَبِ التَّأْكِيدِ." },
+            { id: 60, difficulty: 'medium', purpose: 'quiz', english: "What are you doing?", iraqi: "شْدِتْسَوِّي؟", pronunciation: "شْدِتْسَوِّي؟", example: "شْدِتْسَوِّي هَسَّة؟ مَشْغُول؟", explanation: "سُؤَالٌ عَنِ النَّشَاطِ الْحَالِيِّ لِلشَّخْصِ." },
+            { id: 61, difficulty: 'hard', purpose: 'learn', english: "Can you help me find this address?", iraqi: "تِگْدَر تْسَاعِدْنِي أَلْگَى هَذَا الْعِنْوَان؟", pronunciation: "تِگْدَر تْسَاعِدْنِي أَلْگَى هَذَا الْعِنْوَان؟", example: "بِلَا زَحْمَة، تِگْدَر تْسَاعِدْنِي أَلْگَى هَذَا الْعِنْوَان؟ آنِي غَرِيب هْنَا.", explanation: "طَلَبُ الْمُسَاعَدَةِ فِي الْعُثُورِ عَلَى عُنْوَانٍ." },
+            { id: 62, difficulty: 'hard', purpose: 'learn', english: "I would like to order some food please", iraqi: "أَرِيد أَطْلُب أَكِل إِذَا مُمْكِن", pronunciation: "أَرِيد أَطْلُب أَكِل إِذَا مُمْكِن", example: "لَوْ سَمَحْت، أَرِيد أَطْلُب أَكِل إِذَا مُمْكِن، شِنُو عِنْدْكُم؟", explanation: "طَلَبُ الطَّعَامِ بِأَدَبٍ." },
+            { id: 63, difficulty: 'hard', purpose: 'learn', english: "Where can I find a good restaurant around here?", iraqi: "وَيْن أَكُو مَطْعَم أَكْلَه طَيِّب قْرَيِّب مِنَّْا؟", pronunciation: "وَيْن أَكُو مَطْعَم أَكْلَه طَيِّب قْرَيِّب مِنَّْا؟", example: "جَوْعَانِين، وَيْن أَكُو مَطْعَم أَكْلَه طَيِّب قْرَيِّب مِنَّْا نْسَوِّيلَه هُجُوم؟", explanation: "سُؤَالٌ عَنْ مَوْقِعِ مَطْعَمٍ جَيِّدٍ." },
+            { id: 64, difficulty: 'hard', purpose: 'learn', english: "How do I get to the nearest hospital?", iraqi: "شْلُون أَوْصَل لِأَقْرَب مُسْتَشْفَى مِنَّْا؟", pronunciation: "شْلُون أَوْصَل لِأَقْرَب مُسْتَشْفَى مِنَّْا؟", example: "صَار حَادِث، شْلُون أَوْصَل لِأَقْرَب مُسْتَشْفَى مِنَّْا بِسُرْعَة؟", explanation: "سُؤَالٌ عَنِ الِاتِّجَاهَاتِ إِلَى الْمُسْتَشْفَى." },
+            { id: 65, difficulty: 'hard', purpose: 'learn', english: "What do you recommend I visit in this city?", iraqi: "شْتِنْصَحْنِي أَشُوف أَمَاكِن حِلْوَة بِهَالْمَدِينَة؟", pronunciation: "شْتِنْصَحْنِي أَشُوف أَمَاكِن حِلْوَة بِهَالْمَدِينَة؟", example: "أَوَّل مَرَّة أَجِي، شْتِنْصَحْنِي أَشُوف أَمَاكِن حِلْوَة بِهَالْمَدِينَة؟", explanation: "طَلَبُ تَوْصِيَاتٍ لِلْأَمَاكِنِ السِّيَاحِيَّةِ." },
+            { id: 66, difficulty: 'hard', purpose: 'learn', english: "I need to exchange some money, where can I do that?", iraqi: "مِحْتَاج أَصَرِّف عُمْلَة، وَيْن أَگْدَر أَسَوِّي هَالشِّي؟", pronunciation: "مِحْتَاج أَصَرِّف عُمْلَة، وَيْن أَگْدَر أَسَوِّي هَالشِّي؟", example: "عِنْدِي دُولَارَات، مِحْتَاج أَصَرِّف عُمْلَة، وَيْن أَگْدَر أَسَوِّي هَالشِّي؟", explanation: "سُؤَالٌ عَنْ مَكَانِ صَرْفِ الْعُمْلَاتِ." },
+            { id: 67, difficulty: 'hard', purpose: 'learn', english: "Could you speak more slowly please?", iraqi: "مُمْكِن تِحْچِي عَلَى كَيْفَك شْوَيَّة؟", pronunciation: "مُمْكِن تِحْچِي عَلَى كَيْفَك شْوَيَّة؟", example: "مَا دَأَلْحَگ وِيَّاك، مُمْكِن تِحْچِي عَلَى كَيْفَك شْوَيَّة؟", explanation: "طَلَبُ التَّحَدُّثِ بِبُطْءٍ." },
+            { id: 68, difficulty: 'hard', purpose: 'learn', english: "What is the best way to learn Iraqi dialect?", iraqi: "شِنُو أَحْسَن أُسْلُوب حَتَّى أَتْقِن اللهْجَة الْعِرَاقِيَّة؟", pronunciation: "شِنُو أَحْسَن أُسْلُوب حَتَّى أَتْقِن اللهْجَة الْعِرَاقِيَّة؟", example: "صَار لِي فَتْرَة أَحَاوِل، شِنُو أَحْسَن أُسْلُوب حَتَّى أَتْقِن اللهْجَة الْعِرَاقِيَّة؟", explanation: "سُؤَالٌ عَنْ أَفْضَلِ طَرِيقَةٍ لِلتَّعَلُّمِ." },
+            { id: 69, difficulty: 'hard', purpose: 'learn', english: "I'm looking for a gift for my friend, any suggestions?", iraqi: "دَأَدَوِّر عَلَى هَدِيَّة لْصَاحْبِي، عِنْدَك اقْتِرَاحَات؟", pronunciation: "دَأَدَوِّر عَلَى هَدِيَّة لْصَاحْبِي، عِنْدَك اقْتِرَاحَات؟", example: "عِيد مِيلَادَه قَرَّب، دَأَدَوِّر عَلَى هَدِيَّة لْصَاحْبِي، عِنْدَك اقْتِرَاحَات؟", explanation: "طَلَبُ اقْتِرَاحَاتٍ لِشِرَاءِ هَدِيَّةٍ." },
+            { id: 70, difficulty: 'hard', purpose: 'learn', english: "How long does it take to get to the city center from here?", iraqi: "شْگَد يْرَادِلْهَا وَكِت حَتَّى نُوصَل لْسَنْتَر الْمَدِينَة مِنْ هَالْمَكَان؟", pronunciation: "شْگَد يْرَادِلْهَا وَكِت حَتَّى نُوصَل لْسَنْتَر الْمَدِينَة مِنْ هَالْمَكَان؟", example: "عِدْنَا مَوْعِد، شْگَد يْرَادِلْهَا وَكِت حَتَّى نُوصَل لْسَنْتَر الْمَدِينَة مِنْ هَالْمَكَان؟", explanation: "سُؤَالٌ عَنْ مُدَّةِ الْوُصُولِ." },
+            { id: 71, difficulty: 'hard', purpose: 'learn', english: "What is the traditional food I should try in Iraq?", iraqi: "يَا أَكْلَة تُرَاثِيَّة عِرَاقِيَّة تِنْصَحْنِي أَضُوگْهَا؟", pronunciation: "يَا أَكْلَة تُرَاثِيَّة عِرَاقِيَّة تِنْصَحْنِي أَضُوگْهَا؟", example: "أَحِبّ الْأَكِل الشَّعْبِي، يَا أَكْلَة تُرَاثِيَّة عِرَاقِيَّة تِنْصَحْنِي أَضُوگْهَا؟", explanation: "سُؤَالٌ عَنْ الْأَكَلَاتِ التَّقْلِيدِيَّةِ." },
+            { id: 72, difficulty: 'hard', purpose: 'learn', english: "Can you tell me more about this historical place?", iraqi: "مُمْكِن تَفَاصِيل أَكْثَر عَنْ هَالْمَوْقِع الْأَثَرِي؟", pronunciation: "مُمْكِن تَفَاصِيل أَكْثَر عَنْ هَالْمَوْقِع الْأَثَرِي؟", example: "كُلِّش عَجَبْنِي، مُمْكِن تَفَاصِيل أَكْثَر عَنْ هَالْمَوْقِع الْأَثَرِي؟", explanation: "طَلَبُ مَعْلُومَاتٍ عَنْ مَكَانٍ تَارِيخِيٍّ." },
+            { id: 73, difficulty: 'hard', purpose: 'learn', english: "I think I'm lost, can you help me find my way?", iraqi: "أَعْتَقِد ضَيَّعْت، مُمْكِن تْدَلِّينِي شْلُون أَرْجَع؟", pronunciation: "أَعْتَقِد ضَيَّعْت، مُمْكِن تْدَلِّينِي شْلُون أَرْجَع؟", example: "الْمِنْطَقَة جَدِيدَة عَلَيَّ، أَعْتَقِد ضَيَّعْت، مُمْكِن تْدَلِّينِي شْلُون أَرْجَع لِلْفُنْدُق؟", explanation: "طَلَبُ الْمُسَاعَدَةِ عِنْدَ الضَّيَاعِ." },
+            { id: 74, difficulty: 'hard', purpose: 'learn', english: "What is the weather usually like at this time of year?", iraqi: "الْجَوّ عَادَةً شْلُون يْصِير بِهِيچ وَقِت مِنَ السَّنَة؟", pronunciation: "الْجَوّ عَادَةً شْلُون يْصِير بِهِيچ وَقِت مِنَ السَّنَة؟", example: "نَاوِي أَسَافِر، الْجَوّ عَادَةً شْلُون يْصِير بِهِيچ وَقِت مِنَ السَّنَة بِالْعِرَاق؟", explanation: "سُؤَالٌ عَنِ الطَّقْسِ الْمُعْتَادِ." },
+            { id: 75, difficulty: 'hard', purpose: 'learn', english: "Could you write that down for me please?", iraqi: "إِذَا مَتْصِير زَحْمَة، مُمْكِن تْسَجِّلْهَا بِوَرَقَة؟", pronunciation: "إِذَا مَتْصِير زَحْمَة، مُمْكِن تْسَجِّلْهَا بِوَرَقَة؟", example: "خَاف أَنْسَاهَا، إِذَا مَتْصِير زَحْمَة، مُمْكِن تْسَجِّلْهَا بِوَرَقَة؟", explanation: "طَلَبُ كِتَابَةِ شَيْءٍ مَا." },
+            { id: 76, difficulty: 'hard', purpose: 'quiz', english: "This situation is very complicated, I don't know what to do.", iraqi: "الْوَضْعِيَّة كُلِّش مْعَقَّدَة، مَا أَعْرُف شْسَوِّي.", pronunciation: "الْوَضْعِيَّة كُلِّش مْعَقَّدَة، مَا أَعْرُف شْسَوِّي.", example: "حَاوَلْت أَحِلَّهَا بَسّ الْوَضْعِيَّة كُلِّش مْعَقَّدَة، مَا أَعْرُف شْسَوِّي.", explanation: "وَصْفُ مَوْقِفٍ صَعْبٍ وَعَدَمُ مَعْرِفَةِ كَيْفِيَّةِ التَّصَرُّفِ." },
+            { id: 77, difficulty: 'hard', purpose: 'quiz', english: "I have an important meeting tomorrow morning, I need to prepare well.", iraqi: "عِنْدِي اجْتِمَاع مُهِمّ بَاچِر الصُّبُح، لَازِم أَحَضِّرْلَه زَيْن.", pronunciation: "عِنْدِي اجْتِمَاع مُهِمّ بَاچِر الصُّبُح، لَازِم أَحَضِّرْلَه زَيْن.", example: "مَا أَگْدَر أَتْأَخَّر، عِنْدِي اجْتِمَاع مُهِمّ بَاچِر الصُّبُح، لَازِم أَحَضِّرْلَه زَيْن.", explanation: "التَّحَدُّثُ عَنِ الْتِزَامٍ مُهِمٍّ وَالْحَاجَةِ لِلِاسْتِعْدَادِ لَهُ." },
+            { id: 78, difficulty: 'hard', purpose: 'quiz', english: "I've been waiting for you for over an hour, where have you been?", iraqi: "صَار لِي سَاعَة أَنْتَظْرَك، وَيْن چِنِت؟", pronunciation: "صَار لِي سَاعَة أَنْتَظْرَك، وَيْن چِنِت؟", example: "اتَّصَلْت بِيك هْوَايَة وَمَجَاوَبْت، صَار لِي سَاعَة أَنْتَظْرَك، وَيْن چِنِت؟", explanation: "التَّعْبِيرُ عَنِ الِانْزِعَاجِ بِسَبَبِ الِانْتِظَارِ الطَّوِيلِ." },
+            { id: 79, difficulty: 'hard', purpose: 'quiz', english: "The traffic was terrible today, that's why I'm late.", iraqi: "الِازْدِحَام چَان فَد شِي الْيَوْم، لِهَذَا اتْأَخَّرِت.", pronunciation: "الِازْدِحَام چَان فَد شِي الْيَوْم، لِهَذَا اتْأَخَّرِت.", example: "مُو بِيَدِي، الِازْدِحَام چَان فَد شِي الْيَوْم، لِهَذَا اتْأَخَّرِت.", explanation: "تَبْرِيرُ التَّأْخِيرِ بِسَبَبِ الِازْدِحَامِ الْمُرُورِيِّ." },
+            { id: 80, difficulty: 'hard', purpose: 'quiz', english: "I'm really looking forward to our trip next week.", iraqi: "كُلِّش مِتْحَمِّس لْسَفْرَتْنَا الْأُسْبُوع الْجَاي.", pronunciation: "كُلِّش مِتْحَمِّس لْسَفْرَتْنَا الْأُسْبُوع الْجَاي.", example: "خَلَّصْت كُلّ التَّرْتِيبَات، كُلِّش مِتْحَمِّس لْسَفْرَتْنَا الْأُسْبُوع الْجَاي.", explanation: "التَّعْبِيرُ عَنِ الْحَمَاسِ لِرِحْلَةٍ قَادِمَةٍ." },
+            { id: 81, difficulty: 'hard', purpose: 'quiz', english: "Could you please recommend a good book for me to read?", iraqi: "مُمْكِن تِنْصَحْنِي بِكِتَاب حِلُو أَقْرَاه؟", pronunciation: "مُمْكِن تِنْصَحْنِي بِكِتَاب حِلُو أَقْرَاه؟", example: "أَحِبّ الْقِرَايَة، مُمْكِن تِنْصَحْنِي بِكِتَاب حِلُو أَقْرَاه بِالْفَتْرَة الْأَخِيرَة؟", explanation: "طَلَبُ تَوْصِيَةٍ لِكِتَابٍ جَيِّدٍ." },
+            { id: 82, difficulty: 'hard', purpose: 'quiz', english: "I need to buy some groceries, is there a supermarket nearby?", iraqi: "مِحْتَاج أَتْسَوَّگ مِسْوَاگ، أَكُو سُوبَرْمَارْكِت قْرَيِّب مِنَّْا؟", pronunciation: "مِحْتَاج أَتْسَوَّگ مِسْوَاگ، أَكُو سُوبَرْمَارْكِت قْرَيِّب مِنَّْا؟", example: "خَلَص الْأَكِل بِالْبَيْت، مِحْتَاج أَتْسَوَّگ مِسْوَاگ، أَكُو سُوبَرْمَارْكِت قْرَيِّب مِنَّْا؟", explanation: "الْحَاجَةُ لِشِرَاءِ مَوَادٍّ غِذَائِيَّةٍ وَالسُّؤَالُ عَنْ مَتْجَرٍ قَرِيبٍ." },
+            { id: 83, difficulty: 'hard', purpose: 'quiz', english: "I'm not feeling well, I think I should go home.", iraqi: "مَدَى أَحِسّ نَفْسِي زَيْن، أَعْتَقِد لَازِم أَرْجَع لِلْبَيْت.", pronunciation: "مَدَى أَحِسّ نَفْسِي زَيْن، أَعْتَقِد لَازِم أَرْجَع لِلْبَيْت.", example: "رَاسِي يُوجَعْنِي، مَدَى أَحِسّ نَفْسِي زَيْن، أَعْتَقِد لَازِم أَرْجَع لِلْبَيْت.", explanation: "التَّعْبِيرُ عَنِ الشُّعُورِ بِالْمَرَضِ وَالرَّغْبَةِ فِي الْعَوْدَةِ لِلْمَنْزِلِ." },
+            { id: 84, difficulty: 'hard', purpose: 'quiz', english: "What are your plans for the weekend?", iraqi: "شِنُو مْخَطَّطَاتَك لِنِهَايَةِ الْأُسْبُوع؟", pronunciation: "شِنُو مْخَطَّطَاتَك لِنِهَايَةِ الْأُسْبُوع؟", example: "إِذَا مَا عِنْدَك شِي، شِنُو مْخَطَّطَاتَك لِنِهَايَةِ الْأُسْبُوع؟ نِطْلَع؟", explanation: "السُّؤَالُ عَنْ خُطَطِ نِهَايَةِ الْأُsسْبُوعِ." },
+            { id: 85, difficulty: 'hard', purpose: 'quiz', english: "This is the best Iraqi food I have ever tasted!", iraqi: "هَذَا أَطْيَب أَكِل عِرَاقِي ضُگْتَه بِحَيَاتِي!", pronunciation: "هَذَا أَطْيَب أَكِل عِرَاقِي ضُگْتَه بِحَيَاتِي!", example: "تَسْلَم إِيدْ اللِّي طَبَخ، هَذَا أَطْيَب أَكِل عِرَاقِي ضُگْتَه بِحَيَاتِي!", explanation: "مَدْحُ الطَّعَامِ الْعِرَاقِيِّ بِشَكْلٍ كَبِيرٍ." },
+            { id: 86, difficulty: 'hard', purpose: 'quiz', english: "I need to focus on my studies, I have an important exam soon.", iraqi: "لَازِم أَرَكِّز عَلَى دِرَاسْتِي، عِنْدِي امْتِحَان مَصِيرِي عَنْ قَرِيب.", pronunciation: "لَازِم أَرَكِّز عَلَى دِرَاسْتِي، عِنْدِي امْتِحَان مَصِيرِي عَنْ قَرِيب.", example: "مَا أَگْدَر أَطْلَع وِيَّاكُم، لَازِم أَرَكِّز عَلَى دِرَاسْتِي، عِنْدِي امْتِحَان مَصِيرِي عَنْ قَرِيب.", explanation: "التَّأْكِيدُ عَلَى أَهَمِّيَّةِ الدِّرَاسَةِ لِوُجُودِ امْتِحَانٍ مُهِمٍّ." },
+            { id: 87, difficulty: 'hard', purpose: 'quiz', english: "It's been a long time since we last met, how have you been?", iraqi: "صَار هْوَايَة مِنْ آخِر مَرَّة الْتِقَيْنَا، شْلُونَك شَخْبَارَك؟", pronunciation: "صَار هْوَايَة مِنْ آخِر مَرَّة الْتِقَيْنَا، شْلُونَك شَخْبَارَك؟", example: "مِشْتَاقْلَك، صَار هْوَايَة مِنْ آخِر مَرَّة الْتِقَيْنَا، شْلُونَك شَخْبَارَك؟", explanation: "تَحِيَّةُ شَخْصٍ لَمْ تَرَهُ مُنْذُ فَتْرَةٍ طَوِيلَةٍ وَالسُّؤَالُ عَنْ أَحْوَالِهِ." },
+            { id: 88, difficulty: 'hard', purpose: 'quiz', english: "I'm trying to save money to buy a new car.", iraqi: "دَأَحَاوِل أَجَمِّع فْلُوس حَتَّى أَشْتِرِي سَيَّارَة جَدِيدَة.", pronunciation: "دَأَحَاوِل أَجَمِّع فْلُوس حَتَّى أَشْتِرِي سَيَّارَة جَدِيدَة.", example: "قَلَّلْت مَصَارِيفِي، دَأَحَاوِل أَجَمِّع فْلُوس حَتَّى أَشْتِرِي سَيَّارَة جَدِيدَة.", explanation: "التَّحَدُّثُ عَنْ هَدَفٍ مَالِيٍّ وَهُوَ شِرَاءُ سَيَّارَةٍ." },
+            { id: 89, difficulty: 'hard', purpose: 'quiz', english: "Can you give me some advice on how to improve my Iraqi accent?", iraqi: "تِگْدَر تِنْطِينِي نَصِيحَة شْلُون أَحَسِّن لَهْجْتِي الْعِرَاقِيَّة؟", pronunciation: "تِگْدَر تِنْطِينِي نَصِيحَة شْلُون أَحَسِّن لَهْجْتِي الْعِرَاقِيَّة؟", example: "دَأَتْعَلَّم صَار لِي فَتْرَة، تِگْدَر تِنْطِينِي نَصِيحَة شْلُون أَحَسِّن لَهْجْتِي الْعِرَاقِيَّة؟", explanation: "طَلَبُ نَصِيحَةٍ لِتَحْسِينِ اللَّكْنَةِ الْعِرَاقِيَّةِ." },
+            { id: 90, difficulty: 'hard', purpose: 'quiz', english: "I'm very grateful for all the help you've given me.", iraqi: "آنِي كُلِّش مَمْنُون لِكُلّ الْمُسَاعَدَة اللِّي قَدَّمْتَهَالِيَاه.", pronunciation: "آنِي كُلِّش مَمْنُون لِكُلّ الْمُسَاعَدَة اللِّي قَدَّمْتَهَالِيَاه.", example: "مَا أَعْرُف شْلُون أَشْكُرَك، آنِي كُلِّش مَمْنُون لِكُلّ الْمُسَاعَدَة اللِّي قَدَّمْتَهَالِيَاه.", explanation: "التَّعْبِيرُ عَنِ امْتِنَانٍ عَمِيقٍ لِلْمُسَاعَدَةِ الْمُقَدَّمَةِ." },
+            { id: 91, difficulty: 'easy', purpose: 'learn', english: "Family", iraqi: "أَهِل", pronunciation: "أَهِل", example: "كُل أَهْلِي بِالْبَيْت.", explanation: "كَلِمَةٌ عَامَّةٌ تَعْنِي الْعَائِلَةَ أَوِ الْأَقَارِبَ." },
+            { id: 92, difficulty: 'easy', purpose: 'learn', english: "Work", iraqi: "شُغُل", pronunciation: "شُغُل", example: "عِنْدِي شُغُل هْوَايَة الْيَوْم.", explanation: "الْعَمَلُ أَوِ الْوَظِيفَةُ." },
+            { id: 93, difficulty: 'easy', purpose: 'learn', english: "Night", iraqi: "لَيْل", pronunciation: "لَيْل", example: "بِاللَّيْل الْجَوّ يْصِير أَحْلَى.", explanation: "الْفَتْرَةُ الزَّمَنِيَّةُ بَعْدَ غُرُوبِ الشَّمْسِ." },
+            { id: 94, difficulty: 'easy', purpose: 'quiz', english: "Hot", iraqi: "حَارّ", pronunciation: "حَارّ", example: "الچَاي كُلِّش حَارّ.", explanation: "صِفَةٌ لِشَيْءٍ ذِي دَرَجَةِ حَرَارَةٍ مُرْتَفِعَةٍ." },
+            { id: 95, difficulty: 'easy', purpose: 'quiz', english: "Cold", iraqi: "بَارِد", pronunciation: "بَارِد", example: "أَرِيد مَاي بَارِد.", explanation: "صِفَةٌ لِشَيْءٍ ذِي دَرَجَةِ حَرَارَةٍ مُنْخَفِضَةٍ." },
+            { id: 96, difficulty: 'easy', purpose: 'quiz', english: "Here", iraqi: "هْنَا", pronunciation: "هْنَا", example: "تَعَال اگْعُد هْنَا يَمِّي.", explanation: "ظَرْفُ مَكَانٍ يَدُلُّ عَلَى الْمَكَانِ الْحَالِيِّ." },
+            { id: 97, difficulty: 'medium', purpose: 'learn', english: "What happened?", iraqi: "شْصَايِر؟", pronunciation: "شْصَايِر؟", example: "لِيشْ هَاي الْهُوسَة، شْصَايِر؟", explanation: "سُؤَالٌ عَمَّا يَجْرِي أَوْ حَدَثَ." },
+            { id: 98, difficulty: 'medium', purpose: 'learn', english: "Be careful", iraqi: "دِير بَالَك", pronunciation: "دِير بَالَك (m) / بَالِچ (f)", example: "دِير بَالَك لَتُوگَع.", explanation: "لِلتَّحْذِيرِ وَطَلَبِ الْحَيْطَةِ." },
+            { id: 99, difficulty: 'medium', purpose: 'learn', english: "I'm joking", iraqi: "دَأَشَّاقَى", pronunciation: "دَأَشَّاقَى", example: "لَتِزْعَل، تَرَى دَأَشَّاقَى وِيَّاك.", explanation: "لِلتَّعْبِيرِ عَنْ أَنَّ الْكَلَامَ لَيْسَ جِدِّيًّا." },
+            { id: 100, difficulty: 'medium', purpose: 'quiz', english: "Now", iraqi: "هَسَّة", pronunciation: "هَسَّة", example: "لَازِم نِطْلَع هَسَّة.", explanation: "ظَرْفُ زَمَانٍ يَعْنِي 'الْآنَ'." },
+            { id: 101, difficulty: 'medium', purpose: 'quiz', english: "A lot / Very", iraqi: "كُلِّش", pronunciation: "كُلِّش", example: "آنِي كُلِّش فَرْحَان.", explanation: "تُسْتَخْدَمُ لِلتَّوْكِيدِ، تَعْنِي 'جِدًّا'." },
+            { id: 102, difficulty: 'medium', purpose: 'quiz', english: "A little", iraqi: "شْوَيَّة", pronunciation: "شْوَيَّة", example: "انْطِينِي وَقِت شْوَيَّة.", explanation: "تَعْنِي كَمِّيَّةً قَلِيلَةً أَوْ فَتْرَةً قَصِيرَةً." },
+            { id: 103, difficulty: 'hard', purpose: 'learn', english: "This topic has many details that need discussion.", iraqi: "هَالْمَوْضُوع بِي تَفَاصِيل هْوَايَة لَازِم نِنَاقِشْهَا.", pronunciation: "هَالْمَوْضُوع بِي تَفَاصِيل هْوَايَة لَازِم نِنَاقِشْهَا.", example: "قَبْلَ مَنِتَّخِذ قَرَار، هَالْمَوْضُوع بِي تَفَاصِيل هْوَايَة لَازِم نِنَاقِشْهَا.", explanation: "جُمْلَةٌ تُقَالُ عِنْدَ وُجُودِ مَوْضُوعٍ مُعَقَّدٍ يَتَطَلَّبُ نِقَاشًا مُفَصَّلًا." },
+            { id: 104, difficulty: 'hard', purpose: 'learn', english: "Don't worry, everything will be alright.", iraqi: "لَتِشِيل هَمّ، كِلْشِي حَيِتْسَهَّل.", pronunciation: "لَتِشِيل هَمّ، كِلْشِي حَيِتْسَهَّل.", example: "أَعْرُف الْوَضِع صَعُب، بَسّ لَتِشِيل هَمّ، كِلْشِي حَيِتْسَهَّل.", explanation: "لِلتَّطْمِينِ وَالتَّخْفِيفِ مِنْ قَلَقِ شَخْصٍ مَا." },
+            { id: 105, difficulty: 'hard', purpose: 'quiz', english: "To be honest, I did not expect this result.", iraqi: "بِصَرَاحَة، مَچِنِت مِتْوَقِّع هَاي النَّتِيجَة.", pronunciation: "بِصَرَاحَة، مَچِنِت مِتْوَقِّع هَاي النَّتِيجَة.", example: "لَمَّا شُفْت الدَّرَجَات، بِصَرَاحَة، مَچِنِت مِتْوَقِّع هَاي النَّتِيجَة.", explanation: "لِلتَّعْبِيرِ عَنِ الْمُفَاجَأَةِ بِنَتِيجَةٍ غَيْرِ مُتَوَقَّعَةٍ." },
+            { id: 106, difficulty: 'hard', purpose: 'quiz', english: "We have to take advantage of this opportunity.", iraqi: "لَازِم نِسْتَغِلّ هَاي الْفُرْصَة.", pronunciation: "لَازِم نِسْتَغِلّ هَاي الْفُرْصَة.", example: "هَاي فُرْصَة مُتِتْعَوَّض، لَازِم نِسْتَغِلَّهَا.", explanation: "لِلتَّأْكِيدِ عَلَى أَهَمِّيَّةِ اغْتِنَامِ فُرْصَةٍ مُعَيَّنَةٍ." }
+        ];
+        const QUIZ_QUESTIONS_COUNT = 15;
+
+        // --- GLOBAL FUNCTIONS ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- GAME STATE ---
+        let gameState = {
+            currentLearnCardIndex: 0,
+            currentLearnSessionCards: [],
+            totalWordsLearnedGlobally: 0,
+            overallMaxStreak: 1,
+            quizCurrentQuestionIndex: 0,
+            quizScore: 0,
+            quizQuestions: [],
+            totalCorrectQuizAnswersGlobal: 0,
+            totalQuizQuestionsAttemptedGlobal: 0,
+            quizzesCompletedGlobal: 0,
+            gameStarted: false,
+            settings: { difficulty: 'easy', autoFlipCard: false, showExamples: true, enableVibration: true, enableSound: true, colorTheme: 'default', pageBgColor: '#ECEFF1' },
+            progressByDifficulty: { easy:{learnedWordIds:new Set(),quizAttempts:[],highestQuizScore:0,highestQuizTotal:0,learnStreak:1,maxLearnStreak:1,learnItemsTotal:0,quizItemsTotal:0},medium:{learnedWordIds:new Set(),quizAttempts:[],highestQuizScore:0,highestQuizTotal:0,learnStreak:1,maxLearnStreak:1,learnItemsTotal:0,quizItemsTotal:0},hard:{learnedWordIds:new Set(),quizAttempts:[],highestQuizScore:0,highestQuizTotal:0,learnStreak:1,maxLearnStreak:1,learnItemsTotal:0,quizItemsTotal:0}},
+            achievements: {}
+        };
+        
+        // --- DOM ELEMENTS ---
+        const learnDifficultySubtitleEl = document.getElementById('learn-difficulty-subtitle');
+        const quizDifficultySubtitleEl = document.getElementById('quiz-difficulty-subtitle-inline'); 
+        const difficultyStatsDisplayEl = document.getElementById('difficulty-stats-display');
+        const learnCompletionMessageEl = document.getElementById('learn-completion-message');
+        const statsTotalLearnedEl = document.getElementById('stats-total-learned');
+        const statsMaxStreakEl = document.getElementById('stats-max-streak');
+        const statsQuizAccuracyEl = document.getElementById('stats-quiz-accuracy');
+        const statsQuizzesCompletedEl = document.getElementById('stats-quizzes-completed');
+        const statsOverallProgressBarEl = document.getElementById('stats-overall-progress-bar');
+        const enableVibrationCheckbox = document.getElementById('enable-vibration');
+        const enableSoundCheckbox = document.getElementById('enable-sound');
+        const bgColorSpans = document.querySelectorAll('.bg-color-options span');
+        const sections = document.querySelectorAll('.section');
+        const navButtons = document.querySelectorAll('nav button');
+        const learnStreakEl = document.getElementById('learn-streak');
+        const learnProgressEl = document.getElementById('learn-progress');
+        const flashcard = document.getElementById('flashcard');
+        const flashcardFrontText = document.getElementById('flashcard-front-text');
+        const flashcardBackIraqi = document.getElementById('flashcard-back-iraqi');
+        const flashcardPronunciation = document.getElementById('flashcard-pronunciation');
+        const flashcardExample = document.getElementById('flashcard-example');
+        const flashcardExplanation = document.getElementById('flashcard-explanation');
+        const hintBtn = document.getElementById('hint-btn');
+        const dontKnowBtn = document.getElementById('dont-know-btn');
+        const nextCardBtn = document.getElementById('next-card-btn');
+        const audioEnLearnBtn = document.getElementById('audio-en-learn');
+        const audioIqLearnBtn = document.getElementById('audio-iq-learn');
+        const audioSaLearnBtn = document.getElementById('audio-sa-learn');
+        const quizProgressEl = document.getElementById('quiz-progress');
+        const quizScoreDisplayEl = document.getElementById('quiz-score-display');
+        const quizQuestionEl = document.getElementById('quiz-question');
+        const quizOptionsEl = document.getElementById('quiz-options');
+        const quizFeedbackEl = document.getElementById('quiz-feedback');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const newQuizBtn = document.getElementById('new-quiz-btn');
+        const audioEnQuizBtn = document.getElementById('audio-en-quiz');
+        const achievementsListEl = document.getElementById('achievements-list');
+        const difficultyButtons = document.querySelectorAll('.difficulty-options button');
+        const colorThemeSpans = document.querySelectorAll('.color-options span');
+        const autoFlipCardCheckbox = document.getElementById('auto-flip-card');
+        const showExamplesCheckbox = document.getElementById('show-examples');
+        const resetProgressBtn = document.getElementById('reset-progress-btn');
+        const closeBtnHeader = document.querySelector('.close-btn-header');
+        const toggleSoundBtn = document.getElementById('toggle-sound-btn');
+        const startGameContainer = document.getElementById('start-game-container');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const learnContentWrapper = document.getElementById('learn-content-wrapper');
+
+        let autoFlipTimeout;
+        let synth; 
+        let voices = []; 
+        let synthesisReady = false;
+        
+        function initializeAchievements() { 
+            const totalLearnItems = wordsData.filter(w => w.purpose === 'learn').length;
+            gameState.achievements = {
+                beginner: { unlocked: false, goal: Math.max(1, Math.min(10, totalLearnItems)), current: 0, name: "المبتدئ النشيط", description: `تعلم ${Math.max(1, Math.min(10, totalLearnItems))} كلمة/جملة جديدة (إجمالي)`},
+                intermediate: { unlocked: false, goal: Math.max(1, Math.min(25, totalLearnItems)), current: 0, name: "المتعلم الجاد", description: `تعلم ${Math.max(1, Math.min(25, totalLearnItems))} كلمة/جملة جديدة (إجمالي)`},
+                advanced: { unlocked: false, goal: Math.max(1, totalLearnItems), current: 0, name: "خبير اللهجة", description: `إتقان كل محتوى التعلم (${Math.max(1, totalLearnItems)})`},
+                streakStar: { unlocked: false, goal: 10, current: 0, name: "نجم التسلسل", description: "حقق سلسلة تعلم من 10 (في أي مستوى)"},
+                quizNovice: { unlocked: false, goal: 15, current: 0, name: "هاوي الاختبارات", description: "أجب عن 15 سؤالاً صحيحاً (إجمالي)"},
+                quizChampion: { unlocked: false, goal: QUIZ_QUESTIONS_COUNT, current: 0, name: "بطل الاختبارات", description: `علامة كاملة في اختبار (${QUIZ_QUESTIONS_COUNT} أسئلة)`}
+            };
+        }
+
+        // --- SOUND & TTS (FIXED) ---
+        function initializeSpeechSynthesis() { 
+            if ('speechSynthesis' in window) {
+                synth = window.speechSynthesis;
+                const loadVoices = () => {
+                    voices = synth.getVoices();
+                    if (voices.length > 0) {
+                        synthesisReady = true;
+                        [audioEnLearnBtn, audioIqLearnBtn, audioSaLearnBtn, audioEnQuizBtn].forEach(btn => { if(btn) btn.disabled = false; });
+                    }
+                };
+                
+                if (synth.onvoiceschanged !== undefined) {
+                    synth.onvoiceschanged = loadVoices;
+                }
+                
+                loadVoices();
+
+                if (voices.length === 0) {
+                    const dummyUtterance = new SpeechSynthesisUtterance('');
+                    dummyUtterance.volume = 0;
+                    synth.speak(dummyUtterance);
+                    setTimeout(loadVoices, 500); 
+                }
+            } else {
+                synthesisReady = false;
+                [audioEnLearnBtn, audioIqLearnBtn, audioSaLearnBtn, audioEnQuizBtn].forEach(btn => { if(btn) { btn.disabled = true; btn.title = "خاصية الصوت غير مدعومة"; }});
+            }
+        }
+
+        const soundEffects = {
+            click: new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3'),
+            flip: new Audio('https://www.soundjay.com/misc/sounds/page-flip-02.mp3'),
+            correct: new Audio('https://www.soundjay.com/buttons/sounds/button-21.mp3'),
+            incorrect: new Audio('https://www.soundjay.com/buttons/sounds/button-10.mp3'),
+            achievement: new Audio('https://www.soundjay.com/misc/sounds/magic-chime-01.mp3')
+        };
+
+        function preloadSounds() { for(const key in soundEffects){soundEffects[key].load(); soundEffects[key].volume = 0.6;} }
+        function playSound(soundName) { if(gameState.settings.enableSound && soundEffects[soundName]){soundEffects[soundName].currentTime = 0; soundEffects[soundName].play().catch(e => console.warn(`Sound ${soundName} play error:`, e));} }
+        function vibrate(duration = 50) { if(gameState.settings.enableVibration && navigator.vibrate) navigator.vibrate(duration); }
+        
+        
+        function speakText(text, lang) { 
+            if (!synth || !synthesisReady) return;
+            if (synth.speaking) synth.cancel();
+            if (text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                let voice = voices.find(v => v.lang.startsWith(lang));
+                if (!voice && (lang === 'ar-IQ' || lang.startsWith('ar'))) {
+                    voice = voices.find(v => v.lang.startsWith('ar-SA')) || voices.find(v => v.lang.startsWith('ar'));
+                } else if (!voice && lang.startsWith('en')) {
+                    voice = voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
+                }
+                if (voice) utterance.voice = voice;
+                else utterance.lang = lang;
+                utterance.pitch = 1; 
+                utterance.rate = 0.9;
+                synth.speak(utterance);
+            }
+        }
+
+        // --- DATA & STATE MANAGEMENT ---
+        function getWordsForDifficultyAndPurpose(difficulty, purpose) {
+            return wordsData.filter(w => w.difficulty === difficulty && (!purpose || w.purpose === purpose));
+        }
+
+        function updateDifficultyItemCounts() {
+            ['easy', 'medium', 'hard'].forEach(d => {
+                const progress = gameState.progressByDifficulty[d];
+                progress.learnItemsTotal = getWordsForDifficultyAndPurpose(d, 'learn').length;
+                progress.quizItemsTotal = getWordsForDifficultyAndPurpose(d, 'quiz').length;
+            });
+        }
+        
+        function saveGameState() { 
+            const stateToSave = JSON.parse(JSON.stringify(gameState));
+            for (const diff in stateToSave.progressByDifficulty) {
+                stateToSave.progressByDifficulty[diff].learnedWordIds = Array.from(stateToSave.progressByDifficulty[diff].learnedWordIds);
+            }
+            localStorage.setItem('iraqiDialectGameState_v3.9.1', JSON.stringify(stateToSave)); 
+        }
+
+        function loadGameState() { 
+            const savedState = localStorage.getItem('iraqiDialectGameState_v3.9.1');
+            initializeAchievements(); 
+            if (savedState) {
+                const parsedState = JSON.parse(savedState);
+                gameState = {
+                    ...gameState,
+                    ...parsedState,
+                    settings: { ...gameState.settings, ...(parsedState.settings || {}) },
+                    progressByDifficulty: {
+                        easy: { ...gameState.progressByDifficulty.easy, ...(parsedState.progressByDifficulty?.easy || {}), learnedWordIds: new Set(parsedState.progressByDifficulty?.easy?.learnedWordIds || []) },
+                        medium: { ...gameState.progressByDifficulty.medium, ...(parsedState.progressByDifficulty?.medium || {}), learnedWordIds: new Set(parsedState.progressByDifficulty?.medium?.learnedWordIds || []) },
+                        hard: { ...gameState.progressByDifficulty.hard, ...(parsedState.progressByDifficulty?.hard || {}), learnedWordIds: new Set(parsedState.progressByDifficulty?.hard?.learnedWordIds || []) }
+                    },
+                    achievements: { ...gameState.achievements },
+                    currentLearnSessionCards: [] 
+                };
+                if (parsedState.achievements) {
+                    for(const key in gameState.achievements) {
+                        if(parsedState.achievements[key]){
+                            gameState.achievements[key].current = parsedState.achievements[key].current;
+                            gameState.achievements[key].unlocked = parsedState.achievements[key].unlocked;
+                        }
+                    }
+                }
+            } 
+            updateDifficultyItemCounts(); 
+        }
+
+        // --- NAVIGATION & UI ---
+        function switchSection(targetId) { 
+            sections.forEach(s => s.classList.toggle('active', s.id === targetId)); 
+            navButtons.forEach(b => b.classList.toggle('active', b.id === `nav-${targetId.split('-')[0]}`)); 
+            
+            if (targetId === 'quiz-section' && (gameState.quizQuestions.length === 0 || gameState.quizCurrentQuestionIndex >= gameState.quizQuestions.length)) { 
+                startNewQuiz(); 
+            } 
+            if (targetId === 'learn-section') { prepareLearnSection(); } 
+            if (targetId === 'stats-achievements-section') { updateStatsAndAchievementsDisplay(); } 
+            
+            document.querySelector('.main-content').scrollTop = 0; 
+        }
+        
+        function updateUI() {
+             const diff = gameState.settings.difficulty;
+             const progress = gameState.progressByDifficulty[diff];
+             const diffLabels = {easy: "سَهْل", medium: "مُتَوَسِّط", hard: "صَعْب"};
+             
+             learnStreakEl.textContent = progress.learnStreak;
+             learnProgressEl.textContent = `التقدم (${diffLabels[diff]}): ${progress.learnedWordIds.size}/${progress.learnItemsTotal || 0}`;
+             
+             quizDifficultySubtitleEl.textContent = `(مستوى: ${diffLabels[diff]})`;
+             const totalQuizQs = gameState.quizQuestions.length;
+             quizProgressEl.textContent = `السؤال: ${Math.min(gameState.quizCurrentQuestionIndex + 1, totalQuizQs)}/${totalQuizQs}`;
+             quizScoreDisplayEl.textContent = `النتيجة: ${gameState.quizScore}`;
+        }
+        
+        // --- LEARN SECTION ---
+        function prepareLearnSection() {
+            const learnPool = getWordsForDifficultyAndPurpose(gameState.settings.difficulty, 'learn');
+            const currentDifficultyProgress = gameState.progressByDifficulty[gameState.settings.difficulty];
+            if (!gameState.gameStarted || (learnPool.length > 0 && currentDifficultyProgress.learnedWordIds.size === learnPool.length)) {
+                showStartButton();
+            } else {
+                hideStartButtonAndShowContent();
+                loadLearnCard();
+            }
+            updateUI();
+        }
+
+        function showStartButton() {
+            startGameContainer.classList.remove('hidden');
+            learnContentWrapper.classList.add('hidden');
+            gameState.gameStarted = false; 
+            const learnPool = getWordsForDifficultyAndPurpose(gameState.settings.difficulty, 'learn');
+            const currentDifficultyProgress = gameState.progressByDifficulty[gameState.settings.difficulty];
+            if (learnPool.length > 0 && currentDifficultyProgress.learnedWordIds.size === learnPool.length){
+                startGameBtn.textContent = "🎉 أَعِدْ مُرَاجَعَةَ الْمُسْتَوَى 🎉";
+            } else {
+                startGameBtn.textContent = "🚀 ابْدَأِ التَّعَلُّمَ 🚀";
+            }
+        }
+        
+        function hideStartButtonAndShowContent() {
+            startGameContainer.classList.add('hidden');
+            learnContentWrapper.classList.remove('hidden');
+        }
+
+        function loadLearnCard() {
+            clearTimeout(autoFlipTimeout); 
+            flashcard.classList.remove('flipped'); 
+            learnCompletionMessageEl.classList.add('hidden');
+            
+            const learnPool = gameState.currentLearnSessionCards;
+            const diffProgress = gameState.progressByDifficulty[gameState.settings.difficulty];
+            
+            if (learnPool.length === 0) {
+                flashcardFrontText.textContent = "لا يوجد محتوى تعلم لهذا المستوى.";
+                flashcardBackIraqi.textContent = "-";
+                [hintBtn, dontKnowBtn, nextCardBtn].forEach(b => b.disabled = true);
+                showStartButton();
+                startGameBtn.textContent = "لا يوجد محتوى";
+                startGameBtn.disabled = true;
+                return;
+            }
+            [hintBtn, dontKnowBtn, nextCardBtn].forEach(b => b.disabled = false);
+            startGameBtn.disabled = false;
+            
+            if (diffProgress.learnedWordIds.size === diffProgress.learnItemsTotal && diffProgress.learnItemsTotal > 0) {
+                 learnCompletionMessageEl.classList.remove('hidden');
+            }
+            
+            gameState.currentLearnCardIndex = gameState.currentLearnCardIndex % learnPool.length;
+            const cardData = learnPool[gameState.currentLearnCardIndex];
+            
+            flashcardFrontText.textContent = cardData.english;
+            flashcardBackIraqi.textContent = cardData.iraqi;
+            flashcardPronunciation.textContent = `النُّطْقُ: ${cardData.pronunciation}`;
+            flashcardExample.textContent = `مِثَالٌ: ${cardData.example}`;
+            flashcardExplanation.textContent = `شَرْحٌ بِالْفُصْحَى: ${cardData.explanation}`;
+            flashcardExample.classList.toggle('hidden', !gameState.settings.showExamples);
+            
+            updateUI();
+            if (gameState.settings.autoFlipCard) {
+                autoFlipTimeout = setTimeout(() => { if (!flashcard.classList.contains('flipped')) { playSound('flip'); flashcard.classList.add('flipped'); }}, 3000);
+            }
+            audioEnLearnBtn.onclick = () => { playSound('click'); speakText(cardData.english, 'en-US'); };
+            audioIqLearnBtn.onclick = () => { playSound('click'); speakText(cardData.iraqi, 'ar-IQ'); };
+            audioSaLearnBtn.onclick = () => { playSound('click'); speakText(cardData.explanation, 'ar-SA'); };
+        }
+        
+        function handleLearnAction(known) {
+            if (!gameState.gameStarted) return;
+            vibrate();
+            if (!flashcard.classList.contains('flipped')) { playSound('flip'); flashcard.classList.add('flipped'); }
+            
+            const diff = gameState.settings.difficulty; 
+            const diffProgress = gameState.progressByDifficulty[diff]; 
+            const learnPool = gameState.currentLearnSessionCards;
+            const currentWord = learnPool[gameState.currentLearnCardIndex];
+
+            if (known) {
+                playSound('correct');
+                if (!diffProgress.learnedWordIds.has(currentWord.id)) {
+                    diffProgress.learnedWordIds.add(currentWord.id);
+                    gameState.totalWordsLearnedGlobally++;
+                    updateAchievementProgress('learner', gameState.totalWordsLearnedGlobally);
+                } 
+                diffProgress.learnStreak++;
+                if (diffProgress.learnStreak > diffProgress.maxLearnStreak) {
+                    diffProgress.maxLearnStreak = diffProgress.learnStreak;
+                    if (diffProgress.maxLearnStreak > gameState.overallMaxStreak) {
+                        gameState.overallMaxStreak = diffProgress.maxLearnStreak;
+                        updateAchievementProgress('streak', gameState.overallMaxStreak);
+                    }
+                } 
+            } else {
+                playSound('incorrect');
+                diffProgress.learnStreak = 1;
+            }
+
+            let nextCardIndex = gameState.currentLearnCardIndex + 1;
+            if (diffProgress.learnedWordIds.size === diffProgress.learnItemsTotal && diffProgress.learnItemsTotal > 0) {
+                 setTimeout(() => { showStartButton(); saveGameState(); }, 500);
+            } else {
+                setTimeout(() => {
+                    gameState.currentLearnCardIndex = (learnPool.length > 0) ? nextCardIndex % learnPool.length : 0;
+                    loadLearnCard();
+                    saveGameState();
+                }, 300);
+            }
+            updateUI();
+        }
+
+        // --- QUIZ SECTION ---
+        function startNewQuiz() {
+            playSound('click');
+            vibrate();
+            gameState.quizCurrentQuestionIndex = 0;
+            gameState.quizScore = 0;
+            gameState.quizQuestions = [];
+
+            const quizPool = getWordsForDifficultyAndPurpose(gameState.settings.difficulty, 'quiz');
+            
+            if (quizPool.length === 0) {
+                quizQuestionEl.textContent = "لا يوجد أسئلة اختبار لهذا المستوى.";
+                quizOptionsEl.innerHTML = '';
+                quizFeedbackEl.textContent = '';
+                nextQuestionBtn.classList.add('hidden');
+                newQuizBtn.classList.remove('hidden');
+                updateUI();
+                return;
+            } 
+            
+            shuffleArray(quizPool);
+            const actualQuizCount = Math.min(QUIZ_QUESTIONS_COUNT, quizPool.length);
+            gameState.quizQuestions = quizPool.slice(0, actualQuizCount);
+            
+            quizFeedbackEl.textContent = '';
+            nextQuestionBtn.classList.add('hidden');
+            newQuizBtn.classList.add('hidden');
+            quizOptionsEl.innerHTML = '';
+            
+            loadQuizQuestion();
+        }
+        
+        function loadQuizQuestion() {
+            if (gameState.quizCurrentQuestionIndex >= gameState.quizQuestions.length) {
+                endQuiz();
+                return;
+            }
+
+            const questionData = gameState.quizQuestions[gameState.quizCurrentQuestionIndex];
+            quizQuestionEl.textContent = `ما هي ترجمة كلمة/جملة "${questionData.english}" باللهجة العراقية؟`;
+            audioEnQuizBtn.onclick = () => { playSound('click'); speakText(questionData.english, 'en-US'); };
+
+            let options = [questionData.iraqi];
+            let distractorPool = wordsData
+                .filter(w => w.id !== questionData.id)
+                .map(w => w.iraqi);
+            
+            shuffleArray(distractorPool);
+            distractorPool = [...new Set(distractorPool)];
+
+            for (let distractor of distractorPool) {
+                if (options.length < 4 && !options.includes(distractor)) {
+                    options.push(distractor);
+                }
+            }
+            shuffleArray(options);
+
+            quizOptionsEl.innerHTML = '';
+            options.forEach(optionText => {
+                const button = document.createElement('button');
+                button.textContent = optionText;
+                button.onclick = () => { handleQuizAnswer(optionText, questionData.iraqi); };
+                quizOptionsEl.appendChild(button);
+            });
+
+            quizFeedbackEl.textContent = '';
+            nextQuestionBtn.classList.add('hidden');
+            updateUI();
+        }
+
+        function handleQuizAnswer(selectedAnswer, correctAnswer) {
+            const isCorrect = selectedAnswer === correctAnswer;
+
+            quizOptionsEl.querySelectorAll('button').forEach(button => {
+                button.disabled = true;
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('correct');
+                }
+                if (button.textContent === selectedAnswer && !isCorrect) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            gameState.totalQuizQuestionsAttemptedGlobal++;
+            if (isCorrect) {
+                playSound('correct');
+                vibrate(100);
+                gameState.quizScore++;
+                gameState.totalCorrectQuizAnswersGlobal++;
+                quizFeedbackEl.textContent = '👍 إجابة صحيحة!';
+                quizFeedbackEl.style.color = 'var(--correct-color)';
+            } else {
+                playSound('incorrect');
+                vibrate([50, 50, 50]);
+                quizFeedbackEl.textContent = `👎 إجابة خاطئة. الصحيح: ${correctAnswer}`;
+                quizFeedbackEl.style.color = 'var(--incorrect-color)';
+            }
+
+            nextQuestionBtn.classList.remove('hidden');
+            updateUI();
+            updateAchievementProgress('quiz', { score: gameState.quizScore, totalQuestions: gameState.quizQuestions.length, totalCorrectGlobal: gameState.totalCorrectQuizAnswersGlobal });
+            saveGameState();
+        }
+
+        function endQuiz() {
+            quizQuestionEl.textContent = "انتهى الاختبار!";
+            quizOptionsEl.innerHTML = '';
+            const totalQuestions = gameState.quizQuestions.length;
+            quizFeedbackEl.textContent = `نتيجتك النهائية: ${gameState.quizScore} من ${totalQuestions}`;
+            newQuizBtn.classList.remove('hidden');
+
+            const diff = gameState.settings.difficulty;
+            const diffProgress = gameState.progressByDifficulty[diff];
+            if (totalQuestions > 0) {
+                diffProgress.quizAttempts.push({ score: gameState.quizScore, total: totalQuestions, date: new Date().toISOString() });
+                if (gameState.quizScore > diffProgress.highestQuizScore || (gameState.quizScore === diffProgress.highestQuizScore && totalQuestions > diffProgress.highestQuizTotal)) {
+                    diffProgress.highestQuizScore = gameState.quizScore;
+                    diffProgress.highestQuizTotal = totalQuestions;
+                }
+                gameState.quizzesCompletedGlobal++;
+            }
+            
+            updateAchievementProgress('quiz', {score: gameState.quizScore, totalQuestions: totalQuestions, totalCorrectGlobal: gameState.totalCorrectQuizAnswersGlobal});
+            updateStatsAndAchievementsDisplay();
+            saveGameState();
+        }
+
+        // --- STATS & ACHIEVEMENTS SECTION ---
+        function updateStatsAndAchievementsDisplay() {
+            statsTotalLearnedEl.textContent = gameState.totalWordsLearnedGlobally;
+            statsMaxStreakEl.textContent = `${gameState.overallMaxStreak} 🔥`;
+            const accuracy = gameState.totalQuizQuestionsAttemptedGlobal > 0 ? Math.round((gameState.totalCorrectQuizAnswersGlobal / gameState.totalQuizQuestionsAttemptedGlobal) * 100) : 0;
+            statsQuizAccuracyEl.textContent = `${accuracy}%`;
+            statsQuizzesCompletedEl.textContent = gameState.quizzesCompletedGlobal;
+
+            const totalLearnable = wordsData.filter(w => w.purpose === 'learn').length;
+            const overallProgress = totalLearnable > 0 ? Math.round((gameState.totalWordsLearnedGlobally / totalLearnable) * 100) : 0;
+            statsOverallProgressBarEl.style.width = `${overallProgress}%`;
+            statsOverallProgressBarEl.textContent = `${overallProgress}%`;
+
+            difficultyStatsDisplayEl.innerHTML = '';
+            const diffOrder = ['easy', 'medium', 'hard'];
+            const diffLabels = {easy: "سَهْل", medium: "مُتَوَسِّط", hard: "صَعْب"};
+            diffOrder.forEach(key => {
+                const p = gameState.progressByDifficulty[key];
+                const quizTotal = p.quizItemsTotal > 0 ? Math.min(QUIZ_QUESTIONS_COUNT, p.quizItemsTotal) : 0;
+                const group = document.createElement('div');
+                group.className = 'difficulty-stats-group';
+                group.innerHTML = `
+                    <h4>مستوى: ${diffLabels[key]}</h4>
+                    <div class="stat-line"><span class="label">الكلمات المتعلمة:</span> <span class="value">${p.learnedWordIds.size} / ${p.learnItemsTotal || 0}</span></div>
+                    <div class="stat-line"><span class="label">أعلى نتيجة اختبار:</span> <span class="value">${p.highestQuizScore} / ${p.highestQuizTotal || quizTotal}</span></div>
+                    <div class="stat-line"><span class="label">أطول سلسلة تعلم:</span> <span class="value">${p.maxLearnStreak} 🔥</span></div>
+                `;
+                difficultyStatsDisplayEl.appendChild(group);
+            });
+
+            achievementsListEl.innerHTML = '';
+            Object.values(gameState.achievements).forEach(ach => {
+                if (!ach) return;
+                const item = document.createElement('div');
+                item.classList.add('achievement-item', ach.unlocked ? 'unlocked' : '');
+                item.innerHTML = `
+                    <h3>${ach.unlocked ? '<span class="trophy-icon">🏆</span>' : '<span class="trophy-icon">🔒</span>'} ${ach.name}</h3>
+                    <p>${ach.description}</p>
+                    ${ach.goal > 0 ? `<div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${Math.min(100, (ach.current / ach.goal) * 100)}%;"></div></div>` : ''}
+                `;
+                achievementsListEl.appendChild(item);
+            });
+        }
+        function updateAchievementProgress(type, value) {
+            let newUnlock = false;
+            if (type === 'learner') {
+                ['beginner', 'intermediate', 'advanced'].forEach(key => {
+                    const ach = gameState.achievements[key];
+                    if (ach && !ach.unlocked) {
+                        ach.current = value;
+                        if (ach.current >= ach.goal) {
+                            ach.unlocked = true;
+                            ach.current = ach.goal;
+                            newUnlock = true;
+                        }
+                    }
+                });
+            } else if (type === 'streak') {
+                const ach = gameState.achievements.streakStar;
+                if (ach && !ach.unlocked) {
+                    ach.current = value;
+                    if (ach.current >= ach.goal) {
+                        ach.unlocked = true;
+                        ach.current = ach.goal;
+                        newUnlock = true;
+                    }
+                }
+            } else if (type === 'quiz') {
+                const noviceAch = gameState.achievements.quizNovice;
+                if (noviceAch) {
+                    if (!noviceAch.unlocked) {
+                        noviceAch.current = value.totalCorrectGlobal;
+                        if (noviceAch.current >= noviceAch.goal) {
+                            noviceAch.unlocked = true;
+                            noviceAch.current = noviceAch.goal;
+                            newUnlock = true;
+                        }
+                    } else {
+                        noviceAch.current = Math.min(value.totalCorrectGlobal, noviceAch.goal);
+                    }
+                }
+
+                const champAch = gameState.achievements.quizChampion;
+                const quizItemsInDiff = getWordsForDifficultyAndPurpose(gameState.settings.difficulty, 'quiz').length;
+                champAch.goal = Math.min(QUIZ_QUESTIONS_COUNT, quizItemsInDiff);
+                champAch.description = `علامة كاملة في اختبار (${champAch.goal} أسئلة)`;
+
+                if (champAch && !champAch.unlocked && value.score > 0 && value.score === value.totalQuestions && value.totalQuestions >= champAch.goal) {
+                    champAch.unlocked = true;
+                    champAch.current = champAch.goal;
+                    newUnlock = true;
+                }
+            } 
+            if (newUnlock) { playSound('achievement'); vibrate([100, 50, 100]); }
+            updateStatsAndAchievementsDisplay();
+        }
+        
+        // --- SETTINGS ---
+        function applySettings() {
+            updateThemeVariables(gameState.settings.colorTheme);
+            document.body.style.backgroundColor = gameState.settings.pageBgColor;
+            difficultyButtons.forEach(b => b.classList.toggle('active', b.dataset.difficulty === gameState.settings.difficulty));
+            colorThemeSpans.forEach(s => s.classList.toggle('active', s.dataset.colorTheme === gameState.settings.colorTheme));
+            bgColorSpans.forEach(s => s.classList.toggle('active', s.dataset.bgColor === gameState.settings.pageBgColor));
+            autoFlipCardCheckbox.checked = gameState.settings.autoFlipCard;
+            showExamplesCheckbox.checked = gameState.settings.showExamples;
+            enableVibrationCheckbox.checked = gameState.settings.enableVibration;
+            enableSoundCheckbox.checked = gameState.settings.enableSound;
+            toggleSoundBtn.textContent = gameState.settings.enableSound ? '🔊' : '🔇';
+        }
+
+        function hexToRgb(hex) { const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return r && g && b ? {r,g,b} : null; }
+        function parseRgb(rgbString) { const match = rgbString.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/); return match ? {r:parseInt(match[1]), g:parseInt(match[2]), b:parseInt(match[3])} : null; }
+        
+        function updateThemeVariables(themeName) {
+            let p, s, a, as, ae;
+            switch (themeName) {
+                case 'green': p = '#66BB6A'; s = '#43A047'; a = '#FFEE58'; as = '#C8E6C9'; ae = '#A5D6A7'; break;
+                case 'blue': p = '#42A5F5'; s = '#1E88E5'; a = '#FFD54F'; as = '#BBDEFB'; ae = '#90CAF9'; break;
+                case 'orange': p = '#FFA726'; s = '#FB8C00'; a = '#81D4FA'; as = '#FFE0B2'; ae = '#FFCC80'; break;
+                default: p = '#7E57C2'; s = '#5E35B1'; a = '#66BB6A'; as = '#E0F7FA'; ae = '#B2EBF2'; break;
+            }
+            const rootStyle = document.documentElement.style;
+            rootStyle.setProperty('--primary-color', p);
+            rootStyle.setProperty('--secondary-color', s);
+            rootStyle.setProperty('--accent-color', a);
+            rootStyle.setProperty('--app-bg-color-start', as);
+            rootStyle.setProperty('--app-bg-color-end', ae);
+            const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim(); 
+            const rgb = accent.startsWith('#') ? hexToRgb(accent) : parseRgb(accent); 
+            if (rgb) rootStyle.setProperty('--accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+        }
+
+        // --- EVENT LISTENERS ---
+        navButtons.forEach(b => b.addEventListener('click', () => { playSound('click'); switchSection(b.id.replace('nav-', '') + '-section'); }));
+        closeBtnHeader.addEventListener('click', () => { playSound('click'); switchSection('learn-section'); });
+        
+        startGameBtn.addEventListener('click', () => {
+            playSound('click');
+            vibrate();
+            gameState.gameStarted = true;
+            let learnPool = getWordsForDifficultyAndPurpose(gameState.settings.difficulty, 'learn');
+            shuffleArray(learnPool);
+            gameState.currentLearnSessionCards = learnPool;
+            gameState.currentLearnCardIndex = 0; 
+            hideStartButtonAndShowContent();
+            loadLearnCard();
+            saveGameState();
+        });
+
+        flashcard.parentElement.addEventListener('click', (e) => { 
+            if (!gameState.gameStarted || e.target.closest('.audio-btn')) return;
+            playSound('flip');
+            flashcard.classList.toggle('flipped');
+            clearTimeout(autoFlipTimeout);
+        });
+
+        hintBtn.addEventListener('click', () => handleLearnAction(true));
+        dontKnowBtn.addEventListener('click', () => handleLearnAction(false));
+        nextCardBtn.addEventListener('click', () => {
+            playSound('click');
+            gameState.progressByDifficulty[gameState.settings.difficulty].learnStreak = 1;
+            const learnPool = gameState.currentLearnSessionCards;
+            gameState.currentLearnCardIndex = (learnPool.length > 0) ? (gameState.currentLearnCardIndex + 1) % learnPool.length : 0;
+            loadLearnCard();
+            saveGameState();
+        });
+
+        nextQuestionBtn.addEventListener('click', () => { playSound('click'); gameState.quizCurrentQuestionIndex++; loadQuizQuestion(); });
+        newQuizBtn.addEventListener('click', startNewQuiz);
+
+        difficultyButtons.forEach(b => b.addEventListener('click', () => {
+            playSound('click');
+            gameState.settings.difficulty = b.dataset.difficulty;
+            applySettings();
+            gameState.gameStarted = false; 
+            gameState.currentLearnCardIndex = 0; 
+            gameState.quizQuestions = [];
+            if (document.getElementById('learn-section').classList.contains('active')) {
+                prepareLearnSection();
+            } 
+            if (document.getElementById('quiz-section').classList.contains('active')) {
+                startNewQuiz();
+            }
+            updateStatsAndAchievementsDisplay();
+            saveGameState();
+        }));
+
+        colorThemeSpans.forEach(s => s.addEventListener('click', () => { playSound('click'); gameState.settings.colorTheme = s.dataset.colorTheme; applySettings(); saveGameState(); }));
+        bgColorSpans.forEach(s => s.addEventListener('click', () => { playSound('click'); gameState.settings.pageBgColor = s.dataset.bgColor; applySettings(); saveGameState(); }));
+        autoFlipCardCheckbox.addEventListener('change', e => { gameState.settings.autoFlipCard = e.target.checked; saveGameState(); if (e.target.checked && gameState.gameStarted && !flashcard.classList.contains('flipped')) { loadLearnCard() }});
+        showExamplesCheckbox.addEventListener('change', e => { gameState.settings.showExamples = e.target.checked; if (gameState.gameStarted) loadLearnCard(); saveGameState(); });
+        enableVibrationCheckbox.addEventListener('change', e => { gameState.settings.enableVibration = e.target.checked; saveGameState(); });
+        enableSoundCheckbox.addEventListener('change', e => { gameState.settings.enableSound = e.target.checked; applySettings(); saveGameState(); });
+        resetProgressBtn.addEventListener('click', () => { playSound('click'); if (confirm("هل أنت متأكد أنك تريد إعادة ضبط كل التقدم والإعدادات؟ لا يمكن التراجع عن هذا الإجراء.")) { playSound('incorrect'); localStorage.removeItem('iraqiDialectGameState_v3.9.1'); location.reload(); }});
+        toggleSoundBtn.addEventListener('click', () => { gameState.settings.enableSound = !gameState.settings.enableSound; playSound('click'); applySettings(); saveGameState(); });
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            preloadSounds(); 
+            loadGameState(); 
+            applySettings(); 
+            updateUI(); 
+            updateStatsAndAchievementsDisplay(); 
+            switchSection('learn-section');
+            initializeSpeechSynthesis();
+        });
+    </script>
+</body>
+</html>
