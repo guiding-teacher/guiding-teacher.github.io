@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - بريد الرسائل</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Amiri-Regular-normal/1.0/Amiri-Regular-normal.js"></script>
+</head>
+<body>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1>بريد الرسائل</h1>
+            <p>لوحة التحكم والإدارة</p>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div id="loading-spinner" class="loader" style="display: none;"></div>
+        <div id="alert-container" aria-live="polite"></div>
+
+        <div id="dashboard-home" class="dashboard-container">
+            <div class="card">
+                <h2>الوصول إلى استبيان</h2>
+                <p>أدخل معرّف الاستبيان والرمز السري للوصول إليه وإضافته إلى قائمتك.</p>
+                <form id="survey-lookup-form" class="lookup-form">
+                    <input type="text" id="survey-id-input" placeholder="معرّف الاستبيان (Survey ID)" required>
+                    <input type="password" id="survey-pin-input" placeholder="الرمز السري (PIN)" required>
+                    <button type="submit" class="btn primary">بحث و إضافة</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>استبياناتي</h2>
+                <p>الاستبيانات التي قمت بالوصول إليها مؤخرًا.</p>
+                <div id="my-surveys-list" class="surveys-grid"></div>
+                 <a href="admin.html" class="btn secondary create-new-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    إنشاء استبيان جديد
+                </a>
+            </div>
+        </div>
+
+        <div id="survey-management-view" class="dashboard-container" style="display: none;">
+            <div class="management-header">
+                <button id="back-to-dashboard-btn" class="btn secondary">&larr; العودة</button>
+                <h2 id="survey-title-header"></h2>
+                <div class="response-toggle-container">
+                    <span>قبول الردود</span>
+                    <label class="switch">
+                      <input type="checkbox" id="accepting-responses-toggle">
+                      <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="action-buttons">
+                    <button id="export-csv-btn" class="btn secondary small">تصدير CSV</button>
+                    <button id="export-pdf-btn" class="btn secondary small">تصدير PDF</button>
+                </div>
+            </div>
+
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="responses">الردود (<span id="response-count-tab">0</span>)</button>
+                <button class="tab-btn" data-tab="settings">الإعدادات</button>
+            </nav>
+
+            <div class="tab-content-area">
+                <div id="responses-content" class="tab-pane active">
+                    <nav class="sub-tabs">
+                        <button class="sub-tab-btn active" data-subtab="summary">ملخص</button>
+                        <button class="sub-tab-btn" data-subtab="individual">فردي</button>
+                    </nav>
+                    <div id="summary-view" class="sub-tab-pane active"></div>
+                    <div id="individual-view" class="sub-tab-pane">
+                        <div class="individual-controls">
+                            <button id="prev-response-btn" class="btn">&lt;</button>
+                            <span id="individual-counter">عرض 0 من 0</span>
+                            <button id="next-response-btn" class="btn">&gt;</button>
+                        </div>
+                        <div id="individual-response-content" class="card"></div>
+                    </div>
+                </div>
+                <div id="settings-content" class="tab-pane">
+                    <div class="card">
+                        <h3>ملخص الإعدادات</h3>
+                        <div id="settings-summary-area"></div>
+                        <div id="share-link-area" class="link-item" style="margin-top: 1.5rem;">
+                            <span>رابط المشاركة:</span>
+                            <input type="text" id="survey-share-link-dashboard" readonly>
+                            <button id="copy-share-link-dashboard" class="btn secondary small">نسخ</button>
+                        </div>
+                        <a href="#" id="edit-survey-link" class="btn primary" style="margin-top: 20px;">تعديل الأسئلة والإعدادات</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

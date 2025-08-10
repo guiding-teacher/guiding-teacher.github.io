@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">استبيان</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+    <div id="loading-spinner" class="loader"></div>
+
+    <header class="survey-header" style="display: none;">
+        <img id="survey-logo-display" src="" alt="Survey Logo" style="display: none;">
+        <h1 id="survey-title-display"></h1>
+    </header>
+    
+    <main id="survey-main-content">
+        <div id="alert-container" aria-live="polite"></div>
+        
+        <div id="progress-container" class="progress-container" style="display: none;">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+        </div>
+
+        <form id="survey-form-responder" class="survey-form-container" style="display: none;">
+            <div id="responder-form-content"></div>
+            <button type="submit" class="btn primary submit-btn">إرسال الإجابات</button>
+        </form>
+
+        <div id="thank-you-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
+            <h2 id="thank-you-text"></h2>
+            <a href="#" id="view-results-link" class="btn secondary" style="display: none; margin-top: 1rem;">عرض النتائج</a>
+        </div>
+        
+        <div id="status-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
+             <h2 id="status-text"></h2>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
