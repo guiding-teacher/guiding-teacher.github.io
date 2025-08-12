@@ -30,7 +30,15 @@ body {
     color: var(--text-color);
     line-height: 1.7;
     direction: rtl;
-    transition: background-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex-grow: 1;
+    width: 100%;
+    padding: 2rem 1rem;
 }
 
 /* --- Loader & Alerts --- */
@@ -49,11 +57,10 @@ body {
 .btn.secondary { background-color: var(--card-bg-color); color: var(--primary-color); border: 1px solid var(--border-color); }
 .btn.secondary:hover { background-color: #f1f3f5; border-color: var(--secondary-color); }
 .btn.small { padding: 0.4rem 0.8rem; font-size: 0.9rem; }
-.btn:disabled { background-color: #ccc; cursor: not-allowed; }
+.btn:disabled, .btn[disabled] { background-color: #ccc; cursor: not-allowed; border-color: #ccc; color: #666; }
 .card { background-color: var(--card-bg-color); border-radius: var(--border-radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
 .card h2 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 0.5rem; }
 .card h3 { font-size: 1.4rem; color: var(--primary-color); margin-bottom: 1rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem; }
-.card h4 { font-size: 1.1rem; color: var(--secondary-color); margin-bottom: 0.75rem; }
 .card p { color: var(--text-muted); margin-bottom: 1.5rem; }
 input[type="text"], input[type="password"], textarea, select, input[type="date"], input[type="time"] { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; font-family: 'Cairo', sans-serif; background-color: #fdfdff; }
 input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 85, 162, 0.2); }
@@ -63,10 +70,17 @@ input[type="color"] { width: 100px; height: 40px; padding: 5px; }
 .form-group small { color: var(--text-muted); font-size: 0.85rem; margin-top: 5px; display: block;}
 .checkbox-group { display: flex; align-items: center; gap: 0.5rem; }
 
-/* --- Dashboard & Admin Styles --- */
-.dashboard-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 2.5rem 1rem; text-align: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+/* --- Header & Footer --- */
+.dashboard-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 2.5rem 1rem; text-align: center; }
 .header-content h1 { font-weight: 700; font-size: 2.5rem; }
-.dashboard-main, .admin-body main { padding: 2rem 1rem; max-width: 1100px; margin: 0 auto; }
+.site-footer { text-align: center; padding: 1.5rem; background-color: var(--card-bg-color); color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid var(--border-color); margin-top: auto; }
+
+/* --- Dashboard & Admin Styles --- */
+.dashboard-container, .survey-form-container, #status-container, #thank-you-container, #already-submitted-container {
+    max-width: 1200px;
+    margin-right: auto;
+    margin-left: auto;
+}
 .dashboard-container { display: flex; flex-direction: column; gap: 1.5rem; }
 .lookup-form { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
 .lookup-form input { flex-grow: 1; }
@@ -78,10 +92,12 @@ input[type="color"] { width: 100px; height: 40px; padding: 5px; }
 .create-new-btn { width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem; border-style: dashed; }
 .management-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--card-bg-color); border-radius: var(--border-radius); margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
 .management-header h2 { margin: 0; color: var(--primary-color); flex-grow: 1; text-align: center; }
-.tabs, .sub-tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 1.5rem; }
+.main-controls-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); margin-bottom: 1.5rem; }
+.tabs { display: flex; }
+.main-actions { display: flex; gap: 0.5rem; }
+.sub-tabs { display: flex; border-bottom: 1px solid var(--border-color); background: #f8f9fa; border-radius: 8px; padding: 0 0.5rem; margin-bottom: 1.5rem; }
 .tab-btn, .sub-tab-btn { padding: 1rem 1.5rem; cursor: pointer; border: none; background: transparent; font-size: 1.1rem; font-weight: 600; color: var(--text-muted); border-bottom: 3px solid transparent; transition: all 0.2s; }
 .tab-btn.active, .sub-tab-btn.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-.sub-tabs { border-bottom: 1px solid var(--border-color); background: #f8f9fa; border-radius: 8px; padding: 0 0.5rem; }
 .sub-tab-btn { font-size: 1rem; padding: 0.75rem 1rem; }
 .tab-pane, .sub-tab-pane { display: none; }
 .tab-pane.active, .sub-tab-pane.active { display: block; }
@@ -97,9 +113,10 @@ input:checked + .slider:before { transform: translateX(22px); }
 .individual-controls { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 #individual-counter { font-size: 1.1rem; font-weight: 600; color: var(--text-muted); }
 #individual-response-content .question-response { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
-#individual-response-content .question-response:last-child { border-bottom: none; }
+#individual-response-content .question-response:last-child { border-bottom: none; padding-bottom: 0; }
 #individual-response-content .question-title { font-weight: 600; color: var(--primary-color); margin-bottom: 0.5rem; }
 #individual-response-content .answer-text { background-color: var(--bg-color); padding: 0.75rem; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+.response-timestamp { font-size: 0.85rem; text-align: center; color: var(--text-muted); margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
 .link-item { display: flex; align-items: center; gap: 0.5rem; }
 .link-item input { background: #e9ecef; }
 .admin-question-card { background: #f8f9fa; border: 1px solid #e0e0e0; padding: 1.5rem; margin-bottom: 1rem; border-radius: var(--border-radius); }
@@ -112,12 +129,17 @@ input:checked + .slider:before { transform: translateX(22px); }
 .progress-bar-info { display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 0.25rem; color: var(--text-muted); }
 .progress-bar-track { width: 100%; background-color: #e9ecef; border-radius: 1rem; overflow: hidden; }
 .progress-bar { height: 12px; background-color: var(--secondary-color); border-radius: 1rem; transition: width 0.5s ease-in-out; }
+.question-stats { font-size: 0.9rem; color: var(--text-muted); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); }
+.answers-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+.answers-list p { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #eee; }
+.answers-list p:last-child { border-bottom: none; margin-bottom: 0; }
 
 /* --- Survey Page (Responder View) --- */
-.survey-header { text-align: center; padding: 2rem 1rem; }
-#survey-logo-display { max-height: 100px; margin-bottom: 1rem; border-radius: 8px; }
-#survey-title-display { color: var(--primary-color); font-size: 2.2rem; }
-.survey-form-container { max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+.survey-header-details { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.3); display: flex; align-items: center; justify-content: center; gap: 1rem; }
+#survey-logo-display { max-height: 70px; border-radius: 8px; background: white; padding: 5px;}
+#survey-title-display { font-size: 1.8rem; margin: 0; font-weight: 600; }
+#survey-description-display { font-size: 1rem; opacity: 0.8; margin: 0; max-width: 600px; }
+.survey-form-container { max-width: 700px; display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
 .question-card-responder { background: var(--card-bg-color); padding: 2rem; border-radius: var(--border-radius); box-shadow: var(--shadow); }
 .question-card-responder label.question-text { font-size: 1.2rem; font-weight: 600; display: block; margin-bottom: 1rem; }
 .submit-btn { padding: 1rem; font-size: 1.1rem; margin-top: 1rem; }
@@ -127,13 +149,45 @@ input:checked + .slider:before { transform: translateX(22px); }
 .rating-stars input[type="radio"] { display: none; }
 .rating-stars label { font-size: 2.5rem; color: #ccc; cursor: pointer; transition: color 0.2s, transform 0.2s; }
 .rating-stars label:hover, .rating-stars input[type="radio"]:checked ~ label, .rating-stars label:hover ~ label { color: #ffc107; transform: scale(1.1); }
+.share-container { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
+.share-container p { font-size: 0.9rem; margin-bottom: 0.5rem; }
 
 /* --- Special Mailbox Theme --- */
 body.mailbox-theme { background: var(--mailbox-bg); }
-.mailbox-theme main { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+body.mailbox-theme .dashboard-header { background: transparent; }
+.mailbox-theme .header-content h1 { color: var(--mailbox-text); }
+.mailbox-theme .survey-header-details { border-top-color: rgba(180, 96, 96, 0.3); }
+.mailbox-theme #survey-title-display, .mailbox-theme #survey-description-display { color: var(--mailbox-text); }
 .mailbox-theme .survey-form-container { background: var(--mailbox-card-bg); border: 2px solid var(--mailbox-accent); color: var(--mailbox-text); padding: 2.5rem; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 .mailbox-theme .question-card-responder { all: unset; }
 .mailbox-theme .question-text { color: var(--mailbox-text); font-size: 1.5rem; }
 .mailbox-theme textarea { min-height: 180px; background: white; border: 2px solid var(--mailbox-accent); border-radius: 15px; padding: 1rem; font-size: 1.1rem; color: var(--text-color); }
 .mailbox-theme .submit-btn { background-color: var(--mailbox-text); color: white; font-size: 1.2rem; border-radius: 15px; }
 .mailbox-theme .submit-btn:hover { background-color: #9d4e4e; }
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+    .header-content h1 {
+        font-size: 2rem;
+    }
+    .management-header {
+        flex-direction: column;
+    }
+    .main-controls-bar {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    .tabs {
+        justify-content: center;
+    }
+    .main-actions {
+        justify-content: center;
+    }
+    .card {
+        padding: 1.5rem 1rem;
+    }
+}

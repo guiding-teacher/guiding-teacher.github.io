@@ -3,20 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="page-title">استبيان</title>
+    <title id="page-title">استفتاء</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-    <div id="loading-spinner" class="loader"></div>
 
-    <header class="survey-header" style="display: none;">
-        <img id="survey-logo-display" src="" alt="Survey Logo" style="display: none;">
-        <h1 id="survey-title-display"></h1>
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1>منصة قرار للاستفتاء</h1>
+            <!-- Survey-specific title and description will be inserted here by script.js -->
+            <div id="survey-header-details" class="survey-header-details">
+                <img id="survey-logo-display" src="" alt="Survey Logo" style="display: none;">
+                <div>
+                    <h2 id="survey-title-display"></h2>
+                    <p id="survey-description-display"></p>
+                </div>
+            </div>
+        </div>
     </header>
-    
+
     <main id="survey-main-content">
+        <div id="loading-spinner" class="loader"></div>
         <div id="alert-container" aria-live="polite"></div>
         
         <div id="progress-container" class="progress-container" style="display: none;">
@@ -30,13 +39,36 @@
 
         <div id="thank-you-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
             <h2 id="thank-you-text"></h2>
+            <div class="share-container" style="display: none;">
+                <p>يمكنك مشاركة هذا الاستفتاء مع الآخرين:</p>
+                <div class="link-item">
+                    <input type="text" id="survey-share-link-after" readonly>
+                    <button id="copy-share-link-after" class="btn secondary small">نسخ</button>
+                </div>
+            </div>
             <a href="#" id="view-results-link" class="btn secondary" style="display: none; margin-top: 1rem;">عرض النتائج</a>
         </div>
         
+        <div id="already-submitted-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
+             <h2>لقد قمت بالإجابة على هذا الاستفتاء مسبقًا.</h2>
+             <div class="share-container">
+                <p>يمكنك مشاركة هذا الاستفتاء مع الآخرين:</p>
+                <div class="link-item">
+                    <input type="text" id="survey-share-link-submitted" readonly>
+                    <button id="copy-share-link-submitted" class="btn secondary small">نسخ</button>
+                </div>
+            </div>
+        </div>
+
         <div id="status-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
              <h2 id="status-text"></h2>
         </div>
     </main>
+    
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year"></span> منصة قرار للاستفتاء. جميع الحقوق محفوظة.</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>

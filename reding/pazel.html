@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة بازل الجملة - التركيب المتسلسل</title>
+    <title>لعبة بازل الجملة - 50 لغزاً متدرجاً</title>
     <!-- استيراد خط Amiri من Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,10 +16,11 @@
 
     <style>
         :root {
-            --piece-size: 180px; /* تكبير حجم قطع البازل */
-            --gap-size: 15px;
-            --border-radius: 25px;
+            --base-piece-size: 140px; /* الحجم الأساسي للقطعة */
+            --gap-size: 10px;
+            --border-radius: 15px;
             --glow-color: rgba(144, 238, 144, 0.8);
+            --hint-color: #ffc107;
         }
 
         html {
@@ -36,59 +38,54 @@
             align-items: center;
             justify-content: space-between;
             min-height: 100vh;
-            height: 100%;
-            background: linear-gradient(135deg, #ffe29f, #ffa99f, #ff719a);
+            background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
             margin: 0;
-            padding: 15px 15px 10px 15px;
+            padding: 15px;
             color: #333;
-            overflow: hidden;
-            transition: background-color 0.2s ease-out;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
-
-        body.timeout-flash {
-            background-color: #ffdddd;
-        }
-
+        
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 800px; /* تكبير الحجم الكلي */
+            max-width: 900px;
             flex-grow: 1;
             justify-content: center;
         }
 
         h1 {
             color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            text-align: center;
             margin-top: 0;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
-            font-size: 2.2em; /* تكبير حجم العنوان */
+            margin-bottom: 5px;
         }
 
         .instructions {
             color: #f8f8f8;
             margin-bottom: 15px;
             text-align: center;
-            font-size: 1.3em; /* تكبير حجم التعليمات */
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         #puzzle-area {
              display: flex;
              justify-content: center;
              align-items: center;
-             width: calc(3 * var(--piece-size) + 2 * var(--gap-size) + 20px);
+             width: 100%;
+             max-width: calc(4 * var(--base-piece-size) + 3 * var(--gap-size));
              position: relative;
+             margin: 0 auto;
         }
 
         #puzzle-container {
-            width: calc(3 * var(--piece-size) + 2 * var(--gap-size));
-            height: calc(3 * var(--piece-size) + 2 * var(--gap-size));
+            width: 100%;
             display: grid;
-            grid-template-columns: repeat(3, var(--piece-size));
-            grid-template-rows: repeat(3, var(--piece-size));
             gap: var(--gap-size);
             background-color: rgba(255, 255, 255, 0.5);
             border: 1px solid #ccc;
@@ -96,45 +93,41 @@
             border-radius: var(--border-radius);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
             position: relative;
+            transition: all 0.3s ease-in-out;
         }
-
+        
         .puzzle-piece {
-            width: var(--piece-size);
-            height: var(--piece-size);
+            aspect-ratio: 1 / 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: calc(var(--piece-size) * 0.22); /* تكبير حجم النص داخل القطع */
-            line-height: 1.4;
+            font-size: clamp(1rem, 3.5vw, 1.8rem); /* حجم خط متوازن */
+            line-height: 1.3;
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.6);
             cursor: pointer;
-            transition: transform 0.2s ease-in-out, box-shadow 0.3s ease-in-out, border-color 0.2s ease-in-out, filter 0.3s ease;
+            transition: transform 0.2s ease, box-shadow 0.3s ease, filter 0.3s ease;
             user-select: none;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.25);
             text-align: center;
-            padding: 15px; /* زيادة المساحة الداخلية */
+            padding: 5px;
             box-sizing: border-box;
             overflow: hidden;
-            word-wrap: break-word;
-            border-radius: calc(var(--border-radius) * 0.5);
-            position: relative;
-            background-clip: padding-box;
+            word-break: break-word;
+            border-radius: calc(var(--border-radius) * 0.6);
         }
 
         .puzzle-piece:hover:not(.locked-in-sequence) {
-            transform: scale(1.05) rotate(1deg);
+            transform: scale(1.05);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
             z-index: 10;
-            border-color: white;
         }
 
         .puzzle-piece.selected:not(.locked-in-sequence) {
             border: 4px solid gold;
-            transform: scale(1.08) rotate(0deg);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: scale(1.08);
             z-index: 20;
         }
 
@@ -146,25 +139,19 @@
              z-index: 5;
         }
 
-        /* Colors */
-        .piece-color-0 { background-color: #FFA500; } .piece-color-1 { background-color: #2E8B57; }
-        .piece-color-2 { background-color: #FF1493; } .piece-color-3 { background-color: #32CD32; }
-        .piece-color-4 { background-color: #FFD700; } .piece-color-5 { background-color: #1E90FF; }
-        .piece-color-6 { background-color: #00BFFF; } .piece-color-7 { background-color: #FF0000; }
-        .piece-color-8 { background-color: #483D8B; }
+        .piece-color-0{background-color:#e67e22}.piece-color-1{background-color:#27ae60}.piece-color-2{background-color:#8e44ad}.piece-color-3{background-color:#2980b9}.piece-color-4{background-color:#f1c40f}.piece-color-5{background-color:#c0392b}.piece-color-6{background-color:#16a085}.piece-color-7{background-color:#d35400}.piece-color-8{background-color:#34495e}.piece-color-9{background-color:#7f8c8d}.piece-color-10{background-color:#2ecc71}.piece-color-11{background-color:#e74c3c}.piece-color-12{background-color:#9b59b6}.piece-color-13{background-color:#3498db}.piece-color-14{background-color:#f39c12}.piece-color-15{background-color:#1abc9c}
 
-        /* Controls Area */
         .controls-area {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             padding: 15px;
             background-color: rgba(255, 255, 255, 0.7);
             border-radius: 15px 15px 0 0;
             box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
-            flex-shrink: 0;
+            margin-top: 15px;
         }
 
         .stats-guide-container {
@@ -177,23 +164,16 @@
              gap: 15px;
         }
 
-        .stats {
-            display: flex;
-            gap: 15px;
-            font-size: 1.2em; /* تكبير حجم الخط */
-            font-weight: normal;
-            align-items: center;
-        }
+        .stats { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
         #level-display, #move-counter, #countdown-timer {
             background-color: #fff;
-            padding: 10px 15px;
+            padding: 8px 12px;
             border-radius: 8px;
             box-shadow: inset 0 1px 4px rgba(0,0,0,0.15);
-            color: #333;
-            min-width: 110px;
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            min-width: 100px;
             text-align: center;
-            font-size: 1.2em; /* تكبير حجم الخط */
         }
         
         #countdown-timer.warning {
@@ -202,346 +182,96 @@
              animation: pulse 1s infinite;
         }
         
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        #guide-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        
-        #guide-emojis {
-            font-size: 3.2em;
-            margin-bottom: 5px;
-            cursor: default;
-        }
-        
-        #feedback {
-            font-weight: normal;
-            min-height: 24px;
-            color: #006400;
-            transition: color 0.3s ease;
-            font-size: 1.2em; /* تكبير حجم الخط */
-        }
-        
+        #guide-area { text-align: center; }
+        #guide-emojis { font-size: clamp(2rem, 6vw, 3rem); margin-bottom: 5px; cursor: default; }
+        #feedback { font-weight: bold; min-height: 24px; transition: color 0.3s ease; font-size: clamp(1rem, 3vw, 1.2rem); }
         #feedback.info { color: #007bff; }
-        #feedback.win { color: #d9534f; font-size: 1.3em; font-weight: bold;}
-        #feedback.error { color: #dc3545; font-weight: bold;}
+        #feedback.win { color: #28a745; }
+        #feedback.error { color: #dc3545; }
 
-        .buttons-row {
-            display: flex;
-            gap: 15px;
-            margin-top: 10px;
-        }
+        .buttons-row { display: flex; gap: 15px; margin-top: 10px; }
 
         #start-reset-button, #help-button {
-            padding: 12px 25px;
-            font-size: 1.2em; /* تكبير حجم الخط */
+            padding: 10px 20px;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            color: white; border: none; border-radius: 8px; cursor: pointer;
+            transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex; align-items: center; gap: 8px;
         }
         
-        #start-reset-button {
-            background: linear-gradient(180deg, #5cb85c, #4cae4c);
-        }
-        
+        #start-reset-button { background: linear-gradient(180deg, #5cb85c, #4cae4c); }
         #start-reset-button:hover { background: linear-gradient(180deg, #4cae4c, #398439); }
-        #start-reset-button:active { transform: scale(0.96); box-shadow: 0 2px 3px rgba(0,0,0,0.1); }
         #start-reset-button:disabled { background: #ccc; cursor: not-allowed; }
         
-        #help-button {
-            background: linear-gradient(180deg, #ffc107, #ffab00);
-            min-width: 50px;
-            padding: 12px 15px;
-        }
-        
+        #help-button { background: linear-gradient(180deg, var(--hint-color), #ffab00); }
         #help-button:hover { background: linear-gradient(180deg, #ffab00, #ff8f00); }
-        #help-button:active { transform: scale(0.96); }
         
         #sound-toggle {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.7);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 100;
-        }
-        
-        #sound-toggle:hover {
-            background: rgba(255, 255, 255, 0.9);
+            position: absolute; top: 15px; left: 15px;
+            background: rgba(255, 255, 255, 0.7); border: none; border-radius: 50%;
+            width: 40px; height: 40px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2em; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 100;
         }
 
         .modal {
-            display: none;
-            position: fixed;
-            z-index: 1001;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
+            display: none; position: fixed; z-index: 1001;
+            left: 0; top: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.6);
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
+            align-items: center; justify-content: center; padding: 15px;
         }
         
         .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 25px;
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            background-color: #fefefe; margin: auto; padding: 25px;
+            width: 90%; max-width: 550px; border-radius: 15px;
+            text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             animation: fadeIn 0.5s ease;
         }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        
-        .modal-content h2 { 
-            margin-bottom: 15px; 
-            font-size: 1.8em; /* تكبير حجم الخط */
-            color: #d9534f;
-        }
-        
-        .modal-content p { 
-            font-size: 1.3em; /* تكبير حجم الخط */
-            margin-bottom: 25px; 
-            line-height: 1.6; 
-            color: #333;
-        }
+        .modal-content h2 { font-size: clamp(1.5rem, 4vw, 1.8rem); margin-bottom: 15px; }
+        .modal-content p { font-size: clamp(1rem, 3vw, 1.3rem); margin-bottom: 20px; line-height: 1.6;}
         
         .completed-sentence {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #2E8B57;
-            border: 2px dashed #2E8B57;
+            background-color: #e9f5ec; padding: 15px; border-radius: 10px;
+            margin: 15px 0; font-size: clamp(1.1rem, 3.5vw, 1.4rem); font-weight: bold;
+            color: #2E8B57; border: 2px dashed #2E8B57;
         }
         
-        .modal-buttons { 
-            display: flex; 
-            justify-content: space-around; 
-            gap: 15px; 
-        }
-        
-        .modal-buttons button {
-            padding: 10px 20px;
-            font-size: 1.1em;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-        }
-        
-        #next-level-button { 
-            background: linear-gradient(180deg, #5cb85c, #4cae4c);
-            color: white; 
-        }
-        
-        #next-level-button:hover { background: linear-gradient(180deg, #4cae4c, #398439); }
-        #next-level-button:disabled { background: #ccc; cursor: not-allowed;}
-        
-        #end-game-button { 
-            background: linear-gradient(180deg, #dc3545, #c82333);
-            color: white; 
-        }
-        
-        #end-game-button:hover { background: linear-gradient(180deg, #c82333, #bd2130); }
+        .modal-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;}
+        .modal-buttons button { padding: 10px 20px; font-size: clamp(0.9rem, 2.5vw, 1.1rem); font-weight: bold; border-radius: 8px; cursor: pointer; border: none; }
+        #next-puzzle-button { background: linear-gradient(180deg, #5cb85c, #4cae4c); color: white; }
+        #end-game-button { background: linear-gradient(180deg, #f0ad4e, #ec971f); color: white; }
+        #retry-puzzle-button { background: linear-gradient(180deg, #0275d8, #025aa5); color: white; }
 
-        /* New styles for hints */
-        .hint-bubble {
-            position: absolute;
-            background-color: #fff9e6;
-            border: 2px solid #ffc107;
-            border-radius: 15px;
-            padding: 15px;
-            max-width: 300px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            z-index: 100;
-            font-size: 1.2em;
-            text-align: center;
-            animation: float 3s infinite ease-in-out;
+        .hint-piece { animation: pulse-hint 1.5s infinite ease-in-out; z-index: 50; }
+        @keyframes pulse-hint { 50% { transform: scale(1.1); box-shadow: 0 0 25px rgba(255, 215, 0, 0.9); } }
+        .correct-position-indicator {
+            position: absolute; width: 100%; height: 100%;
+            border: 4px dashed var(--hint-color);
+            border-radius: inherit;
+            z-index: 40; pointer-events: none;
+            animation: glow-hint 2s infinite ease-in-out;
+            box-sizing: border-box;
         }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        
-        .hint-bubble:after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 15px 15px 0;
-            border-style: solid;
-            border-color: #ffc107 transparent transparent;
-        }
-        
-        .hint-piece {
-            animation: pulse-hint 1.5s infinite;
-            position: relative;
-            z-index: 50;
-        }
-        
-        @keyframes pulse-hint {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255,215,0,0.8); }
-            100% { transform: scale(1); }
-        }
-        
-        .correct-position {
-            position: absolute;
-            width: var(--piece-size);
-            height: var(--piece-size);
-            border: 3px dashed #fff;
-            border-radius: calc(var(--border-radius) * 0.5);
-            z-index: 40;
-            pointer-events: none;
-            animation: glow 2s infinite;
-        }
-        
-        @keyframes glow {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-        }
+        @keyframes glow-hint { 50% { opacity: 1; box-shadow: 0 0 20px 5px var(--hint-color); } }
 
-        #confetti-canvas { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            z-index: 1000; 
-            pointer-events: none; 
-            display: none; 
-        }
-        
-        .celebration {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: rgba(0,0,0,0.7);
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .celebration-text {
-            color: white;
-            font-size: 3em;
-            text-align: center;
-            margin-bottom: 30px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.7);
-            animation: zoomInOut 2s infinite;
-        }
-        
-        @keyframes zoomInOut {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        /* Responsive Adjustments */
-        @media (max-height: 800px) {
-             :root { --piece-size: 140px; --gap-size: 12px;}
-             h1 { font-size: 2em; }
-             .instructions { font-size: 1.2em; }
-             .puzzle-piece { font-size: calc(var(--piece-size) * 0.2); }
-             #guide-emojis { font-size: 3em;}
-             #feedback { font-size: 1.1em;}
-             .stats { font-size: 1.1em; gap: 12px;}
-             #level-display, #move-counter, #countdown-timer {padding: 8px 12px; font-size: 1.1em;}
-             .controls-area { padding: 12px;}
-             #start-reset-button, #help-button { font-size: 1.1em; padding: 10px 20px;}
-        }
-        
-        @media (max-width: 700px) {
-            :root { --piece-size: 130px; --gap-size: 10px;}
-             .puzzle-piece { font-size: calc(var(--piece-size) * 0.18); }
-        }
-         
-        @media (max-width: 600px) {
-             :root { --piece-size: 110px; --gap-size: 8px;}
-             .puzzle-piece { font-size: calc(var(--piece-size) * 0.16); padding: 12px;}
-             h1 { font-size: 1.8em;}
-             .stats { flex-direction: column; align-items: stretch; gap: 8px;}
-             .stats > div { min-width: 0;}
-              #guide-emojis { font-size: 2.5em; }
-              #feedback { font-size: 1em; }
-              .controls-area { padding: 10px;}
-              #start-reset-button, #help-button { font-size: 1em; padding: 10px 15px;}
-               .modal-content h2 { font-size: 1.6em; }
-               .modal-content p { font-size: 1.2em;}
-               .modal-buttons button { font-size: 1em;}
-        }
-         
-        @media (max-width: 480px) {
-            :root { --piece-size: 100px; --gap-size: 6px;}
-             .puzzle-piece { font-size: calc(var(--piece-size) * 0.14); padding: 10px;}
-             #guide-emojis { font-size: 2.2em; }
-             h1 { font-size: 1.6em;}
-             .completed-sentence { font-size: 1.2em; }
-        }
-        
-        @media (max-width: 380px) {
-            :root { --piece-size: 100px; --gap-size: 5px;}
-             .puzzle-piece { font-size: calc(var(--piece-size) * 0.13); padding: 8px;}
-             #guide-emojis { font-size: 2em; }
-             h1 { font-size: 1.4em;}
-        }
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; display: none; }
     </style>
 </head>
 <body>
     <canvas id="confetti-canvas"></canvas>
 
-    <button id="sound-toggle" title="تشغيل/إيقاف الصوت">
-        <i class="fas fa-volume-up"></i>
-    </button>
+    <button id="sound-toggle" title="تشغيل/إيقاف الصوت"><i class="fas fa-volume-up"></i></button>
 
     <div class="game-container">
         <h1>لعبة بازل الجملة</h1>
-        <p class="instructions">رتب الجملة بالترتيب الصحيح قبل انتهاء الوقت!</p>
-
+        <p class="instructions">رتب الكلمات لتكوين جملة صحيحة قبل انتهاء الوقت!</p>
         <div id="puzzle-area">
-            <div id="puzzle-container">
-                <!-- قطع البازل ستظهر هنا -->
-            </div>
+            <div id="puzzle-container"></div>
         </div>
     </div>
 
@@ -558,582 +288,302 @@
             </div>
         </div>
         <div class="buttons-row">
-            <button id="help-button" title="مساعدة"><i class="fas fa-question-circle"></i> مساعدة</button>
-            <button id="start-reset-button">ابدأ اللعبة</button>
+            <button id="help-button" title="مساعدة"><i class="fas fa-question-circle"></i><span>مساعدة</span></button>
+            <button id="start-reset-button"><i class="fas fa-play"></i><span>ابدأ اللعبة</span></button>
         </div>
     </footer>
 
-    <div id="level-complete-modal" class="modal">
+    <!-- Modal for puzzle/level completion -->
+    <div id="completion-modal" class="modal">
         <div class="modal-content">
-            <h2>🎉 أحسنت! 🎉</h2>
-            <p>لقد أكملت المستوى بنجاح!</p>
-            <div class="completed-sentence" id="completed-sentence"></div>
-            <p>الجملة الصحيحة:</p>
-            <p><strong id="full-sentence"></strong></p>
+            <h2 id="completion-title">🎉 أحسنت! 🎉</h2>
+            <p id="completion-message">لقد أكملت اللغز بنجاح!</p>
+            <div class="completed-sentence" id="completed-sentence-text"></div>
             <div class="modal-buttons">
-                <button id="next-level-button">المستوى التالي</button>
+                <button id="next-puzzle-button">اللغز التالي</button>
                 <button id="end-game-button">إنهاء اللعبة</button>
             </div>
         </div>
     </div>
     
+    <!-- Modal for timeout -->
     <div id="timeout-modal" class="modal">
         <div class="modal-content">
             <h2>⏰ انتهى الوقت!</h2>
-            <p>لم تنجح في حل اللغز في الوقت المحدد.</p>
-            <p>هل تريد المحاولة مرة أخرى أو الانتقال إلى المستوى التالي؟</p>
+            <p>للأسف، لم تنجح في حل اللغز في الوقت المحدد.</p>
             <div class="modal-buttons">
-                <button id="retry-level-button">إعادة المستوى</button>
-                <button id="continue-button">المستوى التالي</button>
+                <button id="retry-puzzle-button">إعادة المحاولة</button>
+                <button id="end-game-timeout-button">إنهاء اللعبة</button>
             </div>
         </div>
     </div>
 
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const puzzleContainer = document.getElementById('puzzle-container');
-            const startResetButton = document.getElementById('start-reset-button');
-            const helpButton = document.getElementById('help-button');
-            const feedbackElement = document.getElementById('feedback');
-            const guideEmojis = document.getElementById('guide-emojis');
-            const countdownTimerElement = document.getElementById('countdown-timer');
-            const moveCounterElement = document.getElementById('move-counter');
-            const levelDisplayElement = document.getElementById('level-display');
-            const confettiCanvas = document.getElementById('confetti-canvas');
-            const levelCompleteModal = document.getElementById('level-complete-modal');
-            const completedSentenceElement = document.getElementById('completed-sentence');
-            const fullSentenceElement = document.getElementById('full-sentence');
-            const nextLevelButton = document.getElementById('next-level-button');
-            const endGameButton = document.getElementById('end-game-button');
-            const timeoutModal = document.getElementById('timeout-modal');
-            const retryLevelButton = document.getElementById('retry-level-button');
-            const continueButton = document.getElementById('continue-button');
-            const soundToggle = document.getElementById('sound-toggle');
-            const bodyElement = document.body;
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM Elements ---
+        const puzzleContainer = document.getElementById('puzzle-container');
+        const startResetButton = document.getElementById('start-reset-button');
+        const helpButton = document.getElementById('help-button');
+        const feedbackElement = document.getElementById('feedback');
+        const countdownTimerElement = document.getElementById('countdown-timer');
+        const moveCounterElement = document.getElementById('move-counter');
+        const levelDisplayElement = document.getElementById('level-display');
+        const soundToggle = document.getElementById('sound-toggle');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const completionModal = document.getElementById('completion-modal');
+        const completionTitle = document.getElementById('completion-title');
+        const completionMessage = document.getElementById('completion-message');
+        const completedSentenceText = document.getElementById('completed-sentence-text');
+        const nextPuzzleButton = document.getElementById('next-puzzle-button');
+        const endGameButton = document.getElementById('end-game-button');
+        const timeoutModal = document.getElementById('timeout-modal');
+        const retryPuzzleButton = document.getElementById('retry-puzzle-button');
+        const endGameTimeoutButton = document.getElementById('end-game-timeout-button');
 
-            // جمل المستويات
-            const levels = [
-                { 
-                    sentence: ["الجملة", "الأولى", "هنا", "يجب", "أن", "تكون", "تسع", "كلمات", "تماماً"], 
-                    hint: "الجملة الصحيحة: الجملة الأولى هنا يجب أن تكون تسع كلمات تماماً"
-                },
-                { 
-                    sentence: ["و", "هذه", "أيضاً", "جملة", "ثانية", "للمستوى", "الثاني", "تسع", "كلمات"], 
-                    hint: "الجملة الصحيحة: و هذه أيضاً جملة ثانية للمستوى الثاني تسع كلمات"
-                },
-                { 
-                    sentence: ["المستوى", "الثالث", "يحتاج", "تسع", "كلمات", "لكي", "يعمل", "بشكل", "صحيح"], 
-                    hint: "الجملة الصحيحة: المستوى الثالث يحتاج تسع كلمات لكي يعمل بشكل صحيح"
-                },
-                { 
-                    sentence: ["المثال", "الرابع", "هو", "مجرد", "مثال", "للتوضيح", "للجملة", "ذات", "التسع"], 
-                    hint: "الجملة الصحيحة: المثال الرابع هو مجرد مثال للتوضيح للجملة ذات التسع"
-                },
-                { 
-                    sentence: ["خمسة", "خمسة", "خمسة", "خمسة", "خمسة", "خمسة", "خمسة", "خمسة", "خمسة"], 
-                    hint: "كل القطع متشابهة، يمكنك ترتيبها بأي طريقة!"
+        // --- Game Data ---
+        const puzzlesByLevel = [
+            // Level 1: Easy (4-6 words)
+            [{sentence:["القطارُ","سريعٌ","جداً","."]}, {sentence:["السماءُ","زرقاءُ","وجميلةٌ","."]}, {sentence:["أحبُ","القراءةَ","والكتابةَ","."]}, {sentence:["الأسدُ","ملكُ","الغابةِ","."]}, {sentence:["تلعبُ","الطفلةُ","بالدميةِ","."]}, {sentence:["الشمسُ","مصدرُ","الضوءِ","والدفءِ","."]}, {sentence:["الماءُ","سرُّ","الحياةِ","للجميعِ","."]}, {sentence:["أذهبُ","إلى","المدرسةِ","كلَّ","يومٍ","."]}, {sentence:["العلمُ","نورٌ","والجهلُ","ظلامٌ","."]}, {sentence:["النظافةُ","من","الإيمانِ","."]}],
+            // Level 2: Medium (6-8 words)
+            [{sentence:["يساعدُ","الولدُ","والدَه","في","أعمالِ","المنزلِ","."]}, {sentence:["قراءةُ","الكتبِ","تفتحُ","العقولَ","وتنمي","الفكرَ","."]}, {sentence:["الرياضةُ","مفيدةٌ","لصحةِ","الجسمِ","والعقلِ","."]}, {sentence:["يزورُ","الأصدقاءُ","بعضَهم","في","الأعيادِ","والمناسباتِ","."]}, {sentence:["يعيشُ","السمكُ","في","الماءِ","ولا","يستطيعُ","مغادرتَه","."]}, {sentence:["يحبُّ","الأطفالُ","اللعبَ","في","الحدائقِ","العامةِ","."]}, {sentence:["رمضانُ","شهرُ","الخيرِ","والبركةِ","والرحمةِ","."]}, {sentence:["نحنُ","نحترمُ","المعلمَ","لأنه","يربي","الأجيالَ","."]}, {sentence:["الصبرُ","مفتاحُ","الفرجِ","بعدَ","الشدةِ","."]}, {sentence:["تطيرُ","الطيورُ","عاليةً","في","السماءِ","الصافيةِ","."]}],
+            // Level 3: Advanced (8-10 words)
+            [{sentence:["العملُ","الجادُّ","هو","الطريقُ","الوحيدُ","لتحقيقِ","الأحلامِ","الكبيرةِ","."]}, {sentence:["الطبيعةُ","الخلابةُ","تُلهمُ","الفنانينَ","وتريحُ","النفوسَ","من","ضجيجِ","المدينةِ","."]}, {sentence:["الصداقةُ","الحقيقيةُ","كنزٌ","ثمينٌ","يجبُ","أن","نحافظَ","عليهِ","."]}, {sentence:["يجبُ","علينا","استخدامُ","التكنولوجيا","بحكمةٍ","للاستفادةِ","من","مزاياها","."]}, {sentence:["اللغةُ","العربيةُ","من","أجملِ","لغاتِ","العالمِ","وأغناها","بالمفرداتِ","."]}, {sentence:["كان","ابنُ","الهيثمِ","عالمًا","عظيمًا","في","مجالِ","البصرياتِ","والفيزياءِ","."]}, {sentence:["الحفاظُ","على","البيئةِ","مسؤوليةٌ","جماعيةٌ","لضمانِ","مستقبلٍ","أفضلَ","."]}, {sentence:["التفاؤلُ","يمنحُ","الإنسانَ","القوةَ","لمواجهةِ","تحدياتِ","وصعوباتِ","الحياةِ","."]}, {sentence:["القمرُ","يدورُ","حولَ","الأرضِ","وهي","تدورُ","حولَ","الشمسِ","."]}, {sentence:["السفرُ","يوسعُ","الآفاقَ","ويعرفنا","على","ثقافاتٍ","وحضاراتٍ","مختلفةٍ","."]}],
+            // Level 4: Hard (10-12 words)
+            [{sentence:["النجاحُ","يتطلبُ","الصبرَ","والمثابرةَ","والتخطيطَ","الجيدَ","والتوكلَ","على","اللهِ","أولاً","."]}, {sentence:["يُعتبرُ","الأدبُ","مرآةً","تعكسُ","واقعَ","المجتمعاتِ","وتعبرُ","عن","آمالِها","وآلامِها","."]}, {sentence:["يجبُ","أن","نستثمرَ","أوقاتَ","فراغِنا","في","أشياءَ","مفيدةٍ","تنمي","مهاراتِنا","وقدراتِنا","."]}, {sentence:["إن","برَّ","الوالدينِ","من","أعظمِ","الأعمالِ","التي","تقربُ","العبدَ","من","ربِّهِ","."]}, {sentence:["الحضارةُ","الإسلاميةُ","تركتْ","بصماتٍ","واضحةً","في","مختلفِ","العلومِ","والفنونِ","والآدابِ","."]}, {sentence:["الوقتُ","كالسيفِ","إن","لم","تقطعْهُ","قطعَكَ","فاغتنمْ","كلَّ","لحظةٍ","فيهِ","."]}, {sentence:["تسعى","الدولُ","جاهدةً","لتطويرِ","أنظمتِها","التعليميةِ","لمواكبةِ","التطوراتِ","العلميةِ","المتسارعةِ","."]}, {sentence:["العقلُ","السليمُ","في","الجسمِ","السليمِ","لذا","اهتمَّ","بغذائِكَ","وررياضتِكَ","."]}, {sentence:["لكلِّ","مجتهدٍ","نصيبٌ","فلا","ييأسْ","أحدٌ","من","تحقيقِ","هدفهِ","مهما","كان","."]}, {sentence:["التسامحُ","هو","أساسُ","التعايشِ","السلميِّ","بين","الشعوبِ","على","اختلافِ","أديانِها","."]}],
+            // Level 5: Expert (Proverbs)
+            [{sentence:["من","جدَّ","وجدَ","ومن","زرعَ","حصدَ","ومن","سارَ","على","الدربِ","وصلَ","."]}, {sentence:["إذا","كان","الكلامُ","من","فضةٍ","فالسكوتُ","من","ذهبٍ","في","بعضِ","المواقفِ","."]}, {sentence:["لا","تؤجلْ","عملَ","اليومِ","إلى","الغدِ","فإن","لكلِّ","يومٍ","عملَه","."]}, {sentence:["عندَ","الامتحانِ","يُكرَمُ","المرءُ","أو","يُهانُ","فكنْ","مستعداً","دائماً","."]}, {sentence:["يدٌ","واحدةٌ","لا","تصفقُ","ولكنها","تستطيعُ","أن","تزرعَ","الأملَ","."]}, {sentence:["من","طلبَ","العلا","سهرَ","الليالي","واجتهدَ","في","طلبِ","العلمِ","والعملِ","."]}, {sentence:["الجارُ","قبلَ","الدارِ","والرفيقُ","قبلَ","الطريقِ","فاخترْهما","بعنايةٍ","فائقةٍ","."]}, {sentence:["ربَّ","أخٍ","لكَ","لم","تلدهُ","أمُّكَ","تجدُهُ","سنداً","وعوناً","لكَ","."]}, {sentence:["من","يزرعِ","المعروفَ","في","غيرِ","أهلِه","يكنْ","حمدُه","ذماً","عليهِ","ويندمِ","."]}, {sentence:["العلمُ","في","الصغرِ","كالنقشِ","في","الحجرِ","يبقى","أثرُه","طوالَ","العمرِ","."]}],
+        ];
+        
+        // --- Game State ---
+        let currentLevelNumber = 1, puzzlesInLevel = 10, puzzlesCompletedThisLevel = 0, currentLevelPuzzles = [], currentPuzzle = {};
+        let selectedPiece = null, gameActive = false, nextExpectedCorrectIndex = 0, countdownInterval = null, remainingTime = 60, moveCount = 0;
+        let soundEnabled = true, audioContext, hintIndicator = null;
+        
+        const initAudioContext = () => { if (!audioContext && (window.AudioContext || window.webkitAudioContext)) audioContext = new (window.AudioContext || window.webkitAudioContext)(); };
+        
+        const playTone = (type) => {
+            if (!soundEnabled || !audioContext) return;
+            if (audioContext.state === 'suspended') { audioContext.resume(); }
+            try {
+                const o = audioContext.createOscillator(), g = audioContext.createGain();
+                o.connect(g); g.connect(audioContext.destination); g.gain.setValueAtTime(0.1, audioContext.currentTime);
+                let f=440, d=0.1, w='sine';
+                switch(type){
+                    case 'click': f=900; w='triangle'; d=0.06; break;
+                    case 'swap': f=300; o.frequency.linearRampToValueAtTime(500, audioContext.currentTime+0.08); break;
+                    case 'correct_sequence': f=600; w='square'; g.gain.setValueAtTime(0.08, audioContext.currentTime); break;
+                    case 'win': f=523; w='sawtooth'; d=0.5; g.gain.setValueAtTime(0.12, audioContext.currentTime); o.frequency.linearRampToValueAtTime(f*2, audioContext.currentTime+0.4); break;
+                    case 'timeout': f=200; w='square'; d=0.5; g.gain.setValueAtTime(0.15, audioContext.currentTime); break;
+                    case 'hint': f=880; d=0.2; g.gain.setValueAtTime(0.07, audioContext.currentTime); break;
                 }
-            ];
+                o.type = w; o.frequency.setValueAtTime(f, audioContext.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + d);
+                o.start(); o.stop(audioContext.currentTime + d);
+            } catch (e) { console.error("Error playing sound:", e); }
+        };
+        
+        const shuffleArray = (arr) => arr.sort(() => Math.random() - 0.5);
+        const calculateGridDimensions = c => {
+            if(c<=4)return{rows:2,cols:2}; if(c<=6)return{rows:2,cols:3}; if(c<=9)return{rows:3,cols:3};
+            if(c<=12)return{rows:3,cols:4}; if(c<=16)return{rows:4,cols:4}; return{rows:4,cols:Math.ceil(c/4)};
+        };
+
+        const updateCountdownDisplay = () => { countdownTimerElement.textContent = `الوقت: ${remainingTime} ث`; };
+        const stopCountdownTimer = () => { clearInterval(countdownInterval); countdownInterval = null; };
+        const startCountdownTimer = () => {
+            stopCountdownTimer();
+            remainingTime = 15 + (currentPuzzle.sentence.length * 4); // Dynamic time
+            updateCountdownDisplay();
+            countdownInterval = setInterval(() => {
+                remainingTime--; updateCountdownDisplay();
+                if (remainingTime <= 0) handleTimeUp();
+                countdownTimerElement.classList.toggle('warning', remainingTime <= 10);
+            }, 1000);
+        };
+        const resetMoveCounter = () => { moveCount = 0; moveCounterElement.textContent = `الحركات: 0`; };
+        const incrementMoveCounter = () => { moveCount++; moveCounterElement.textContent = `الحركات: ${moveCount}`; };
+        
+        const removeHint = () => {
+            document.querySelectorAll('.hint-piece').forEach(p => p.classList.remove('hint-piece'));
+            if(hintIndicator) { hintIndicator.remove(); hintIndicator = null; }
+        };
+
+        const showHint = () => {
+            if (!gameActive || !currentPuzzle.sentence || nextExpectedCorrectIndex >= currentPuzzle.sentence.length) return;
+            removeHint();
             
-            let currentLevelIndex = 0;
-            const pieceCount = 9;
-            let pieces = [];
-            let selectedPiece = null;
-            let gameActive = false;
-            let nextExpectedCorrectIndex = 0;
-            const LEVEL_TIME_LIMIT = 50;
-            let countdownInterval = null;
-            let remainingTime = LEVEL_TIME_LIMIT;
-            let moveCount = 0;
-            let hintTimeout = null;
-            let soundEnabled = true;
-            let hintBubble = null;
-            let correctPositionIndicator = null;
-
-            let audioContext;
-            function initAudioContext() {
-                if (!audioContext && (window.AudioContext || window.webkitAudioContext)) {
-                    try {
-                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    } catch (e) { console.error("Error creating AudioContext:", e); }
-                }
+            const pieceToHint = Array.from(puzzleContainer.children)
+                .find(p => parseInt(p.dataset.correctIndex) === nextExpectedCorrectIndex);
+            
+            if (pieceToHint) {
+                playTone('hint');
+                pieceToHint.classList.add('hint-piece');
+                
+                const { cols } = calculateGridDimensions(currentPuzzle.sentence.length);
+                const correctPosition = nextExpectedCorrectIndex;
+                
+                hintIndicator = document.createElement('div');
+                hintIndicator.className = 'correct-position-indicator';
+                hintIndicator.style.gridRow = Math.floor(correctPosition / cols) + 1;
+                hintIndicator.style.gridColumn = (correctPosition % cols) + 1;
+                
+                puzzleContainer.appendChild(hintIndicator);
             }
+        };
+
+        const setupLevel = (levelNum) => {
+            currentLevelNumber = levelNum;
+            puzzlesCompletedThisLevel = 0;
+            currentLevelPuzzles = shuffleArray([...puzzlesByLevel[levelNum - 1]]);
+            setupPuzzle(false);
+        };
+
+        const setupPuzzle = (isRetry = false) => {
+            removeHint();
+            if (!isRetry) {
+                if (currentLevelPuzzles.length === 0) { endGame(true); return; }
+                currentPuzzle = currentLevelPuzzles.pop();
+            }
+            const { sentence } = currentPuzzle;
+            const pieceCount = sentence.length;
+            const { rows, cols } = calculateGridDimensions(pieceCount);
             
-            function playTone(type) {
-                if (!soundEnabled) return;
-                
-                if (!audioContext || audioContext.state !== 'running') {
-                    if(audioContext && audioContext.state === 'suspended') audioContext.resume().catch(e => console.error("Resume failed", e));
-                    return;
+            puzzleContainer.innerHTML = '';
+            puzzleContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            puzzleContainer.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+            selectedPiece = null; gameActive = true; nextExpectedCorrectIndex = 0;
+            updateUIForNewPuzzle();
+            
+            const shuffledIndices = shuffleArray([...Array(pieceCount).keys()]);
+            shuffledIndices.forEach(wordIndex => {
+                const piece = document.createElement('div');
+                piece.classList.add('puzzle-piece', `piece-color-${wordIndex % 16}`);
+                piece.textContent = sentence[wordIndex];
+                piece.dataset.correctIndex = wordIndex;
+                piece.addEventListener('click', handlePieceClick);
+                puzzleContainer.appendChild(piece);
+            });
+            checkAndLockSequence();
+        };
+
+        const handlePieceClick = (e) => {
+            if (!gameActive) return;
+            const clickedPiece = e.target.closest('.puzzle-piece');
+            if (!clickedPiece || clickedPiece.classList.contains('locked-in-sequence')) return;
+            if (!countdownInterval) startCountdownTimer();
+            playTone('click'); removeHint();
+            if (!selectedPiece) {
+                selectedPiece = clickedPiece; selectedPiece.classList.add('selected');
+            } else {
+                if (clickedPiece !== selectedPiece) {
+                    const p1 = selectedPiece, p2 = clickedPiece;
+                    const p1Next = p1.nextSibling === p2 ? p1 : p1.nextSibling;
+                    p1.parentNode.insertBefore(p1, p2); p1.parentNode.insertBefore(p2, p1Next);
+                    incrementMoveCounter(); checkAndLockSequence();
                 }
-                
-                try {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
-
-                    let freq = 440, duration = 0.1;
-                    oscillator.type = 'sine';
-
-                    switch (type) {
-                        case 'click': freq = 900; oscillator.type = 'triangle'; duration = 0.06; break;
-                        case 'swap': freq = 300; duration = 0.1; oscillator.frequency.linearRampToValueAtTime(500, audioContext.currentTime + 0.08); break;
-                        case 'correct_sequence': freq = 600; oscillator.type = 'square'; duration = 0.1; gainNode.gain.setValueAtTime(0.06, audioContext.currentTime); break;
-                        case 'win': freq = 523.25; oscillator.type = 'sawtooth'; duration = 0.5; gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-                                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                                    oscillator.frequency.linearRampToValueAtTime(freq * 2, audioContext.currentTime + 0.4); break;
-                        case 'timeout': freq = 200; oscillator.type = 'square'; duration = 0.5; gainNode.gain.setValueAtTime(0.12, audioContext.currentTime); break;
-                        case 'hint': freq = 800; oscillator.type = 'sine'; duration = 0.2; break;
+                selectedPiece.classList.remove('selected'); selectedPiece = null;
+            }
+        };
+        
+        const checkAndLockSequence = () => {
+            const currentGridPieces = Array.from(puzzleContainer.children);
+            let lockedCount = 0;
+            for (let i = nextExpectedCorrectIndex; i < currentGridPieces.length; i++) {
+                const piece = currentGridPieces[i];
+                if (parseInt(piece.dataset.correctIndex) === i) {
+                    if (!piece.classList.contains('locked-in-sequence')) {
+                        piece.classList.add('locked-in-sequence');
+                        piece.removeEventListener('click', handlePieceClick);
+                        lockedCount++;
                     }
-                    
-                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + duration);
-                } catch (error) { console.error(`Error playing tone ${type}:`, error); }
+                } else break;
             }
-
-            function showCelebration() {
-                const celebrationDiv = document.createElement('div');
-                celebrationDiv.className = 'celebration';
-                
-                const celebrationText = document.createElement('div');
-                celebrationText.className = 'celebration-text';
-                celebrationText.textContent = '🎉 أحسنت! 🎉';
-                
-                const sentenceText = document.createElement('div');
-                sentenceText.className = 'celebration-text';
-                sentenceText.textContent = levels[currentLevelIndex].sentence.join(' ');
-                sentenceText.style.fontSize = '2em';
-                sentenceText.style.marginTop = '0';
-                
-                celebrationDiv.appendChild(celebrationText);
-                celebrationDiv.appendChild(sentenceText);
-                document.body.appendChild(celebrationDiv);
-                
-                setTimeout(() => {
-                    celebrationDiv.style.opacity = '0';
-                    setTimeout(() => {
-                        document.body.removeChild(celebrationDiv);
-                    }, 500);
-                }, 3000);
+            if (lockedCount > 0) {
+                nextExpectedCorrectIndex += lockedCount; playTone('correct_sequence');
+                feedbackElement.textContent = `رائع! ${nextExpectedCorrectIndex} ${nextExpectedCorrectIndex > 2 ? 'كلمات' : 'كلمتان'} صحيحة!`;
             }
+            if (nextExpectedCorrectIndex === currentPuzzle.sentence.length) handleWin();
+        };
 
-            function startCountdownTimer() {
-                if (countdownInterval) return;
-                remainingTime = LEVEL_TIME_LIMIT;
-                updateCountdownDisplay();
-                countdownInterval = setInterval(() => {
-                    remainingTime--;
-                    updateCountdownDisplay();
-                    if (remainingTime <= 0) {
-                        handleTimeUp();
-                    }
-                    countdownTimerElement.classList.toggle('warning', remainingTime <= 10);
-                }, 1000);
-            }
-
-            function stopCountdownTimer() {
-                clearInterval(countdownInterval);
-                countdownInterval = null;
-                countdownTimerElement.classList.remove('warning');
-            }
-
-            function resetCountdownTimer() {
-                stopCountdownTimer();
-                remainingTime = LEVEL_TIME_LIMIT;
-                updateCountdownDisplay();
-            }
-
-            function updateCountdownDisplay() {
-                countdownTimerElement.textContent = `الوقت: ${remainingTime} ث`;
-            }
-
-            function showHint() {
-                if (!gameActive || nextExpectedCorrectIndex >= pieceCount) return;
-                
-                // Remove any existing hints
-                removeHint();
-                
-                const currentLevel = levels[currentLevelIndex];
-                
-                // Create hint bubble
-                hintBubble = document.createElement('div');
-                hintBubble.className = 'hint-bubble';
-                hintBubble.textContent = currentLevel.hint;
-                
-                // Position the hint bubble
-                const puzzleArea = document.getElementById('puzzle-area');
-                hintBubble.style.top = '20px';
-                hintBubble.style.left = '50%';
-                hintBubble.style.transform = 'translateX(-50%)';
-                
-                puzzleArea.appendChild(hintBubble);
-                
-                // Highlight the next correct piece
-                const nextCorrectPiece = Array.from(puzzleContainer.children).find(p => 
-                    parseInt(p.dataset.correctIndex) === nextExpectedCorrectIndex
-                );
-                
-                if (nextCorrectPiece) {
-                    nextCorrectPiece.classList.add('hint-piece');
-                    playTone('hint');
-                    
-                    // Show correct position indicator
-                    const correctPosition = nextExpectedCorrectIndex;
-                    const row = Math.floor(correctPosition / 3);
-                    const col = correctPosition % 3;
-                    
-                    correctPositionIndicator = document.createElement('div');
-                    correctPositionIndicator.className = 'correct-position';
-                    correctPositionIndicator.style.gridRow = row + 1;
-                    correctPositionIndicator.style.gridColumn = col + 1;
-                    
-                    puzzleContainer.appendChild(correctPositionIndicator);
-                }
-            }
-            
-            function removeHint() {
-                if (hintBubble) {
-                    hintBubble.parentNode.removeChild(hintBubble);
-                    hintBubble = null;
-                }
-                
-                document.querySelectorAll('.hint-piece').forEach(p => {
-                    p.classList.remove('hint-piece');
-                });
-                
-                if (correctPositionIndicator) {
-                    correctPositionIndicator.parentNode.removeChild(correctPositionIndicator);
-                    correctPositionIndicator = null;
-                }
-            }
-
-            function handleTimeUp() {
-                stopCountdownTimer();
-                playTone('timeout');
-                feedbackElement.textContent = "⏳ انتهى الوقت!";
-                feedbackElement.className = 'error';
-                gameActive = false;
-                startResetButton.disabled = true;
-                removeHint();
-                
-                // Show timeout modal
-                timeoutModal.style.display = 'flex';
-                continueButton.disabled = (currentLevelIndex >= levels.length - 1);
-            }
-
-            function resetMoveCounter() { 
-                moveCount = 0; 
-                updateMoveCounterDisplay(); 
-            }
-            
-            function incrementMoveCounter() { 
-                moveCount++; 
-                updateMoveCounterDisplay(); 
-            }
-            
-            function updateMoveCounterDisplay() { 
-                moveCounterElement.textContent = `الحركات: ${moveCount}`; 
-            }
-
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
-
-            function launchConfetti() {
-                confettiCanvas.style.display = 'block';
-                const myConfetti = confetti.create(confettiCanvas, { 
-                    resize: true, 
-                    useWorker: true 
-                });
-                
-                myConfetti({
-                    particleCount: 200,
-                    spread: 180,
-                    origin: { y: 0.6 },
-                    colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
-                });
-                
-                setTimeout(() => { 
-                    confettiCanvas.style.display = 'none'; 
-                }, 5000);
-            }
-
-            function setupPuzzle(levelIndex) {
-                initAudioContext();
-                removeHint();
-                
-                if (levelIndex >= levels.length) {
-                    feedbackElement.textContent = "رائع! لقد أكملت كل المستويات!";
-                    feedbackElement.className = 'win';
-                    endGame(true);
-                    return;
-                }
-
-                const currentLevel = levels[levelIndex];
-                const correctSentence = currentLevel.sentence;
-                
-                if (correctSentence.length !== pieceCount) {
-                    console.error(`Level ${levelIndex + 1} sentence must have ${pieceCount} words.`);
-                    feedbackElement.textContent = `خطأ إعداد المستوى ${levelIndex + 1}.`;
-                    gameActive = false;
-                    startResetButton.disabled = true;
-                    return;
-                }
-
-                puzzleContainer.innerHTML = '';
-                feedbackElement.textContent = 'رتب القطع بالترتيب الصحيح!';
-                feedbackElement.className = 'info';
-                pieces = [];
-                selectedPiece = null;
-                gameActive = true;
-                nextExpectedCorrectIndex = 0;
-                startResetButton.textContent = "إعادة المستوى";
-                startResetButton.disabled = false;
-
-                resetCountdownTimer();
-                resetMoveCounter();
-                levelDisplayElement.textContent = `المستوى: ${levelIndex + 1}`;
-
-                const shuffledIndices = shuffleArray([...Array(pieceCount).keys()]);
-
-                for (let i = 0; i < pieceCount; i++) {
-                    const piece = document.createElement('div');
-                    const wordIndex = shuffledIndices[i];
-                    piece.classList.add('puzzle-piece');
-                    piece.classList.add(`piece-color-${wordIndex}`);
-                    piece.textContent = correctSentence[wordIndex];
-                    piece.dataset.correctIndex = wordIndex;
-
-                    piece.handlePieceClick = handlePieceClick;
-                    piece.addEventListener('click', piece.handlePieceClick);
-
-                    puzzleContainer.appendChild(piece);
-                    pieces.push(piece);
-                }
-                
-                checkAndLockSequence();
-            }
-
-            function handlePieceClick(event) {
-                initAudioContext();
-                if (!gameActive) return;
-
-                const clickedPiece = event.target.closest('.puzzle-piece');
-                if (!clickedPiece || clickedPiece.classList.contains('locked-in-sequence')) return;
-
-                if (moveCount === 0 && !countdownInterval && remainingTime === LEVEL_TIME_LIMIT) {
-                    startCountdownTimer();
-                }
-
-                playTone('click');
-                removeHint();
-
-                if (!selectedPiece) {
-                    selectedPiece = clickedPiece;
-                    selectedPiece.classList.add('selected');
-                    feedbackElement.textContent = "اختر القطعة الثانية للتبديل";
-                    feedbackElement.className = 'info';
+        const handleWin = () => {
+            gameActive = false; stopCountdownTimer(); playTone('win');
+            try{ confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } }); } catch(e){}
+            puzzlesCompletedThisLevel++;
+            feedbackElement.textContent = `🎉 ممتاز! أكملت اللغز! 🎉`; feedbackElement.className = 'win';
+            completedSentenceText.textContent = currentPuzzle.sentence.join(' ');
+            if (puzzlesCompletedThisLevel >= puzzlesInLevel) {
+                if (currentLevelNumber >= puzzlesByLevel.length) {
+                    completionTitle.textContent = "🏆 تهانينا! أتقنت اللعبة! 🏆";
+                    completionMessage.textContent = "لقد أكملت جميع المستويات بنجاح باهر. أنت بطل الألغاز!";
+                    nextPuzzleButton.style.display = 'none';
                 } else {
-                    if (clickedPiece !== selectedPiece) {
-                        if (selectedPiece.classList.contains('locked-in-sequence')) {
-                            selectedPiece.classList.remove('selected');
-                            selectedPiece = null;
-                            feedbackElement.textContent = "لا يمكن تحريك قطعة مثبتة!";
-                            feedbackElement.className = 'error';
-                            return;
-                        }
-
-                        swapPieces(selectedPiece, clickedPiece);
-                        playTone('swap');
-                        incrementMoveCounter();
-                        selectedPiece.classList.remove('selected');
-                        selectedPiece = null;
-                        checkAndLockSequence();
-                    } else {
-                        selectedPiece.classList.remove('selected');
-                        selectedPiece = null;
-                        feedbackElement.textContent = "تم إلغاء التحديد.";
-                        feedbackElement.className = 'info';
-                    }
+                    completionTitle.textContent = `🎉 رائع! أكملت المستوى ${currentLevelNumber}! 🎉`;
+                    completionMessage.textContent = "أنت مستعد الآن لتحدٍ جديد. هل أنت جاهز للمستوى التالي؟";
+                    nextPuzzleButton.textContent = `ابدأ المستوى ${currentLevelNumber + 1}`;
+                    nextPuzzleButton.style.display = 'inline-block';
+                    nextPuzzleButton.onclick = () => { completionModal.style.display = 'none'; setupLevel(currentLevelNumber + 1); };
                 }
+            } else {
+                completionTitle.textContent = "🎉 أحسنت! 🎉";
+                completionMessage.textContent = "لقد أكملت هذا اللغز بنجاح. استعد للتحدي التالي!";
+                nextPuzzleButton.textContent = "اللغز التالي";
+                nextPuzzleButton.style.display = 'inline-block';
+                nextPuzzleButton.onclick = () => { completionModal.style.display = 'none'; setupPuzzle(false); };
             }
+            setTimeout(() => { completionModal.style.display = 'flex'; }, 1000);
+        };
+        const handleTimeUp = () => {
+            stopCountdownTimer(); playTone('timeout'); gameActive = false; removeHint();
+            feedbackElement.textContent = "⏳ انتهى الوقت!"; feedbackElement.className = 'error';
+            timeoutModal.style.display = 'flex';
+        };
 
-            function swapPieces(piece1, piece2) {
-                const tempText = piece1.textContent;
-                const tempCorrectIndex = piece1.dataset.correctIndex;
-                const tempColorClass = getColorClass(piece1);
-                
-                piece1.textContent = piece2.textContent;
-                piece1.dataset.correctIndex = piece2.dataset.correctIndex;
-                replaceColorClass(piece1, getColorClass(piece2));
-                
-                piece2.textContent = tempText;
-                piece2.dataset.correctIndex = tempCorrectIndex;
-                replaceColorClass(piece2, tempColorClass);
-                
-                feedbackElement.textContent = 'جيد! استمر في المحاولة...';
-                feedbackElement.className = '';
-            }
+        const updateUIForNewPuzzle = () => {
+            stopCountdownTimer();
+            feedbackElement.textContent = 'رتب الكلمات لتكوين جملة صحيحة!'; feedbackElement.className = 'info';
+            const startButtonSpan = startResetButton.querySelector('span');
+            const startButtonIcon = startResetButton.querySelector('i');
+            startButtonSpan.textContent = "إعادة اللغز"; startButtonIcon.className = "fas fa-redo";
+            startResetButton.disabled = false; helpButton.disabled = false;
+            resetMoveCounter();
+            levelDisplayElement.textContent = `المستوى: ${currentLevelNumber} (اللغز ${puzzlesCompletedThisLevel + 1}/${puzzlesInLevel})`;
+            countdownTimerElement.textContent = "الوقت: --"; countdownTimerElement.classList.remove('warning');
+        };
+        
+        const endGame = (completedAll = false) => {
+            stopCountdownTimer(); gameActive = false;
+            puzzleContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; font-size: 1.5em; color: #333;">${completedAll ? '🏆 شكراً على اللعب! لقد أتقنت كل الألغاز! 🏆' : 'انتهت اللعبة! اضغط "ابدأ" للعب مجدداً.'}</p>`;
+            const startButtonSpan = startResetButton.querySelector('span');
+            const startButtonIcon = startResetButton.querySelector('i');
+            startButtonSpan.textContent = "ابدأ اللعبة"; startButtonIcon.className = "fas fa-play";
+            startResetButton.disabled = false; helpButton.disabled = true;
+            resetMoveCounter();
+            levelDisplayElement.textContent = "المستوى: -"; countdownTimerElement.textContent = "الوقت: --";
+        };
 
-            function getColorClass(element) {
-                for (let className of element.classList) {
-                    if (className.startsWith('piece-color-')) return className;
-                }
-                return null;
-            }
-            
-            function replaceColorClass(element, newColorClass) {
-                const oldColorClass = getColorClass(element);
-                if (oldColorClass) element.classList.remove(oldColorClass);
-                if (newColorClass) element.classList.add(newColorClass);
-            }
-
-            function checkAndLockSequence() {
-                if (!gameActive) return;
-                const currentGridPieces = Array.from(puzzleContainer.children);
-                if(currentGridPieces.length !== pieceCount) return;
-
-                for (let i = nextExpectedCorrectIndex; i < pieceCount; i++) {
-                    const pieceAtGridPosition = currentGridPieces[i];
-                    if (!pieceAtGridPosition || !pieceAtGridPosition.dataset) continue;
-                    const correctIndexForThisPiece = parseInt(pieceAtGridPosition.dataset.correctIndex);
-
-                    if (correctIndexForThisPiece === i) {
-                        if (!pieceAtGridPosition.classList.contains('locked-in-sequence')) {
-                            pieceAtGridPosition.classList.add('locked-in-sequence');
-                            pieceAtGridPosition.classList.remove('selected');
-                            playTone('correct_sequence');
-                            
-                            if(pieceAtGridPosition.handlePieceClick) {
-                                pieceAtGridPosition.removeEventListener('click', pieceAtGridPosition.handlePieceClick);
-                            }
-                            
-                            nextExpectedCorrectIndex++;
-                            feedbackElement.textContent = `رائع! القطعة ${nextExpectedCorrectIndex} صحيحة!`;
-                            feedbackElement.className = 'info';
-                        }
-                    } else {
-                        return;
-                    }
-                }
-                
-                if (nextExpectedCorrectIndex === pieceCount) {
-                    handleWin();
-                }
-            }
-
-            function handleWin() {
-                gameActive = false;
-                stopCountdownTimer();
-                playTone('win');
-                launchConfetti();
-                showCelebration();
-                
-                feedbackElement.textContent = `🎉 ممتاز! أكملت المستوى ${currentLevelIndex + 1}! 🎉`;
-                feedbackElement.className = 'win';
-                
-                pieces.forEach(p => p.classList.add('locked-in-sequence'));
-                
-                // Show completed sentence in modal
-                const currentLevel = levels[currentLevelIndex];
-                completedSentenceElement.textContent = currentLevel.sentence.slice(0, 3).join(' ') + '...';
-                fullSentenceElement.textContent = currentLevel.sentence.join(' ');
-                
-                levelCompleteModal.style.display = 'flex';
-                nextLevelButton.disabled = (currentLevelIndex >= levels.length - 1);
-                nextLevelButton.textContent = (currentLevelIndex >= levels.length - 1) ? "لا مستويات أخرى" : "المستوى التالي";
-                startResetButton.disabled = true;
-            }
-
-            // Event listeners
-            nextLevelButton.addEventListener('click', () => {
-                levelCompleteModal.style.display = 'none';
-                currentLevelIndex++;
-                setupPuzzle(currentLevelIndex);
-            });
-
-            endGameButton.addEventListener('click', () => {
-                levelCompleteModal.style.display = 'none';
-                endGame(true);
-            });
-            
-            retryLevelButton.addEventListener('click', () => {
-                timeoutModal.style.display = 'none';
-                setupPuzzle(currentLevelIndex);
-            });
-            
-            continueButton.addEventListener('click', () => {
-                timeoutModal.style.display = 'none';
-                currentLevelIndex++;
-                setupPuzzle(currentLevelIndex);
-            });
-            
-            helpButton.addEventListener('click', () => {
-                if (gameActive) {
-                    showHint();
-                } else {
-                    feedbackElement.textContent = "ابدأ اللعبة أولاً لرؤية التلميحات";
-                    feedbackElement.className = 'info';
-                }
-            });
-            
-            soundToggle.addEventListener('click', () => {
-                soundEnabled = !soundEnabled;
-                if (soundEnabled) {
-                    soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
-                    soundToggle.title = "إيقاف الصوت";
-                } else {
-                    soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
-                    soundToggle.title = "تشغيل الصوت";
-                }
-            });
-
-            function endGame(completedAll) {
-                stopCountdownTimer();
-                removeHint();
-                
-                if (completedAll) {
-                    feedbackElement.textContent = "🎉 تهانينا! أتقنت كل المستويات! 🎉";
-                    feedbackElement.className = 'win';
-                } else {
-                    feedbackElement.textContent = "شكراً للعب! اضغط 'ابدأ اللعبة' للعب مرة أخرى.";
-                    feedbackElement.className = 'info';
-                }
-                
-                gameActive = false;
-                puzzleContainer.innerHTML = `<p style="color: #444; text-align: center; grid-column: span 3; font-size: 1.4em; padding: 20px;">${completedAll ? 'أنت بطل الألغاز!' : 'انتهت اللعبة!'}</p>`;
-                startResetButton.textContent = "ابدأ اللعبة";
-                startResetButton.disabled = false;
-                currentLevelIndex = 0;
-                resetMoveCounter();
-                levelDisplayElement.textContent = "المستوى: -";
-                countdownTimerElement.textContent = "الوقت: --";
-                countdownTimerElement.classList.remove('warning');
-            }
-
-            startResetButton.addEventListener('click', () => {
-                initAudioContext();
-                if (!gameActive && startResetButton.textContent === "ابدأ اللعبة") {
-                    currentLevelIndex = 0;
-                }
-                setupPuzzle(currentLevelIndex);
-            });
-
-            // Initial setup
-            levelDisplayElement.textContent = "المستوى: -";
-            countdownTimerElement.textContent = "الوقت: --";
-            moveCounterElement.textContent = "الحركات: -";
-            puzzleContainer.innerHTML = '<p style="color: #555; text-align: center; grid-column: span 3; font-size: 1.3em;">اضغط "ابدأ اللعبة" للتحدي!</p>';
+        startResetButton.addEventListener('click', () => {
+            initAudioContext();
+            const isNewGame = startResetButton.querySelector('span').textContent === "ابدأ اللعبة";
+            isNewGame ? setupLevel(1) : setupPuzzle(true);
         });
+
+        helpButton.addEventListener('click', () => { if(gameActive) showHint(); });
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.innerHTML = soundEnabled ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
+        });
+        endGameButton.addEventListener('click', () => { completionModal.style.display = 'none'; endGame(); });
+        retryPuzzleButton.addEventListener('click', () => { timeoutModal.style.display = 'none'; setupPuzzle(true); });
+        endGameTimeoutButton.addEventListener('click', () => { timeoutModal.style.display = 'none'; endGame(); });
+
+        const initializeGame = () => {
+            puzzleContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; font-size: 1.3em;">اضغط "ابدأ اللعبة" للتحدي!</p>';
+            helpButton.disabled = true;
+        };
+
+        initializeGame();
+    });
     </script>
 </body>
 </html>

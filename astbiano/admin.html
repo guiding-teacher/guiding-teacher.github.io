@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الاستبيان</title>
+    <title>إدارة الاستفتاء -  قرار للاستفتاء</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -12,8 +12,8 @@
 <body class="admin-body">
     <header class="dashboard-header">
         <div class="header-content">
-            <a href="dashboard.html" style="color:white; text-decoration: none;"><h1>بريد الرسائل</h1></a>
-            <p id="header-description">إنشاء / تعديل استبيان</p>
+            <a href="dashboard.html" style="color:white; text-decoration: none;"><h1>قــرار للاستفتاء</h1></a>
+            <p id="header-description">إنشاء / تعديل الاستفتاء</p>
         </div>
     </header>
 
@@ -24,19 +24,19 @@
         <div id="admin-mode-content" class="dashboard-container">
             <!-- Basic Info Card -->
             <div class="card">
-                <h2 id="admin-page-heading">إنشاء استبيان جديد</h2>
+                <h2 id="admin-page-heading">إنشاء استفتاء جديد</h2>
                 <div class="form-group">
-                    <label for="survey-title">عنوان الاستبيان:</label>
-                    <input type="text" id="survey-title" placeholder="مثال: رسائل إلى قلبي" required>
+                    <label for="survey-title">عنوان الاستفتاء:</label>
+                    <input type="text" id="survey-title" placeholder="مثال: ما هو رأيك في منصة المعلم المرشد ؟" required>
                 </div>
                 <div class="form-group">
-                    <label for="survey-description">وصف الاستبيان (يظهر في لوحة التحكم):</label>
+                    <label for="survey-description">وصف الاستفتاء (يظهر في لوحة التحكم):</label>
                     <textarea id="survey-description" placeholder="وصف موجز عن هدف الاستبيان"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="survey-admin-pin">الرمز السري (PIN) للمشرف (مطلوب):</label>
                     <input type="password" id="survey-admin-pin" placeholder="4 أرقام/أحرف على الأقل" required minlength="4">
-                    <small>ستحتاج هذا الرمز للوصول لنتائج الاستبيان. احفظه جيداً.</small>
+                    <small>ستحتاج هذا الرمز للوصول لنتائج الاستفتاء. احفظه جيداً.</small>
                 </div>
             </div>
 
@@ -55,7 +55,11 @@
                 <h3>الإعدادات المتقدمة</h3>
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="accepting-responses" checked>
-                    <label for="accepting-responses">قبول الردود (تفعيل/إيقاف الاستبيان)</label>
+                    <label for="accepting-responses">قبول الردود (تفعيل/إيقاف الاستفتاء)</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="allow-multiple-submissions">
+                    <label for="allow-multiple-submissions">السماح للمستخدم بالإجابة أكثر من مرة</label>
                 </div>
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="allow-results-view">
@@ -66,12 +70,12 @@
                     <label for="show-progress">إظهار شريط التقدم للمجيب</label>
                 </div>
                 <div class="form-group">
-                    <label for="start-date">تاريخ ووقت بدء الاستبيان (اختياري):</label>
+                    <label for="start-date">تاريخ ووقت بدء الاستفتاء (اختياري):</label>
                     <input type="date" id="start-date">
                     <input type="time" id="start-time">
                 </div>
                 <div class="form-group">
-                    <label for="end-date">تاريخ ووقت انتهاء الاستبيان (اختياري):</label>
+                    <label for="end-date">تاريخ ووقت انتهاء الاستفتاء (اختياري):</label>
                     <input type="date" id="end-date">
                     <input type="time" id="end-time">
                 </div>
@@ -80,7 +84,7 @@
                     <input type="text" id="survey-logo-url" placeholder="https://example.com/logo.png">
                 </div>
                 <div class="form-group">
-                    <label for="background-color">لون خلفية صفحة الاستبيان:</label>
+                    <label for="background-color">لون خلفية صفحة الاستفتاء:</label>
                     <input type="color" id="background-color" value="#F0F2F5">
                 </div>
                 <div class="form-group">
@@ -91,7 +95,7 @@
 
             <div class="action-buttons-container">
                 <a href="dashboard.html" class="btn secondary">إلغاء</a>
-                <button id="publish-btn" class="btn primary">نشر / تحديث الاستبيان</button>
+                <button id="publish-btn" class="btn primary">نشر / تحديث الاستفتاء</button>
             </div>
         </div>
     </main>

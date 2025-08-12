@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم الشاملة</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Chart.js for Bar Chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Modern Professional Stylesheet */
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4A55A2;
+            --secondary-color: #7895CB;
+            --accent-color: #A0BFE0;
+            --bg-color: #F0F2F5;
+            --card-bg-color: #FFFFFF;
+            --text-color: #333;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --border-radius: 12px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            direction: rtl;
+        }
+
+        .loader { border: 4px solid var(--accent-color); border-top: 4px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 0.8s linear infinite; margin: 3rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .dashboard-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 2.5rem 1rem; text-align: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+        .header-content h1 { font-weight: 700; font-size: 2.5rem; }
+
+        .dashboard-main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+
+        .login-container { max-width: 400px; margin: 4rem auto; text-align: center; }
+
+        .card { background-color: var(--card-bg-color); border-radius: var(--border-radius); padding: 1.5rem 2rem; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+        .card h2 { font-size: 1.75rem; color: var(--primary-color); margin-bottom: 0.5rem; }
+        .card p { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+        input[type="password"] { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; font-family: 'Cairo', sans-serif; margin-bottom: 1rem; }
+        input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 85, 162, 0.2); }
+        
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; font-family: 'Cairo', sans-serif; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .btn.primary { background-color: var(--primary-color); color: white; }
+        .btn.primary:hover { background-color: #3b4482; }
+        .btn.secondary { background-color: var(--card-bg-color); color: var(--primary-color); border: 1px solid var(--border-color); }
+        .btn.secondary:hover { background-color: #f1f3f5; }
+        .btn.danger { background-color: var(--error-color); color: white; border: 1px solid var(--error-color); }
+        .btn.danger:hover { background-color: #c82333; }
+        .btn.small { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+        .btn[disabled] { background-color: #ccc; cursor: not-allowed; border-color: #ccc; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--card-bg-color); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--shadow); text-align: center; }
+        .stat-card .value { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); }
+        .stat-card .label { font-size: 1rem; color: var(--text-muted); }
+
+        .dashboard-section { margin-bottom: 2rem; }
+        .dashboard-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;}
+        .table-actions { display: flex; gap: 1rem; align-items: center; }
+
+        .dashboard-table { width: 100%; border-collapse: collapse; background: white; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--shadow); }
+        .dashboard-table th, .dashboard-table td { padding: 1rem; text-align: right; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
+        .dashboard-table th { background-color: #f8f9fa; font-weight: 600; color: var(--text-muted); }
+        .dashboard-table tbody tr:last-child td { border-bottom: none; }
+        .dashboard-table tbody tr:hover { background-color: #f1f3f5; }
+
+        .status-badge { padding: 0.25rem 0.6rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .status-badge.active { background-color: #d4edda; color: #155724; }
+        .status-badge.expired { background-color: #f8d7da; color: #721c24; }
+        
+        .actions-cell { display: flex; gap: 0.5rem; }
+        
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background-color: var(--card-bg-color); padding: 2rem; border-radius: var(--border-radius); width: 90%; max-width: 500px; text-align: center; }
+        .modal-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+
+        #alert-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1002; width: 90%; max-width: 500px; }
+        .alert { padding: 1rem 1.5rem; margin-bottom: 1rem; border-radius: var(--border-radius); font-size: 1rem; border: 1px solid transparent; box-shadow: var(--shadow); }
+        .alert.error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .alert.success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+
+        #chart-container {
+            padding: 1.5rem;
+            height: 400px; /* Give the chart container a fixed height */
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="dashboard-header">
+        <div class="header-content">
+            <h1> قــرار للاستفتاء</h1>
+            <p>لوحة التحكم الشاملة</p>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        <div id="loading-spinner" class="loader" style="display: none;"></div>
+        <div id="alert-container" aria-live="polite"></div>
+
+        <div id="login-view">
+            <div class="login-container">
+                <div class="card">
+                    <h2>الوصول مطلوب</h2>
+                    <p>الرجاء إدخال مفتاح الإدارة للوصول إلى لوحة التحكم.</p>
+                    <form id="login-form">
+                        <input type="password" id="admin-key-input" placeholder="مفتاح الإدارة" required>
+                        <button type="submit" class="btn primary">دخول</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="dashboard-view" style="display: none;">
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div id="total-surveys" class="value">0</div>
+                    <div class="label">إجمالي الاستفتاءات</div>
+                </div>
+                <div class="stat-card">
+                    <div id="total-responses" class="value">0</div>
+                    <div class="label">إجمالي الردود</div>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h2>الاستفتاءات النشطة</h2>
+                    <div class="table-actions">
+                        <button id="delete-selected-active" class="btn danger" disabled>حذف المحدد</button>
+                        <a href="admin.html" class="btn primary">إنشاء استفتاء جديد</a>
+                    </div>
+                </div>
+                <div class="card" style="padding: 0; overflow-x: auto;">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-active"></th>
+                                <th>عنوان الاستفتاء</th>
+                                <th>عدد الردود</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الإنشاء</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-surveys-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h2>الاستفتاءات المنتهية</h2>
+                     <div class="table-actions">
+                        <button id="delete-selected-expired" class="btn danger" disabled>حذف المحدد</button>
+                    </div>
+                </div>
+                <div class="card" style="padding: 0; overflow-x: auto;">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-expired"></th>
+                                <th>عنوان الاستفتاء</th>
+                                <th>عدد الردود</th>
+                                <th>الحالة</th>
+                                <th>تاريخ الانتهاء</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expired-surveys-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="card">
+                     <h2>أكثر 10 استفتاءات تفاعلاً</h2>
+                     <div id="chart-container">
+                        <canvas id="top-surveys-chart"></canvas>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="delete-modal" class="modal">
+            <div class="modal-content">
+                <h2 id="delete-modal-title">تأكيد الحذف</h2>
+                <p id="delete-modal-text"></p>
+                <div class="modal-actions">
+                    <button id="cancel-delete-btn" class="btn secondary">إلغاء</button>
+                    <button id="confirm-delete-btn" class="btn danger">نعم، قم بالحذف</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Firebase Config
+        const firebaseConfig = { apiKey: "AIzaSyA4idIicapTuRwacbuzFeoAEJE6iUpQG9Y", authDomain: "mcqs-28ac8.firebaseapp.com", databaseURL: "https://mcqs-28ac8-default-rtdb.asia-southeast1.firebasedatabase.app", projectId: "mcqs-28ac8", storageBucket: "mcqs-28ac8.appspot.com", messagingSenderId: "305239385864", appId: "1:305239385864:web:d2d44dd61f73a502b96ebd", measurementId: "G-2E3137CYTR" };
+        
+        try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } catch (e) { console.error("Firebase initialization error:", e); document.body.innerHTML = '<h1>خطأ فادح: فشل الاتصال بقاعدة البيانات.</h1>'; }
+        const db = firebase.firestore();
+        
+        const ADMIN_KEY = "aaabraaa1995"; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('masterAdminAuthenticated') === 'true') {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('dashboard-view').style.display = 'block';
+                loadDashboardData();
+            }
+
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (document.getElementById('admin-key-input').value === ADMIN_KEY) {
+                    sessionStorage.setItem('masterAdminAuthenticated', 'true');
+                    document.getElementById('login-view').style.display = 'none';
+                    document.getElementById('dashboard-view').style.display = 'block';
+                    loadDashboardData();
+                } else {
+                    showAlert('مفتاح الإدارة غير صحيح.', 'error');
+                }
+            });
+        });
+
+        const showAlert = (message, type, duration = 4000) => {
+            const container = document.getElementById('alert-container');
+            if (!container) return;
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type}`;
+            alertDiv.textContent = message;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), duration);
+        };
+        const showLoader = (show = true) => { document.getElementById('loading-spinner').style.display = show ? 'block' : 'none'; };
+
+        let topSurveysChart = null;
+
+        async function loadDashboardData() {
+            showLoader(true);
+            try {
+                const [surveysSnapshot, responsesSnapshot] = await Promise.all([
+                    db.collection('surveys').orderBy('createdAt', 'desc').get(),
+                    db.collection('responses').get()
+                ]);
+
+                const allSurveys = surveysSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const allResponses = responsesSnapshot.docs.map(doc => doc.data());
+
+                document.getElementById('total-surveys').textContent = allSurveys.length;
+                document.getElementById('total-responses').textContent = allResponses.length;
+
+                const responseCounts = allResponses.reduce((acc, response) => {
+                    acc[response.surveyId] = (acc[response.surveyId] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const now = new Date();
+                const activeSurveys = [];
+                const expiredSurveys = [];
+
+                allSurveys.forEach(survey => {
+                    const settings = survey.settings || {};
+                    const isExpired = settings.endDate && now > new Date(settings.endDate + 'T' + (settings.endTime || '23:59'));
+                    const surveyWithCount = { ...survey, responseCount: responseCounts[survey.id] || 0 };
+                    isExpired ? expiredSurveys.push(surveyWithCount) : activeSurveys.push(surveyWithCount);
+                });
+
+                renderSurveysTable(activeSurveys, 'active-surveys-tbody');
+                renderSurveysTable(expiredSurveys, 'expired-surveys-tbody', true);
+                renderTopSurveysChart(allSurveys.map(s => ({...s, responseCount: responseCounts[s.id] || 0})));
+                setupTableEventListeners();
+
+            } catch (error) {
+                console.error("Error loading dashboard data:", error);
+                showAlert("فشل تحميل بيانات لوحة التحكم.", "error");
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        function renderSurveysTable(surveys, tbodyId, isExpiredTable = false) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            if (surveys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem;">لا توجد استفتاءات لعرضها.</td></tr>`;
+                return;
+            }
+            const dateOptions = { year: 'numeric', month: 'short', day: 'numeric', calendar: 'gregory' };
+            surveys.forEach(survey => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = survey.id;
+                const statusHtml = isExpiredTable ? `<span class="status-badge expired">منتهي</span>` : `<span class="status-badge active">نشط</span>`;
+                const dateToShow = isExpiredTable
+                    ? (survey.settings.endDate ? new Date(survey.settings.endDate).toLocaleDateString('ar-EG', dateOptions) : 'N/A')
+                    : (survey.createdAt ? survey.createdAt.toDate().toLocaleDateString('ar-EG', dateOptions) : 'N/A');
+
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="survey-checkbox" value="${survey.id}"></td>
+                    <td>${survey.title}</td>
+                    <td>${survey.responseCount}</td>
+                    <td>${statusHtml}</td>
+                    <td>${dateToShow}</td>
+                    <td class="actions-cell">
+                        <a href="survey.html?id=${survey.id}" target="_blank" class="btn small secondary">عرض</a>
+                        <a href="admin.html?id=${survey.id}" class="btn small secondary">تعديل</a>
+                        <button class="btn small danger delete-btn">حذف</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function renderTopSurveysChart(surveysWithCounts) {
+            const ctx = document.getElementById('top-surveys-chart').getContext('2d');
+            const sortedSurveys = surveysWithCounts.sort((a, b) => b.responseCount - a.responseCount).slice(0, 10);
+            const labels = sortedSurveys.map(s => s.title.length > 20 ? s.title.substring(0, 20) + '...' : s.title);
+            const data = sortedSurveys.map(s => s.responseCount);
+
+            if (topSurveysChart) { topSurveysChart.destroy(); }
+
+            topSurveysChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'عدد الردود', data: data, backgroundColor: 'rgba(74, 85, 162, 0.6)', borderColor: 'rgba(74, 85, 162, 1)', borderWidth: 1 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                    scales: {
+                        x: { beginAtZero: true, ticks: { font: { family: "'Cairo', sans-serif" } } },
+                        y: { ticks: { font: { family: "'Cairo', sans-serif" } } }
+                    },
+                    plugins: { legend: { display: false }, tooltip: { bodyFont: { family: "'Cairo', sans-serif" }, titleFont: { family: "'Cairo', sans-serif" } } }
+                }
+            });
+        }
+
+        function setupTableEventListeners() {
+            const setupBulkDelete = (tableId, selectAllId, deleteBtnId) => {
+                const selectAllCheckbox = document.getElementById(selectAllId);
+                const checkboxes = document.querySelectorAll(`#${tableId} .survey-checkbox`);
+                const deleteBtn = document.getElementById(deleteBtnId);
+
+                const toggleDeleteButton = () => {
+                    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+                    deleteBtn.disabled = !anyChecked;
+                };
+
+                selectAllCheckbox.onchange = () => {
+                    checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+                    toggleDeleteButton();
+                };
+                checkboxes.forEach(cb => cb.onchange = toggleDeleteButton);
+                deleteBtn.onclick = () => {
+                    const selectedIds = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+                    if (selectedIds.length > 0) {
+                        showDeleteModal(selectedIds, `هل أنت متأكد من حذف ${selectedIds.length} استفتاء/استفتاءات؟`);
+                    }
+                };
+            };
+            setupBulkDelete('active-surveys-tbody', 'select-all-active', 'delete-selected-active');
+            setupBulkDelete('expired-surveys-tbody', 'select-all-expired', 'delete-selected-expired');
+
+            document.body.addEventListener('click', e => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const surveyId = e.target.closest('tr').dataset.id;
+                    showDeleteModal([surveyId], "هل أنت متأكد من حذف هذا الاستفتاء؟");
+                }
+            });
+        }
+        
+        const deleteModal = document.getElementById('delete-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        let surveyIdsToDelete = [];
+
+        function showDeleteModal(ids, text) {
+            surveyIdsToDelete = ids;
+            document.getElementById('delete-modal-text').textContent = text;
+            deleteModal.style.display = 'flex';
+        }
+
+        cancelDeleteBtn.onclick = () => { deleteModal.style.display = 'none'; surveyIdsToDelete = []; };
+        
+        // =========================================================
+        // START: CORRECTED BATCH DELETE FUNCTION
+        // =========================================================
+        confirmDeleteBtn.onclick = async () => {
+            if (surveyIdsToDelete.length === 0) return;
+            showLoader(true);
+            try {
+                // Firestore 'in' query is limited to 10 elements. We'll chunk by this size.
+                const CHUNK_SIZE = 10;
+                for (let i = 0; i < surveyIdsToDelete.length; i += CHUNK_SIZE) {
+                    const chunk = surveyIdsToDelete.slice(i, i + CHUNK_SIZE);
+                    
+                    const batch = db.batch();
+
+                    // 1. Find and mark all associated responses for deletion
+                    const responsesQuery = await db.collection('responses').where('surveyId', 'in', chunk).get();
+                    responsesQuery.docs.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+
+                    // 2. Mark the surveys themselves for deletion
+                    chunk.forEach(id => {
+                        const surveyRef = db.collection('surveys').doc(id);
+                        batch.delete(surveyRef);
+                    });
+                    
+                    // 3. Commit the batch for this chunk
+                    await batch.commit();
+                }
+                
+                showAlert(`تم حذف ${surveyIdsToDelete.length} استفتاء/استفتاءات بنجاح.`, 'success');
+                loadDashboardData(); // Refresh the dashboard
+
+            } catch (error) {
+                console.error("Error deleting surveys:", error);
+                showAlert(`فشل حذف الاستفتاءات المحددة: ${error.message}`, "error");
+            } finally {
+                deleteModal.style.display = 'none';
+                surveyIdsToDelete = [];
+                showLoader(false);
+            }
+        };
+        // =========================================================
+        // END: CORRECTED BATCH DELETE FUNCTION
+        // =========================================================
+    </script>
+</body>
+</html>

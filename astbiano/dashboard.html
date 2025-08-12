@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - بريد الرسائل</title>
+    <title>   قرار للاستفتاء </title>
+
+<meta name="description" content="  قرار للاستفتاء" هي اداة إلكترونية تابعة لمنصة المعلم المرشد متكاملة تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور">
+
+<!-- Open Graph (لوسائل التواصل مثل فيسبوك وواتساب) -->
+<meta property="og:title" content="  قرار للاستفتاء">
+<meta property="og:description" content="    قرار للاستفتاء" هي اداة إلكترونية متكاملة تابعة لمنصة المعلم المرشد تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور">
+<meta property="og:image" content="https://guiding-teacher.web.app/images/reter1.jpg"> <!-- غيّر هذا للرابط الصحيح لصورتك -->
+<meta property="og:url" content="https://guiding-teacher.web.app/images/reter1.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_IQ">
+    
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -14,8 +25,8 @@
 <body>
     <header class="dashboard-header">
         <div class="header-content">
-            <h1>بريد الرسائل</h1>
-            <p>لوحة التحكم والإدارة</p>
+            <h1>  قــرار للاستفتاء    </h1>
+            <p>     اداة إلكترونية تابعة لمنصة المعلم المرشد متكاملة تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور </p>
         </div>
     </header>
 
@@ -25,21 +36,21 @@
 
         <div id="dashboard-home" class="dashboard-container">
             <div class="card">
-                <h2>الوصول إلى استبيان</h2>
-                <p>أدخل معرّف الاستبيان والرمز السري للوصول إليه وإضافته إلى قائمتك.</p>
+                <h2>الوصول إلى الاستفتاء</h2>
+                <p>أدخل معرّف الاستفتاء والرمز السري للوصول إليه وإضافته إلى قائمتك.</p>
                 <form id="survey-lookup-form" class="lookup-form">
-                    <input type="text" id="survey-id-input" placeholder="معرّف الاستبيان (Survey ID)" required>
+                    <input type="text" id="survey-id-input" placeholder="معرّف الاستفتاء (Survey ID)" required>
                     <input type="password" id="survey-pin-input" placeholder="الرمز السري (PIN)" required>
                     <button type="submit" class="btn primary">بحث و إضافة</button>
                 </form>
             </div>
             <div class="card">
-                <h2>استبياناتي</h2>
-                <p>الاستبيانات التي قمت بالوصول إليها مؤخرًا.</p>
+                <h2>استفتاءاتي</h2>
+                <p>الاستفتاءات التي قمت بالوصول إليها مؤخرًا.</p>
                 <div id="my-surveys-list" class="surveys-grid"></div>
                  <a href="admin.html" class="btn secondary create-new-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    إنشاء استبيان جديد
+                    إنشاء استفتاء جديد
                 </a>
             </div>
         </div>
@@ -60,11 +71,17 @@
                     <button id="export-pdf-btn" class="btn secondary small">تصدير PDF</button>
                 </div>
             </div>
-
-            <nav class="tabs">
-                <button class="tab-btn active" data-tab="responses">الردود (<span id="response-count-tab">0</span>)</button>
-                <button class="tab-btn" data-tab="settings">الإعدادات</button>
-            </nav>
+            
+            <div class="main-controls-bar">
+                <nav class="tabs">
+                    <button class="tab-btn active" data-tab="responses">الردود (<span id="response-count-tab">0</span>)</button>
+                    <button class="tab-btn" data-tab="settings">الإعدادات</button>
+                </nav>
+                <div class="main-actions">
+                    <a href="#" id="view-survey-link" class="btn secondary small" target="_blank">عرض</a>
+                    <a href="#" id="edit-survey-link" class="btn primary small">تعديل</a>
+                </div>
+            </div>
 
             <div class="tab-content-area">
                 <div id="responses-content" class="tab-pane active">
@@ -91,7 +108,6 @@
                             <input type="text" id="survey-share-link-dashboard" readonly>
                             <button id="copy-share-link-dashboard" class="btn secondary small">نسخ</button>
                         </div>
-                        <a href="#" id="edit-survey-link" class="btn primary" style="margin-top: 20px;">تعديل الأسئلة والإعدادات</a>
                     </div>
                 </div>
             </div>

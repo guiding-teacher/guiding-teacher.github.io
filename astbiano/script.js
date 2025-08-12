@@ -81,11 +81,11 @@ function initDashboardPage() {
     const mySurveysList = document.getElementById('my-surveys-list');
     
     const surveys = getManagedSurveys();
-    mySurveysList.innerHTML = surveys.length ? '' : '<p>لم تقم بإدارة أي استبيان بعد. ابدأ بإنشاء واحد جديد أو ابحث عن استبيان موجود.</p>';
+    mySurveysList.innerHTML = surveys.length ? '' : '<p>لم تقم بإدارة أي استفتاء بعد. ابدأ بإنشاء واحد جديد أو ابحث عن استفتاء موجود.</p>';
     surveys.forEach(survey => {
         const surveyCard = document.createElement('div');
         surveyCard.className = 'survey-item-card';
-        surveyCard.innerHTML = `<h3>${survey.title || 'استبيان بدون عنوان'}</h3><code>ID: ${survey.id}</code>`;
+        surveyCard.innerHTML = `<h3>${survey.title || 'استفتاء بدون عنوان'}</h3><code>ID: ${survey.id}</code>`;
         surveyCard.onclick = () => loadSurveyForManagement(survey.id, survey.pin);
         mySurveysList.appendChild(surveyCard);
     });
@@ -99,7 +99,7 @@ function initDashboardPage() {
         showLoader(true);
         try {
             const surveyDoc = await db.collection('surveys').doc(id).get();
-            if (!surveyDoc.exists) throw new Error('لم يتم العثور على استبيان بهذا المعرف.');
+            if (!surveyDoc.exists) throw new Error('لم يتم العثور على استفتاء بهذا المعرف.');
             const data = surveyDoc.data();
             if ((await hashPassword(pin)) !== data.adminPinHash) throw new Error('الرمز السري غير صحيح.');
             
@@ -126,7 +126,7 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
     
     try {
         const surveyDoc = await db.collection('surveys').doc(surveyId).get();
-        if (!surveyDoc.exists) throw new Error("لم يتم العثور على الاستبيان.");
+        if (!surveyDoc.exists) throw new Error("لم يتم العثور على الاستفتاء.");
         currentSurveyData = { id: surveyDoc.id, ...surveyDoc.data() };
         
         const responsesSnapshot = await db.collection('responses').where('surveyId', '==', surveyId).orderBy('timestamp', 'desc').get();
@@ -135,6 +135,7 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
         document.getElementById('survey-title-header').textContent = currentSurveyData.title;
         document.getElementById('response-count-tab').textContent = currentSurveyResponses.length;
         document.getElementById('edit-survey-link').href = `admin.html?id=${surveyId}`;
+        document.getElementById('view-survey-link').href = `survey.html?id=${surveyId}`;
         
         const shareLink = `${window.location.origin}${window.location.pathname.replace(/dashboard\.html|admin\.html|results\.html/, 'survey.html')}?id=${surveyId}`;
         document.getElementById('survey-share-link-dashboard').value = shareLink;
@@ -153,7 +154,6 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
 }
 
 function setupDashboardControls() {
-    // Setup Tabs
     const setup = (btnClass, paneClass) => {
         const buttons = document.querySelectorAll(btnClass);
         const panes = document.querySelectorAll(paneClass);
@@ -170,7 +170,6 @@ function setupDashboardControls() {
     setup('.tab-btn', '.tab-pane');
     setup('.sub-tab-btn', '.sub-tab-pane');
 
-    // Setup Toggle Switch
     const toggle = document.getElementById('accepting-responses-toggle');
     toggle.checked = currentSurveyData.settings.acceptingResponses;
     toggle.onchange = async () => {
@@ -180,9 +179,10 @@ function setupDashboardControls() {
             await db.collection('surveys').doc(currentSurveyData.id).update({ 'settings.acceptingResponses': newState });
             currentSurveyData.settings.acceptingResponses = newState;
             showAlert(`تم ${newState ? 'فتح' : 'إغلاق'} استقبال الردود.`, 'success');
+            renderAllResponseViews();
         } catch (err) {
             showAlert('فشل تحديث الحالة.', 'error');
-            toggle.checked = !newState; // Revert on failure
+            toggle.checked = !newState;
         } finally {
             showLoader(false);
         }
@@ -191,12 +191,14 @@ function setupDashboardControls() {
 
 function renderAllResponseViews() {
     const settings = currentSurveyData.settings || {};
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
     document.getElementById('settings-summary-area').innerHTML = `
-        <p><strong>حالة الاستبيان:</strong> ${settings.acceptingResponses ? '<span style="color:var(--success-color);">يستقبل الردود</span>' : '<span style="color:var(--error-color);">مغلق</span>'}</p>
+        <p><strong>حالة الاستفتاء:</strong> ${settings.acceptingResponses ? '<span style="color:var(--success-color);">يستقبل الردود</span>' : '<span style="color:var(--error-color);">مغلق</span>'}</p>
+        <p><strong>الإجابات المتعددة:</strong> ${settings.allowMultipleSubmissions ? 'مسموح بها' : 'غير مسموح بها'}</p>
         <p><strong>عرض النتائج للعامة:</strong> ${settings.allowResultsView ? 'مسموح' : 'غير مسموح'}</p>
         <p><strong>شريط التقدم:</strong> ${settings.showProgress ? 'مُفعّل' : 'غير مُفعّل'}</p>
-        <p><strong>تاريخ البدء:</strong> ${settings.startDate ? new Date(settings.startDate + 'T' + (settings.startTime || '00:00')).toLocaleString('ar-SA') : 'فوري'}</p>
-        <p><strong>تاريخ الانتهاء:</strong> ${settings.endDate ? new Date(settings.endDate + 'T' + (settings.endTime || '23:59')).toLocaleString('ar-SA') : 'لا يوجد'}</p>
+        <p><strong>تاريخ البدء:</strong> ${settings.startDate ? new Date(settings.startDate + 'T' + (settings.startTime || '00:00')).toLocaleString('ar-EG', dateOptions) : 'فوري'}</p>
+        <p><strong>تاريخ الانتهاء:</strong> ${settings.endDate ? new Date(settings.endDate + 'T' + (settings.endTime || '23:59')).toLocaleString('ar-EG', dateOptions) : 'لا يوجد'}</p>
     `;
 
     if (currentSurveyResponses.length === 0) {
@@ -205,7 +207,6 @@ function renderAllResponseViews() {
         document.getElementById('individual-view').innerHTML = msg;
         return;
     }
-
     renderSummaryView();
     renderIndividualView(0);
     setupIndividualNav();
@@ -218,31 +219,26 @@ function renderSummaryView(containerId = 'summary-view') {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `<h3>${q.text}</h3>`;
-        const responsesForQ = currentSurveyResponses.map(r => r.answers.find(a => a.questionId === q.id)?.answer).filter(a => a != null && a !== '');
+        const responsesForQ = currentSurveyResponses.map(r => r.answers.find(a => a.questionId === q.id)?.answer).filter(a => a != null && (Array.isArray(a) ? a.length > 0 : a !== ''));
 
+        card.innerHTML += `<div class="answers-list">${responsesForQ.map(ans => `<p>${Array.isArray(ans) ? ans.join('، ') : ans}</p>`).join('') || '<em>لا توجد إجابات لهذا السؤال.</em>'}</div>`;
+
+        const statsDiv = document.createElement('div');
         if (['radio', 'checkbox', 'dropdown', 'rating'].includes(q.type)) {
             const counts = {};
-            let totalVotes = 0;
             responsesForQ.forEach(answer => {
                 const answers = Array.isArray(answer) ? answer : [answer];
                 answers.forEach(opt => { counts[opt] = (counts[opt] || 0) + 1; });
-                totalVotes++;
             });
             const denominator = q.type === 'checkbox' ? responsesForQ.length : Object.values(counts).reduce((a, b) => a + b, 0);
             (q.options || (q.type === 'rating' ? ['5', '4', '3', '2', '1'] : [])).forEach(opt => {
                 const count = counts[opt] || 0;
                 const percentage = denominator > 0 ? ((count / denominator) * 100).toFixed(1) : 0;
-                card.innerHTML += `
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-info"><span>${opt}${q.type === 'rating' ? ' نجوم' : ''}</span><span>${count} (${percentage}%)</span></div>
-                        <div class="progress-bar-track"><div class="progress-bar" style="width:${percentage}%;"></div></div>
-                    </div>`;
+                statsDiv.innerHTML += `<div class="progress-bar-container"><div class="progress-bar-info"><span>${opt}${q.type === 'rating' ? ' نجوم' : ''}</span><span>${count} (${percentage}%)</span></div><div class="progress-bar-track"><div class="progress-bar" style="width:${percentage}%;"></div></div></div>`;
             });
-        } else {
-            card.innerHTML += `<div class="answers-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
-                ${responsesForQ.map(ans => `<p style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px;">${ans}</p>`).join('') || '<em>لا توجد إجابات نصية.</em>'}
-            </div>`;
         }
+        statsDiv.innerHTML += `<p class="question-stats">إجمالي الردود على هذا السؤال: <strong>${responsesForQ.length}</strong> من أصل ${currentSurveyResponses.length} إجابة كلية.</p>`;
+        card.appendChild(statsDiv);
         container.appendChild(card);
     });
 }
@@ -251,16 +247,19 @@ function renderIndividualView(index) {
     currentIndividualResponseIndex = index;
     const container = document.getElementById('individual-response-content');
     const response = currentSurveyResponses[index];
-    container.innerHTML = `<small style="color:var(--text-muted)">تاريخ الرد: ${response.timestamp.toDate().toLocaleString('ar-SA')}</small>`;
-    
+    container.innerHTML = '';
     response.answers.forEach(answer => {
         const answerText = (answer.answer && answer.answer.length) ? (Array.isArray(answer.answer) ? answer.answer.join('، ') : answer.answer) : '<em>لم تتم الإجابة</em>';
         container.innerHTML += `<div class="question-response"><div class="question-title">${answer.questionText}</div><div class="answer-text">${answerText}</div></div>`;
     });
-    
-    document.getElementById('individual-counter').textContent = `عرض ${index + 1} من ${currentSurveyResponses.length}`;
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+    const formattedDate = response.timestamp.toDate().toLocaleString('ar-EG', dateOptions);
+    container.innerHTML += `<p class="response-timestamp">تاريخ الرد: ${formattedDate}</p>`;
+    const totalResponses = currentSurveyResponses.length;
+    const displayIndex = totalResponses - index; 
+    document.getElementById('individual-counter').textContent = `عرض ${displayIndex} من ${totalResponses}`;
     document.getElementById('prev-response-btn').disabled = (index === 0);
-    document.getElementById('next-response-btn').disabled = (index === currentSurveyResponses.length - 1);
+    document.getElementById('next-response-btn').disabled = (index === totalResponses - 1);
 }
 
 function setupIndividualNav() {
@@ -272,22 +271,14 @@ function setupIndividualNav() {
 function initAdminPage() {
     const surveyId = getSurveyIdFromUrl();
     let questionCounter = 0;
-
     const addQuestion = (data = {}) => {
         const qId = `q_${++questionCounter}`;
         const qCard = document.createElement('div');
         qCard.className = 'admin-question-card';
-        qCard.innerHTML = `
-            <div class="admin-question-header"><h4>السؤال ${questionCounter}</h4><button type="button" class="btn small" onclick="this.closest('.admin-question-card').remove()">حذف</button></div>
-            <div class="form-group"><input type="text" class="q-text" value="${data.text || ''}" placeholder="نص السؤال" required></div>
-            <div class="form-group"><select class="q-type"><option value="text">نص قصير</option><option value="textarea">نص طويل</option><option value="radio">اختيار واحد</option><option value="checkbox">اختيار متعدد</option><option value="dropdown">قائمة منسدلة</option><option value="date">تاريخ</option><option value="time">وقت</option><option value="rating">تقييم نجوم</option></select></div>
-            <div class="q-options-container" style="display:none;"></div>
-            <div class="form-group checkbox-group"><input type="checkbox" class="q-required" id="q-req-${qId}" ${data.required ? 'checked':''}><label for="q-req-${qId}">سؤال إجباري</label></div>`;
-        
+        qCard.innerHTML = `<div class="admin-question-header"><h4>السؤال ${questionCounter}</h4><button type="button" class="btn small" onclick="this.closest('.admin-question-card').remove()">حذف</button></div><div class="form-group"><input type="text" class="q-text" value="${data.text || ''}" placeholder="نص السؤال" required></div><div class="form-group"><select class="q-type"><option value="text">نص قصير</option><option value="textarea">نص طويل</option><option value="radio">اختيار واحد</option><option value="checkbox">اختيار متعدد</option><option value="dropdown">قائمة منسدلة</option><option value="date">تاريخ</option><option value="time">وقت</option><option value="rating">تقييم نجوم</option></select></div><div class="q-options-container" style="display:none;"></div><div class="form-group checkbox-group"><input type="checkbox" class="q-required" id="q-req-${qId}" ${data.required ? 'checked':''}><label for="q-req-${qId}">سؤال إجباري</label></div>`;
         document.getElementById('questions-container').appendChild(qCard);
         const typeSelect = qCard.querySelector('.q-type');
         typeSelect.value = data.type || 'text';
-
         const handleTypeChange = () => {
             const optionsContainer = qCard.querySelector('.q-options-container');
             if (['radio', 'checkbox', 'dropdown'].includes(typeSelect.value)) {
@@ -299,9 +290,7 @@ function initAdminPage() {
                 const optionsList = optionsContainer.querySelector('.options-list');
                 optionsList.innerHTML = '';
                 (data.options && data.options.length ? data.options : ['']).forEach(opt => addOptionToList(optionsList, opt));
-            } else {
-                optionsContainer.style.display = 'none';
-            }
+            } else { optionsContainer.style.display = 'none'; }
         };
         const addOptionToList = (list, text = '') => {
             const optionDiv = document.createElement('div');
@@ -312,11 +301,9 @@ function initAdminPage() {
         typeSelect.onchange = handleTypeChange;
         handleTypeChange();
     };
-
     document.getElementById('add-question-btn').onclick = () => addQuestion();
-
     if (surveyId) {
-        document.getElementById('admin-page-heading').textContent = 'تعديل الاستبيان';
+        document.getElementById('admin-page-heading').textContent = 'تعديل الاستفتاء';
         showLoader(true);
         db.collection('surveys').doc(surveyId).get().then(doc => {
             if (doc.exists) {
@@ -327,6 +314,7 @@ function initAdminPage() {
                 document.getElementById('survey-admin-pin').placeholder = "اتركه فارغاً للحفاظ على الرمز القديم";
                 document.getElementById('survey-admin-pin').required = false;
                 document.getElementById('accepting-responses').checked = settings.acceptingResponses !== false;
+                document.getElementById('allow-multiple-submissions').checked = settings.allowMultipleSubmissions || false;
                 document.getElementById('allow-results-view').checked = settings.allowResultsView || false;
                 document.getElementById('show-progress').checked = settings.showProgress || false;
                 document.getElementById('start-date').value = settings.startDate || '';
@@ -339,10 +327,7 @@ function initAdminPage() {
                 data.questions.forEach(q => addQuestion(q));
             }
         }).finally(() => showLoader(false));
-    } else {
-        addQuestion({text: "اكتب رسالتك هنا...", type: "textarea", required: true});
-    }
-
+    } else { addQuestion({text: "اكتب هنا ", type: "textarea", required: true}); }
     document.getElementById('publish-btn').onclick = async () => {
         showLoader(true);
         const title = document.getElementById('survey-title').value;
@@ -351,13 +336,13 @@ function initAdminPage() {
             showAlert('العنوان ورمز سري من 4 خانات على الأقل مطلوبان.', 'error');
             return showLoader(false);
         }
-
         const surveyData = {
             title,
             description: document.getElementById('survey-description').value,
             logoUrl: document.getElementById('survey-logo-url').value.trim() || null,
             settings: {
                 acceptingResponses: document.getElementById('accepting-responses').checked,
+                allowMultipleSubmissions: document.getElementById('allow-multiple-submissions').checked,
                 allowResultsView: document.getElementById('allow-results-view').checked,
                 showProgress: document.getElementById('show-progress').checked,
                 startDate: document.getElementById('start-date').value || null,
@@ -377,7 +362,6 @@ function initAdminPage() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (pin) surveyData.adminPinHash = await hashPassword(pin);
-        
         try {
             let finalId = surveyId;
             if (surveyId) {
@@ -392,9 +376,7 @@ function initAdminPage() {
             setTimeout(() => window.location.href = `dashboard.html`, 1500);
         } catch (error) {
             showAlert(`فشل النشر: ${error.message}`, 'error');
-        } finally {
-            showLoader(false);
-        }
+        } finally { showLoader(false); }
     };
 }
 
@@ -402,95 +384,125 @@ function initAdminPage() {
 async function initSurveyPage() {
     const surveyId = getSurveyIdFromUrl();
     const statusContainer = document.getElementById('status-container');
+    const header = document.querySelector('.dashboard-header');
+    
+    const showStatus = (message, isError = true) => {
+        if (header) header.style.display = 'none'; // Hide header on error
+        document.getElementById('survey-main-content').innerHTML = '';
+        const statusDiv = document.getElementById('status-container') || document.createElement('div');
+        statusDiv.className = 'card';
+        statusDiv.style.cssText = 'display: block; text-align: center; max-width: 600px; margin: 2rem auto;';
+        statusDiv.innerHTML = `<h2 id="status-text">${message}</h2>`;
+        if (isError) statusDiv.querySelector('h2').style.color = 'var(--error-color)';
+        document.getElementById('survey-main-content').appendChild(statusDiv);
+    };
+
     if (!surveyId) {
-        statusContainer.style.display = 'block';
-        document.getElementById('status-text').textContent = 'معرف الاستبيان مفقود من الرابط.';
+        showStatus('معرف الاستفتاء مفقود من الرابط.');
         return showLoader(false);
     }
     showLoader(true);
+    
     try {
         const surveyDoc = await db.collection('surveys').doc(surveyId).get();
-        if (!surveyDoc.exists) throw new Error('لم يتم العثور على الاستبيان.');
+        if (!surveyDoc.exists) throw new Error('لم يتم العثور على الاستفتاء.');
         
-        const data = { id: surveyDoc.id, ...surveyDoc.data() };
-        currentSurveyData = data;
-        const settings = data.settings || {};
+        currentSurveyData = { id: surveyDoc.id, ...surveyDoc.data() };
+        const settings = currentSurveyData.settings || {};
+        
+        // Populate header with survey details
+        document.getElementById('survey-title-display').textContent = currentSurveyData.title;
+        document.getElementById('survey-description-display').textContent = currentSurveyData.description || '';
+        if (currentSurveyData.logoUrl) {
+            document.getElementById('survey-logo-display').src = currentSurveyData.logoUrl;
+            document.getElementById('survey-logo-display').style.display = 'block';
+        }
 
-        // --- Check Survey Status ---
+        if (settings.allowMultipleSubmissions === false && localStorage.getItem(`submitted_${surveyId}`)) {
+            const alreadySubmittedContainer = document.getElementById('already-submitted-container');
+            const shareLinkInput = document.getElementById('survey-share-link-submitted');
+            const shareLinkBtn = document.getElementById('copy-share-link-submitted');
+            const shareLink = window.location.href;
+            shareLinkInput.value = shareLink;
+            shareLinkBtn.onclick = () => copyToClipboard(shareLink, shareLinkBtn);
+            document.getElementById('survey-main-content').innerHTML = '';
+            alreadySubmittedContainer.style.display = 'block';
+            document.getElementById('survey-main-content').appendChild(alreadySubmittedContainer);
+            return;
+        }
+        
         const now = new Date();
-        if (!settings.acceptingResponses) throw new Error('هذا الاستبيان مغلق حاليًا ولا يستقبل ردودًا جديدة.');
+        if (settings.acceptingResponses === false) throw new Error('هذا الاستفتاء مغلق حاليًا ولا يستقبل ردودًا جديدة.');
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
         if (settings.startDate) {
             const start = new Date(settings.startDate + 'T' + (settings.startTime || '00:00'));
-            if (now < start) throw new Error(`هذا الاستبيان لم يبدأ بعد. سيبدأ في: ${start.toLocaleString('ar-SA')}`);
+            if (now < start) throw new Error(`هذا الاستفتاء لم يبدأ بعد. سيبدأ في: ${start.toLocaleString('ar-EG', dateOptions)}`);
         }
         if (settings.endDate) {
             const end = new Date(settings.endDate + 'T' + (settings.endTime || '23:59'));
-            if (now > end) throw new Error(`هذا الاستبيان قد انتهى في: ${end.toLocaleString('ar-SA')}`);
+            if (now > end) throw new Error(`هذا الاستفتاء قد انتهى في: ${end.toLocaleString('ar-EG', dateOptions)}`);
         }
 
-        // --- Apply Theme ---
-        const isMailbox = data.questions.length === 1 && data.questions[0].type === 'textarea';
+        const isMailbox = currentSurveyData.questions.length === 1 && currentSurveyData.questions[0].type === 'textarea';
         document.body.className = isMailbox ? 'mailbox-theme' : 'standard-theme';
         document.body.style.backgroundColor = isMailbox ? '' : (settings.backgroundColor || '#F0F2F5');
         
-        const header = document.querySelector('.survey-header');
-        if (!isMailbox && header) {
-            header.style.display = 'block';
-            document.getElementById('survey-title-display').textContent = data.title;
-            if (data.logoUrl) {
-                const logo = document.getElementById('survey-logo-display');
-                logo.src = data.logoUrl; logo.style.display = 'block';
-            }
-        }
-        
-        // --- Render Form ---
-        document.getElementById('responder-form-content').innerHTML = data.questions.map(q => `
-            <div class="question-card-responder">
-                <label for="q-${q.id}" class="question-text">${q.text} ${q.required ? '<span style="color:red;">*</span>' : ''}</label>
-                ${renderQuestionInputForResponder(q)}
-            </div>`).join('');
-        document.getElementById('survey-form-responder').style.display = 'flex';
+        document.getElementById('responder-form-content').innerHTML = currentSurveyData.questions.map(q => `<div class="question-card-responder"><label for="q-${q.id}" class="question-text">${q.text} ${q.required ? '<span style="color:red;">*</span>' : ''}</label>${renderQuestionInputForResponder(q)}</div>`).join('');
+        const form = document.getElementById('survey-form-responder');
+        form.style.display = 'flex';
         
         if (settings.showProgress) {
              document.getElementById('progress-container').style.display = 'block';
-             updateProgressBar(); // Initial call
+             form.addEventListener('input', updateProgressBar);
+             updateProgressBar();
         }
         
-        // --- Form Submission ---
-        document.getElementById('survey-form-responder').addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const answers = [];
             let allValid = true;
-
-            data.questions.forEach(q => {
+            const answers = currentSurveyData.questions.map(q => {
                 const answer = q.type === 'checkbox' ? formData.getAll(`q-${q.id}`) : formData.get(`q-${q.id}`);
                 if (q.required && (!answer || answer.length === 0)) allValid = false;
-                answers.push({ questionId: q.id, questionText: q.text, answer });
+                return { questionId: q.id, questionText: q.text, answer };
             });
 
             if (!allValid) return showAlert('الرجاء تعبئة الحقول الإجبارية.', 'error');
             
             showLoader(true);
-            await db.collection('responses').add({ surveyId: data.id, answers, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            await db.collection('responses').add({ surveyId: currentSurveyData.id, answers, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
             
-            document.getElementById('survey-form-responder').style.display = 'none';
-            if (header) header.style.display = 'none';
-            if (document.getElementById('progress-container')) document.getElementById('progress-container').style.display = 'none';
-            
-            document.getElementById('thank-you-text').textContent = settings.thankYouMessage || 'شكرًا لك، تم استلام ردك بنجاح.';
-            if(settings.allowResultsView){
-                const resultsLink = document.getElementById('view-results-link');
-                resultsLink.href = `results.html?id=${data.id}`;
-                resultsLink.style.display = 'inline-block';
+            if(settings.allowMultipleSubmissions) {
+                showAlert('تم إرسال إجابتك بنجاح!', 'success');
+                e.target.reset();
+                updateProgressBar();
+            } else {
+                localStorage.setItem(`submitted_${surveyId}`, 'true');
+                document.getElementById('survey-main-content').innerHTML = '';
+                const thankYouContainer = document.getElementById('thank-you-container');
+                thankYouContainer.style.display = 'block';
+                document.getElementById('survey-main-content').appendChild(thankYouContainer);
+                
+                document.getElementById('thank-you-text').textContent = settings.thankYouMessage || 'شكرًا لك، تم استلام ردك بنجاح.';
+                
+                const shareContainer = thankYouContainer.querySelector('.share-container');
+                shareContainer.style.display = 'block';
+                const shareLinkInput = document.getElementById('survey-share-link-after');
+                const shareLinkBtn = document.getElementById('copy-share-link-after');
+                const shareLink = window.location.href;
+                shareLinkInput.value = shareLink;
+                shareLinkBtn.onclick = () => copyToClipboard(shareLink, shareLinkBtn);
+
+                if (settings.allowResultsView) {
+                    document.getElementById('view-results-link').href = `results.html?id=${currentSurveyData.id}`;
+                    document.getElementById('view-results-link').style.display = 'inline-block';
+                }
             }
-            document.getElementById('thank-you-container').style.display = 'block';
             showLoader(false);
         });
 
     } catch (error) {
-        statusContainer.style.display = 'block';
-        document.getElementById('status-text').textContent = error.message;
+        showStatus(error.message);
     } finally {
         showLoader(false);
     }
@@ -498,63 +510,53 @@ async function initSurveyPage() {
 
 function renderQuestionInputForResponder(q) {
     const name = `q-${q.id}`; const req = q.required ? 'required' : '';
-    const onchange = currentSurveyData.settings.showProgress ? `onchange="updateProgressBar()"` : '';
     switch (q.type) {
-        case 'text': case 'textarea': case 'date': case 'time': case 'dropdown':
-            const type = q.type === 'textarea' ? 'textarea' : 'input';
-            const inputType = q.type === 'dropdown' ? '' : `type="${q.type}"`;
-            if (q.type === 'dropdown') return `<select id="${name}" name="${name}" ${req} ${onchange}><option value="">-- اختر --</option>${q.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`;
-            return `<${type==='textarea'?'textarea':'input'} id="${name}" name="${name}" ${inputType} placeholder="إجابتك..." ${req} ${onchange}></${type==='textarea'?'textarea':'input'}>`;
-        case 'radio': return q.options.map((o, i) => `<div class="checkbox-group"><input type="radio" id="${name}-o-${i}" name="${name}" value="${o}" ${req} ${onchange}><label for="${name}-o-${i}">${o}</label></div>`).join('');
-        case 'checkbox': return q.options.map((o, i) => `<div class="checkbox-group"><input type="checkbox" id="${name}-o-${i}" name="${name}" value="${o}" ${onchange}><label for="${name}-o-${i}">${o}</label></div>`).join('');
-        case 'rating': return `<div class="rating-stars">${Array.from({length: 5}, (_, i) => 5 - i).map(v => `<input type="radio" id="${name}-r-${v}" name="${name}" value="${v}" ${req} ${onchange}><label for="${name}-r-${v}" title="${v} نجوم">★</label>`).join('')}</div>`;
+        case 'text': return `<input type="text" id="${name}" name="${name}" placeholder="إجابتك" ${req}>`;
+        case 'textarea': return `<textarea id="${name}" name="${name}" placeholder="إجابتك المفصلة..." ${req}></textarea>`;
+        case 'date': return `<input type="date" id="${name}" name="${name}" ${req}>`;
+        case 'time': return `<input type="time" id="${name}" name="${name}" ${req}>`;
+        case 'radio': return q.options.map((o, i) => `<div class="checkbox-group"><input type="radio" id="${name}-o-${i}" name="${name}" value="${o}" ${req}><label for="${name}-o-${i}">${o}</label></div>`).join('');
+        case 'checkbox': return q.options.map((o, i) => `<div class="checkbox-group"><input type="checkbox" id="${name}-o-${i}" name="${name}" value="${o}"><label for="${name}-o-${i}">${o}</label></div>`).join('');
+        case 'dropdown': return `<select id="${name}" name="${name}" ${req}><option value="">-- اختر --</option>${q.options.map(o => `<option value="${o}">${o}</option>`).join('')}</select>`;
+        case 'rating': return `<div class="rating-stars">${Array.from({length: 5}, (_, i) => 5 - i).map(v => `<input type="radio" id="${name}-r-${v}" name="${name}" value="${v}" ${req}><label for="${name}-r-${v}" title="${v} نجوم">★</label>`).join('')}</div>`;
         default: return '<p>نوع غير مدعوم.</p>';
     }
 }
 
 function updateProgressBar() {
-    const requiredInputs = currentSurveyData.questions.filter(q => q.required);
-    if (requiredInputs.length === 0) return;
-
+    const form = document.getElementById('survey-form-responder');
+    if (!form || !currentSurveyData) return;
+    const requiredQuestions = currentSurveyData.questions.filter(q => q.required);
+    if (requiredQuestions.length === 0) {
+        document.getElementById('progress-bar-fill').style.width = '100%';
+        return;
+    }
     let filledCount = 0;
-    requiredInputs.forEach(q => {
-        const el = document.querySelector(`[name="q-${q.id}"]`);
-        if (el) {
-            if (q.type === 'checkbox') {
-                if (document.querySelector(`[name="q-${q.id}"]:checked`)) filledCount++;
-            } else if (el.value) {
-                filledCount++;
-            }
-        }
+    const formData = new FormData(form);
+    requiredQuestions.forEach(q => {
+        const answer = q.type === 'checkbox' ? formData.getAll(`q-${q.id}`) : formData.get(`q-${q.id}`);
+        if (answer && answer.length > 0) filledCount++;
     });
-    
-    const percentage = (filledCount / requiredInputs.length) * 100;
+    const percentage = (filledCount / requiredQuestions.length) * 100;
     document.getElementById('progress-bar-fill').style.width = `${percentage}%`;
 }
-
 
 // ====== PUBLIC RESULTS PAGE LOGIC ======
 async function initResultsPage() {
     const surveyId = getSurveyIdFromUrl();
     const contentDiv = document.getElementById('public-results-content');
-    if (!surveyId) return contentDiv.innerHTML = '<h1>معرف الاستبيان مفقود.</h1>';
+    if (!surveyId) return contentDiv.innerHTML = '<h1>معرف الاستفتاء مفقود.</h1>';
     
     showLoader(true);
     try {
         const surveyDoc = await db.collection('surveys').doc(surveyId).get();
-        if (!surveyDoc.exists) throw new Error("الاستبيان غير موجود.");
+        if (!surveyDoc.exists) throw new Error("الاستفتاء غير موجود.");
         currentSurveyData = { id: surveyDoc.id, ...surveyDoc.data() };
-
-        if (!currentSurveyData.settings?.allowResultsView) {
-            throw new Error("عذرًا، نتائج هذا الاستبيان ليست متاحة للعرض العام.");
-        }
+        if (!currentSurveyData.settings?.allowResultsView) throw new Error("عذرًا، نتائج هذا الاستفتاء ليست متاحة للعرض العام.");
         document.getElementById('results-title').textContent = `نتائج: ${currentSurveyData.title}`;
-
         const responsesSnapshot = await db.collection('responses').where('surveyId', '==', surveyId).get();
         currentSurveyResponses = responsesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
         renderSummaryView('public-results-content');
-
     } catch (error) {
         contentDiv.innerHTML = `<div class="card" style="text-align:center;"><h2 style="color:var(--error-color);">خطأ</h2><p>${error.message}</p></div>`;
     } finally {
@@ -562,24 +564,24 @@ async function initResultsPage() {
     }
 }
 
-
 // ====== EXPORT FUNCTIONS (for Dashboard) ======
+function setupExportButtons(surveyId) {
+    document.getElementById('export-csv-btn').onclick = () => exportResponsesToCSV(surveyId);
+    document.getElementById('export-pdf-btn').onclick = () => exportResponsesToPDF(surveyId);
+}
 function exportResponsesToCSV(surveyId) {
     if (!currentSurveyData || currentSurveyResponses.length === 0) return showAlert('لا توجد بيانات للتصدير.', 'info');
     showAlert('جاري تجهيز ملف CSV...', 'info');
     const headers = ['ResponseID', 'Timestamp', ...currentSurveyData.questions.map(q => `"${q.text.replace(/"/g, '""')}"`)];
     let csvContent = '\uFEFF' + headers.join(',') + '\r\n';
     currentSurveyResponses.forEach(response => {
-        const rowData = [
-            response.id,
-            `"${response.timestamp?.toDate ? response.timestamp.toDate().toLocaleString('ar-SA') : 'N/A'}"`,
-            ...currentSurveyData.questions.map(q => {
+        const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+        const rowData = [ response.id, `"${response.timestamp?.toDate ? response.timestamp.toDate().toLocaleString('en-CA', dateOptions) : 'N/A'}"`, ...currentSurveyData.questions.map(q => {
                 const ans = response.answers.find(a => a.questionId === q.id)?.answer;
                 if (ans == null) return '""';
                 const text = Array.isArray(ans) ? ans.join('; ') : String(ans);
                 return `"${text.replace(/"/g, '""')}"`;
-            })
-        ];
+            })];
         csvContent += rowData.join(',') + '\r\n';
     });
     const link = document.createElement("a");
@@ -595,14 +597,11 @@ function exportResponsesToPDF(surveyId) {
     doc.addFont('Amiri-Regular-normal.js', 'Amiri-Regular', 'normal');
     doc.setFont('Amiri-Regular');
     const tableHeaders = [['#', 'تاريخ الإجابة', ...currentSurveyData.questions.map(q => q.text)]];
-    const tableBody = currentSurveyResponses.map((response, index) => [
-        index + 1,
-        response.timestamp?.toDate ? response.timestamp.toDate().toLocaleDateString('ar-SA') : 'N/A',
-        ...currentSurveyData.questions.map(q => {
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', calendar: 'gregory', numberingSystem: 'latn' };
+    const tableBody = currentSurveyResponses.map((response, index) => [ index + 1, response.timestamp?.toDate ? response.timestamp.toDate().toLocaleDateString('ar-EG', dateOptions) : 'N/A', ...currentSurveyData.questions.map(q => {
             const ans = response.answers.find(a => a.questionId === q.id)?.answer;
             return ans == null ? '' : (Array.isArray(ans) ? ans.join('، ') : String(ans));
-        })
-    ]);
+        })]);
     doc.autoTable({
         head: tableHeaders, body: tableBody, startY: 25,
         theme: 'grid', styles: { font: 'Amiri-Regular', halign: 'right', fontSize: 8 },
@@ -615,10 +614,12 @@ function exportResponsesToPDF(surveyId) {
     doc.save(`survey_${surveyId}_responses.pdf`);
 }
 
-
 // ====== PAGE ROUTER ======
 document.addEventListener('DOMContentLoaded', () => {
     const path = window.location.pathname;
+    const yearSpan = document.getElementById('current-year');
+    if(yearSpan) yearSpan.textContent = new Date().getFullYear();
+    
     if (path.includes('dashboard.html')) initDashboardPage();
     else if (path.includes('survey.html')) initSurveyPage();
     else if (path.includes('admin.html')) initAdminPage();

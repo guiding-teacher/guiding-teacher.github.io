@@ -47,6 +47,11 @@
             cursor: none;
         }
 
+        
+        #sds{
+                font-size: 52px;
+            } 
+        
         /* --- مؤشر الفأرة المخصص --- */
         .custom-cursor { position: fixed; left: 0; top: 0; width: 30px; height: 30px; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="%23FFD166" d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.966-7.417 3.966 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>'); background-size: contain; background-repeat: no-repeat; pointer-events: none; z-index: 9999; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s; transform: translate(-50%, -50%) scale(1); opacity: 1; }
         .custom-cursor.hidden { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
@@ -228,6 +233,7 @@
         .site-footer__sparkles span:nth-child(4) { animation-delay: 0.6s; }
         @keyframes footerShine { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; } 50% { transform: translateY(-6px) scale(1.25); opacity: 1; } }
 
+         
         @keyframes fadeInSlideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideInDownNav { from { transform: translateY(-100%); opacity: 0.8; } to { transform: translateY(0); opacity: 1; } }
 
@@ -239,7 +245,7 @@
                 padding-left: 30px;
                 padding-right: 30px;
             }
-            .magic-nav__link { padding: 10px 15px; font-size: clamp(0.85rem, 1.8vw, 1rem); }
+            .magic-nav__link { padding: 10px 15px; font-size: clamp(0.84rem, 1.8vw, 1rem); }
         }
 
         @media (max-width: 768px) {
@@ -251,7 +257,7 @@
              .content-section { padding: 0 10px; } /* Regular padding for content on mobile */
 
 
-            .magic-nav { padding: 10px 0; }
+            .magic-nav { padding: 10px 0; font-size: 27px; }
             .magic-nav__list { flex-wrap: wrap; justify-content: center; gap: 6px; padding: 0 5px; }
             .magic-nav__item { flex-grow: 0; flex-shrink: 0; flex-basis: calc(33.333% - 4px); max-width: calc(33.333% - 4px); }
             .magic-nav__link { padding: 8px 5px; font-size: clamp(0.7rem, 2.5vw, 0.8rem); flex-direction: column; gap: 3px; min-height: 50px; text-align: center; word-break: break-word; }
@@ -283,6 +289,8 @@
             .back-to-top-button { width: 50px; height: 50px; font-size: 1.4rem; bottom: 20px; right: 20px;}
         }
 
+        
+        
         @media (max-width: 480px) {
             .content-section { padding: 0 5px; }
             .cards-grid {
@@ -293,7 +301,9 @@
                 
                 width: 55%;
             }
-            
+            #sds{
+                font-size: 31px;
+            }
             .magic-card__image-wrapper {
                 height: 160px;
             }
@@ -302,8 +312,9 @@
             }
             .magic-card__button {
                 padding: 10px 18px;
-                font-size: clamp(0.75rem, 2.4vw, 0.85rem);
+                font-size: clamp(0.78rem, 2.4vw, 0.85rem);
             }
+        }
         }
 
         @media (max-width: 370px) {
@@ -350,7 +361,7 @@
     </header>
 
     <nav class="magic-nav">
-        <ul class="magic-nav__list">
+        <ul class="magic-nav__list" id="sds">
             <li class="magic-nav__item"><a href="#letters-section" class="magic-nav__link" data-section-id="letters-section"><i class="fas fa-spell-check magic-nav__icon"></i><span>عالم الحروف</span></a></li>
             <li class="magic-nav__item"><a href="#numbers-section" class="magic-nav__link" data-section-id="numbers-section"><i class="fas fa-sort-numeric-down magic-nav__icon"></i><span>أصدقاء الأرقام</span></a></li>
             <li class="magic-nav__item"><a href="#stories-section" class="magic-nav__link" data-section-id="stories-section"><i class="fas fa-book-open-reader magic-nav__icon"></i><span>حكايات ملهمة</span></a></li>
