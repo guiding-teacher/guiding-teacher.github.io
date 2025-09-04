@@ -75,9 +75,9 @@
         .back-to-top-button:hover i { transform: rotate(-15deg) translateY(-2px); }
 
         /* --- قسم الهيرو --- */
-        .hero { height: 65vh; min-height: 400px; position: relative; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--color-white); overflow: hidden; }
-        .hero__background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.6) saturate(1.2); z-index: -2; transform: scale(1.1); animation: heroBgZoom 20s infinite alternate ease-in-out; }
-        @keyframes heroBgZoom { from { transform: scale(1.1); } to { transform: scale(1.25); } }
+        .hero { height: 81vh; min-height: 400px; position: relative; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--color-white); overflow: hidden; }
+        .hero__background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.6) saturate(1.2); z-index: -2; transform: scale(1.1); animation: heroBgZoom 21s infinite alternate ease-in-out; }
+        @keyframes heroBgZoom { from { transform: scale(1.1); } to { transform: scale(1.50); } }
         .hero__overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(255, 140, 105, 0.4), rgba(110, 205, 196, 0.4), rgba(160, 132, 232, 0.3)); z-index: -1; }
         .hero__content { padding: 20px; animation: fadeInSlideUp 1s 0.3s ease-out backwards; }
         .hero__title { font-family: var(--font-display); font-size: clamp(2.8rem, 7vw, 6rem); margin-bottom: 0.4em; color: var(--color-accent1); text-shadow: 3px 3px 0px rgba(0,0,0,0.25), 0 0 20px rgba(255,209,102,0.6); letter-spacing: 1.5px; }
@@ -302,7 +302,21 @@
                 width: 55%;
             }
             #sds{
-                font-size: 31px;
+                height: 300px;
+            }
+            
+            .hero__content{
+                margin-top: 250px;
+            }
+            
+            .hero__subtitle{
+                margin-bottom: 0px;
+                font-size: 15px;
+            }
+            li{
+                height: 130px;
+                border-radius: 25px;
+                border:dashed 1px #555675;
             }
             .magic-card__image-wrapper {
                 height: 160px;
@@ -351,17 +365,16 @@
     </div>
 
     <header class="hero">
-        <img src="https://images.unsplash.com/photo-1484807352052-23338990c6c6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGNoaWxkJTIwZHJlYW18ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&w=1000&q=80" alt="خيال طفل واسع" class="hero__background-image">
+        <img src="imgeredink/dsd.png" alt="خيال طفل واسع" class="hero__background-image">
         <div class="hero__overlay"></div>
         <div class="hero__content">
-            <h1 class="hero__title">مملكة الحروف والمرح</h1>
             <p class="hero__subtitle">انطلق في مغامرة شيقة لاكتشاف سحر القراءة والكتابة بطرق مبتكرة وملهمة!</p>
-            <a href="#letters-section" class="hero__cta-button"><span>ابدأ رحلتك الآن!</span></a>
+            <a href="#sds" class="hero__cta-button"><span>ابدأ رحلتك الآن!</span></a>
         </div>
     </header>
 
-    <nav class="magic-nav">
-        <ul class="magic-nav__list" id="sds">
+    <nav class="magic-nav" id="sds">
+        <ul class="magic-nav__list" >
             <li class="magic-nav__item"><a href="#letters-section" class="magic-nav__link" data-section-id="letters-section"><i class="fas fa-spell-check magic-nav__icon"></i><span>عالم الحروف</span></a></li>
             <li class="magic-nav__item"><a href="#numbers-section" class="magic-nav__link" data-section-id="numbers-section"><i class="fas fa-sort-numeric-down magic-nav__icon"></i><span>أصدقاء الأرقام</span></a></li>
             <li class="magic-nav__item"><a href="#stories-section" class="magic-nav__link" data-section-id="stories-section"><i class="fas fa-book-open-reader magic-nav__icon"></i><span>حكايات ملهمة</span></a></li>
@@ -384,7 +397,7 @@
                 <div class="cards-grid">
                     <article class="magic-card is-featured" id="ass" style="--card-theme-color: var(--color-primary);">
                         <div class="magic-card__image-wrapper">
-                            <img src="https://images.unsplash.com/photo-1550355291-bbee04a92027?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y29sb3JmdWwlMjBhbHBoYWJldHxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&w=500&q=60" alt="مكعبات حروف ملونة بشكل جذاب">
+                            <img src="" alt="مكعبات حروف ملونة بشكل جذاب">
                         </div>
                         <div class="magic-card__content">
                             <h3 class="magic-card__title">رحلة الأبجدية المذهلة</h3>

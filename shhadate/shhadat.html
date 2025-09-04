@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مولّد شهادات الشكر والتقدير الاحترافي</title>
+
+    <!-- Bootstrap 5 RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" integrity="sha384-nU14brUcp6StFntEOOEBvcJm4huWjB0OcIeQ3fltAfSmuZFrkAif0T+UtNGlKKQv" crossorigin="anonymous">
+    
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts (Cairo, Tajawal, Almarai, Amiri, Reem Kufi for Arabic) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&family=Amiri:wght@400;700&family=Cairo:wght@300;400;700;900&family=Reem+Kufi:wght@400;500;600;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6f42c1;
+            --accent-color: #d63384;
+            --success-color: #198754;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2.5rem 0;
+            margin-bottom: 2rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-header::before {
+            content: "";
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+            z-index: 0;
+        }
+
+        .template-gallery .card { cursor: pointer; transition: all 0.3s ease; border: 3px solid transparent; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .template-gallery .card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 35px rgba(0,0,0,0.15); }
+        .template-gallery .card.selected { border-color: var(--primary-color); box-shadow: 0 0 25px rgba(13, 110, 253, 0.6); transform: translateY(-5px) scale(1.01); }
+        .template-gallery img { height: 200px; object-fit: cover; transition: transform 0.5s ease; }
+        .template-gallery .card:hover img { transform: scale(1.05); }
+        .template-actions { position: absolute; top: 10px; left: 10px; opacity: 0; transition: opacity 0.3s ease; }
+        .template-gallery .card:hover .template-actions { opacity: 1; }
+        
+        #editor-section { display: none; background-color: #ffffff; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 2rem; }
+        
+        /* === START: A4 PREVIEW STYLES === */
+        .preview-container { 
+            position: relative; 
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            border-right: 2px solid #e9ecef;
+        }
+        
+        /* The responsive wrapper that maintains A4 aspect ratio */
+        #preview-wrapper {
+            width: 100%;
+            max-width: 1122px; /* Optional: set a max-width for very large screens */
+            aspect-ratio: 1122 / 794; /* A4 Landscape aspect ratio */
+            position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border-radius: 8px; /* Optional visual enhancement */
+            overflow: hidden; /* Important for scaling */
+        }
+        
+        /* A4 Landscape Fixed Canvas (1122.5 x 793.7 pixels at 96 DPI) */
+        #certificate-preview {
+            width: 1122px; 
+            height: 794px; 
+            position: absolute; /* Changed to absolute to sit inside wrapper */
+            top: 0;
+            left: 0;
+            border: 1px solid #ddd;
+            background-size: cover; 
+            background-position: center;
+            color: black; 
+            overflow: hidden; 
+            transform-origin: top left; /* Crucial for scaling */
+            /* The 'transform: scale()' property will be set by JavaScript */
+        }
+        /* === END: A4 PREVIEW STYLES === */
+
+        .preview-tools { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            z-index: 10; 
+            background: rgba(255,255,255,0.9); 
+            padding: 10px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+
+        /* Certificate Elements */
+        .cert-element { 
+            position: absolute; 
+            padding: 5px; 
+            box-sizing: border-box; 
+            touch-action: none; /* Important for mobile drag */ 
+        }
+        #certificate-preview.drag-mode .cert-element { 
+            cursor: move; 
+            border: 1px dashed rgba(0, 0, 0, 0.5); 
+        }
+        #certificate-preview.drag-mode .cert-element:hover { 
+            background: rgba(13, 110, 253, 0.1); 
+        }
+        .resizer { 
+            width: 10px; 
+            height: 10px; 
+            background: white; 
+            border: 1px solid #333; 
+            position: absolute; 
+            display: none; 
+            z-index: 11; 
+        }
+        .resizer.br { 
+            bottom: -5px; 
+            right: -5px; 
+            cursor: se-resize; 
+        }
+        .cert-element.resizable:hover .resizer, 
+        .cert-element.selected .resizer { 
+            display: block; 
+        }
+        .cert-element img, 
+        .cert-element .qr-code-container { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+        }
+
+        /* Adjusted element positions */
+        #cert-school-name { top: 30px; width: 100%; text-align: center; font-size: 24px; font-weight: bold; }
+        #cert-title { top: 90px; width: 100%; text-align: center; font-size: 50px; font-weight: 900; }
+        #cert-separator { top: 160px; left: 20%; width: 60%; height: 2px; background-color: #333; border: none; }
+        #cert-body { top: 220px; width: 80%; left: 10%; text-align: center; font-size: 24px; line-height: 1.8; }
+        #cert-student-name { font-weight: 700; display: block; margin: 20px 0; font-size: 34px; }
+        #cert-class-name-text { display: block; margin: 10px 0; font-weight: normal; }
+        #cert-teacher { bottom: 70px; right: 100px; text-align: center; font-size: 18px; } /* Moved more to the right */
+        #cert-manager { bottom: 70px; left: 100px; text-align: center; font-size: 18px; }  /* Moved more to the left */
+        #cert-date { bottom: 30px; width: 100%; text-align: center; font-size: 18px; }
+        #cert-qrcode { bottom: 100px; width: 100%; text-align: center; } /* QR code above date */
+        .signature-line { border-top: 1px solid #555; padding-top: 5px; margin-top: 5px; min-width: 180px; }
+        
+        /* Circular logo styling */
+        .cert-logo img {
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .settings-panel { 
+            max-height: 794px; 
+            overflow-y: auto; 
+            padding-right: 10px; 
+        }
+        .accordion-button:not(.collapsed) { 
+            color: white; 
+            background-color: var(--primary-color); 
+        }
+        .accordion-button:focus { 
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); 
+        }
+        .input-group .form-control-color { 
+            padding: 0.25rem; 
+            min-width: 50px; 
+            height: auto; 
+        }
+
+        .step-number { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            width: 30px; 
+            height: 30px; 
+            background: var(--primary-color); 
+            color: white; 
+            border-radius: 50%; 
+            margin-left: 10px; 
+        }
+        .custom-file-upload { 
+            display: block; 
+            padding: 12px; 
+            border: 2px dashed #ddd; 
+            border-radius: 8px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            margin-bottom: 15px; 
+        }
+        .custom-file-upload:hover { 
+            border-color: var(--primary-color); 
+            background-color: rgba(13, 110, 253, 0.05); 
+        }
+        .template-category { 
+            margin-bottom: 20px; 
+        }
+        .category-title { 
+            border-right: 4px solid var(--primary-color); 
+            padding-right: 10px; 
+            margin-bottom: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .badge-template { 
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            z-index: 5; 
+        }
+        
+        @media (max-width: 992px) { 
+            .preview-container { 
+                border-right: none; 
+                border-bottom: 2px solid #e9ecef; 
+                padding-bottom: 2rem; 
+                margin-bottom: 2rem; 
+            } 
+        }
+
+        .toast-container { 
+            position: fixed; 
+            top: 20px; 
+            left: 20px; 
+            z-index: 9999; 
+        }
+        .toast { 
+            background: white; 
+            border-left: 4px solid var(--success-color); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+            border-radius: 4px; 
+            padding: 12px 20px; 
+            margin-bottom: 10px; 
+            display: none; 
+            align-items: center; 
+            gap: 10px; 
+            transform: translateX(-100%); 
+            transition: transform 0.3s ease; 
+            opacity: 0; 
+            transition: all 0.3s ease-in-out; 
+        }
+        .toast.show { 
+            display: flex; 
+            opacity: 1; 
+            transform: translateX(0); 
+        }
+        .toast-success { 
+            border-left-color: var(--success-color); 
+        }
+        .toast-error { 
+            border-left-color: #dc3545; 
+        }
+        
+        .loading-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(255,255,255,0.9); 
+            display: none; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999; 
+        }
+        .spinner { 
+            width: 50px; 
+            height: 50px; 
+            border: 5px solid #f3f3f3; 
+            border-top: 5px solid var(--primary-color); 
+            border-radius: 50%; 
+            animation: spin 1s linear infinite; 
+            margin-bottom: 15px; 
+        }
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
+        /* Preview modal styling */
+        .preview-modal .modal-body {
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+        .preview-item {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .preview-item canvas {
+            width: 100%;
+            height: auto;
+        }
+        .preview-student-name {
+            padding: 10px;
+            background: #f8f9fa;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        footer {
+            width: 100%; padding: 15px 0; text-align: center; background-color: rgb(195, 226, 237);
+            color: Teal; font-size: 1.1em; margin-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        footer a { color: var(--primary-color); text-decoration: none; transition: color 0.3s ease; }
+        footer a:hover { color: var(--secondary-color); }
+
+        
+    </style>
+</head>
+<body>
+
+    <div class="main-header text-center">
+        <div class="container">
+            <h1 class="display-4"><i class="fas fa-award me-2"></i> مولّد شهادات التقدير الاحترافي</h1>
+            <p class="lead">صمم وأنشئ شهادات تقدير احترافية بضغطة زر مع ميزات متقدمة</p>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4">
+        <!-- الخطوة 1: معرض القوالب -->
+        <div class="template-gallery">
+            <h2 class="text-center mb-4"><span class="step-number">1</span> اختر تصميم الشهادة</h2>
+            <div class="template-filters mb-4 text-center">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" data-filter="all">الكل</button>
+                    <button type="button" class="btn btn-outline-primary" data-filter="educational">تعليمية</button>
+                    <button type="button" class="btn btn-outline-primary" data-filter="sports">رياضية</button>
+                    <button type="button" class="btn btn-outline-primary" data-filter="corporate">شركات</button>
+                </div>
+            </div>
+            
+            <!-- التصاميم التعليمية -->
+            <div class="template-category" data-category="educational">
+                <h4 class="category-title">
+                    <span><i class="fas fa-school me-2"></i> تصاميم تعليمية</span>
+                    <span class="badge bg-primary">4</span>
+                </h4>
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/ass.jpg" data-category="educational">
+                            <span class="badge bg-success badge-template">مميز</span>
+                            <img src="images/ass.jpg" class="card-img-top" alt="تصميم ذهبي كلاسيكي">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم ذهبي كلاسيكي</h5>
+                                <p class="card-text text-muted">مناسب للتفوق الدراسي</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek2.jpg" data-category="educational">
+                            <img src="images/klasek2.jpg" class="card-img-top" alt="تصميم حديث وأنيق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم حديث وأنيق</h5>
+                                <p class="card-text text-muted">لمختلف المناسبات</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek3.jpg" data-category="educational">
+                            <img src="images/klasek3.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek4.jpg" data-category="educational">
+                            <img src="images/klasek4.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                     <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek6.jpg" data-category="educational">
+                            <img src="images/klasek6.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek5.jpg" data-category="educational">
+                            <img src="images/klasek5.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                     <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek7.jpg" data-category="educational">
+                            <img src="images/klasek7.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek8.jpg" data-category="educational">
+                            <img src="images/klasek8.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek9.jpg" data-category="educational">
+                            <img src="images/klasek9.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek11.jpg" data-category="educational">
+                            <img src="images/klasek11.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek22.jpg" data-category="educational">
+                            <img src="images/klasek22.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek44.jpg" data-category="educational">
+                            <img src="images/klasek44.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg="images/klasek55.jpg" data-category="educational">
+                            <img src="images/klasek55.jpg" class="card-img-top" alt="تصميم رسمي أزرق">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رسمي أزرق</h5>
+                                <p class="card-text text-muted">للجوائز الأكاديمية</p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+            
+            <!-- التصاميم الرياضية -->
+            <div class="template-category" data-category="sports">
+                <h4 class="category-title">
+                    <span><i class="fas fa-running me-2"></i> تصاميم رياضية</span>
+                    <span class="badge bg-primary">2</span>
+                </h4>
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="card h-100" data-bg=" " data-category="sports">
+                            <img src=" " class="card-img-top" alt="">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">تصميم رياضي أخضر</h5>
+                                <p class="card-text text-muted">غير متاح حاليا </p>
+                            </div>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-primary select-template"><i class="fas fa-check"></i> اختيار</button>
+                                <button class="btn btn-sm btn-outline-secondary preview-template" data-bs-toggle="tooltip" title="معاينة"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                     
+                </div>
+            </div>
+            
+            <!-- تصميم مخصص -->
+            <div class="mb-5 mt-4">
+                <h4 class="category-title">
+                    <span><i class="fas fa-upload me-2"></i> تصميم مخصص</span>
+                </h4>
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-cloud-upload-alt display-4 text-muted mb-3"></i>
+                        <h5 class="card-title">ارفع تصميمك الخاص</h5>
+                        <p class="card-text text-muted">استخدم صورة خلفية خاصة بك لإنشاء شهادة فريدة</p>
+                        <label for="custom-template-upload" class="custom-file-upload mt-3">
+                            <i class="fas fa-file-image me-2"></i> اختر صورة من جهازك
+                        </label>
+                        <input type="file" id="custom-template-upload" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الخطوة 2: قسم التحرير -->
+        <div id="editor-section" class="slide-down">
+            <h2 class="text-center mb-4"><span class="step-number">2</span> قم بتحرير محتوى الشهادة</h2>
+            <div class="row">
+                <!-- جزء المعاينة -->
+                <div class="col-lg-8 preview-container">
+                    <div id="preview-wrapper">
+                        <div id="certificate-preview" style="background-image: url('https://i.ibb.co/51bScY5/cert-bg-1.png');">
+                            <div class="preview-tools">
+                                <button class="btn btn-sm btn-primary" id="drag-mode-toggle" data-bs-toggle="tooltip" title="تفعيل/إلغاء وضع التحريك"><i class="fas fa-arrows-alt"></i> وضع التحريك</button>
+                            </div>
+                            <div id="cert-school-name" class="cert-element">اسم المدرسة</div>
+                            <div id="cert-title" class="cert-element" style="color: #d4af37;">شهادة شكر وتقدير</div>
+                            <div id="cert-separator" class="cert-element" style="background-color: #d4af37;"></div>
+                            <div id="cert-body" class="cert-element">
+                                تتقدم إدارة المدرسة بخالص الشكر والتقدير إلى الطالب/ة:
+                                <span id="cert-student-name" style="color: #0d6efd;">اسم الطالب هنا</span>
+                                <span id="cert-reason-text">وذلك لتفوقه/ها الدراسي وحسن سلوكه خلال العام الدراسي،</span>
+                                <span id="cert-class-name-text"></span>
+                                <span id="cert-desc-text">مع تمنياتنا له/لها بدوام التوفيق والنجاح.</span>
+                            </div>
+                            <div id="cert-teacher" class="cert-element">
+                                <span id="teacher-name-text">اسم المعلم</span>
+                                <div class="signature-line">المعلم/ة</div>
+                            </div>
+                            <div id="cert-manager" class="cert-element">
+                                <span id="manager-name-text">اسم المدير</span>
+                                <div class="signature-line">مدير المدرسة</div>
+                            </div>
+                            <div id="cert-date" class="cert-element"></div>
+                            <!-- QR code will be inserted here programmatically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- لوحة الإعدادات -->
+                <div class="col-lg-4 settings-panel">
+                    <div class="accordion" id="settingsAccordion">
+                        <!-- معلومات عامة -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseZero">
+                                    <i class="fas fa-info-circle me-2"></i> معلومات عامة
+                                </button>
+                            </h2>
+                            <div id="collapseZero" class="accordion-collapse collapse show" data-bs-parent="#settingsAccordion">
+                                <div class="accordion-body">
+                                    <label for="school-name-input" class="form-label">اسم المدرسة/الجهة:</label>
+                                    <input type="text" id="school-name-input" class="form-control" value="اسم المدرسة">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- إعدادات اسم الطالب -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                    <i class="fas fa-user-graduate me-2"></i> اسم الطالب/المكرّم
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                                <div class="accordion-body">
+                                    <label for="student-name-input" class="form-label">أسماء الطلاب/المكرمين:</label>
+                                    <textarea id="student-name-input" class="form-control" rows="4" placeholder="اكتب اسم طالب واحد، أو عدة أسماء كل اسم في سطر منفصل للطباعة دفعة واحدة.">اسم الطالب هنا</textarea>
+                                    <div class="form-text">ضع كل اسم في سطر منفصل لإنشاء شهادات متعددة.</div>
+                                    <label class="form-label small mt-3">تنسيق اسم الطالب:</label>
+                                    <div class="input-group input-group-sm">
+                                        <select id="student-font" class="form-select" title="نوع الخط">
+                                            <option value="'Cairo', sans-serif">Cairo</option>
+                                            <option value="'Tajawal', sans-serif">Tajawal</option>
+                                            <option value="'Almarai', sans-serif">Almarai</option>
+                                            <option value="'Amiri', serif">Amiri</option>
+                                            <option value="'Reem Kufi', sans-serif">Reem Kufi</option>
+                                        </select>
+                                        <select id="student-bold" class="form-select" title="سماكة الخط">
+                                            <option value="300">نحيف</option>
+                                            <option value="400">عادي</option>
+                                            <option value="700" selected>عريض</option>
+                                            <option value="900">عريض جداً</option>
+                                        </select>
+                                        <input type="color" id="student-color" class="form-control form-control-color" value="#0d6efd" title="لون الخط">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- إعدادات نص الشهادة -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    <i class="fas fa-heading me-2"></i> نصوص الشهادة
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                                <div class="accordion-body">
+                                    <label class="form-label fw-bold">العنوان الرئيسي</label>
+                                    <input type="text" id="title-input" class="form-control mb-2" value="شهادة شكر وتقدير">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">الحجم</span>
+                                        <input type="number" id="title-size" class="form-control" value="50" min="10" max="80">
+                                        <select id="title-font" class="form-select font-selector">
+                                            <option value="'Cairo', sans-serif">Cairo</option>
+                                            <option value="'Tajawal', sans-serif">Tajawal</option>
+                                            <option value="'Almarai', sans-serif">Almarai</option>
+                                            <option value="'Amiri', serif">Amiri</option>
+                                            <option value="'Reem Kufi', sans-serif">Reem Kufi</option>
+                                        </select>
+                                        <input type="color" id="title-color" class="form-control form-control-color" value="#d4af37">
+                                    </div>
+                                    <hr>
+                                    <label class="form-label fw-bold">نص الشهادة</label>
+                                    <label for="reason-input" class="form-label small text-muted">العبارة الأولى (سبب التكريم)</label>
+                                    <!-- التعديل هنا: تحويل الحقل إلى textarea -->
+                                    <textarea id="reason-input" class="form-control mb-2" rows="3">وذلك لتفوقه/ها الدراسي وحسن سلوكه خلال العام الدراسي،</textarea>
+                                    
+                                    <!-- حقل جديد لاسم الصف -->
+                                    <label for="class-name-input" class="form-label small text-muted">اسم الصف (اختياري)</label>
+                                    <input type="text" id="class-name-input" class="form-control mb-2" placeholder="مثال: الأول المتوسط">
+                                    
+                                    <label for="desc-input" class="form-label small text-muted">العبارة الثانية (تكملة النص)</label>
+                                    <textarea id="desc-input" class="form-control" rows="2">مع تمنياتنا له/لها بدوام التوفيق والنجاح.</textarea>
+                                    <div class="input-group input-group-sm mt-2">
+                                        <span class="input-group-text">الحجم</span>
+                                        <input type="number" id="desc-size" class="form-control" value="24" min="8" max="40">
+                                        <select id="desc-font" class="form-select font-selector">
+                                            <option value="'Cairo', sans-serif">Cairo</option>
+                                            <option value="'Tajawal', sans-serif">Tajawal</option>
+                                            <option value="'Almarai', sans-serif">Almarai</option>
+                                            <option value="'Amiri', serif">Amiri</option>
+                                            <option value="'Reem Kufi', sans-serif">Reem Kufi</option>
+                                        </select>
+                                        <input type="color" id="desc-color" class="form-control form-control-color" value="#000000">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- التواقيع والتاريخ -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    <i class="fas fa-signature me-2"></i> التواقيع والتاريخ
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                                <div class="accordion-body">
+                                    <label for="teacher-name-input" class="form-label">اسم المعلم/ة:</label>
+                                    <input type="text" id="teacher-name-input" class="form-control mb-2" value="اسم المعلم">
+                                    <label for="manager-name-input" class="form-label">اسم المدير/ة:</label>
+                                    <input type="text" id="manager-name-input" class="form-control mb-3" value="اسم المدير">
+                                    <hr>
+                                    <label for="cert-date-input" class="form-label">تاريخ الشهادة:</label>
+                                    <input type="date" id="cert-date-input" class="form-control mb-2">
+                                     <div class="input-group input-group-sm">
+                                        <span class="input-group-text">الحجم</span>
+                                        <input type="number" id="date-size" class="form-control" value="18" min="8" max="30">
+                                        <input type="color" id="date-color" class="form-control form-control-color" value="#000000">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- الشعار أو الختم -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                                    <i class="fas fa-image me-2"></i> الشعار أو الختم
+                                </button>
+                            </h2>
+                            <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                                <div class="accordion-body">
+                                    <label for="logo-upload" class="custom-file-upload">
+                                        <i class="fas fa-upload me-2"></i> رفع شعار أو ختم
+                                    </label>
+                                    <input type="file" id="logo-upload" accept="image/png, image/jpeg" style="display: none;">
+                                    
+                                    <div class="logo-size-control mt-3" id="logo-size-control" style="display: none;">
+                                        <label class="form-label">حجم الشعار:</label>
+                                        <input type="range" class="form-range" id="logo-size-slider" min="80" max="200" value="120">
+                                        <div class="form-text text-center" id="logo-size-value">120px</div>
+                                    </div>
+                                    
+                                    <button id="remove-logo-btn" class="btn btn-sm btn-outline-danger w-100 mt-2" style="display: none;">
+                                        <i class="fas fa-trash"></i> إزالة الشعار
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- رمز الاستجابة السريعة (QR) -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFive">
+                                    <i class="fas fa-qrcode me-2"></i> رمز الاستجابة السريعة (QR)
+                                </button>
+                            </h2>
+                            <div id="collapseFive" class="accordion-collapse collapse" data-bs-parent="#settingsAccordion">
+                                <div class="accordion-body">
+                                    <label for="qr-url-input" class="form-label">أدخل رابطًا:</label>
+                                    <input type="url" id="qr-url-input" class="form-control" placeholder="https://example.com">
+                                    <div class="d-grid gap-2 mt-2">
+                                        <button id="generate-qr-btn" class="btn btn-secondary">
+                                            <i class="fas fa-cogs"></i> إنشاء/تحديث الرمز
+                                        </button>
+                                        <button id="remove-qr-btn" class="btn btn-outline-danger" style="display: none;">
+                                            <i class="fas fa-trash"></i> إزالة الرمز
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- أزرار الإجراءات -->
+                    <div class="d-grid gap-2 mt-4">
+                        <button id="preview-all-btn" class="btn btn-info">
+                            <i class="fas fa-eye"></i> معاينة جميع الشهادات
+                        </button>
+                        <button id="download-btn" class="btn btn-primary btn-lg">
+                            <i class="fas fa-download"></i> تنزيل الشهادات (PDF)
+                        </button>
+                        <button id="save-template-btn" class="btn btn-outline-primary">
+                            <i class="fas fa-save"></i> حفظ الإعدادات الحالية
+                        </button>
+                        <button id="reset-btn" class="btn btn-outline-secondary">
+                            <i class="fas fa-redo"></i> إعادة تعيين الكل
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast-container">
+        <div class="toast">
+            <i class="fas fa-check-circle text-success"></i>
+            <div class="toast-message">تم الإجراء بنجاح!</div>
+        </div>
+    </div>
+    
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+        <p>جاري إنشاء الشهادات، الرجاء الانتظار...</p>
+    </div>
+
+    
+    
+    <!-- JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fontfaceobserver/2.3.0/fontfaceobserver.standalone.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // تحميل الخطوط مسبقًا لتحسين عرض canvas
+            const fontsToLoad = ['Cairo', 'Tajawal', 'Almarai', 'Amiri', 'Reem Kufi'].map(font => new FontFaceObserver(font).load());
+            Promise.all(fontsToLoad).then(() => {
+                initializeApp();
+            }).catch(e => {
+                console.warn('Font could not be loaded. Using fallback.', e);
+                initializeApp();
+            });
+        });
+
+        function initializeApp() {
+            // المتغيرات العامة
+            const editorSection = document.getElementById('editor-section');
+            const templates = document.querySelectorAll('.template-gallery .card');
+            const filterButtons = document.querySelectorAll('.template-filters .btn');
+            const certificatePreview = document.getElementById('certificate-preview');
+            const loadingOverlay = document.querySelector('.loading-overlay');
+            
+            // عناصر الشهادة
+            const certElements = document.querySelectorAll('.cert-element');
+            const certSchoolName = document.getElementById('cert-school-name');
+            const certTitle = document.getElementById('cert-title');
+            const certSeparator = document.getElementById('cert-separator');
+            const certStudentNameSpan = document.getElementById('cert-student-name');
+            const certBody = document.getElementById('cert-body');
+            const certReasonTextSpan = document.getElementById('cert-reason-text');
+            const certClassNameTextSpan = document.getElementById('cert-class-name-text');
+            const certDescTextSpan = document.getElementById('cert-desc-text');
+            const certTeacher = document.getElementById('cert-teacher');
+            const certManager = document.getElementById('cert-manager');
+            const certDate = document.getElementById('cert-date');
+
+            // عناصر التحكم في الإدخال
+            const schoolNameInput = document.getElementById('school-name-input');
+            const titleInput = document.getElementById('title-input');
+            const titleColor = document.getElementById('title-color');
+            const titleSize = document.getElementById('title-size');
+            const titleFont = document.getElementById('title-font');
+            const studentNameInput = document.getElementById('student-name-input');
+            const studentColor = document.getElementById('student-color');
+            const studentBold = document.getElementById('student-bold');
+            const studentFont = document.getElementById('student-font');
+            const reasonInput = document.getElementById('reason-input');
+            const classNameInput = document.getElementById('class-name-input'); // حقل جديد
+            const descInput = document.getElementById('desc-input');
+            const descColor = document.getElementById('desc-color');
+            const descSize = document.getElementById('desc-size');
+            const descFont = document.getElementById('desc-font');
+            const teacherNameInput = document.getElementById('teacher-name-input');
+            const managerNameInput = document.getElementById('manager-name-input');
+            const certDateInput = document.getElementById('cert-date-input');
+            const dateColor = document.getElementById('date-color');
+            const dateSize = document.getElementById('date-size');
+            
+            // أزرار التحكم
+            const previewAllBtn = document.getElementById('preview-all-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const saveTemplateBtn = document.getElementById('save-template-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const dragModeToggle = document.getElementById('drag-mode-toggle');
+            const logoUpload = document.getElementById('logo-upload');
+            const logoSizeSlider = document.getElementById('logo-size-slider');
+            const logoSizeValue = document.getElementById('logo-size-value');
+            const logoSizeControl = document.getElementById('logo-size-control');
+            const removeLogoBtn = document.getElementById('remove-logo-btn');
+            const qrUrlInput = document.getElementById('qr-url-input');
+            const generateQrBtn = document.getElementById('generate-qr-btn');
+            const removeQrBtn = document.getElementById('remove-qr-btn');
+            const customTemplateUpload = document.getElementById('custom-template-upload');
+            
+            // تهيئة أدوات Bootstrap
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+            // تعيين التاريخ الافتراضي
+            if (!certDateInput.value) certDateInput.value = new Date().toISOString().split('T')[0];
+
+            // منطق تصفية القوالب واختيارها
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const filter = button.getAttribute('data-filter');
+                    document.querySelectorAll('.template-category .col-lg-3').forEach(col => {
+                        const card = col.querySelector('.card');
+                        if (filter === 'all' || card.getAttribute('data-category') === filter) {
+                            col.style.display = 'block';
+                        } else {
+                            col.style.display = 'none';
+                        }
+                    });
+                });
+            });
+            
+            function selectTemplateAction(card) {
+                editorSection.style.display = 'block';
+                const bgImage = card.getAttribute('data-bg');
+                certificatePreview.style.backgroundImage = `url('${bgImage}')`;
+                templates.forEach(t => t.classList.remove('selected'));
+                card.classList.add('selected');
+                editorSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Adjust preview size after it becomes visible
+                setTimeout(adjustPreviewSize, 100);
+            }
+            
+            document.querySelectorAll('.select-template').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const card = button.closest('.card');
+                    selectTemplateAction(card);
+                });
+            });
+            
+            templates.forEach(card => {
+                card.addEventListener('click', () => {
+                    selectTemplateAction(card);
+                });
+            });
+            
+            document.querySelectorAll('.preview-template').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const card = button.closest('.card');
+                    const bgImage = card.getAttribute('data-bg');
+                    const modalHtml = `
+                        <div class="modal fade" id="templatePreviewModal" tabindex="-1">
+                            <div class="modal-dialog modal-xl modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">${card.querySelector('.card-title').innerText}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-center p-0">
+                                        <img src="${bgImage}" class="img-fluid" alt="Template preview">
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                                        <button type="button" class="btn btn-primary select-from-preview">اختيار هذا التصميم</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    const modalElement = document.getElementById('templatePreviewModal');
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                    modalElement.querySelector('.select-from-preview').addEventListener('click', () => {
+                        selectTemplateAction(card);
+                        modal.hide();
+                    });
+                    modalElement.addEventListener('hidden.bs.modal', () => modalElement.remove());
+                });
+            });
+            
+            customTemplateUpload.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        certificatePreview.style.backgroundImage = `url('${e.target.result}')`;
+                        editorSection.style.display = 'block';
+                        editorSection.scrollIntoView({ behavior: 'smooth' });
+                        showToast('تم رفع التصميم المخصص بنجاح!', 'success');
+                         // Adjust preview size after it becomes visible
+                        setTimeout(adjustPreviewSize, 100);
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            
+            // الوظيفة الرئيسية لتحديث معاينة الشهادة
+            function updatePreview() {
+                // المعلومات العامة
+                certSchoolName.innerText = schoolNameInput.value;
+                
+                // العنوان
+                certTitle.innerText = titleInput.value;
+                certTitle.style.color = titleColor.value;
+                certTitle.style.fontSize = titleSize.value + 'px';
+                certTitle.style.fontFamily = titleFont.value;
+                certSeparator.style.backgroundColor = titleColor.value;
+                
+                // اسم الطالب
+                const firstStudentName = studentNameInput.value.split('\n')[0].trim() || 'اسم الطالب هنا';
+                certStudentNameSpan.innerText = firstStudentName;
+                certStudentNameSpan.style.color = studentColor.value;
+                certStudentNameSpan.style.fontWeight = studentBold.value;
+                certStudentNameSpan.style.fontFamily = studentFont.value;
+
+                // نص الشهادة الرئيسي مع اسم الصف الاختياري
+                certReasonTextSpan.innerText = reasonInput.value;
+                const classNameValue = classNameInput.value.trim();
+                if (classNameValue) {
+                    certClassNameTextSpan.innerText = `وتميزه/ها في الصف: ${classNameValue}`;
+                    certClassNameTextSpan.style.display = 'block';
+                } else {
+                    certClassNameTextSpan.innerText = '';
+                    certClassNameTextSpan.style.display = 'none';
+                }
+                certDescTextSpan.innerText = descInput.value;
+
+                certBody.style.color = descColor.value;
+                certBody.style.fontSize = descSize.value + 'px';
+                certBody.style.fontFamily = descFont.value;
+
+                // التواقيع والتاريخ
+                document.getElementById('teacher-name-text').innerText = teacherNameInput.value;
+                document.getElementById('manager-name-text').innerText = managerNameInput.value;
+                
+                // تنسيق التاريخ
+                const dateObj = new Date(certDateInput.value);
+                const formattedDate = dateObj.toLocaleDateString('ar-SA', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                certDate.innerText = `في تاريخ: ${formattedDate}`;
+                certDate.style.color = dateColor.value;
+                certDate.style.fontSize = dateSize.value + 'px';
+            }
+
+            // ---- الميزات المحسنة ----
+
+            // السحب والإفلات المحسن للماوس واللمس (مبسط بدون تحجيم)
+            function makeDraggable(el) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+                const dragStart = (e) => {
+                    if (!certificatePreview.classList.contains('drag-mode')) return;
+                    e.preventDefault();
+                    
+                    const event = e.touches ? e.touches[0] : e;
+                    pos3 = event.pageX;
+                    pos4 = event.pageY;
+
+                    document.addEventListener('mouseup', dragEnd);
+                    document.addEventListener('touchend', dragEnd);
+                    document.addEventListener('mousemove', elementDrag);
+                    document.addEventListener('touchmove', elementDrag);
+                };
+
+                const elementDrag = (e) => {
+                    const event = e.touches ? e.touches[0] : e;
+                    pos1 = pos3 - event.pageX;
+                    pos2 = pos4 - event.pageY;
+                    pos3 = event.pageX;
+                    pos4 = event.pageY;
+                    
+                    const newTop = (el.offsetTop - pos2);
+                    const newLeft = (el.offsetLeft - pos1);
+                    el.style.top = `${newTop}px`;
+                    el.style.left = `${newLeft}px`;
+                };
+
+                const dragEnd = () => {
+                    document.removeEventListener('mouseup', dragEnd);
+                    document.removeEventListener('touchend', dragEnd);
+                    document.removeEventListener('mousemove', elementDrag);
+                    document.removeEventListener('touchmove', elementDrag);
+                };
+
+                el.addEventListener('mousedown', dragStart);
+                el.addEventListener('touchstart', dragStart);
+            }
+            
+            certElements.forEach(makeDraggable);
+
+            dragModeToggle.addEventListener('click', () => {
+                certificatePreview.classList.toggle('drag-mode');
+                dragModeToggle.classList.toggle('btn-success');
+                dragModeToggle.classList.toggle('btn-primary');
+            });
+
+            // منطق قابلية التغيير (مبسط بدون تحجيم)
+            function makeResizable(el) {
+                const resizer = document.createElement('div');
+                resizer.className = 'resizer br';
+                el.appendChild(resizer);
+                el.classList.add('resizable');
+                
+                let startX, startY, startWidth, startHeight;
+                
+                resizer.addEventListener('mousedown', initDrag, false);
+                
+                function initDrag(e) {
+                    e.stopPropagation();
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startWidth = parseInt(document.defaultView.getComputedStyle(el).width, 10);
+                    startHeight = parseInt(document.defaultView.getComputedStyle(el).height, 10);
+                    document.documentElement.addEventListener('mousemove', doDrag, false);
+                    document.documentElement.addEventListener('mouseup', stopDrag, false);
+                }
+                
+                function doDrag(e) {
+                    el.style.width = (startWidth + (e.clientX - startX)) + 'px';
+                    el.style.height = (startHeight + (e.clientY - startY)) + 'px';
+                }
+                
+                function stopDrag() {
+                    document.documentElement.removeEventListener('mousemove', doDrag, false);
+                    document.documentElement.removeEventListener('mouseup', stopDrag, false);
+                }
+            }
+
+            // رفع الشعار مع التحكم في الحجم
+            logoUpload.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        let logoEl = document.getElementById('cert-logo');
+                        if (!logoEl) {
+                            logoEl = document.createElement('div');
+                            logoEl.id = 'cert-logo';
+                            logoEl.className = 'cert-element cert-logo';
+                            logoEl.style.top = '50px';
+                            logoEl.style.left = '50px';
+                            logoEl.style.width = logoSizeSlider.value + 'px';
+                            logoEl.style.height = logoSizeSlider.value + 'px';
+                            certificatePreview.appendChild(logoEl);
+                            makeDraggable(logoEl);
+                            makeResizable(logoEl);
+                        }
+                        logoEl.innerHTML = `<img src="${e.target.result}" alt="logo">`;
+                        removeLogoBtn.style.display = 'block';
+                        logoSizeControl.style.display = 'block';
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            
+            // التحكم في حجم الشعار
+            logoSizeSlider.addEventListener('input', function() {
+                const logoEl = document.getElementById('cert-logo');
+                if (logoEl) {
+                    logoEl.style.width = this.value + 'px';
+                    logoEl.style.height = this.value + 'px';
+                    logoSizeValue.textContent = `${this.value}px`;
+                }
+            });
+            
+            removeLogoBtn.addEventListener('click', () => {
+                const logoEl = document.getElementById('cert-logo');
+                if (logoEl) logoEl.remove();
+                removeLogoBtn.style.display = 'none';
+                logoSizeControl.style.display = 'none';
+                logoUpload.value = '';
+            });
+
+            // منشئ رمز الاستجابة السريعة (QR)
+            let qrCodeInstance = null;
+            generateQrBtn.addEventListener('click', () => {
+                const url = qrUrlInput.value.trim();
+                if (!url) {
+                    showToast('الرجاء إدخال رابط صالح لإنشاء الرمز', 'error');
+                    return;
+                }
+                
+                let qrEl = document.getElementById('cert-qrcode');
+                if (!qrEl) {
+                    qrEl = document.createElement('div');
+                    qrEl.id = 'cert-qrcode';
+                    qrEl.className = 'cert-element';
+                    qrEl.style.bottom = '100px'; // فوق التاريخ مباشرة
+                    qrEl.style.left = '50%';
+                    qrEl.style.transform = 'translateX(-50%)';
+                    qrEl.style.width = '100px';
+                    qrEl.style.height = '100px';
+                    qrEl.innerHTML = '<div class="qr-code-container"></div>';
+                    certificatePreview.appendChild(qrEl);
+                    makeDraggable(qrEl);
+                    makeResizable(qrEl);
+                }
+                
+                const qrContainer = qrEl.querySelector('.qr-code-container');
+                qrContainer.innerHTML = "";
+                qrCodeInstance = new QRCode(qrContainer, {
+                    text: url,
+                    width: 128,
+                    height: 128,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                removeQrBtn.style.display = 'block';
+            });
+            
+            removeQrBtn.addEventListener('click', () => {
+                const qrEl = document.getElementById('cert-qrcode');
+                if (qrEl) qrEl.remove();
+                removeQrBtn.style.display = 'none';
+                qrUrlInput.value = '';
+            });
+
+            // مستمعو الأحداث لجميع عناصر التحكم
+            const controls = [
+                schoolNameInput, titleInput, titleColor, titleSize, titleFont, 
+                studentNameInput, studentColor, studentBold, studentFont, 
+                reasonInput, classNameInput, descInput, descColor, descSize, descFont, 
+                teacherNameInput, managerNameInput, certDateInput, dateColor, dateSize
+            ];
+            
+            controls.forEach(control => control.addEventListener('input', updatePreview));
+            
+            // حفظ/تحميل/إعادة تعيين الإعدادات
+            function getElementState(el) {
+                if (!el) return null;
+                const state = {
+                    id: el.id,
+                    top: el.style.top,
+                    left: el.style.left,
+                    width: el.style.width,
+                    height: el.style.height,
+                };
+                if (el.id === 'cert-logo' && el.querySelector('img')) state.src = el.querySelector('img').src;
+                if (el.id === 'cert-qrcode') state.url = qrUrlInput.value;
+                return state;
+            }
+            
+            saveTemplateBtn.addEventListener('click', () => {
+                const settings = {
+                    inputs: {
+                        schoolName: schoolNameInput.value,
+                        title: titleInput.value, titleColor: titleColor.value, titleSize: titleSize.value, titleFont: titleFont.value,
+                        studentNames: studentNameInput.value, studentColor: studentColor.value, studentBold: studentBold.value, studentFont: studentFont.value,
+                        reason: reasonInput.value,
+                        className: classNameInput.value, // حفظ اسم الصف
+                        description: descInput.value, descColor: descColor.value, descSize: descSize.value, descFont: descFont.value,
+                        teacherName: teacherNameInput.value, managerName: managerNameInput.value,
+                        date: certDateInput.value, dateColor: dateColor.value, dateSize: dateSize.value,
+                        qrUrl: qrUrlInput.value,
+                        logoSize: logoSizeSlider.value
+                    },
+                    background: certificatePreview.style.backgroundImage,
+                    elements: Array.from(document.querySelectorAll('#certificate-preview .cert-element, #cert-logo, #cert-qrcode')).map(getElementState).filter(s => s)
+                };
+                localStorage.setItem('certificateSettings', JSON.stringify(settings));
+                showToast('تم حفظ الإعدادات بنجاح!', 'success');
+            });
+            
+            function loadSettings() {
+                const savedSettings = localStorage.getItem('certificateSettings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    const inputs = settings.inputs;
+                    
+                    schoolNameInput.value = inputs.schoolName || 'اسم المدرسة';
+                    titleInput.value = inputs.title;
+                    titleColor.value = inputs.titleColor;
+                    titleSize.value = inputs.titleSize;
+                    titleFont.value = inputs.titleFont;
+                    studentNameInput.value = inputs.studentNames;
+                    studentColor.value = inputs.studentColor;
+                    studentBold.value = inputs.studentBold;
+                    studentFont.value = inputs.studentFont;
+                    reasonInput.value = inputs.reason;
+                    classNameInput.value = inputs.className || ''; // تحميل اسم الصف
+                    descInput.value = inputs.description;
+                    descColor.value = inputs.descColor;
+                    descSize.value = inputs.descSize;
+                    descFont.value = inputs.descFont;
+                    teacherNameInput.value = inputs.teacherName;
+                    managerNameInput.value = inputs.managerName;
+                    certDateInput.value = inputs.date;
+                    dateColor.value = inputs.dateColor;
+                    dateSize.value = inputs.dateSize;
+                    qrUrlInput.value = inputs.qrUrl || '';
+                    
+                    if (inputs.logoSize) {
+                        logoSizeSlider.value = inputs.logoSize;
+                        logoSizeValue.textContent = `${inputs.logoSize}px`;
+                    }
+                    
+                    if (settings.background) certificatePreview.style.backgroundImage = settings.background;
+                    
+                    if (settings.elements) {
+                        settings.elements.forEach(state => {
+                            let el = document.getElementById(state.id);
+                            if (el) {
+                                el.style.top = state.top;
+                                el.style.left = state.left;
+                                if (state.width) el.style.width = state.width;
+                                if (state.height) el.style.height = state.height;
+                                
+                                if (state.id === 'cert-logo' && state.src) {
+                                    let event = new Event('change');
+                                    logoUpload.dispatchEvent(event);
+                                    setTimeout(() => {
+                                        const logoImg = document.querySelector('#cert-logo img');
+                                        if (logoImg) logoImg.src = state.src;
+                                        removeLogoBtn.style.display = 'block';
+                                        logoSizeControl.style.display = 'block';
+                                    }, 200);
+                                }
+                                
+                                if (state.id === 'cert-qrcode' && state.url) {
+                                    generateQrBtn.click();
+                                }
+                            }
+                        });
+                    }
+                    
+                    updatePreview();
+                    editorSection.style.display = 'block';
+                    showToast('تم استعادة الإعدادات المحفوظة.', 'success');
+                }
+            }
+            
+            resetBtn.addEventListener('click', () => {
+                if (confirm('هل أنت متأكد من إعادة تعيين جميع الإعدادات إلى الوضع الافتراضي؟ سيتم حذف أي إعدادات محفوظة.')) {
+                    localStorage.removeItem('certificateSettings');
+                    window.location.reload();
+                }
+            });
+
+            // معاينة جميع الشهادات قبل التحميل
+            previewAllBtn.addEventListener('click', async () => {
+                const studentNames = studentNameInput.value.split('\n').map(name => name.trim()).filter(name => name !== '');
+                if (studentNames.length === 0) {
+                    showToast('الرجاء إدخال اسم طالب واحد على الأقل.', 'error');
+                    return;
+                }
+
+                loadingOverlay.style.display = 'flex';
+                previewAllBtn.disabled = true;
+                previewAllBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري التجهيز...`;
+
+                const previewTools = document.querySelector('.preview-tools');
+                if (previewTools) previewTools.style.display = 'none';
+
+                const wasDragMode = certificatePreview.classList.contains('drag-mode');
+                if (wasDragMode) certificatePreview.classList.remove('drag-mode');
+                document.querySelectorAll('.resizer').forEach(r => r.style.display = 'none');
+
+                try {
+                    const previewsHtml = [];
+                    const previewCanvases = [];
+                    
+                    for (let i = 0; i < studentNames.length; i++) {
+                        certStudentNameSpan.innerText = studentNames[i];
+                        await new Promise(resolve => setTimeout(resolve, 50)); // وقت قصير للتحديث
+                        
+                        // التعديل هنا: زيادة دقة المعاينة
+                        const canvas = await html2canvas(certificatePreview, {
+                            scale: 1.5, // تم زيادة المقياس من 0.5 إلى 1.5 لدقة أعلى
+                            useCORS: true,
+                            backgroundColor: null,
+                            logging: false
+                        });
+                        
+                        previewCanvases.push(canvas);
+
+                        previewsHtml.push(`
+                            <div class="preview-item">
+                                <div class="canvas-container-${i}"></div>
+                                <div class="preview-student-name">${studentNames[i]}</div>
+                            </div>
+                        `);
+                    }
+                    
+                    const modalHtml = `
+                        <div class="modal fade preview-modal" id="previewAllModal" tabindex="-1">
+                            <div class="modal-dialog modal-xl modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">معاينة جميع الشهادات (${studentNames.length})</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        ${previewsHtml.join('')}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                                        <button type="button" class="btn btn-primary" id="confirm-download-after-preview">
+                                            <i class="fas fa-download"></i> تنزيل الكل
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    const modalElement = document.getElementById('previewAllModal');
+                    const modal = new bootstrap.Modal(modalElement);
+
+                    modalElement.addEventListener('shown.bs.modal', () => {
+                         for (let i = 0; i < previewCanvases.length; i++) {
+                            const container = modalElement.querySelector(`.canvas-container-${i}`);
+                            previewCanvases[i].style.width = '100%';
+                            previewCanvases[i].style.height = 'auto';
+                            container.appendChild(previewCanvases[i]);
+                        }
+                    });
+                    
+                    modal.show();
+                    
+                    modalElement.querySelector('#confirm-download-after-preview').addEventListener('click', () => {
+                        modal.hide();
+                        downloadBtn.click();
+                    });
+                    
+                    modalElement.addEventListener('hidden.bs.modal', () => {
+                        modalElement.remove();
+                    });
+                    
+                } catch (error) {
+                    console.error('Error generating previews:', error);
+                    showToast('حدث خطأ أثناء إنشاء المعاينة.', 'error');
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                    previewAllBtn.disabled = false;
+                    previewAllBtn.innerHTML = `<i class="fas fa-eye"></i> معاينة جميع الشهادات`;
+                    if (previewTools) previewTools.style.display = '';
+                    if (wasDragMode) certificatePreview.classList.add('drag-mode');
+                    document.querySelectorAll('.resizer').forEach(r => r.style.display = '');
+                    updatePreview(); // العودة إلى اسم الطالب الأول
+                }
+            });
+
+            // منطق تنزيل PDF
+            downloadBtn.addEventListener('click', async () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1122, 794] });
+                const studentNames = studentNameInput.value.split('\n').map(name => name.trim()).filter(name => name !== '');
+                if (studentNames.length === 0) {
+                    showToast('الرجاء إدخال اسم طالب واحد على الأقل.', 'error');
+                    return;
+                }
+
+                loadingOverlay.style.display = 'flex';
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري التجهيز...`;
+                
+                const previewTools = document.querySelector('.preview-tools');
+                if (previewTools) previewTools.style.display = 'none';
+
+                const wasDragMode = certificatePreview.classList.contains('drag-mode');
+                if (wasDragMode) certificatePreview.classList.remove('drag-mode');
+                document.querySelectorAll('.resizer').forEach(r => r.style.display = 'none');
+
+                try {
+                    for (let i = 0; i < studentNames.length; i++) {
+                        certStudentNameSpan.innerText = studentNames[i];
+                        await new Promise(resolve => setTimeout(resolve, 100)); // السماح لـ DOM بالتحديث
+                        
+                        const canvas = await html2canvas(certificatePreview, {
+                            scale: 2, // العرض بدقة 2x لجودة عالية
+                            useCORS: true,
+                            backgroundColor: null,
+                            logging: false
+                        });
+                        const imgData = canvas.toDataURL('image/png');
+                        if (i > 0) doc.addPage([1122, 794], 'landscape');
+                        doc.addImage(imgData, 'PNG', 0, 0, 1122, 794);
+                    }
+                    doc.save('شهادات-تقدير.pdf');
+                    showToast(`تم إنشاء ${studentNames.length} شهادة بنجاح!`, 'success');
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    showToast('حدث خطأ أثناء إنشاء الشهادات. تأكد من أن الصور من مصادر موثوقة.', 'error');
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                    downloadBtn.disabled = false;
+                    downloadBtn.innerHTML = `<i class="fas fa-download"></i> تنزيل الشهادات (PDF)`;
+                    if (previewTools) previewTools.style.display = '';
+                    if (wasDragMode) certificatePreview.classList.add('drag-mode');
+                    document.querySelectorAll('.resizer').forEach(r => r.style.display = '');
+                    updatePreview(); // العودة إلى اسم الطالب الأول
+                }
+            });
+            
+            // وظيفة الإشعارات
+            function showToast(message, type = 'success') {
+                const container = document.querySelector('.toast-container');
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast toast-${type}`;
+                toastEl.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle text-success' : 'fa-exclamation-circle text-danger'}"></i> <div class="toast-message">${message}</div>`;
+                container.appendChild(toastEl);
+                setTimeout(() => {
+                    toastEl.classList.add('show');
+                }, 10);
+                setTimeout(() => {
+                    toastEl.classList.remove('show');
+                    setTimeout(() => toastEl.remove(), 500);
+                }, 3000);
+            }
+
+            // === START: DYNAMIC PREVIEW SIZING FUNCTION ===
+            /**
+             * This function scales the fixed-size certificate preview to fit perfectly 
+             * within its responsive wrapper, maintaining the A4 aspect ratio.
+             */
+            function adjustPreviewSize() {
+                const wrapper = document.getElementById('preview-wrapper');
+                const preview = document.getElementById('certificate-preview');
+                
+                if (wrapper && preview) {
+                    const wrapperWidth = wrapper.offsetWidth;
+                    const previewBaseWidth = 1122; // The fixed width of the certificate canvas
+                    
+                    const scale = wrapperWidth / previewBaseWidth;
+                    
+                    preview.style.transform = `scale(${scale})`;
+                }
+            }
+            // === END: DYNAMIC PREVIEW SIZING FUNCTION ===
+
+
+            // المكالمات الأولية
+            loadSettings();
+            updatePreview();
+            
+            // ضبط الحجم عند التحميل وعند تغيير حجم النافذة
+            window.addEventListener('load', adjustPreviewSize);
+            window.addEventListener('resize', adjustPreviewSize);
+
+            // Call adjustPreviewSize again if settings are loaded, as this displays the editor
+            if (localStorage.getItem('certificateSettings')) {
+                 setTimeout(adjustPreviewSize, 100);
+            }
+        }
+    </script>
+    
+    <footer>
+        <p>© 2025 جميع الحقوق محفوظة لمنصة <a href="/index.html">المعلم المرشد</a>. تصميم وتطوير    .</p>
+    </footer>
+</body>
+</html>
