@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>أداة دمج PDF الاحترافية</title>
+    <!-- MODIFIED: Title updated -->
+    <title>أداة دمج PDF والصور الاحترافية</title>
     <!-- Load pdf-lib Library -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <!-- Load fontkit (needed for reading/writing PDFs with various fonts) -->
@@ -95,52 +96,68 @@
         }
         .file-item:hover { background-color: var(--list-item-hover-bg); }
         .file-item.dragging { opacity: 0.5; background-color: var(--secondary-color); }
+        .file-item-clickable { cursor: pointer !important; } /* ADDED: For preview cursor */
         
         .file-order-number {
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin-left: 8px; /* مسافة بين الرقم ومقبض السحب (في الترتيب المرئي RTL) */
-            flex-shrink: 0; /* لمنع التقلص */
+            font-weight: bold; color: var(--secondary-color); margin-left: 8px; flex-shrink: 0;
         }
         .drag-handle {
-            cursor: grab;
-            color: var(--secondary-color);
-            font-size: 1.2em;
-            margin-left: 8px; /* مسافة بين المقبض وتفاصيل الملف (في الترتيب المرئي RTL) */
-            flex-shrink: 0; /* لمنع التقلص */
+            cursor: grab; color: var(--secondary-color); font-size: 1.2em; margin-left: 8px; flex-shrink: 0;
         }
-        .file-details-main { /* لتجميع اسم الملف والمعلومات */
-            flex-grow: 1;
-            overflow: hidden;
-            text-align: right; 
-            margin-left: 10px; /* مسافة بين التفاصيل وزر الإزالة (في الترتيب المرئي RTL) */
+        .file-details-main {
+            flex-grow: 1; overflow: hidden; text-align: right; margin-left: 10px;
         }
         .file-item-name {
-            display: block;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            font-size: 0.9em;
+            display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9em;
         }
         .file-item-info { 
-            display: block;
-            font-size: 0.8em; color: #bdc3c7; 
-            white-space: nowrap; 
+            display: block; font-size: 0.8em; color: #bdc3c7; white-space: nowrap; 
         }
         .remove-file-btn {
             background-color: var(--danger-color); color: white; border: none;
             border-radius: 4px; padding: 4px 8px; font-size: 0.8em; cursor: pointer;
-            transition: background-color 0.2s;
-            flex-shrink: 0; /* لمنع التقلص */
+            transition: background-color 0.2s; flex-shrink: 0;
         }
         .file-item:active { cursor: grabbing; }
 
-
         #outputFilename {
-            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 25px;
+            display: block; width: 100%; padding: 10px 15px; margin: 20px auto 10px; /* MODIFIED margin */
             border: 1px solid var(--input-border);
             border-radius: 8px; font-size: 0.95rem; font-family: 'Cairo', sans-serif; direction: ltr; text-align: left;
             background-color: var(--input-bg); color: var(--input-text); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         #outputFilename::placeholder { text-align: right; direction: rtl; color: #95a5a6; opacity: 0.8; }
+
+        /* --- ADDED: Styles for Image Options --- */
+        .image-options-container {
+            margin: 15px 0 25px 0;
+            padding: 15px;
+            border: 1px solid var(--input-border);
+            border-radius: var(--border-radius);
+            background-color: var(--input-bg);
+            text-align: right;
+        }
+        .image-options-container p {
+            margin: 0 0 10px 0;
+            font-weight: bold;
+            color: var(--secondary-color);
+            font-size: 1rem;
+        }
+        .image-options-container div {
+            margin-bottom: 8px;
+        }
+        .image-options-container label {
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+        .image-options-container input[type="radio"] {
+            margin-left: 10px;
+            accent-color: var(--primary-color);
+            transform: scale(1.1);
+            vertical-align: middle;
+        }
+        /* --- END ADDED STYLES --- */
 
         #processBtn {
             background: linear-gradient(135deg, var(--primary-color), #1e7e34); color: var(--button-text-color); border: none;
@@ -179,6 +196,21 @@
             margin: 0 8px; vertical-align: middle;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- ADDED: Styles for Preview Modal --- */
+        .preview-modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+        }
+        .preview-modal-content {
+            margin: auto; display: block; max-width: 90%; max-height: 90vh;
+        }
+        .preview-modal-close {
+            position: absolute; top: 25px; right: 45px; color: #f1f1f1; font-size: 40px;
+            font-weight: bold; transition: 0.3s; cursor: pointer;
+        }
+        .preview-modal-close:hover, .preview-modal-close:focus { color: #bbb; text-decoration: none; }
+        /* --- END ADDED STYLES --- */
 
         footer {
             width: 100%; padding: 15px 0; text-align: center; background-color: var(--footer-bg);
@@ -225,17 +257,34 @@
       <i class="fas fa-home" > </i> 
 </button>
     <div class="merger-container">
-        <h1>أداة دمج PDF الاحترافية</h1>
+        <!-- MODIFIED: Title updated -->
+        <h1>أداة دمج PDF والصور الاحترافية</h1>
 
-        <label for="pdfInputs" class="file-label">اختر ملفات PDF (حتى 5 ملفات)</label>
-        <input type="file" id="pdfInputs" accept="application/pdf" multiple>
+        <!-- MODIFIED: Label text updated -->
+        <label for="pdfInputs" class="file-label">اختر ملفات PDF وصور</label>
+        <!-- MODIFIED: input accepts images now -->
+        <input type="file" id="pdfInputs" accept="application/pdf,image/png,image/jpeg" multiple>
         <span id="fileInfoDisplay">لم يتم اختيار أي ملفات.</span>
 
         <div id="fileListContainer">
-             <div class="file-list-placeholder">اسحب ملفات PDF هنا أو انقر لاختيارها. الملفات المختارة ستظهر هنا.</div>
+             <!-- MODIFIED: Placeholder text updated -->
+             <div class="file-list-placeholder">اسحب ملفات PDF وصور هنا أو انقر لاختيارها. الملفات المختارة ستظهر هنا.</div>
         </div>
         
         <input type="text" id="outputFilename" placeholder="الاسم الجديد للملف المدمج (اختياري)">
+
+        <!-- ADDED: Image Handling Options -->
+        <div class="image-options-container">
+            <p>خيارات معالجة الصور:</p>
+            <div>
+                <input type="radio" id="imageFitA4" name="imageHandling" value="fitA4" checked>
+                <label for="imageFitA4">وضع الصورة داخل صفحة A4 (مع تصغيرها لتناسب الصفحة)</label>
+            </div>
+            <div>
+                <input type="radio" id="imageRealSize" name="imageHandling" value="realSize">
+                <label for="imageRealSize">إنشاء صفحة PDF بنفس حجم الصورة الحقيقي</label>
+            </div>
+        </div>
 
         <button id="processBtn" disabled>بدء الدمج</button>
 
@@ -248,6 +297,12 @@
         <div id="download-options">
             <a id="downloadLinkPdf" href="#" download="merged_document.pdf" class="download-button">تحميل الملف المدمج (PDF)</a>
         </div>
+    </div>
+
+    <!-- ADDED: Preview Modal HTML -->
+    <div id="previewModal" class="preview-modal">
+        <span class="preview-modal-close">&times;</span>
+        <img class="preview-modal-content" id="previewImage">
     </div>
 
     <footer>
@@ -264,7 +319,7 @@
             document.getElementById('pdfInputs').disabled = true;
         } else {
             console.log("pdf-lib and fontkit loaded successfully.");
-            const { PDFDocument } = window.PDFLib;
+            const { PDFDocument, PageSizes } = window.PDFLib;
 
             // --- DOM Elements ---
             const pdfInputs = document.getElementById('pdfInputs');
@@ -277,13 +332,19 @@
             const statusDiv = document.getElementById('statusDiv');
             const downloadOptionsDiv = document.getElementById('download-options');
             const downloadLinkPdf = document.getElementById('downloadLinkPdf');
+            // --- ADDED: Modal DOM Elements ---
+            const previewModal = document.getElementById('previewModal');
+            const previewImage = document.getElementById('previewImage');
+            const modalCloseBtn = document.querySelector('.preview-modal-close');
+
 
             // --- State ---
-            let fileDetails = []; // Array of { id, name, arrayBuffer, pageCount, fileObject }
+            // MODIFIED: fileDetails now stores more info (type, previewUrl)
+            let fileDetails = []; // Array of { id, name, arrayBuffer, pageCount, fileObject, type, previewUrl }
             let mergedPdfBlobUrl = null;
             let isProcessing = false;
             let totalSelectedPages = 0;
-            const MAX_FILES = 5;
+            // MODIFIED: File limit removed. Page limit is still useful.
             const MAX_TOTAL_PAGES = 500;
 
             // --- Utility Functions ---
@@ -293,6 +354,13 @@
                     mergedPdfBlobUrl = null;
                     console.log("Merged PDF Blob URL revoked.");
                 }
+                 // Clean up preview URLs to free memory
+                fileDetails.forEach(file => {
+                    if (file.previewUrl) {
+                        URL.revokeObjectURL(file.previewUrl);
+                        file.previewUrl = null;
+                    }
+                });
             }
 
             function formatBytes(bytes, decimals = 2) {
@@ -313,29 +381,37 @@
             }
 
             function renderFileList() {
-                fileListContainer.innerHTML = ''; // Clear existing list
+                fileListContainer.innerHTML = '';
                 totalSelectedPages = 0;
 
                 if (fileDetails.length === 0) {
-                    fileListContainer.innerHTML = '<div class="file-list-placeholder">اسحب ملفات PDF هنا أو انقر لاختيارها. الملفات المختارة ستظهر هنا.</div>';
+                    fileListContainer.innerHTML = '<div class="file-list-placeholder">اسحب ملفات PDF وصور هنا أو انقر لاختيارها. الملفات المختارة ستظهر هنا.</div>';
                     updateUIState();
                     return;
                 }
 
-                fileDetails.forEach((file, index) => { // *** CHANGED: Added index ***
+                fileDetails.forEach((file, index) => {
                     totalSelectedPages += file.pageCount;
                     const listItem = document.createElement('div');
-                    listItem.classList.add('file-item');
+                    listItem.classList.add('file-item', 'file-item-clickable'); // ADDED clickable class
                     listItem.setAttribute('draggable', 'true');
                     listItem.dataset.id = file.id;
+                    // ADDED: data attributes for preview
+                    listItem.dataset.previewType = file.type;
+                    listItem.dataset.previewUrl = file.previewUrl;
 
-                    // *** CHANGED: Updated innerHTML to include order number and new structure ***
+
+                    // MODIFIED: fileInfo text adapts to file type (PDF vs Image)
+                    const fileInfoText = file.type === 'pdf'
+                        ? `(${file.pageCount} صفحة، ${formatBytes(file.fileObject.size)})`
+                        : `(صورة، ${formatBytes(file.fileObject.size)})`;
+
                     listItem.innerHTML = `
                         <span class="file-order-number">${index + 1}.</span>
                         <span class="drag-handle">☰</span>
                         <div class="file-details-main">
                             <span class="file-item-name" title="${file.name}">${file.name}</span>
-                            <span class="file-item-info">(${file.pageCount} صفحة، ${formatBytes(file.fileObject.size)})</span>
+                            <span class="file-item-info">${fileInfoText}</span>
                         </div>
                         <button class="remove-file-btn" data-id="${file.id}" title="إزالة الملف">×</button>
                     `;
@@ -345,11 +421,24 @@
                         e.stopPropagation(); 
                         removeFile(file.id);
                     });
+
+                    // ADDED: Click listener for preview on the whole item
+                    listItem.addEventListener('click', (e) => {
+                        // Prevent preview when clicking on the remove button or drag handle
+                        if (e.target.classList.contains('remove-file-btn') || e.target.classList.contains('drag-handle')) {
+                            return;
+                        }
+                        showPreview(file.type, file.previewUrl);
+                    });
                 });
                 updateUIState();
             }
             
             function removeFile(id) {
+                const fileToRemove = fileDetails.find(file => file.id === id);
+                if (fileToRemove && fileToRemove.previewUrl) {
+                    URL.revokeObjectURL(fileToRemove.previewUrl); // Clean up blob URL on removal
+                }
                 fileDetails = fileDetails.filter(file => file.id !== id);
                 renderFileList(); 
                 if (fileDetails.length === 0) {
@@ -364,14 +453,10 @@
                 processBtn.disabled = !filesSelected || processing || pageLimitExceeded || fileDetails.some(f => f.pageCount === 0);
 
                 if (filesSelected) {
-                    let infoText = `تم اختيار ${fileDetails.length} ملف(ات). إجمالي الصفحات: ${totalSelectedPages}.`;
+                    let infoText = `تم اختيار ${fileDetails.length} ملف(ات). إجمالي الصفحات المقدر: ${totalSelectedPages}.`;
                     if (pageLimitExceeded) {
                         infoText += ` <span style="color: var(--danger-color);">(تجاوز الحد الأقصى ${MAX_TOTAL_PAGES} صفحة!)</span>`;
                         fileInfoDisplay.innerHTML = infoText;
-                    } else if (fileDetails.length > MAX_FILES) {
-                         infoText += ` <span style="color: var(--danger-color);">(تجاوز الحد الأقصى ${MAX_FILES} ملفات!)</span>`;
-                         fileInfoDisplay.innerHTML = infoText;
-                         processBtn.disabled = true;
                     } else {
                         fileInfoDisplay.innerHTML = infoText;
                         fileInfoDisplay.style.color = 'var(--success-color)';
@@ -397,33 +482,29 @@
             }
 
 
-            // --- File Input Handler ---
+            // --- File Input Handler --- MODIFIED to handle images
             async function handleFileSelection(files) {
                 console.log("Handling file selection.");
                 if (isProcessing) {
                     console.warn("Processing in progress, ignoring new file selection.");
                     return;
                 }
-
+                
+                // MODIFIED: Limit check removed
                 const newFiles = Array.from(files);
-                if (fileDetails.length + newFiles.length > MAX_FILES) {
-                    statusDiv.textContent = `لا يمكن إضافة المزيد من الملفات. الحد الأقصى هو ${MAX_FILES} ملفات.`;
-                    statusDiv.style.color = 'var(--warning-color)';
-                    pdfInputs.value = null; 
-                    return;
-                }
 
                 statusDiv.innerHTML = 'جاري قراءة الملفات... <div class="spinner"></div>';
                 statusDiv.style.color = 'var(--secondary-color)';
                 downloadOptionsDiv.style.display = 'none';
                 progressBarContainer.style.display = 'none'; 
                 progressBar.value = 0;
-                cleanupBlobUrl();
+                // Do not cleanup blob URLs here, as it might affect existing previews.
                 
                 let filesProcessed = 0;
                 for (const file of newFiles) {
-                    if (file.type !== 'application/pdf') {
-                        statusDiv.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF.`;
+                    // MODIFIED: Check for PDF OR Image
+                    if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {
+                        statusDiv.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF أو صورة مدعومة.`;
                         statusDiv.style.color = 'var(--danger-color)';
                         continue; 
                     }
@@ -436,28 +517,35 @@
                     }
 
                     const fileId = generateUniqueId();
-                    const currentFileDetail = { id: fileId, name: file.name, arrayBuffer: null, pageCount: 0, fileObject: file };
+                    // MODIFIED: Added type and previewUrl
+                    const currentFileDetail = { id: fileId, name: file.name, arrayBuffer: null, pageCount: 0, fileObject: file, type: null, previewUrl: null };
                     fileDetails.push(currentFileDetail); 
-                    renderFileList(); 
+                    renderFileList();
                     updateUIState(); 
 
                     try {
                         const arrayBuffer = await file.arrayBuffer();
                         currentFileDetail.arrayBuffer = arrayBuffer;
+                        currentFileDetail.previewUrl = URL.createObjectURL(file); // Create preview URL
 
-                        const tempDoc = await PDFDocument.load(arrayBuffer, {
-                            updateMetadata: false,
-                            ignoreEncryption: true,
-                            fontkit: window.fontkit
-                        });
-                        currentFileDetail.pageCount = tempDoc.getPageCount();
-                        if (currentFileDetail.pageCount === 0) {
-                             statusDiv.textContent = `تحذير: الملف "${file.name}" لا يحتوي على صفحات أو لا يمكن قراءته.`;
-                             statusDiv.style.color = 'var(--warning-color)';
+                        if (file.type === 'application/pdf') {
+                            currentFileDetail.type = 'pdf';
+                            const tempDoc = await PDFDocument.load(arrayBuffer, {
+                                updateMetadata: false, ignoreEncryption: true, fontkit: window.fontkit
+                            });
+                            currentFileDetail.pageCount = tempDoc.getPageCount();
+                            if (currentFileDetail.pageCount === 0) {
+                                statusDiv.textContent = `تحذير: الملف "${file.name}" لا يحتوي على صفحات أو لا يمكن قراءته.`;
+                                statusDiv.style.color = 'var(--warning-color)';
+                            }
+                        } else if (file.type.startsWith('image/')) {
+                            // It's an image
+                            currentFileDetail.type = 'image';
+                            currentFileDetail.pageCount = 1; // Each image is one page
                         }
 
                     } catch (loadError) {
-                        console.error(`Error parsing PDF "${file.name}":`, loadError);
+                        console.error(`Error parsing file "${file.name}":`, loadError);
                         statusDiv.textContent = `خطأ في قراءة الملف "${file.name}": ${loadError.message || 'ملف تالف أو محمي؟'}`;
                         statusDiv.style.color = 'var(--danger-color)';
                         currentFileDetail.pageCount = 0; 
@@ -482,24 +570,20 @@
 
             // --- Drag and Drop for File Input ---
             fileListContainer.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                e.preventDefault(); e.stopPropagation();
                 if (!isProcessing) fileListContainer.style.borderColor = 'var(--primary-color)';
             });
             fileListContainer.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                e.preventDefault(); e.stopPropagation();
                 fileListContainer.style.borderColor = 'var(--preview-border)';
             });
             fileListContainer.addEventListener('drop', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+                e.preventDefault(); e.stopPropagation();
                 fileListContainer.style.borderColor = 'var(--preview-border)';
                 if (isProcessing) return;
-                if (e.dataTransfer.files.length > 0) { // This is for adding new files via drag/drop
+                if (e.dataTransfer.files.length > 0) {
                     handleFileSelection(e.dataTransfer.files);
                 }
-                // Note: Reordering logic is handled in a separate 'drop' event further down
             });
 
             // --- Drag and Drop for Reordering List Items ---
@@ -516,30 +600,26 @@
                     draggedItem = null;
                 }
             });
-            fileListContainer.addEventListener('dragover', (e) => { // Handles positioning during drag
+            fileListContainer.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 if (!draggedItem) return;
                 const afterElement = getDragAfterElement(fileListContainer, e.clientY);
-                const draggable = draggedItem;
                 if (afterElement == null) {
-                    fileListContainer.appendChild(draggable);
+                    fileListContainer.appendChild(draggedItem);
                 } else {
-                    fileListContainer.insertBefore(draggable, afterElement);
+                    fileListContainer.insertBefore(draggedItem, afterElement);
                 }
             });
-            // This 'drop' listener is specifically for when a list item is dropped to reorder.
-            // It's distinct from the file drop listener above.
             fileListContainer.addEventListener('drop', (e) => { 
                 e.preventDefault(); 
-                if (draggedItem) { // This means it was a list item reorder
+                if (draggedItem) { 
                     draggedItem.classList.remove('dragging');
                     const newOrderedIds = Array.from(fileListContainer.querySelectorAll('.file-item')).map(item => item.dataset.id);
                     fileDetails.sort((a, b) => newOrderedIds.indexOf(a.id) - newOrderedIds.indexOf(b.id));
                     draggedItem = null;
                     console.log("Files reordered.");
-                    renderFileList(); // Re-render to update order numbers and ensure consistency
+                    renderFileList();
                 }
-                // If e.dataTransfer.files is populated, it's handled by the other drop listener.
             });
 
             function getDragAfterElement(container, y) {
@@ -555,29 +635,43 @@
                 }, { offset: Number.NEGATIVE_INFINITY }).element;
             }
 
-            // --- Processing Logic ---
+            // --- ADDED: Preview Logic ---
+            function showPreview(type, url) {
+                if (!url) {
+                    console.error("Preview URL is missing.");
+                    return;
+                }
+                if (type === 'pdf') {
+                    window.open(url, '_blank');
+                } else if (type === 'image') {
+                    previewImage.src = url;
+                    previewModal.style.display = 'flex';
+                }
+            }
+            modalCloseBtn.onclick = () => { previewModal.style.display = "none"; previewImage.src = ""; };
+            window.onclick = (event) => {
+                if (event.target == previewModal) { previewModal.style.display = "none"; previewImage.src = ""; }
+            };
+
+            // --- Processing Logic --- MODIFIED to handle images
             processBtn.addEventListener('click', async function() {
                 console.log("Process button clicked.");
                 if (isProcessing || fileDetails.length === 0) {
-                    statusDiv.textContent = 'الرجاء اختيار ملف PDF واحد على الأقل للدمج.';
-                    statusDiv.style.color = 'var(--danger-color)';
-                    return;
+                    statusDiv.textContent = 'الرجاء اختيار ملف واحد على الأقل للدمج.';
+                    statusDiv.style.color = 'var(--danger-color)'; return;
                 }
                 if (totalSelectedPages > MAX_TOTAL_PAGES) {
                      statusDiv.textContent = `لا يمكن المتابعة، إجمالي عدد الصفحات (${totalSelectedPages}) يتجاوز الحد المسموح به (${MAX_TOTAL_PAGES}).`;
-                     statusDiv.style.color = 'var(--danger-color)';
-                     return;
+                     statusDiv.style.color = 'var(--danger-color)'; return;
                 }
                  if (fileDetails.some(f => f.pageCount === 0)) {
                     statusDiv.textContent = 'واحد أو أكثر من الملفات المحددة لا يحتوي على صفحات أو به خطأ. يرجى إزالته أو اختيار ملف آخر.';
-                    statusDiv.style.color = 'var(--danger-color)';
-                    return;
+                    statusDiv.style.color = 'var(--danger-color)'; return;
                 }
-
 
                 isProcessing = true;
                 updateUIState();
-                cleanupBlobUrl();
+                cleanupBlobUrl(); // Clean up previous merged file, but not previews yet
                 statusDiv.innerHTML = 'جاري التحضير للدمج... <div class="spinner"></div>';
                 statusDiv.style.color = 'var(--secondary-color)';
                 downloadOptionsDiv.style.display = 'none';
@@ -590,6 +684,9 @@
                     mergedPdfDoc.registerFontkit(window.fontkit); 
                     progressBar.value = 5; 
 
+                    // --- ADDED: Get selected image handling option ---
+                    const imageHandlingOption = document.querySelector('input[name="imageHandling"]:checked').value;
+
                     let filesProcessedForMerging = 0;
                     const totalFilesToMerge = fileDetails.length;
 
@@ -597,14 +694,56 @@
                         filesProcessedForMerging++;
                         statusDiv.innerHTML = `جاري دمج الملف ${filesProcessedForMerging} من ${totalFilesToMerge} ("${fileDetail.name}")... <div class="spinner"></div>`;
                         
-                        const pdfToMerge = await PDFDocument.load(fileDetail.arrayBuffer, { fontkit: window.fontkit });
-                        const pageIndices = pdfToMerge.getPageIndices();
-                        const copiedPages = await mergedPdfDoc.copyPages(pdfToMerge, pageIndices);
-                        copiedPages.forEach(page => mergedPdfDoc.addPage(page));
+                        // MODIFIED: Handle PDF and Image differently
+                        if (fileDetail.type === 'pdf') {
+                            const pdfToMerge = await PDFDocument.load(fileDetail.arrayBuffer, { fontkit: window.fontkit });
+                            const pageIndices = pdfToMerge.getPageIndices();
+                            const copiedPages = await mergedPdfDoc.copyPages(pdfToMerge, pageIndices);
+                            copiedPages.forEach(page => mergedPdfDoc.addPage(page));
+                        } else if (fileDetail.type === 'image') {
+                            const imageBytes = fileDetail.arrayBuffer;
+                            let pdfImage;
+                            if (fileDetail.fileObject.type === 'image/jpeg') {
+                                pdfImage = await mergedPdfDoc.embedJpg(imageBytes);
+                            } else if (fileDetail.fileObject.type === 'image/png') {
+                                pdfImage = await mergedPdfDoc.embedPng(imageBytes);
+                            } else {
+                                console.warn(`Unsupported image type for ${fileDetail.name}, skipping.`);
+                                continue; // Skip unsupported image types
+                            }
+                            
+                            // --- START OF MODIFICATION ---
+                            // Handle image based on the selected radio button option
+                            if (imageHandlingOption === 'realSize') {
+                                // Option 1: Create a page with the image's exact dimensions
+                                const { width, height } = pdfImage;
+                                const page = mergedPdfDoc.addPage([width, height]);
+                                page.drawImage(pdfImage, {
+                                    x: 0,
+                                    y: 0,
+                                    width: width,
+                                    height: height,
+                                });
+                            } else { // 'fitA4' is the default and other case
+                                // Option 2: Fit the image into an A4 page (original behavior)
+                                const page = mergedPdfDoc.addPage(PageSizes.A4);
+                                const { width: pageWidth, height: pageHeight } = page.getSize();
+                                // Scale image to fit page with some margin
+                                const dims = pdfImage.scaleToFit(pageWidth - 50, pageHeight - 50);
+                                
+                                page.drawImage(pdfImage, {
+                                    x: (pageWidth - dims.width) / 2,
+                                    y: (pageHeight - dims.height) / 2,
+                                    width: dims.width,
+                                    height: dims.height,
+                                });
+                            }
+                            // --- END OF MODIFICATION ---
+                        }
                         
                         progressBar.value = 5 + Math.round((filesProcessedForMerging / totalFilesToMerge) * 85); 
-                        console.log(`Merged: ${fileDetail.name}`);
-                        await new Promise(resolve => setTimeout(resolve, 0));
+                        console.log(`Processed: ${fileDetail.name}`);
+                        await new Promise(resolve => setTimeout(resolve, 0)); // Allow UI to update
                     }
 
                     statusDiv.innerHTML = 'جاري حفظ الملف المدمج... <div class="spinner"></div>';
@@ -615,12 +754,7 @@
 
                     mergedPdfBlobUrl = URL.createObjectURL(new Blob([mergedPdfBytes], { type: 'application/pdf' }));
                     
-                    let outputName = outputFilenameInput.value.trim();
-                    if (!outputName) {
-                        outputName = 'ملف_مدمج';
-                    } else {
-                        outputName = sanitizeFilename(outputName);
-                    }
+                    let outputName = sanitizeFilename(outputFilenameInput.value.trim() || 'ملف_مدمج');
                     if (!outputName.toLowerCase().endsWith('.pdf')) {
                         outputName += '.pdf';
                     }
