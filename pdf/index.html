@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدوات PDF المتكاملة - المعلم المرشد</title>
+
+    <!-- SEO and Social Media Meta Tags -->
+    <meta name="description" content="مجموعة شاملة من أدوات PDF المجانية عبر الإنترنت. قم بدمج، تقسيم، ضغط، تحويل، تعديل، وتوقيع ملفات PDF بكل سهولة وسرعة وأمان.">
+    <meta name="keywords" content="PDF, تحويل PDF, دمج PDF, تقسيم PDF, ضغط PDF, تعديل PDF, PDF إلى Word, Word إلى PDF, JPG إلى PDF">
+    <meta property="og:title" content="أدوات PDF المتكاملة - كل ما تحتاجه في مكان واحد">
+    <meta property="og:description" content="منصة المعلم المرشد تقدم لك أدوات PDF قوية ومجانية للتعامل مع ملفاتك بكفاءة عالية. جربها الآن!">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="[ضع هنا رابط موقعك الكامل]">
+    <meta property="og:image" content="[ضع هنا رابط صورة مميزة للمشاركة على المواقع الاجتماعية]">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* === START: STYLES FROM PROVIDED FILE (siasthsosea.html) === */
+        :root {
+            --color-background: #17171e;
+            --color-surface: #2c2c34;
+            --color-primary-text: #f5f5ff;
+            --color-secondary-text: #c0c0d0;
+            --color-accent: #d4af37;
+            --color-accent-light: #e6c76e;
+            --color-accent-dark: #b59530;
+            --color-border: #2f2f3d;
+            --color-highlight: rgba(212, 175, 55, 0.2);
+            --font-primary: 'Tajawal', sans-serif;
+            --font-headings: 'Amiri', serif;
+            --transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            --radius: 16px;
+            --header-height: 80px;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        ::-webkit-scrollbar { width: 14px; }
+        ::-webkit-scrollbar-track { background: var(--color-surface); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--color-accent), var(--color-accent-dark)); border-radius: 8px; border: 3px solid var(--color-surface); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-accent-light); }
+
+        body {
+            font-family: var(--font-primary);
+            line-height: 1.8;
+            margin: 0;
+            padding: 0;
+            background-color: var(--color-background);
+            color: var(--color-primary-text);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.07) 0%, transparent S25%),
+                radial-gradient(circle at 90% 80%, rgba(212, 175, 55, 0.07) 0%, transparent 25%);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 10px auto;
+            padding: 40px;
+            position: relative;
+        }
+        h1, h2, h3 {
+            font-family: var(--font-headings);
+            color: var(--color-accent);
+            font-weight: 700;
+        }
+        h1 {
+            font-size: 3.5em;
+            text-align: center;
+            margin-bottom: 25px;
+            animation: fadeInDown 0.8s ease-out;
+            text-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
+        }
+        .page-description {
+            text-align: center;
+            font-size: 1.3em;
+            color: var(--color-secondary-text);
+            max-width: 800px;
+            margin: 0 auto 50px;
+            line-height: 1.9;
+        }
+        .section-divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+            margin: 60px 0;
+            border: none;
+            opacity: 0.3;
+            position: relative;
+        }
+        .section-divider::after {
+            content: '\f141';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--color-accent);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--color-background);
+            padding: 0 20px;
+            font-size: 1.5em;
+        }
+        .back-to-top {
+            position: fixed; bottom: 30px; left: 30px; background: var(--color-accent); color: var(--color-background);
+            width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 1.3em; cursor: pointer; opacity: 0; visibility: hidden; transition: var(--transition);
+            box-shadow: var(--shadow); z-index: 100; border: none; outline: none;
+        }
+        .back-to-top:hover { background: var(--color-accent-light); transform: translateY(-5px) scale(1.1); }
+        .back-to-top.visible { opacity: 1; visibility: visible; }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { opacity: 0; transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+        .fade-in.visible { opacity: 1; }
+        /* === END: STYLES FROM PROVIDED FILE === */
+
+        /* === START: NEW STYLES FOR THIS PAGE === */
+
+        /* Professional Search Bar */
+        .search-container {
+            position: relative;
+            max-width: 700px;
+            margin: 20px auto;
+            animation: fadeInDown 1s ease-out 0.2s;
+            animation-fill-mode: both;
+        }
+        .search-input {
+            width: 100%;
+            padding: 20px 60px 20px 30px;
+            background-color: var(--color-surface);
+            border: 2px solid var(--color-border);
+            border-radius: 50px;
+            font-family: var(--font-primary);
+            font-size: 1.2em;
+            color: var(--color-primary-text);
+            transition: var(--transition);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            outline: none;
+        }
+        .search-input::placeholder { color: var(--color-secondary-text); opacity: 0.7; }
+        .search-input:focus { border-color: var(--color-accent); box-shadow: 0 0 20px var(--color-highlight); }
+        .search-icon {
+            position: absolute; right: 25px; top: 50%; transform: translateY(-50%);
+            color: var(--color-accent); font-size: 1.5em; transition: var(--transition);
+        }
+        .search-input:focus + .search-icon { transform: translateY(-50%) scale(1.1); color: var(--color-accent-light); }
+
+        /* Tools Grid Container */
+        .tools-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; margin-top: 60px; }
+
+        /* Individual Tool Card */
+        .tool-card {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; text-decoration: none; padding: 35px 25px;
+            background-color: var(--color-surface); border-radius: var(--radius); border: 1px solid var(--color-border);
+            transition: var(--transition); position: relative; overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3); cursor: pointer;
+        }
+        .tool-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, var(--color-highlight) 0%, transparent 40%);
+            transform: scale(0); transition: transform 0.6s ease-out; z-index: 0;
+        }
+        .tool-card:hover { transform: translateY(-12px); border-color: var(--color-accent); box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .tool-card:hover::before { transform: scale(1); }
+        .tool-card > * { position: relative; z-index: 1; }
+        .tool-card .icon { font-size: 3.5em; margin-bottom: 25px; color: var(--color-accent); transition: var(--transition); }
+        .tool-card:hover .icon { color: var(--color-accent-light); transform: scale(1.15) rotate(-5deg); text-shadow: 0 0 15px var(--color-highlight); }
+        .tool-card h3 { font-size: 1.5em; color: var(--color-primary-text); margin: 0 0 15px 0; transition: var(--transition); }
+        .tool-card:hover h3 { color: var(--color-accent-light); }
+        .tool-card p { font-size: 1em; color: var(--color-secondary-text); line-height: 1.7; margin: 0; }
+        .no-results {
+            display: none; text-align: center; font-size: 1.5em; color: var(--color-secondary-text);
+            margin-top: 80px; padding: 40px; background-color: var(--color-surface);
+            border-radius: var(--radius); border: 1px dashed var(--color-border);
+        }
+        
+        /* === NEW: Footer Styles === */
+        .site-footer {
+            padding: 40px 20px; text-align: center; border-top: 1px solid var(--color-border);
+            background-color: var(--color-background); color: var(--color-secondary-text);
+            font-size: 0.95em; margin-top: 80px;
+        }
+        .site-footer .site-name { color: var(--color-primary-text); font-weight: 500; }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) { .tools-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 992px) {
+            h1 { font-size: 2.8em; }
+            .page-description { font-size: 1.1em; }
+            .tools-grid { grid-template-columns: repeat(2, 1fr); gap: 25px; }
+        }
+        @media (max-width: 768px) {
+            .container { padding: 30px 20px; }
+            .tool-card h3 { font-size: 1.3em; }
+            .tool-card p { font-size: 0.9em; }
+            .site-footer { padding: 30px 20px; font-size: 0.9em; margin-top: 60px; }
+        }
+        @media (max-width: 576px) {
+            h1 { font-size: 1.7em; }
+            .page-description { font-size: 0.90em; margin-bottom:0px}
+            .section-divider { margin: 20px }
+            .tools-grid { gap: 15px; } /* Reduced gap for tighter look */
+            .search-input { font-size: 0.80em; padding: 18px 50px 18px 25px; }
+            
+            /* === MODIFIED SECTION FOR CARD HEIGHT REDUCTION === */
+            .tool-card {
+                padding: 25px 15px; /* Reduced padding */
+            }
+            .tool-card .icon {
+                font-size: 2.8em; /* Smaller icon */
+                margin-bottom: 0px; /* Reduced space below icon */
+            }
+            .tool-card h3 {
+                font-size: 1.15em; /* Smaller title */
+                margin-bottom: 5px; /* Reduced space below title */
+                
+            }
+            
+            .tool-card p {
+                font-size: 0.85em; /* Smaller description text */
+                line-height: 1.5; /* Adjusted line height */
+                color: #cccc;
+            }
+            /* === END OF MODIFIED SECTION === */
+        }
+        /* === END: NEW STYLES === */
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1 class="fade-in">مكتبة أدوات PDF الشاملة</h1>
+             <hr class="section-divider">
+            <p class="page-description fade-in">
+                كل ما تحتاجه للتعامل مع ملفات PDF في مكان واحد. اكتشف مجموعة قوية من الأدوات المجانية التي تجعل من تحويل، دمج، تقسيم، وتعديل ملفاتك أمراً سلساً وفورياً.
+            </p>
+        </header>
+
+        <hr class="section-divider">
+
+        <div class="search-container">
+            <input type="search" id="searchInput" class="search-input" placeholder="ابحث عن أداة... (مثال: دمج، تحويل، صورة)">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+ <hr class="section-divider">
+        <main>
+            <div class="tools-grid" id="toolsGrid">
+                
+                <!-- Card 1 -->
+                <a href="zdmgpdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-object-group"></i></div>
+                    <h3>دمج PDF</h3>
+                    <p>اجمع عدة ملفات PDF في ملف واحد مرتب ومنظم بكل سهولة.</p>
+                </a>
+                <!-- Card 2 -->
+                <a href="tqsempdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-object-ungroup"></i></div>
+                    <h3>تقسيم PDF</h3>
+                    <p>استخرج صفحة واحدة أو مجموعة صفحات من ملف PDF لإنشاء ملفات جديدة.</p>
+                </a>
+                
+                <!-- Card 1 -->
+                <a href="scutpdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-object-group"></i></div>
+                    <h3>اقتطاع جزء PDF</h3>
+                    <p>اجمع عدة صفحات ترغب بها في ملف واحد مرتب ومنظم بكل سهولة.</p>
+                </a>
+                <!-- Card 2 -->
+                <a href="zip.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-object-ungroup"></i></div>
+                    <h3> تحويل الملفات zip</h3>
+                    <p>حول ملفاتك الى ملف مضغوط لسهولة نقله مع الحفاظ على الدقة الكاملة </p>
+                </a>
+                                
+                <!-- Card 3 -->
+                <a href="pdddf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-compress-arrows-alt"></i></div>
+                    <h3>ضغط PDF</h3>
+                    <p>قلّص حجم ملفات PDF بشكل كبير مع الحفاظ على أفضل جودة ممكنة.</p>
+                </a>
+                <!-- Card 4 -->
+                <a href="tadeelpdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-file-word"></i></div>
+                    <h3>تعديل PDF </h3>
+                    <p>  قابلة للتعديل بدقة عالية وامكانية تصميم الملف حسب الحاجة.</p>
+                </a>
+                <!-- Card 5 -->
+                <a href="ndeletpdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-file-powerpoint"></i></div>
+                    <h3>PDF  حذف صفحات  </h3>
+                    <p>يمكنك بسهولة تحديد الصفحات الغير مرغوب بها وحذفها من ملفات PDF</p>
+                </a>
+                <!-- Card 6 -->
+                <a href="sorapdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-file-image"></i></div>
+                    <h3>PDF إلى JPG</h3>
+                    <p>استخرج كل صفحات ملف PDF كصور JPG عالية الجودة أو صفحة محددة.</p>
+                </a>
+                <!-- Card 7 -->
+                <a href="#" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-file-import"></i></div>
+                    <h3>Word إلى PDF</h3>
+                    <p>حوّل مستندات DOC و DOCX إلى ملفات PDF احترافية بسرعة.</p>
+                </a>
+                <!-- Card 8 -->
+                <a href="jpgalpdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-images"></i></div>
+                    <h3>JPG إلى PDF</h3>
+                    <p>اجمع صور JPG متعددة وقم بتحويلها إلى ملف PDF واحد.</p>
+                </a>
+                <!-- Card 9 -->
+                <a href="mayia.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-signature"></i></div>
+                    <h3>توقيع PDF</h3>
+                    <p>أضف توقيعك الإلكتروني او صورك على ملفات PDF واملأ النماذج بكل أمان.</p>
+                </a>
+                <!-- Card 10 -->
+                <a href="msthraj.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3> JPG الى نص</h3>
+                    <p>مستخرج النصوص هي اداة قوية لاستخراج النصوص من الصور </p>
+                </a>
+                <!-- Card 11 -->
+                <a href="imageexsil.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-file-excel"></i></div>
+                    <h3> JPG الى Excel</h3>
+                    <p>قم بتحويل الصور الى ملفات اكسيل مباشرة وتحويل الجداول بسهولة</p>
+                </a>
+                <!-- Card 12 -->
+                <a href="trqempdf.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-sort-numeric-down"></i></div>
+                    <h3>ترقيم الصفحات</h3>
+                    <p>أضف أرقام الصفحات بسهولة إلى ملف PDF الخاص بك في المكان الذي تحدده.</p>
+                </a>
+                               
+                 <!-- Card 12 -->
+                <a href="text.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-image"></i></div>
+                    <h3>النص الى صورة</h3>
+                    <p>قم بتحويل نصوصك العربية إلى صور بجودة عالية مع خيارات متعددة.</p>
+                </a>
+                
+                   <!-- Card 12 -->
+                <a href="Qr.html" class="tool-card fade-in">
+                    <div class="icon"><i class="fas fa-qrcode"></i></div>
+                    <h3>اداة بناء QR </h3>
+                    <p>  اداة احترافية في صناعة QR للنصوص والروابط والبريد ورقم الهاتف .</p>
+                </a>
+                
+            </div>
+
+            <div id="noResults" class="no-results fade-in">
+                <i class="fas fa-exclamation-circle" style="margin-left: 10px;"></i>
+                عذراً، لم يتم العثور على أداة تطابق بحثك.
+            </div>
+        </main>
+    </div>
+
+    <!-- NEW: Site Footer -->
+    <footer class="site-footer">
+        <p>جميع الحقوق محفوظة &copy; 2024 <span class="site-name">
+            <br>
+            <a style="color:#fcc222; text-decoration: none" href="/index.html">المعلم المرشد</a></span>.</p>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" title="العودة للأعلى">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // === START: SCRIPTS FROM PROVIDED FILE (MODIFIED) ===
+        const fadeElements = document.querySelectorAll('.fade-in');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        fadeElements.forEach(element => { observer.observe(element); });
+        const backToTopButton = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        });
+        backToTopButton.addEventListener('click', () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+        // === END: SCRIPTS FROM PROVIDED FILE ===
+
+        // === START: NEW SCRIPT FOR SEARCH FUNCTIONALITY ===
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const toolCards = document.querySelectorAll('#toolsGrid .tool-card');
+            const noResultsMessage = document.getElementById('noResults');
+
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                let visibleCardsCount = 0;
+
+                toolCards.forEach(card => {
+                    const title = card.querySelector('h3').textContent.toLowerCase();
+                    const description = card.querySelector('p').textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                        card.style.display = 'flex';
+                        visibleCardsCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                noResultsMessage.style.display = (visibleCardsCount === 0) ? 'block' : 'none';
+            });
+        });
+        // === END: NEW SCRIPT ===
+    </script>
+
+</body>
+</html>
