@@ -85,8 +85,26 @@ function initDashboardPage() {
     surveys.forEach(survey => {
         const surveyCard = document.createElement('div');
         surveyCard.className = 'survey-item-card';
-        surveyCard.innerHTML = `<h3>${survey.title || 'استفتاء بدون عنوان'}</h3><code>ID: ${survey.id}</code>`;
-        surveyCard.onclick = () => loadSurveyForManagement(survey.id, survey.pin);
+        surveyCard.innerHTML = `
+            <div class="survey-item-header">
+                <h3>${survey.title || 'استفتاء بدون عنوان'}</h3>
+                <button class="delete-survey-btn" title="حذف الاستفتاء نهائياً">&#10006;</button>
+            </div>
+            <code>ID: ${survey.id}</code>`;
+
+        surveyCard.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-survey-btn')) {
+                loadSurveyForManagement(survey.id, survey.pin);
+            }
+        });
+
+        surveyCard.querySelector('.delete-survey-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm('هل أنت متأكد من رغبتك في حذف هذا الاستفتاء وكل ردوده بشكل نهائي؟ لا يمكن التراجع عن هذا الإجراء.')) {
+                deleteSurvey(survey.id);
+            }
+        });
+
         mySurveysList.appendChild(surveyCard);
     });
 
@@ -119,6 +137,34 @@ function initDashboardPage() {
     });
 }
 
+async function deleteSurvey(surveyId) {
+    showLoader(true);
+    try {
+        const responsesQuery = await db.collection('responses').where('surveyId', '==', surveyId).get();
+        if (!responsesQuery.empty) {
+            const batch = db.batch();
+            responsesQuery.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+        }
+
+        await db.collection('surveys').doc(surveyId).delete();
+
+        let surveys = getManagedSurveys();
+        surveys = surveys.filter(s => s.id !== surveyId);
+        localStorage.setItem('managedSurveys', JSON.stringify(surveys));
+        
+        showAlert('تم حذف الاستفتاء بنجاح.', 'success');
+        initDashboardPage(); // Refresh list
+    } catch (error) {
+        console.error("Error deleting survey:", error);
+        showAlert('حدث خطأ أثناء حذف الاستفتاء.', 'error');
+    } finally {
+        showLoader(false);
+    }
+}
+
 async function loadSurveyForManagement(surveyId, surveyPin) {
     document.getElementById('dashboard-home').style.display = 'none';
     document.getElementById('survey-management-view').style.display = 'block';
@@ -141,8 +187,12 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
         document.getElementById('survey-share-link-dashboard').value = shareLink;
         document.getElementById('copy-share-link-dashboard').onclick = () => copyToClipboard(shareLink, document.getElementById('copy-share-link-dashboard'));
 
+        const savedIndexStr = localStorage.getItem(`lastViewedIndex_${surveyId}`);
+        const savedIndex = savedIndexStr ? parseInt(savedIndexStr, 10) : 0;
+        const initialIndex = (currentSurveyResponses.length > 0 && savedIndex < currentSurveyResponses.length) ? savedIndex : 0;
+
         setupDashboardControls();
-        renderAllResponseViews();
+        renderAllResponseViews(initialIndex);
         setupExportButtons(surveyId);
 
     } catch (error) {
@@ -189,7 +239,7 @@ function setupDashboardControls() {
     };
 }
 
-function renderAllResponseViews() {
+function renderAllResponseViews(initialIndividualIndex = 0) {
     const settings = currentSurveyData.settings || {};
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
     document.getElementById('settings-summary-area').innerHTML = `
@@ -208,7 +258,7 @@ function renderAllResponseViews() {
         return;
     }
     renderSummaryView();
-    renderIndividualView(0);
+    renderIndividualView(initialIndividualIndex);
     setupIndividualNav();
 }
 
@@ -244,19 +294,36 @@ function renderSummaryView(containerId = 'summary-view') {
 }
 
 function renderIndividualView(index) {
+    if (currentSurveyData && currentSurveyData.id) {
+        localStorage.setItem(`lastViewedIndex_${currentSurveyData.id}`, index);
+    }
     currentIndividualResponseIndex = index;
     const container = document.getElementById('individual-response-content');
     const response = currentSurveyResponses[index];
     container.innerHTML = '';
-    response.answers.forEach(answer => {
-        const answerText = (answer.answer && answer.answer.length) ? (Array.isArray(answer.answer) ? answer.answer.join('، ') : answer.answer) : '<em>لم تتم الإجابة</em>';
-        container.innerHTML += `<div class="question-response"><div class="question-title">${answer.questionText}</div><div class="answer-text">${answerText}</div></div>`;
-    });
+
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
     const formattedDate = response.timestamp.toDate().toLocaleString('ar-EG', dateOptions);
-    container.innerHTML += `<p class="response-timestamp">تاريخ الرد: ${formattedDate}</p>`;
+
+    response.answers.forEach(answer => {
+        const rawAnswer = answer.answer;
+        const answerText = (rawAnswer && rawAnswer.length > 0) ? (Array.isArray(rawAnswer) ? rawAnswer.join('، ') : String(rawAnswer)) : '<em>لم تتم الإجابة</em>';
+        const textToCopy = (rawAnswer && rawAnswer.length > 0) ? (Array.isArray(rawAnswer) ? rawAnswer.join('\n') : String(rawAnswer)) : '';
+        const escapedTextToCopy = textToCopy.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/(\r\n|\n|\r)/gm, "\\n");
+
+        container.innerHTML += `
+            <div class="question-response">
+                <div class="question-title">${answer.questionText}</div>
+                <div class="answer-text">${answerText}</div>
+                <div class="answer-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                    <span class="response-timestamp-small" style="font-size: 0.8em; color: #666;">${formattedDate}</span>
+                    <button class="btn secondary small" onclick="copyToClipboard('${escapedTextToCopy}', this)">نسخ الرد</button>
+                </div>
+            </div>`;
+    });
+    
     const totalResponses = currentSurveyResponses.length;
-    const displayIndex = totalResponses - index; 
+    const displayIndex = totalResponses - index;
     document.getElementById('individual-counter').textContent = `عرض ${displayIndex} من ${totalResponses}`;
     document.getElementById('prev-response-btn').disabled = (index === 0);
     document.getElementById('next-response-btn').disabled = (index === totalResponses - 1);
