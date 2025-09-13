@@ -8,6 +8,7 @@
  * --- التحسينات ---
  * - إضافة معالجة قوية لانقطاع الاتصال: عندما يغادر مستخدم، يتم إعلام الطرف الآخر فوراً.
  * - تحسين تسجيل الأحداث (Logging) لمتابعة أفضل.
+ * - **إصلاح منطق الانضمام للغرفة لضمان اتصال موثوق.**
  */
 
 // 1. استيراد المكتبات الأساسية
@@ -34,43 +35,38 @@ const PORT = process.env.PORT || 3000;
 io.on('connection', (socket) => {
   console.log(`✅ User connected: ${socket.id}`);
   
-  // الاستماع لحدث 'join-room'
-   // الاستماع لحدث 'join-room' (النسخة المُصححة والأكثر موثوقية)
-socket.on('join-room', (roomId) => {
-    // 1. تحقق من عدد العملاء الحاليين في الغرفة قبل الانضمام
-    const currentRoom = io.sockets.adapter.rooms.get(roomId);
-    const numClients = currentRoom ? currentRoom.size : 0;
+  // الاستماع لحدث 'join-room' بالمنطق الصحيح
+  socket.on('join-room', (roomId) => {
+    // احصل على قائمة العملاء في الغرفة قبل انضمام الجديد
+    const clientsInRoom = io.sockets.adapter.rooms.get(roomId);
+    const numClients = clientsInRoom ? clientsInRoom.size : 0;
 
+    // إذا كانت الغرفة ممتلئة، لا تسمح بالانضمام
     if (numClients >= 2) {
-        socket.emit('room-full');
-        console.log(`🚪 Room ${roomId} is full. User ${socket.id} was denied.`);
-        return;
+      socket.emit('room-full');
+      console.log(`🚪 Room ${roomId} is full. User ${socket.id} was denied.`);
+      return;
     }
-    
-    // 2. انضم إلى الغرفة
+
+    // اسمح للمستخدم بالانضمام
     socket.join(roomId);
     console.log(`🔗 User ${socket.id} joined room: ${roomId}`);
 
-    // 3. بعد الانضمام، إذا أصبح عدد العملاء 2، ابدأ الاتصال
-    if (numClients === 1) { // كان هناك شخص واحد، والآن انضممت أنت، فأصبح المجموع 2
-        console.log(`🎉 Room ${roomId} is now ready for connection!`);
-
-        // احصل على معرف (ID) العميل الآخر الموجود بالفعل في الغرفة
-        const otherClient = Array.from(currentRoom)[0];
-
-        // أرسل للعميل الأول (البادئ) ليقوم بالاتصال بك
-        io.to(otherClient).emit('ready-to-connect', { 
-            initiator: true, 
-            peerId: socket.id // أنت (المنضم الجديد) هو الطرف الآخر (peer)
-        });
-
-        // أرسل لنفسك (المنضم الجديد) لكي تتصل بالعميل الأول
-        socket.emit('ready-to-connect', { 
-            initiator: false, 
-            peerId: otherClient // العميل الأول هو الطرف الآخر (peer)
-        });
+    // الآن، بعد انضمام المستخدم، تحقق مرة أخرى. إذا أصبح العدد 2، فهذا هو الوقت المناسب لبدء الاتصال
+    const updatedClientsInRoom = io.sockets.adapter.rooms.get(roomId);
+    if (updatedClientsInRoom && updatedClientsInRoom.size === 2) {
+      console.log(`🎉 Room ${roomId} is now ready for connection!`);
+      
+      const clients = Array.from(updatedClientsInRoom);
+      const [initiatorId, peerId] = clients;
+      
+      // أرسل إشارة "جاهز للاتصال" لكلا الطرفين
+      // الطرف الأول (initiator) هو من بدأ الجلسة
+      // الطرف الثاني (peer) هو من انضم للتو
+      io.to(initiatorId).emit('ready-to-connect', { initiator: true, peerId: peerId });
+      io.to(peerId).emit('ready-to-connect', { initiator: false, peerId: initiatorId });
     }
-});
+  });
   
   // الاستماع لحدث 'send-signal' لتبادل بيانات WebRTC
   socket.on('send-signal', (payload) => {
