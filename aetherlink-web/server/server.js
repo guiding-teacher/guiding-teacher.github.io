@@ -36,28 +36,31 @@ io.on('connection', (socket) => {
   
   // الاستماع لحدث 'join-room'
   socket.on('join-room', (roomId) => {
-    const room = io.sockets.adapter.rooms.get(roomId) || new Set();
-    const numClients = room.size;
+  const room = io.sockets.adapter.rooms.get(roomId) || new Set();
+  const numClients = room.size;
+  
+  if (numClients >= 2) {
+    socket.emit('room-full');
+    console.log(`🚪 Room ${roomId} is full. User ${socket.id} was denied.`);
+    return;
+  }
+  
+  socket.join(roomId);
+  console.log(`🔗 User ${socket.id} joined room: ${roomId}`);
+  
+  // الحل: تحقق من عدد العملاء بعد الانضمام
+  const updatedRoom = io.sockets.adapter.rooms.get(roomId);
+  if (updatedRoom && updatedRoom.size === 2) {
+    console.log(`🎉 Room ${roomId} is now ready for connection!`);
+    const clients = Array.from(updatedRoom);
     
-    if (numClients >= 2) {
-      socket.emit('room-full');
-      console.log(`🚪 Room ${roomId} is full. User ${socket.id} was denied.`);
-      return;
-    }
+    // تأكد من أن المبتدئ هو أول من انضم
+    const [initiatorId, peerId] = clients;
     
-    socket.join(roomId);
-    console.log(`🔗 User ${socket.id} joined room: ${roomId}`);
-    
-    if (room.size + 1 === 2) { // تم تحديث الشرط ليكون أكثر دقة
-      console.log(`🎉 Room ${roomId} is now ready for connection!`);
-      const clients = Array.from(io.sockets.adapter.rooms.get(roomId));
-      
-      const [initiatorId, peerId] = clients; // طريقة أحدث لتعيين المتغيرات
-      
-      io.to(initiatorId).emit('ready-to-connect', { initiator: true, peerId: peerId });
-      io.to(peerId).emit('ready-to-connect', { initiator: false, peerId: initiatorId });
-    }
-  });
+    io.to(initiatorId).emit('ready-to-connect', { initiator: true, peerId: peerId });
+    io.to(peerId).emit('ready-to-connect', { initiator: false, peerId: initiatorId });
+  }
+});
   
   // الاستماع لحدث 'send-signal' لتبادل بيانات WebRTC
   socket.on('send-signal', (payload) => {
