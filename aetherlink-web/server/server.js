@@ -35,31 +35,41 @@ io.on('connection', (socket) => {
   console.log(`✅ User connected: ${socket.id}`);
   
   // الاستماع لحدث 'join-room'
-  socket.on('join-room', (roomId) => {
-  const room = io.sockets.adapter.rooms.get(roomId) || new Set();
-  const numClients = room.size;
-  
-  if (numClients >= 2) {
-    socket.emit('room-full');
-    console.log(`🚪 Room ${roomId} is full. User ${socket.id} was denied.`);
-    return;
-  }
-  
-  socket.join(roomId);
-  console.log(`🔗 User ${socket.id} joined room: ${roomId}`);
-  
-  // الحل: تحقق من عدد العملاء بعد الانضمام
-  const updatedRoom = io.sockets.adapter.rooms.get(roomId);
-  if (updatedRoom && updatedRoom.size === 2) {
-    console.log(`🎉 Room ${roomId} is now ready for connection!`);
-    const clients = Array.from(updatedRoom);
+   // الاستماع لحدث 'join-room' (النسخة المُصححة والأكثر موثوقية)
+socket.on('join-room', (roomId) => {
+    // 1. تحقق من عدد العملاء الحاليين في الغرفة قبل الانضمام
+    const currentRoom = io.sockets.adapter.rooms.get(roomId);
+    const numClients = currentRoom ? currentRoom.size : 0;
+
+    if (numClients >= 2) {
+        socket.emit('room-full');
+        console.log(`🚪 Room ${roomId} is full. User ${socket.id} was denied.`);
+        return;
+    }
     
-    // تأكد من أن المبتدئ هو أول من انضم
-    const [initiatorId, peerId] = clients;
-    
-    io.to(initiatorId).emit('ready-to-connect', { initiator: true, peerId: peerId });
-    io.to(peerId).emit('ready-to-connect', { initiator: false, peerId: initiatorId });
-  }
+    // 2. انضم إلى الغرفة
+    socket.join(roomId);
+    console.log(`🔗 User ${socket.id} joined room: ${roomId}`);
+
+    // 3. بعد الانضمام، إذا أصبح عدد العملاء 2، ابدأ الاتصال
+    if (numClients === 1) { // كان هناك شخص واحد، والآن انضممت أنت، فأصبح المجموع 2
+        console.log(`🎉 Room ${roomId} is now ready for connection!`);
+
+        // احصل على معرف (ID) العميل الآخر الموجود بالفعل في الغرفة
+        const otherClient = Array.from(currentRoom)[0];
+
+        // أرسل للعميل الأول (البادئ) ليقوم بالاتصال بك
+        io.to(otherClient).emit('ready-to-connect', { 
+            initiator: true, 
+            peerId: socket.id // أنت (المنضم الجديد) هو الطرف الآخر (peer)
+        });
+
+        // أرسل لنفسك (المنضم الجديد) لكي تتصل بالعميل الأول
+        socket.emit('ready-to-connect', { 
+            initiator: false, 
+            peerId: otherClient // العميل الأول هو الطرف الآخر (peer)
+        });
+    }
 });
   
   // الاستماع لحدث 'send-signal' لتبادل بيانات WebRTC
