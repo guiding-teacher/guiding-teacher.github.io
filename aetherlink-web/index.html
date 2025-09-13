@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AetherLink Web</title>
+    <!-- ربط ملف التصميم CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- استيراد خط عصري من Google Fonts (اختياري لكنه يحسن الشكل) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- الخلفية المتحركة -->
+    <div class="background-animation"></div>
+    
+    <!-- الحاوية الرئيسية للتصميم الزجاجي -->
+    <main class="glass-container">
+        <header class="app-header">
+            <h1>AetherLink</h1>
+            <p>نقل الملفات الفوري والآمن</p>
+        </header>
+        
+        <section id="start-screen">
+            <div class="qr-code-placeholder">
+                <!-- سيتم وضع رمز QR هنا لاحقاً باستخدام JavaScript -->
+            </div>
+            <p class="instructions">امسح الرمز أو شارك الرابط لبدء الاتصال</p>
+            <button class="action-button">نسخ الرابط</button>
+        </section>
+    </main>
+    
+ <!-- استيراد المكتبات اللازمة (بالترتيب الصحيح وبدون تكرار) -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://bundle.run/simple-peer@9.11.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
+    
+    <!-- ربط ملف JavaScript الخاص بنا (يجب أن يكون آخر ملف script) -->
+    <script src="app.js"></script>
+
+</body>
+</html>
