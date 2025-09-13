@@ -4,7 +4,7 @@ console.log("AetherLink Web is running!");
 
 // --- 1. إعداد العناصر والمتغيرات ---
 const mainContainer = document.querySelector('.glass-container');
-const SIGNALING_SERVER_URL = 'http://localhost:3000';
+const SIGNALING_SERVER_URL = 'https://aetherlink-server.onrender.com';
 const socket = io(SIGNALING_SERVER_URL, {
     reconnection: true,
     reconnectionAttempts: 5,
