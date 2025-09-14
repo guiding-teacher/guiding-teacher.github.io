@@ -4,11 +4,6 @@
  * هذا الخادم لا يتعامل مع أي ملفات أو بيانات شخصية.
  * وظيفته الوحيدة هي العمل كوسيط أولي (Signaling) لمساعدة جهازين (Peers)
  * على العثور على بعضهما البعض لبدء اتصال WebRTC مباشر (Peer-to-Peer).
- *
- * --- التحسينات ---
- * - إضافة معالجة قوية لانقطاع الاتصال: عندما يغادر مستخدم، يتم إعلام الطرف الآخر فوراً.
- * - تحسين تسجيل الأحداث (Logging) لمتابعة أفضل.
- * - إصلاح منطق الانضمام للغرفة لضمان الاتصال الصحيح وإعلام الطرف الأول.
  */
 
 // 1. استيراد المكتبات الأساسية
@@ -23,7 +18,7 @@ const server = http.createServer(app);
 // 3. إعداد Socket.IO مع سياسة CORS
 const io = new Server(server, {
   cors: {
-    origin: "*", // هام: في بيئة الإنتاج، يجب تقييده إلى نطاق موقعك فقط.
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
@@ -35,7 +30,7 @@ const PORT = process.env.PORT || 3000;
 io.on('connection', (socket) => {
   console.log(`✅ User connected: ${socket.id}`);
   
-  // --- التعديل الرئيسي هنا: منطق انضمام للغرفة مُحسَّن ---
+  // --- منطق انضمام للغرفة مُحسَّن ---
   socket.on('join-room', (roomId) => {
     // 1. الحصول على معلومات الغرفة قبل الانضمام
     const roomClients = io.sockets.adapter.rooms.get(roomId);
@@ -54,42 +49,33 @@ io.on('connection', (socket) => {
     // 3. الحصول على معلومات الغرفة بعد الانضمام
     const updatedRoomClients = Array.from(io.sockets.adapter.rooms.get(roomId) || []);
     
-    if (updatedRoomClients.length === 2) {
-        // إعلام الطرف الأول (المُنشئ) بأن الطرف الثاني قد انضم
-        const initiatorId = updatedRoomClients.find(id => id !== socket.id);
-        if (initiatorId) {
-            io.to(initiatorId).emit('peer-joined');
-            console.log(`🔔 Notified user ${initiatorId} that a peer has joined.`);
-        }
-        
-        // الآن بعد أن انضم كلاهما، نبدأ عملية الاتصال
-        const peerId = socket.id;
-        console.log(`🎉 Room ${roomId} is now ready for connection! Initiator: ${initiatorId}, Peer: ${peerId}`);
-        
-        io.to(initiatorId).emit('ready-to-connect', { initiator: true, peerId: peerId });
-        io.to(peerId).emit('ready-to-connect', { initiator: false, peerId: initiatorId });
+    // إعلام الطرف الأول (المُنشئ) بأن الطرف الثاني قد انضم
+    if (updatedRoomClients.length === 1) {
+      // المستخدم الأول فقط في الغرفة
+      socket.emit('waiting-for-peer');
+      console.log(`⏳ User ${socket.id} is waiting for a peer in room ${roomId}`);
+    } else if (updatedRoomClients.length === 2) {
+      // إعلام الطرف الأول (المُنشئ) بأن الطرف الثاني قد انضم
+      const initiatorId = updatedRoomClients.find(id => id !== socket.id);
+      if (initiatorId) {
+        io.to(initiatorId).emit('peer-joined');
+        console.log(`🔔 Notified user ${initiatorId} that a peer has joined.`);
+      }
+      
+      // الآن بعد أن انضم كلاهما، نبدأ عملية الاتصال
+      const peerId = socket.id;
+      console.log(`🎉 Room ${roomId} is now ready for connection! Initiator: ${initiatorId}, Peer: ${peerId}`);
+      
+      io.to(initiatorId).emit('ready-to-connect', { initiator: true, peerId: peerId });
+      io.to(peerId).emit('ready-to-connect', { initiator: false, peerId: initiatorId });
     }
   });
   
   // الاستماع لحدث 'send-signal' لتبادل بيانات WebRTC
- // --- التعديل الرئيسي لحل مشكلة الاتصال العالق ---
-// الاستماع لحدث 'send-signal' واستخدام البث داخل الغرفة (Broadcasting)
-socket.on('send-signal', (payload) => {
-  // هذا الأسلوب أكثر قوة. بدلاً من الوثوق بالـ ID القادم من العميل،
-  // نقوم ببث الإشارة إلى الطرف الآخر الموجود في نفس الغرفة.
-  
-  // نجد الغرفة التي يتواجد بها المستخدم (والتي ليست غرفته الشخصية)
-  const targetRoom = Array.from(socket.rooms).find(room => room !== socket.id);
-
-  if (targetRoom) {
-    console.log(`📡 Forwarding signal from ${socket.id} to other peer in room ${targetRoom}`);
-    // .to(targetRoom) يرسل إلى كل من في الغرفة
-    // .emit() بعد .to() يرسل للجميع ما عدا المرسل الحالي (socket)
-    socket.to(targetRoom).emit('receive-signal', { signal: payload.signal, from: socket.id });
-  } else {
-    console.warn(`⚠️ User ${socket.id} tried to send a signal but was not in a valid room.`);
-  }
-});
+  socket.on('send-signal', (payload) => {
+    console.log(`📡 Forwarding signal from ${socket.id} to ${payload.to}`);
+    io.to(payload.to).emit('receive-signal', { signal: payload.signal, from: socket.id });
+  });
   
   // معالجة انقطاع الاتصال
   socket.on('disconnecting', () => {
