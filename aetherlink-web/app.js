@@ -1,4 +1,6 @@
-// AetherLink Web Logic - Upgraded Version
+--- START OF FILE app.js ---
+
+// AetherLink Web Logic - Final Corrected Version
 
 console.log("AetherLink Web is running!");
 
@@ -41,16 +43,8 @@ socket.on('connect', () => {
     }
 });
 
-socket.on('waiting-for-peer', () => {
-    updateInstructions('في انتظار انضمام الطرف الآخر...');
-});
-
 socket.on('room-full', () => {
     updateInstructions('هذه الجلسة ممتلئة. لا يمكن الانضمام.', true);
-});
-
-socket.on('peer-joined', () => {
-    updateInstructions('الطرف الآخر ينضم الآن...');
 });
 
 socket.on('ready-to-connect', ({ initiator, peerId }) => {
@@ -58,9 +52,12 @@ socket.on('ready-to-connect', ({ initiator, peerId }) => {
     initializePeer(initiator, peerId);
 });
 
+socket.on('peer-joined', () => {
+    updateInstructions('الطرف الآخر ينضم الآن...');
+});
+
 socket.on('receive-signal', (payload) => peer?.signal(payload.signal));
 
-// الاستماع لحدث انقطاع اتصال الطرف الآخر
 socket.on('peer-disconnected', () => {
     handleDisconnection('لقد قام الطرف الآخر بقطع الاتصال.');
 });
@@ -72,34 +69,23 @@ function initializePeer(isInitiator, peerId) {
     
     peer = new SimplePeer({ 
         initiator: isInitiator, 
-        trickle: false,
+        // --- التعديل الرئيسي هنا ---
+        // تم تغيير trickle إلى true لحل مشكلة الاتصال العالق.
+        // هذا يسمح بتبادل الإشارات على شكل أجزاء صغيرة، وهو أكثر توافقًا مع
+        // بيئات الاستضافة السحابية مثل Render.com.
+        trickle: true,
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
-                // إضافة خوادم TURN للتواصل خلف الجدران النارية
-                {
-                    urls: 'turn:global.relay.metered.ca:80',
-                    username: 'aetherlink',
-                    credential: 'aetherlink123'
-                },
-                {
-                    urls: 'turn:global.relay.metered.ca:443',
-                    username: 'aetherlink',
-                    credential: 'aetherlink123'
-                }
             ]
         } 
     });
 
     peer.on('error', err => {
         console.error('Peer error:', err);
-        if (err.code === 'ERR_WEBRTC_SUPPORT') {
-            handleDisconnection('متصفحك لا يدعم WebRTC. يرجى استخدام متصفح حديث.');
-        } else {
-            handleDisconnection('حدث خطأ في الاتصال: ' + err.message);
-        }
+        handleDisconnection('حدث خطأ في الاتصال.');
     });
 
     peer.on('connect', () => {
@@ -165,7 +151,6 @@ function renderJoinerUI() {
         <section id="start-screen">
              <div class="loader"></div>
             <p class="instructions">جاري الانضمام للجلسة...</p>
-            <p class="sub-instructions">قد يستغرق الاتصال بضع ثوانٍ</p>
         </section>
     `;
 }
