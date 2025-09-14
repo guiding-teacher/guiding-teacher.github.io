@@ -11,6 +11,21 @@ body {
     overflow: hidden; /* لإخفاء أي أجزاء زائدة من الخلفية المتحركة */
 }
 
+/* هذه قاعدة جديدة بالكامل */
+.action-button.cancel {
+    background: #555; /* لون مختلف لتمييزه */
+    margin-top: 10px;
+}
+
+/* هذه قاعدة جديدة بالكامل */
+.batch-info {
+    font-size: 0.8rem;
+    margin-bottom: 15px;
+    padding: 5px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+
 .sub-instructions {
   font-size: 0.9rem;
   color: #888;
@@ -46,6 +61,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.18);
     text-align: center;
     z-index: 2; /* للتأكد من أنه فوق الخلفية */
+     overflow: hidden; /* <-- هذه الإضافة لمنع أي تمرير داخلي في الحاوية */
 }
 
 /* --- تصميم محتويات الحاوية --- */
