@@ -1,7 +1,7 @@
 /**
  * AetherLink Web - Signaling Server (Fixed Version)
  * ----------------------------------------------------
- * إصلاح كامل لمشكلة الاتصال بين الأقران
+ * إصلاح كامل لمشكلة الاتصال بين الأقران وتحسين الأداء
  */
 
 const express = require('express');
@@ -74,8 +74,11 @@ io.on('connection', (socket) => {
   
   // تبادل إشارات WebRTC
   socket.on('send-signal', (payload) => {
-    console.log(`📡 Signal from ${socket.id} to ${payload.to}`);
-    io.to(payload.to).emit('receive-signal', { 
+    // *** التحسين الرئيسي هنا ***
+    // نستخدم socket.to() لإرسال الإشارة إلى كل من في الغرفة باستثناء المرسل نفسه
+    // هذا يمنع حدوث مشاكل في الاتصال ويجعله أكثر استقراراً
+    console.log(`📡 Signal from ${socket.id} being sent to room ${payload.to}`);
+    socket.to(payload.to).emit('receive-signal', { 
       signal: payload.signal, 
       from: socket.id 
     });
@@ -93,11 +96,9 @@ io.on('connection', (socket) => {
         console.log(`🗑️ Removed user ${socket.id} from room ${roomId}`);
         
         // إعلام المستخدم الآخر بانقطاع الاتصال
-        const otherUser = room.users[0];
-        if (otherUser) {
-          io.to(otherUser).emit('peer-disconnected');
-          console.log(`👋 Notified user ${otherUser} about disconnection`);
-        }
+        // نستخدم socket.to() هنا أيضاً لضمان إرسال الرسالة للطرف الآخر فقط
+        socket.to(roomId).emit('peer-disconnected');
+        console.log(`👋 Notified peer in room ${roomId} about disconnection`);
         
         // حذف الغرفة إذا أصبحت فارغة
         if (room.users.length === 0) {
