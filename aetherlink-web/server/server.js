@@ -72,10 +72,24 @@ io.on('connection', (socket) => {
   });
   
   // الاستماع لحدث 'send-signal' لتبادل بيانات WebRTC
-  socket.on('send-signal', (payload) => {
-    console.log(`📡 Forwarding signal from ${socket.id} to ${payload.to}`);
-    io.to(payload.to).emit('receive-signal', { signal: payload.signal, from: socket.id });
-  });
+ // --- التعديل الرئيسي لحل مشكلة الاتصال العالق ---
+// الاستماع لحدث 'send-signal' واستخدام البث داخل الغرفة (Broadcasting)
+socket.on('send-signal', (payload) => {
+  // هذا الأسلوب أكثر قوة. بدلاً من الوثوق بالـ ID القادم من العميل،
+  // نقوم ببث الإشارة إلى الطرف الآخر الموجود في نفس الغرفة.
+  
+  // نجد الغرفة التي يتواجد بها المستخدم (والتي ليست غرفته الشخصية)
+  const targetRoom = Array.from(socket.rooms).find(room => room !== socket.id);
+
+  if (targetRoom) {
+    console.log(`📡 Forwarding signal from ${socket.id} to other peer in room ${targetRoom}`);
+    // .to(targetRoom) يرسل إلى كل من في الغرفة
+    // .emit() بعد .to() يرسل للجميع ما عدا المرسل الحالي (socket)
+    socket.to(targetRoom).emit('receive-signal', { signal: payload.signal, from: socket.id });
+  } else {
+    console.warn(`⚠️ User ${socket.id} tried to send a signal but was not in a valid room.`);
+  }
+});
   
   // معالجة انقطاع الاتصال
   socket.on('disconnecting', () => {
