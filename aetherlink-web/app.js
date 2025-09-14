@@ -15,7 +15,8 @@ const socket = io(SIGNALING_SERVER_URL, {
   timeout: 20000
 });
 
-const CHUNK_SIZE = 16 * 1024; // 16 KB لأفضل أداء
+// *** تعديل 1: زيادة حجم القطعة لتسريع النقل ***
+const CHUNK_SIZE = 64 * 1024; // 64 KB لأداء أسرع بكثير
 
 let peer = null;
 let fileToSend = null;
@@ -24,6 +25,7 @@ let receivingFileBuffer = [];
 let receivedFileSize = 0;
 let roomId = null;
 let connectionTimeout = null;
+let isTransferCancelled = false; // *** إضافة جديدة: متغير لتتبع حالة الإلغاء ***
 
 // --- تهيئة التطبيق ---
 document.addEventListener('DOMContentLoaded', initApp);
@@ -173,15 +175,20 @@ function handlePeerClose() {
 function handlePeerSignal(data) {
   console.log('📤 Sending signal to peer');
   socket.emit('send-signal', {
-    to: roomId, // إرسال إلى الغرفة بدلاً من peerId محدد
+    to: roomId, 
     signal: data
   });
 }
 
 function handlePeerData(data) {
   try {
-    // محاولة تحليل البيانات كـ JSON (ميتاداتا الملف)
     const metadata = JSON.parse(data.toString());
+    // *** تعديل 2: معالجة رسالة الإلغاء ***
+    if (metadata.type === 'cancel') {
+        console.log('Received transfer cancellation request.');
+        handleTransferCancellation();
+        return;
+    }
     if (metadata.fileName && metadata.fileSize) {
       receivingFileMeta = metadata;
       receivingFileBuffer = [];
@@ -312,18 +319,12 @@ function setupFileTransferEvents() {
     }
   });
 
-  // منع السلوك الافتراضي لأحداث السحب والإفلات
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
     dropZone.addEventListener(eventName, preventDefaults, false);
   });
 
-  dropZone.addEventListener('dragenter', () => {
-    dropZone.classList.add('drag-over');
-  });
-
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-over');
-  });
+  dropZone.addEventListener('dragenter', () => dropZone.classList.add('drag-over'));
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 
   dropZone.addEventListener('drop', (e) => {
     dropZone.classList.remove('drag-over');
@@ -347,6 +348,7 @@ function resetFileTransfer() {
   document.getElementById('reset-button').style.display = 'none';
   document.getElementById('drop-zone').style.display = 'flex';
   fileToSend = null;
+  isTransferCancelled = false;
 }
 
 function updateInstructions(message, isError = false) {
@@ -360,16 +362,17 @@ function updateInstructions(message, isError = false) {
 // --- نقل الملفات ---
 function sendFile() {
   if (!fileToSend) return;
-  
   if (!peer || !peer.connected) {
     alert('الاتصال غير جاهز. يرجى الانتظار حتى اكتمال الاتصال.');
     return;
   }
 
+  // *** تعديل 3: إعادة تعيين حالة الإلغاء قبل البدء ***
+  isTransferCancelled = false;
+
   document.getElementById('drop-zone').style.display = 'none';
   document.getElementById('reset-button').style.display = 'none';
 
-  // إرسال ميتاداتا الملف أولاً
   const metadata = {
     fileName: fileToSend.name,
     fileSize: fileToSend.size,
@@ -385,6 +388,11 @@ function sendFile() {
   updateTransferStatus(fileToSend.name, 0, statusText);
 
   fileReader.onload = function(e) {
+    // *** تعديل 4: التحقق من الإلغاء قبل إرسال القطعة التالية ***
+    if (isTransferCancelled) {
+      console.log('Transfer cancelled by sender.');
+      return;
+    }
     if (!e.target.result) return;
     
     try {
@@ -398,7 +406,6 @@ function sendFile() {
         readNextChunk(offset);
       } else {
         updateTransferStatus(fileToSend.name, 100, 'تم الإرسال بنجاح!', true);
-        document.getElementById('reset-button').style.display = 'inline-block';
       }
     } catch (error) {
       console.error('Error sending chunk:', error);
@@ -419,6 +426,17 @@ function sendFile() {
   readNextChunk(0);
 }
 
+// *** تعديل 5: دالة لإلغاء النقل من جهة المستلم ***
+function handleTransferCancellation() {
+    if (receivingFileMeta) {
+        updateTransferStatus(receivingFileMeta.fileName, 0, 'تم إلغاء النقل من قبل المرسل', true, true);
+        receivingFileMeta = null;
+        receivingFileBuffer = [];
+        receivedFileSize = 0;
+        document.getElementById('reset-button').style.display = 'inline-block';
+    }
+}
+
 function updateTransferStatus(fileName, progress, statusText, isComplete = false, isError = false) {
   const transferStatusDiv = document.getElementById('transfer-status');
   if (!transferStatusDiv) return;
@@ -428,10 +446,12 @@ function updateTransferStatus(fileName, progress, statusText, isComplete = false
     fileProgressDiv = document.createElement('div');
     fileProgressDiv.className = 'file-progress';
     fileProgressDiv.id = 'file-progress';
+    transferStatusDiv.innerHTML = ''; // تنظيف أي محتوى سابق
     transferStatusDiv.appendChild(fileProgressDiv);
   }
   
   const statusClass = isComplete ? (isError ? 'error' : 'success') : '';
+  const showCancelButton = !isComplete && !isError && progress < 100;
 
   fileProgressDiv.innerHTML = `
     <div class="file-info">
@@ -442,9 +462,19 @@ function updateTransferStatus(fileName, progress, statusText, isComplete = false
       <div class="progress-bar-inner ${statusClass}" style="width: ${progress}%"></div>
     </div>
     <div class="status-text ${statusClass}">${statusText}</div>
+    ${showCancelButton ? `<button class="action-button cancel" id="cancel-button">إلغاء</button>` : ''}
   `;
 
-  if (isComplete && !isError) {
+  // *** تعديل 6: إضافة مستمع لزر الإلغاء الجديد ***
+  if (showCancelButton) {
+      document.getElementById('cancel-button').addEventListener('click', () => {
+          isTransferCancelled = true;
+          peer.send(JSON.stringify({ type: 'cancel' }));
+          updateTransferStatus(fileName, progress, 'تم الإلغاء', true, true);
+      });
+  }
+
+  if (isComplete || isError) {
     document.getElementById('reset-button').style.display = 'inline-block';
   }
 }
@@ -458,7 +488,6 @@ function downloadFile(blob, fileName) {
   document.body.appendChild(a);
   a.click();
   
-  // تنظيف الذاكرة
   setTimeout(() => {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
