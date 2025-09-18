@@ -187,9 +187,17 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
         document.getElementById('survey-share-link-dashboard').value = shareLink;
         document.getElementById('copy-share-link-dashboard').onclick = () => copyToClipboard(shareLink, document.getElementById('copy-share-link-dashboard'));
 
-        const savedIndexStr = localStorage.getItem(`lastViewedIndex_${surveyId}`);
-        const savedIndex = savedIndexStr ? parseInt(savedIndexStr, 10) : 0;
-        const initialIndex = (currentSurveyResponses.length > 0 && savedIndex < currentSurveyResponses.length) ? savedIndex : 0;
+        // --- MODIFICATION 1 START ---
+        // Find the index of the last viewed response ID, default to 0
+        let initialIndex = 0;
+        if (currentSurveyResponses.length > 0) {
+            const savedResponseId = localStorage.getItem(`lastViewedResponseId_${surveyId}`);
+            if (savedResponseId) {
+                const savedIndex = currentSurveyResponses.findIndex(r => r.id === savedResponseId);
+                initialIndex = (savedIndex !== -1) ? savedIndex : 0;
+            }
+        }
+        // --- MODIFICATION 1 END ---
 
         setupDashboardControls();
         renderAllResponseViews(initialIndex);
@@ -241,7 +249,9 @@ function setupDashboardControls() {
 
 function renderAllResponseViews(initialIndividualIndex = 0) {
     const settings = currentSurveyData.settings || {};
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+    // --- MODIFICATION 2 START ---
+    const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+    // --- MODIFICATION 2 END ---
     document.getElementById('settings-summary-area').innerHTML = `
         <p><strong>حالة الاستفتاء:</strong> ${settings.acceptingResponses ? '<span style="color:var(--success-color);">يستقبل الردود</span>' : '<span style="color:var(--error-color);">مغلق</span>'}</p>
         <p><strong>الإجابات المتعددة:</strong> ${settings.allowMultipleSubmissions ? 'مسموح بها' : 'غير مسموح بها'}</p>
@@ -294,22 +304,31 @@ function renderSummaryView(containerId = 'summary-view') {
 }
 
 function renderIndividualView(index) {
-    if (currentSurveyData && currentSurveyData.id) {
-        localStorage.setItem(`lastViewedIndex_${currentSurveyData.id}`, index);
+    // --- MODIFICATION 1 START ---
+    // Save the ID of the current response instead of its index
+    if (currentSurveyData && currentSurveyData.id && currentSurveyResponses[index]) {
+        localStorage.setItem(`lastViewedResponseId_${currentSurveyData.id}`, currentSurveyResponses[index].id);
     }
+    // --- MODIFICATION 1 END ---
     currentIndividualResponseIndex = index;
     const container = document.getElementById('individual-response-content');
     const response = currentSurveyResponses[index];
     container.innerHTML = '';
-
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+    
+    // --- MODIFICATION 2 START ---
+    const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+    // --- MODIFICATION 2 END ---
     const formattedDate = response.timestamp.toDate().toLocaleString('ar-EG', dateOptions);
 
     response.answers.forEach(answer => {
         const rawAnswer = answer.answer;
         const answerText = (rawAnswer && rawAnswer.length > 0) ? (Array.isArray(rawAnswer) ? rawAnswer.join('، ') : String(rawAnswer)) : '<em>لم تتم الإجابة</em>';
-        const textToCopy = (rawAnswer && rawAnswer.length > 0) ? (Array.isArray(rawAnswer) ? rawAnswer.join('\n') : String(rawAnswer)) : '';
+        
+        // --- MODIFICATION 3 START ---
+        const baseAnswerText = (rawAnswer && rawAnswer.length > 0) ? (Array.isArray(rawAnswer) ? rawAnswer.join('\n') : String(rawAnswer)) : '';
+        const textToCopy = baseAnswerText ? `${baseAnswerText}\n\nتاريخ الرد: ${formattedDate}` : `تاريخ الرد: ${formattedDate}`;
         const escapedTextToCopy = textToCopy.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/(\r\n|\n|\r)/gm, "\\n");
+        // --- MODIFICATION 3 END ---
 
         container.innerHTML += `
             <div class="question-response">
@@ -500,7 +519,9 @@ async function initSurveyPage() {
         
         const now = new Date();
         if (settings.acceptingResponses === false) throw new Error('هذا الاستفتاء مغلق حاليًا ولا يستقبل ردودًا جديدة.');
-        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+        // --- MODIFICATION 2 START ---
+        const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
+        // --- MODIFICATION 2 END ---
         if (settings.startDate) {
             const start = new Date(settings.startDate + 'T' + (settings.startTime || '00:00'));
             if (now < start) throw new Error(`هذا الاستفتاء لم يبدأ بعد. سيبدأ في: ${start.toLocaleString('ar-EG', dateOptions)}`);
@@ -664,7 +685,9 @@ function exportResponsesToPDF(surveyId) {
     doc.addFont('Amiri-Regular-normal.js', 'Amiri-Regular', 'normal');
     doc.setFont('Amiri-Regular');
     const tableHeaders = [['#', 'تاريخ الإجابة', ...currentSurveyData.questions.map(q => q.text)]];
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', calendar: 'gregory', numberingSystem: 'latn' };
+    // --- MODIFICATION 2 START ---
+    const dateOptions = { year: 'numeric', month: 'numeric', day: 'numeric', calendar: 'gregory', numberingSystem: 'latn' };
+    // --- MODIFICATION 2 END ---
     const tableBody = currentSurveyResponses.map((response, index) => [ index + 1, response.timestamp?.toDate ? response.timestamp.toDate().toLocaleDateString('ar-EG', dateOptions) : 'N/A', ...currentSurveyData.questions.map(q => {
             const ans = response.answers.find(a => a.questionId === q.id)?.answer;
             return ans == null ? '' : (Array.isArray(ans) ? ans.join('، ') : String(ans));
