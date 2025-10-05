@@ -41,8 +41,8 @@
             --page-item-hover-bg: #535353;
             
             /* Modified for clearer selection */
-            --page-item-in-range-bg: #0060c0; /* Slightly lighter blue for selected background */
-            --page-item-in-range-border: var(--success-color); /* Green for selected border */
+            --page-item-selected-bg: #0060c0; /* Slightly lighter blue for selected background */
+            --page-item-selected-border: var(--success-color); /* Green for selected border */
 
             --page-item-highlight-outline: var(--success-color); /* For go-to-page feature */
             --full-preview-bg: rgba(0, 0, 0, 0.9);
@@ -88,19 +88,18 @@
             color: #bdc3c7; min-height: 1.2em; word-wrap: break-word;
         }
 
-        #rangeSelectionContainer {
+        #pageSelectionContainer {
             margin-bottom: 20px; display: none; 
-            flex-direction: column; align-items: center; gap: 15px;
+            flex-direction: column; align-items: center; gap: 10px;
             padding: 15px; background-color: var(--input-bg); border-radius: var(--border-radius);
         }
-        .range-inputs-row {
-            display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;
-        }
-        .range-inputs-row label { font-size: 0.95rem; margin-left: 5px; }
-        .range-input {
+        #pageSelectionInput {
             padding: 8px 12px; border-radius: 6px; border: 1px solid var(--input-border);
             background-color: var(--page-item-bg); color: var(--input-text);
-            width: 100px; text-align: center; font-size: 0.95rem;
+            width: 100%; max-width: 400px; text-align: center; font-size: 0.95rem; direction: ltr;
+        }
+        #selection-note {
+            font-size: 0.85rem; color: #ccc; margin: 5px 0 0 0;
         }
         
         #pageNavigationTools { 
@@ -135,37 +134,41 @@
         .page-preview-placeholder { text-align: center; color: #aaa; padding: 20px 0; width:100%;}
         
         .page-item {
-            background-color: var(--page-item-bg); border: 2px solid var(--page-item-border); /* Default border */
-            border-radius: 6px; padding: 10px;
-            width: 120px; height: 170px; 
+            background-color: var(--page-item-bg); border: 2px solid var(--page-item-border);
+            border-radius: 6px; padding: 5px;
+            /* ** NEW ** Responsive two-column layout for mobile */
+            width: calc(50% - 5px); /* 5px is half the 10px gap */
+            height: auto;
+            aspect-ratio: 120 / 170; /* Maintain aspect ratio like the original */
+            max-width: 140px; /* Prevent it from getting too large on tablets */
+
             display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-            cursor: default; 
-            user-select: none; transition: background-color 0.2s, border-color 0.2s, border-width 0.2s, transform 0.2s, outline 0.2s ease-out;
+            cursor: pointer; 
+            user-select: none; transition: all 0.2s ease-out;
             text-align: center; color: var(--text-color);
             position: relative; overflow: hidden;
         }
-        .page-item:hover:not(.in-range) { /* Hover effect only if not already in range to avoid conflict */
+        .page-item:hover:not(.selected) {
             transform: scale(1.03);
             border-color: var(--primary-color); 
         }
-        .page-item.in-range { /* Style for pages within the selected extraction range */
-            background-color: var(--page-item-in-range-bg);
-            border: 3px solid var(--page-item-in-range-border); /* Thicker, prominent green border */
-            box-shadow: 0 0 12px rgba(40, 167, 69, 0.6); /* Shadow matching border color */
-            transform: scale(1.05); /* Slightly larger to make it pop */
+        .page-item.selected {
+            background-color: var(--page-item-selected-bg);
+            border: 3px solid var(--page-item-selected-border);
+            box-shadow: 0 0 12px rgba(40, 167, 69, 0.6);
+            transform: scale(1.05);
         }
-        .page-item.in-range .page-number {
-            color: #fff; /* Ensure page number is visible on new background */
-            font-weight: bold;
+        .page-item.selected .page-number {
+            color: #fff; font-weight: bold;
         }
         .page-item.highlighted { 
              outline: 3px solid var(--page-item-highlight-outline);
              outline-offset: 2px;
         }
         .page-number { 
-            font-size: 1.0em; margin-bottom: 5px; z-index: 2;
+            font-size: 0.9em; margin-bottom: 3px; z-index: 2;
             background-color: rgba(0, 0, 0, 0.7); padding: 2px 8px; border-radius: 10px;
-            transition: color 0.2s; /* Smooth color transition for page number */
+            transition: color 0.2s;
         }
         
         .page-preview-canvas {
@@ -276,10 +279,16 @@
             h1 { font-size: 2.2rem; }
             .file-label { padding: 14px 30px; font-size: 1.1rem; }
             #fileInfoDisplay { font-size: 0.95em; }
-            .range-input { width: 120px; padding: 10px 15px; font-size: 1rem; }
+            #pageSelectionInput { width: 100%; padding: 10px 15px; font-size: 1rem; }
             #pageNumberInput { width: 200px; padding: 10px 15px; font-size: 1rem; }
             #goToPageBtn { padding: 11px 22px; font-size: 0.95rem; }
-            .page-item { width: 140px; height: 200px; } 
+            /* ** NEW ** Revert page item to fixed size on desktop */
+            .page-item { 
+                width: 140px; 
+                height: 200px; 
+                padding: 10px;
+                aspect-ratio: unset;
+            } 
             #outputFilename { padding: 12px 20px; font-size: 1rem; margin-top: 25px; }
             #processBtn { padding: 16px 40px; font-size: 1.2rem; }
             #statusDiv { font-size: 1.05rem; }
@@ -314,16 +323,12 @@
         <input type="file" id="pdfInput" accept="application/pdf">
         <span id="fileInfoDisplay">لم يتم اختيار أي ملف.</span>
 
-        <div id="rangeSelectionContainer">
-            <div class="range-inputs-row">
-                <div>
-                    <label for="startPageInput">من الصفحة:</label>
-                    <input type="number" id="startPageInput" class="range-input" min="1">
-                </div>
-                <div>
-                    <label for="endPageInput">إلى الصفحة:</label>
-                    <input type="number" id="endPageInput" class="range-input" min="1">
-                </div>
+        <!-- ** MODIFIED ** - New single input for page selection -->
+        <div id="pageSelectionContainer">
+            <div>
+                <label for="pageSelectionInput">الصفحات المراد اقتطاعها:</label>
+                <input type="text" id="pageSelectionInput" class="range-input" placeholder="مثال: 1-5, 8, 12">
+                <p id="selection-note">أدخل أرقام الصفحات أو اضغط على الصور المصغرة أدناه لتحديدها.</p>
             </div>
             <div id="pageNavigationTools">
                 <input type="number" id="pageNumberInput" placeholder="أدخل رقم صفحة للانتقال إليها" min="1">
@@ -367,8 +372,6 @@
     </footer>
 
     <script>
-        // JavaScript code remains exactly the same as the previous version
-        // ... (paste the full JavaScript from the previous response here) ...
         console.log("Page Extractor Script start.");
 
         if (typeof window.PDFLib === 'undefined' || typeof window.fontkit === 'undefined') {
@@ -381,11 +384,11 @@
             const { PDFDocument } = window.PDFLib;
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.12.313/pdf.worker.min.js';
 
+            // DOM Element References
             const pdfInput = document.getElementById('pdfInput');
             const fileInfoDisplay = document.getElementById('fileInfoDisplay');
-            const rangeSelectionContainer = document.getElementById('rangeSelectionContainer');
-            const startPageInput = document.getElementById('startPageInput');
-            const endPageInput = document.getElementById('endPageInput');
+            const pageSelectionContainer = document.getElementById('pageSelectionContainer');
+            const pageSelectionInput = document.getElementById('pageSelectionInput');
             const pageNavigationToolsDiv = document.getElementById('pageNavigationTools');
             const pageNumberInput = document.getElementById('pageNumberInput');
             const goToPageBtn = document.getElementById('goToPageBtn');
@@ -397,7 +400,6 @@
             const statusDiv = document.getElementById('statusDiv');
             const downloadOptionsDiv = document.getElementById('download-options');
             const downloadLinkPdf = document.getElementById('downloadLinkPdf');
-            
             const fullPagePreviewOverlay = document.getElementById('fullPagePreviewOverlay');
             const fullPagePreviewCanvas = document.getElementById('fullPagePreviewCanvas');
             const closePreviewBtn = document.getElementById('closePreviewBtn');
@@ -405,500 +407,361 @@
             const nextPageBtn = document.getElementById('nextPageBtn');
             const currentPageIndicator = document.getElementById('currentPageIndicator');
 
+            // Global State
             let currentFile = { name: null, arrayBuffer: null, pdfDoc: null, pdfJsDoc: null, totalPages: 0 };
-            let extractionRange = { start: null, end: null };
+            let selectedPages = new Set();
             let modifiedPdfBlobUrl = null;
             let isProcessing = false;
             let currentPreviewPage = 1;
             let pdfJsPage = null;
 
-            function cleanupBlobUrl() {
-                if (modifiedPdfBlobUrl) {
-                    URL.revokeObjectURL(modifiedPdfBlobUrl);
-                    modifiedPdfBlobUrl = null;
-                }
-            }
-
-            function sanitizeFilename(filename) {
-                return filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_');
-            }
-            
+            // --- Utility Functions ---
+            function cleanupBlobUrl() { if (modifiedPdfBlobUrl) { URL.revokeObjectURL(modifiedPdfBlobUrl); modifiedPdfBlobUrl = null; } }
+            function sanitizeFilename(filename) { return filename.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, '_'); }
             function formatBytes(bytes, decimals = 2) {
-                if (bytes === 0) return '0 بايت';
-                const k = 1024;
-                const dm = decimals < 0 ? 0 : decimals;
+                if (bytes === 0) return '0 بايت'; const k = 1024; const dm = decimals < 0 ? 0 : decimals;
                 const sizes = ['بايت', 'كيلوبايت', 'ميجابايت', 'جيجابايت', 'تيرابايت'];
                 const i = Math.floor(Math.log(bytes) / Math.log(k));
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
             }
 
-            function updatePagePreviewsHighlights() {
-                const pageItems = pagePreviewContainer.querySelectorAll('.page-item');
-                let isValidRange = extractionRange.start && extractionRange.end && extractionRange.start <= extractionRange.end &&
-                                   extractionRange.start > 0 && extractionRange.end <= currentFile.totalPages;
-
-                pageItems.forEach(item => {
-                    const pageIndex = parseInt(item.dataset.pageIndex, 10);
-                    if (isValidRange && pageIndex >= extractionRange.start - 1 && pageIndex <= extractionRange.end - 1) {
-                        item.classList.add('in-range');
+            // --- Core Logic: Page Selection Management ---
+            
+            /**
+             * Parses a string like "1-3, 5, 9-10" into an array of numbers [1, 2, 3, 5, 9, 10].
+             * @param {string} inputString The string to parse.
+             * @returns {number[]} A sorted array of unique page numbers.
+             */
+            function parsePageSelection(inputString) {
+                const pages = new Set();
+                if (!inputString) return [];
+                
+                const parts = inputString.split(',');
+                for (const part of parts) {
+                    const trimmedPart = part.trim();
+                    if (trimmedPart.includes('-')) {
+                        const [start, end] = trimmedPart.split('-').map(num => parseInt(num, 10));
+                        if (!isNaN(start) && !isNaN(end) && start <= end && start > 0 && end <= currentFile.totalPages) {
+                            for (let i = start; i <= end; i++) {
+                                pages.add(i);
+                            }
+                        }
                     } else {
-                        item.classList.remove('in-range');
+                        const pageNum = parseInt(trimmedPart, 10);
+                        if (!isNaN(pageNum) && pageNum > 0 && pageNum <= currentFile.totalPages) {
+                            pages.add(pageNum);
+                        }
+                    }
+                }
+                return Array.from(pages).sort((a, b) => a - b);
+            }
+            
+            /**
+             * Converts a Set of numbers into a compact range string. E.g., [1, 2, 3, 5] -> "1-3, 5".
+             */
+            function formatPageSetToString(pageSet) {
+                if (pageSet.size === 0) return "";
+                const sortedPages = Array.from(pageSet).sort((a, b) => a - b);
+                const ranges = [];
+                let start = sortedPages[0];
+                let end = sortedPages[0];
+
+                for (let i = 1; i < sortedPages.length; i++) {
+                    if (sortedPages[i] === end + 1) {
+                        end = sortedPages[i];
+                    } else {
+                        ranges.push(start === end ? `${start}` : `${start}-${end}`);
+                        start = end = sortedPages[i];
+                    }
+                }
+                ranges.push(start === end ? `${start}` : `${start}-${end}`);
+                return ranges.join(', ');
+            }
+
+            function updateThumbnailsFromSelection() {
+                document.querySelectorAll('.page-item').forEach(item => {
+                    const pageNum = parseInt(item.dataset.pageNumber, 10);
+                    if (selectedPages.has(pageNum)) {
+                        item.classList.add('selected');
+                    } else {
+                        item.classList.remove('selected');
                     }
                 });
                 updateUIState();
             }
+
+            function updateSelectionInputFromSet() {
+                pageSelectionInput.value = formatPageSetToString(selectedPages);
+                updateUIState();
+            }
+
+
+            // --- UI Rendering and Updates ---
 
             async function renderPagePreviews() {
                 pagePreviewContainer.innerHTML = ''; 
                 if (!currentFile.pdfDoc) {
                     pagePreviewContainer.innerHTML = '<div class="page-preview-placeholder">سيتم عرض صفحات ملف PDF هنا بعد اختياره.</div>';
-                    updateUIState();
-                    return;
+                    updateUIState(); return;
                 }
 
-                const pages = currentFile.pdfDoc.getPages(); 
-                currentFile.totalPages = pages.length;
-                
-                startPageInput.max = currentFile.totalPages;
-                endPageInput.max = currentFile.totalPages;
+                currentFile.totalPages = currentFile.pdfDoc.getPageCount();
                 pageNumberInput.max = currentFile.totalPages;
 
-                if (pages.length === 0) {
+                if (currentFile.totalPages === 0) {
                     pagePreviewContainer.innerHTML = '<div class="page-preview-placeholder">الملف لا يحتوي على صفحات.</div>';
-                    updateUIState();
-                    return;
+                    updateUIState(); return;
                 }
-                                
-                for (let i = 0; i < pages.length; i++) {
+
+                for (let i = 0; i < currentFile.totalPages; i++) {
+                    const pageNum = i + 1;
                     const pageItem = document.createElement('div');
                     pageItem.classList.add('page-item');
-                    pageItem.dataset.pageIndex = i; 
+                    pageItem.dataset.pageNumber = pageNum;
 
                     pageItem.innerHTML = `
                         <canvas class="page-preview-canvas"></canvas>
-                        <span class="page-number"> ${i + 1}</span>
+                        <span class="page-number">${pageNum}</span>
                         <button class="view-page-btn">معاينة كاملة</button>
                     `;
-                    
-                    const canvas = pageItem.querySelector('.page-preview-canvas');
-                    const viewBtn = pageItem.querySelector('.view-page-btn');
-                    
-                    viewBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        openFullPagePreview(i + 1);
-                    });
-                    
                     pagePreviewContainer.appendChild(pageItem);
 
-                    if (currentFile.pdfJsDoc && canvas) { 
-                        try {
-                            const pdfJsPageInstance = await currentFile.pdfJsDoc.getPage(i + 1);
-                            const viewport = pdfJsPageInstance.getViewport({ scale: 0.3 }); 
-                            
-                            canvas.height = viewport.height;
-                            canvas.width = viewport.width;
-                            
-                            const renderContext = {
-                                canvasContext: canvas.getContext('2d'),
-                                viewport: viewport
-                            };
-                            await pdfJsPageInstance.render(renderContext).promise;
-                            
-                            pdfJsPageInstance.cleanup();
-                        } catch (renderError) {
-                            console.error(`Error rendering page ${i + 1} thumbnail:`, renderError);
-                            const ctx = canvas.getContext('2d');
-                            if (ctx) { 
-                                canvas.width = canvas.width; 
-                                ctx.fillStyle = '#777';
-                                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                                ctx.fillStyle = 'white';
-                                ctx.textAlign = 'center';
-                                ctx.font = '12px Cairo';
-                                ctx.fillText('خطأ في العرض', canvas.width / 2, canvas.height / 2);
-                            }
+                    pageItem.addEventListener('click', () => {
+                        if (selectedPages.has(pageNum)) {
+                            selectedPages.delete(pageNum);
+                        } else {
+                            selectedPages.add(pageNum);
                         }
-                    } else if (!currentFile.pdfJsDoc && canvas) {
-                        const ctx = canvas.getContext('2d');
-                        if (ctx) {
-                            canvas.width = pageItem.clientWidth > 0 ? pageItem.clientWidth : 100; 
-                            canvas.height = pageItem.clientHeight > 0 ? pageItem.clientHeight : 140;
-                            ctx.fillStyle = '#555';
-                            ctx.fillRect(0, 0, canvas.width, canvas.height);
-                            ctx.fillStyle = 'white';
-                            ctx.textAlign = 'center';
-                            ctx.font = '12px Cairo';
-                            ctx.fillText('لا توجد معاينة', canvas.width / 2, canvas.height / 2);
-                        }
-                    }
+                        updateThumbnailsFromSelection();
+                        updateSelectionInputFromSet();
+                    });
+                    
+                    const viewBtn = pageItem.querySelector('.view-page-btn');
+                    viewBtn.addEventListener('click', (e) => { e.stopPropagation(); openFullPagePreview(pageNum); });
                 }
-                
-                if (currentFile.totalPages > 0) {
-                    extractionRange.start = 1;
-                    extractionRange.end = currentFile.totalPages; 
-                    startPageInput.value = extractionRange.start;
-                    endPageInput.value = extractionRange.end;
-                }
-                updatePagePreviewsHighlights();
 
-                statusDiv.textContent = 'تم تحميل الملف بنجاح. حدد نطاق الصفحات للاقتطاع.';
+                // Render thumbnails asynchronously
+                renderAllThumbnails();
+
+                // Select all pages by default
+                for (let i = 1; i <= currentFile.totalPages; i++) selectedPages.add(i);
+                updateThumbnailsFromSelection();
+                updateSelectionInputFromSet();
+
+                statusDiv.textContent = 'تم تحميل الملف بنجاح. حدد الصفحات للاقتطاع.';
                 statusDiv.style.color = 'var(--success-color)';
             }
-
-            async function openFullPagePreview(pageNum) {
-                if (!currentFile.pdfJsDoc) {
-                    statusDiv.textContent = "تعذر تحميل معاينة الصفحة. قد يكون الملف محمياً أو تالفاً.";
-                    statusDiv.style.color = 'var(--warning-color)';
-                    return;
-                }
-                currentPreviewPage = pageNum;
-                fullPagePreviewOverlay.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                await renderFullPagePreview();
+            
+            async function renderAllThumbnails() {
+                 const items = document.querySelectorAll('.page-item');
+                 for(let i = 0; i < items.length; i++) {
+                     const pageNum = i + 1;
+                     const canvas = items[i].querySelector('canvas');
+                     if (currentFile.pdfJsDoc && canvas) {
+                        try {
+                             const pdfJsPage = await currentFile.pdfJsDoc.getPage(pageNum);
+                             const viewport = pdfJsPage.getViewport({ scale: 0.3 });
+                             canvas.height = viewport.height; canvas.width = viewport.width;
+                             const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport };
+                             await pdfJsPage.render(renderContext).promise;
+                             pdfJsPage.cleanup();
+                        } catch (e) { console.error(`Error rendering page ${pageNum}:`, e); }
+                    }
+                 }
             }
             
+            async function openFullPagePreview(pageNum) {
+                if (!currentFile.pdfJsDoc) { statusDiv.textContent = "تعذر تحميل معاينة الصفحة."; statusDiv.style.color = 'var(--warning-color)'; return; }
+                currentPreviewPage = pageNum;
+                fullPagePreviewOverlay.style.display = 'flex'; document.body.style.overflow = 'hidden';
+                await renderFullPagePreview();
+            }
+
             async function renderFullPagePreview() {
                 try {
                     if (pdfJsPage) { pdfJsPage.cleanup(); pdfJsPage = null; }
                     pdfJsPage = await currentFile.pdfJsDoc.getPage(currentPreviewPage);
-                    const viewport = pdfJsPage.getViewport({ scale: 1.5 }); 
-                    
-                    fullPagePreviewCanvas.height = viewport.height;
-                    fullPagePreviewCanvas.width = viewport.width;
+                    const viewport = pdfJsPage.getViewport({ scale: 1.5 });
+                    fullPagePreviewCanvas.height = viewport.height; fullPagePreviewCanvas.width = viewport.width;
                     currentPageIndicator.textContent = `الصفحة ${currentPreviewPage} من ${currentFile.totalPages}`;
                     prevPageBtn.disabled = currentPreviewPage <= 1;
                     nextPageBtn.disabled = currentPreviewPage >= currentFile.totalPages;
-                    
-                    await pdfJsPage.render({
-                        canvasContext: fullPagePreviewCanvas.getContext('2d'),
-                        viewport: viewport
-                    }).promise;
+                    await pdfJsPage.render({ canvasContext: fullPagePreviewCanvas.getContext('2d'), viewport: viewport }).promise;
                 } catch (error) {
                     console.error("Error rendering PDF page:", error);
-                    statusDiv.textContent = "حدث خطأ أثناء عرض الصفحة.";
-                    statusDiv.style.color = 'var(--danger-color)';
+                    statusDiv.textContent = "حدث خطأ أثناء عرض الصفحة."; statusDiv.style.color = 'var(--danger-color)';
                     closeFullPagePreview();
                 }
             }
-            
+
             function closeFullPagePreview() {
-                fullPagePreviewOverlay.style.display = 'none';
-                document.body.style.overflow = 'auto';
+                fullPagePreviewOverlay.style.display = 'none'; document.body.style.overflow = 'auto';
                 if (pdfJsPage) { pdfJsPage.cleanup(); pdfJsPage = null; }
             }
-            
+
             function navigatePreviewPage(direction) {
                 const newPage = currentPreviewPage + direction;
                 if (newPage >= 1 && newPage <= currentFile.totalPages) {
-                    currentPreviewPage = newPage;
-                    renderFullPagePreview();
+                    currentPreviewPage = newPage; renderFullPagePreview();
                 }
             }
 
             function resetState() {
-                if (currentFile.pdfJsDoc && typeof currentFile.pdfJsDoc.destroy === 'function') {
-                    currentFile.pdfJsDoc.destroy(); 
-                }
+                if (currentFile.pdfJsDoc && typeof currentFile.pdfJsDoc.destroy === 'function') { currentFile.pdfJsDoc.destroy(); }
                 currentFile = { name: null, arrayBuffer: null, pdfDoc: null, pdfJsDoc: null, totalPages: 0 };
-                extractionRange = { start: null, end: null };
+                selectedPages.clear();
                 outputFilenameInput.value = '';
                 fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
-                fileInfoDisplay.style.color = 'var(--text-color)';
                 pagePreviewContainer.innerHTML = '<div class="page-preview-placeholder">سيتم عرض صفحات ملف PDF هنا بعد اختياره.</div>';
                 downloadOptionsDiv.style.display = 'none';
-                progressBarContainer.style.display = 'none';
-                progressBar.value = 0;
-                cleanupBlobUrl();
+                progressBarContainer.style.display = 'none'; progressBar.value = 0; cleanupBlobUrl();
                 if (pdfInput) pdfInput.value = null;
-
-                rangeSelectionContainer.style.display = 'none';
-                pageNavigationToolsDiv.style.display = 'none';
-                startPageInput.value = '';
-                endPageInput.value = '';
-                pageNumberInput.value = '';
-                startPageInput.max = null;
-                endPageInput.max = null;
-                pageNumberInput.max = null;
-                
-                statusDiv.textContent = ''; 
-                updateUIState();
+                pageSelectionContainer.style.display = 'none'; pageNavigationToolsDiv.style.display = 'none';
+                pageSelectionInput.value = ''; pageNumberInput.value = ''; pageNumberInput.max = null;
+                statusDiv.textContent = ''; updateUIState();
             }
 
             function updateUIState(processing = isProcessing) {
                 const fileLoaded = !!currentFile.pdfDoc && currentFile.totalPages > 0;
-                const isValidRange = extractionRange.start && extractionRange.end &&
-                                     extractionRange.start > 0 && extractionRange.end > 0 &&
-                                     extractionRange.start <= currentFile.totalPages &&
-                                     extractionRange.end <= currentFile.totalPages &&
-                                     extractionRange.start <= extractionRange.end;
-
-                processBtn.disabled = !fileLoaded || !isValidRange || processing;
-                rangeSelectionContainer.style.display = fileLoaded ? 'flex' : 'none';
+                const isValidSelection = selectedPages.size > 0;
+                processBtn.disabled = !fileLoaded || !isValidSelection || processing;
+                pageSelectionContainer.style.display = fileLoaded ? 'flex' : 'none';
                 pageNavigationToolsDiv.style.display = fileLoaded ? 'flex' : 'none';
 
                 if (fileLoaded) {
                     let infoText = `الملف: ${currentFile.name} (${currentFile.totalPages} صفحات). `;
-                    if (isValidRange) {
-                        infoText += `سيتم اقتطاع الصفحات من ${extractionRange.start} إلى ${extractionRange.end}.`;
-                    } else if (extractionRange.start || extractionRange.end) { 
-                        infoText += ` <span style="color: var(--warning-color);">(نطاق الصفحات غير صالح!)</span>`;
-                    }
+                    infoText += `تم تحديد ${selectedPages.size} صفحة للاقتطاع.`;
                     fileInfoDisplay.innerHTML = infoText;
-                    
-                    if (!outputFilenameInput.value && currentFile.name && isValidRange && !processing && !statusDiv.textContent.includes('اكتمل')) {
+                    if (!outputFilenameInput.value && currentFile.name && isValidSelection && !processing && !statusDiv.textContent.includes('اكتمل')) {
                         const baseName = currentFile.name.replace(/\.pdf$/i, '');
-                        outputFilenameInput.value = `${baseName}_p${extractionRange.start}-p${extractionRange.end}`;
+                        outputFilenameInput.value = `${baseName}_selected_pages`;
                     }
                 } else if (!currentFile.name) {
                     fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
-                    fileInfoDisplay.style.color = 'var(--text-color)';
-                    outputFilenameInput.value = '';
-                    downloadOptionsDiv.style.display = 'none';
+                    outputFilenameInput.value = ''; downloadOptionsDiv.style.display = 'none';
                 }
-                
                 progressBarContainer.style.display = processing ? 'block' : 'none';
             }
 
+            // --- Event Handlers ---
+
             async function handleFileSelection(event) {
-                if (isProcessing) {
-                    pdfInput.value = null; return;
-                }
+                if (isProcessing) { pdfInput.value = null; return; }
                 const file = event.target.files[0];
-                if (!file) {
-                    if (currentFile.name) resetState();
-                    return;
-                }
-                
+                if (!file) { if (currentFile.name) resetState(); return; }
                 resetState(); 
-
                 fileInfoDisplay.textContent = `الملف المختار: ${file.name} (${formatBytes(file.size)})`;
-                fileInfoDisplay.style.color = 'var(--text-color)';
-
                 if (file.type !== 'application/pdf') {
                     statusDiv.textContent = `خطأ: الملف "${file.name}" ليس بصيغة PDF.`;
                     statusDiv.style.color = 'var(--danger-color)';
-                    fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.';
-                    pdfInput.value = null; return;
+                    fileInfoDisplay.textContent = 'لم يتم اختيار أي ملف.'; pdfInput.value = null; return;
                 }
-
                 currentFile.name = file.name;
-                statusDiv.innerHTML = 'جاري قراءة الملف وتحضير المعاينة... <div class="spinner"></div>';
-                statusDiv.style.color = 'var(--secondary-color)';
-                
+                statusDiv.innerHTML = 'جاري قراءة الملف وتحضير المعاينة... <div class="spinner"></div>'; statusDiv.style.color = 'var(--secondary-color)';
                 try {
                     currentFile.arrayBuffer = await file.arrayBuffer();
-                    currentFile.pdfDoc = await PDFDocument.load(currentFile.arrayBuffer, { 
-                        updateMetadata: false, 
-                        ignoreEncryption: true, 
-                        fontkit: window.fontkit
-                    });
-                    
+                    currentFile.pdfDoc = await PDFDocument.load(currentFile.arrayBuffer, { updateMetadata: false, ignoreEncryption: true, fontkit: window.fontkit });
                     if (currentFile.pdfDoc.isEncrypted) {
-                         statusDiv.textContent = `خطأ: الملف "${file.name}" محمي بكلمة مرور ولا يمكن معالجته.`;
-                         statusDiv.style.color = 'var(--danger-color)';
-                         currentFile.pdfDoc = null; currentFile.arrayBuffer = null;
-                         renderPagePreviews(); updateUIState(); pdfInput.value = null;
-                         return;
+                         statusDiv.textContent = `خطأ: الملف "${file.name}" محمي بكلمة مرور.`; statusDiv.style.color = 'var(--danger-color)';
+                         resetState(); pdfInput.value = null; return;
                     }
-
-                    if (currentFile.arrayBuffer) {
-                        try {
-                            currentFile.pdfJsDoc = await pdfjsLib.getDocument({ data: currentFile.arrayBuffer }).promise;
-                        } catch (pdfJsError) {
-                            console.error("Error loading PDF with PDF.js for preview:", pdfJsError);
-                            currentFile.pdfJsDoc = null; 
-                            statusDiv.textContent += " (تحذير: قد لا تظهر معاينات الصفحات المصغرة بسبب خطأ في تحميل العرض)";
-                            statusDiv.style.color = 'var(--warning-color)';
-                        }
-                    }
+                    currentFile.pdfJsDoc = await pdfjsLib.getDocument({ data: currentFile.arrayBuffer }).promise;
                     await renderPagePreviews();
-
                 } catch (loadError) {
                     console.error(`Error parsing PDF "${file.name}":`, loadError);
-                    statusDiv.textContent = `خطأ في قراءة الملف "${file.name}": ${loadError.message || 'ملف تالف أو غير مدعوم.'}`;
+                    statusDiv.textContent = `خطأ في قراءة الملف: ${loadError.message || 'ملف تالف.'}`;
                     statusDiv.style.color = 'var(--danger-color)';
-                    currentFile.pdfDoc = null; currentFile.arrayBuffer = null; currentFile.pdfJsDoc = null;
-                    renderPagePreviews(); updateUIState(); pdfInput.value = null;
+                    resetState(); pdfInput.value = null;
                 }
             }
 
             pdfInput.addEventListener("change", handleFileSelection);
-            
+
             const dropZone = document.querySelector('.extractor-container');
-            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); if (!isProcessing) dropZone.style.outline = '2px dashed var(--primary-color)'; });
-            dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); dropZone.style.outline = 'none'; });
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); if (!isProcessing) dropZone.style.outline = '2px dashed var(--primary-color)'; });
+            dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.style.outline = 'none'; });
             dropZone.addEventListener('drop', (e) => {
-                e.preventDefault(); e.stopPropagation(); dropZone.style.outline = 'none';
-                if (isProcessing) return;
-                if (e.dataTransfer.files.length > 0) {
-                    pdfInput.files = e.dataTransfer.files; 
-                    const event = new Event('change', { bubbles: true }); 
-                    pdfInput.dispatchEvent(event);
-                }
+                e.preventDefault(); e.stopPropagation(); dropZone.style.outline = 'none'; if (isProcessing) return;
+                if (e.dataTransfer.files.length > 0) { pdfInput.files = e.dataTransfer.files; pdfInput.dispatchEvent(new Event('change', { bubbles: true })); }
             });
 
-            [startPageInput, endPageInput].forEach(input => {
-                input.addEventListener('input', () => { 
-                    extractionRange.start = parseInt(startPageInput.value, 10) || null;
-                    extractionRange.end = parseInt(endPageInput.value, 10) || null;
-                    
-                    let rangeStatusMessage = '';
-                    let rangeStatusColor = 'var(--success-color)';
-
-                    if (currentFile.pdfDoc && currentFile.totalPages > 0) {
-                        if (extractionRange.start && (extractionRange.start < 1 || extractionRange.start > currentFile.totalPages)) {
-                            rangeStatusMessage = `صفحة البداية يجب أن تكون بين 1 و ${currentFile.totalPages}.`;
-                            rangeStatusColor = 'var(--warning-color)';
-                        }
-                        if (extractionRange.end && (extractionRange.end < 1 || extractionRange.end > currentFile.totalPages)) {
-                            rangeStatusMessage = (rangeStatusMessage ? rangeStatusMessage + " " : "") + `صفحة النهاية يجب أن تكون بين 1 و ${currentFile.totalPages}.`;
-                            rangeStatusColor = 'var(--warning-color)';
-                        }
-                        
-                        if (extractionRange.start && extractionRange.end && extractionRange.start > extractionRange.end && rangeStatusColor !== 'var(--warning-color)') {
-                             rangeStatusMessage = 'خطأ: يجب أن تكون صفحة البداية أصغر من أو تساوي صفحة النهاية.';
-                             rangeStatusColor = 'var(--warning-color)';
-                        }
-                    }
-                    
-                    if (rangeStatusMessage) {
-                        statusDiv.textContent = rangeStatusMessage;
-                        statusDiv.style.color = rangeStatusColor;
-                    } else if (statusDiv.textContent.includes('صفحة البداية') || statusDiv.textContent.includes('صفحة النهاية')) {
-                         statusDiv.textContent = (currentFile.totalPages > 0) ? 'حدد نطاق الصفحات للاقتطاع.' : '';
-                         statusDiv.style.color = 'var(--success-color)';
-                    }
-                    updatePagePreviewsHighlights();
-                });
+            pageSelectionInput.addEventListener('input', () => {
+                const parsed = parsePageSelection(pageSelectionInput.value);
+                selectedPages = new Set(parsed);
+                updateThumbnailsFromSelection();
             });
 
             goToPageBtn.addEventListener('click', () => {
-                if (!currentFile.pdfDoc || currentFile.totalPages === 0) {
-                    statusDiv.textContent = 'الرجاء تحميل ملف PDF أولاً.';
-                    statusDiv.style.color = 'var(--warning-color)'; return;
-                }
-                const pageNumStr = pageNumberInput.value;
-                if (!pageNumStr) {
-                    statusDiv.textContent = 'الرجاء إدخال رقم الصفحة للانتقال إليها.';
-                    statusDiv.style.color = 'var(--warning-color)'; pageNumberInput.focus(); return;
-                }
-                const pageNum = parseInt(pageNumStr, 10);
-                if (isNaN(pageNum) || pageNum < 1 || pageNum > currentFile.totalPages) {
+                const pageNum = parseInt(pageNumberInput.value, 10);
+                if (!currentFile.pdfDoc || isNaN(pageNum) || pageNum < 1 || pageNum > currentFile.totalPages) {
                     statusDiv.textContent = `رقم الصفحة غير صالح. الرجاء إدخال رقم بين 1 و ${currentFile.totalPages}.`;
                     statusDiv.style.color = 'var(--warning-color)'; pageNumberInput.focus(); return;
                 }
-
-                const pageIndex = pageNum - 1;
-                const pageItemElement = pagePreviewContainer.querySelector(`.page-item[data-page-index="${pageIndex}"]`);
+                const pageItemElement = pagePreviewContainer.querySelector(`.page-item[data-page-number="${pageNum}"]`);
                 if (pageItemElement) {
                     pageItemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     pageItemElement.classList.add('highlighted');
                     setTimeout(() => pageItemElement.classList.remove('highlighted'), 1500);
-                    statusDiv.textContent = `تم الانتقال إلى الصفحة ${pageNum}.`;
-                    statusDiv.style.color = 'var(--success-color)';
-                } else {
-                    statusDiv.textContent = 'لم يتم العثور على عنصر الصفحة.';
-                    statusDiv.style.color = 'var(--danger-color)';
                 }
             });
 
             processBtn.addEventListener('click', async function() {
-                if (isProcessing || !currentFile.pdfDoc || !extractionRange.start || !extractionRange.end) {
-                    statusDiv.textContent = 'الرجاء تحميل ملف PDF وتحديد نطاق صفحات صالح للاقتطاع.';
-                    statusDiv.style.color = 'var(--warning-color)'; return;
-                }
-                if (extractionRange.start > extractionRange.end || extractionRange.start < 1 || extractionRange.end > currentFile.totalPages) {
-                     statusDiv.textContent = 'نطاق الصفحات المحدد غير صالح. يرجى التحقق والمحاولة مرة أخرى.';
-                     statusDiv.style.color = 'var(--warning-color)'; return;
-                }
+                if (isProcessing || !currentFile.pdfDoc || selectedPages.size === 0) return;
 
-                isProcessing = true;
-                updateUIState();
-                cleanupBlobUrl();
+                isProcessing = true; updateUIState(); cleanupBlobUrl();
                 statusDiv.innerHTML = 'جاري تحضير الملف... <div class="spinner"></div>';
                 statusDiv.style.color = 'var(--secondary-color)';
-                downloadOptionsDiv.style.display = 'none';
-                progressBar.value = 0;
-                progressBarContainer.style.display = 'block';
+                downloadOptionsDiv.style.display = 'none'; progressBar.value = 0; progressBarContainer.style.display = 'block';
 
                 try {
-                    const originalDoc = await PDFDocument.load(currentFile.arrayBuffer, { fontkit: window.fontkit, ignoreEncryption: true });
+                    const originalDoc = await PDFDocument.load(currentFile.arrayBuffer, { fontkit: window.fontkit });
                     const newPdfDoc = await PDFDocument.create();
-                    newPdfDoc.registerFontkit(window.fontkit); 
-                    progressBar.value = 10; 
-
-                    const pagesToCopyIndices = [];
-                    for (let i = extractionRange.start - 1; i < extractionRange.end; i++) {
-                        pagesToCopyIndices.push(i);
-                    }
+                    newPdfDoc.registerFontkit(window.fontkit);
                     
-                    if (pagesToCopyIndices.length === 0) {
-                        throw new Error("يجب تحديد صفحة واحدة على الأقل للاقتطاع.");
-                    }
-
+                    const pagesToCopyIndices = Array.from(selectedPages).map(p => p - 1).sort((a,b)=>a-b);
+                    
                     const copiedPages = await newPdfDoc.copyPages(originalDoc, pagesToCopyIndices);
                     progressBar.value = 50;
 
-                    let copiedCount = 0;
-                    for (const page of copiedPages) {
-                        newPdfDoc.addPage(page);
-                        copiedCount++;
-                        progressBar.value = 50 + Math.round((copiedCount / copiedPages.length) * 40);
-                        if (copiedCount % 5 === 0 || copiedCount === copiedPages.length) { 
-                           await new Promise(resolve => setTimeout(resolve, 0)); 
-                        }
+                    for (let i = 0; i < copiedPages.length; i++) {
+                        newPdfDoc.addPage(copiedPages[i]);
+                        progressBar.value = 50 + Math.round(((i + 1) / copiedPages.length) * 40);
+                        if (i % 5 === 0) await new Promise(resolve => setTimeout(resolve, 0));
                     }
                     
                     statusDiv.innerHTML = 'جاري حفظ الملف المقتطع... <div class="spinner"></div>';
-                    progressBar.value = 90;
-
                     const modifiedPdfBytes = await newPdfDoc.save({ useObjectStreams: true });
-                    progressBar.value = 98; 
-
                     modifiedPdfBlobUrl = URL.createObjectURL(new Blob([modifiedPdfBytes], { type: 'application/pdf' }));
                     
-                    let outputName = outputFilenameInput.value.trim();
-                    if (!outputName) {
-                        const baseName = currentFile.name.replace(/\.pdf$/i, '');
-                        outputName = `${baseName}_p${extractionRange.start}-p${extractionRange.end}`;
-                    }
-                    outputName = sanitizeFilename(outputName);
-                    if (!outputName.toLowerCase().endsWith('.pdf')) {
-                        outputName += '.pdf';
-                    }
+                    let outputName = sanitizeFilename(outputFilenameInput.value.trim() || `${currentFile.name.replace(/\.pdf$/i, '')}_extracted`);
+                    if (!outputName.toLowerCase().endsWith('.pdf')) outputName += '.pdf';
 
                     downloadLinkPdf.href = modifiedPdfBlobUrl;
                     downloadLinkPdf.download = outputName;
 
-                    statusDiv.textContent = `اكتمل! تم اقتطاع ${copiedPages.length} صفحة (صفحات) بنجاح.`;
-                    statusDiv.style.color = 'var(--success-color)';
-                    progressBar.value = 100;
+                    statusDiv.textContent = `اكتمل! تم اقتطاع ${copiedPages.length} صفحة بنجاح.`;
+                    statusDiv.style.color = 'var(--success-color)'; progressBar.value = 100;
                     setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1500);
                     downloadOptionsDiv.style.display = 'flex';
 
                 } catch (error) {
-                    console.error("Error during PDF page extraction:", error);
+                    console.error("Error during PDF extraction:", error);
                     statusDiv.textContent = `حدث خطأ: ${error.message || 'خطأ غير معروف.'}`;
                     statusDiv.style.color = 'var(--danger-color)';
-                    progressBarContainer.style.display = 'none';
-                    downloadOptionsDiv.style.display = 'none';
-                    cleanupBlobUrl();
                 } finally {
-                    isProcessing = false;
-                    const spinner = statusDiv.querySelector('.spinner');
-                    if (spinner) spinner.remove();
-                    updateUIState(); 
+                    isProcessing = false; updateUIState();
                 }
             });
             
+            // Full Page Preview Listeners
             closePreviewBtn.addEventListener('click', closeFullPagePreview);
             prevPageBtn.addEventListener('click', () => navigatePreviewPage(-1));
             nextPageBtn.addEventListener('click', () => navigatePreviewPage(1));
             fullPagePreviewOverlay.addEventListener('click', (e) => { if (e.target === fullPagePreviewOverlay) closeFullPagePreview(); });
             document.addEventListener('keydown', (e) => {
                 if (fullPagePreviewOverlay.style.display === 'flex') {
-                    if (e.key === 'ArrowLeft' || e.key === 'Left') navigatePreviewPage(-1);
-                    else if (e.key === 'ArrowRight' || e.key === 'Right') navigatePreviewPage(1);
+                    if (e.key === 'ArrowLeft') navigatePreviewPage(-1);
+                    else if (e.key === 'ArrowRight') navigatePreviewPage(1);
                     else if (e.key === 'Escape') closeFullPagePreview();
                 }
             });

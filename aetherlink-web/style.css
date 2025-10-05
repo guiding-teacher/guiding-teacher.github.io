@@ -11,6 +11,42 @@ body {
     overflow: hidden; /* لإخفاء أي أجزاء زائدة من الخلفية المتحركة */
 }
 
+#transfer-list {
+    max-height: 250px;  /* تحديد أقصى ارتفاع للقائمة */
+    overflow-y: auto;   /* إضافة شريط تمرير رأسي فقط عند الحاجة */
+    padding-right: 10px;/* مسافة صغيرة على اليمين للجمالية */
+    margin-bottom: 15px;/* مسافة أسفل القائمة */
+}
+
+/* 3. الكود المخصص لإخفاء شكل شريط التمرير داخل قائمة الملفات */
+/* يعمل على متصفحات WebKit مثل Chrome, Safari, Edge */
+#transfer-list::-webkit-scrollbar {
+    width: 0px;  /* جعل عرض الشريط صفراً لإخفائه */
+    background: transparent; /* خلفية شفافة */
+}
+
+/* هذه قاعدة جديدة بالكامل */
+.action-button.cancel {
+    background: #555; /* لون مختلف لتمييزه */
+    margin-top: 10px;
+}
+
+/* هذه قاعدة جديدة بالكامل */
+.batch-info {
+    font-size: 0.8rem;
+    margin-bottom: 15px;
+    padding: 5px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+
+.sub-instructions {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
 /* --- Loader for Joiner UI --- */
 .loader {
     border: 5px solid #f3f3f3; /* Light grey */
@@ -39,6 +75,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.18);
     text-align: center;
     z-index: 2; /* للتأكد من أنه فوق الخلفية */
+     overflow: hidden; /* <-- هذه الإضافة لمنع أي تمرير داخلي في الحاوية */
 }
 
 /* --- تصميم محتويات الحاوية --- */
