@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FormCraft Pro - برنامج الاستبيان المتقدم </title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Amiri-Regular-normal/1.0/Amiri-Regular-normal.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --primary-color: #4a6cf7;
+            --primary-light: #eff2ff;
+            --primary-dark: #3a58d6;
+            --sidebar-bg: #ffffff;
+            --body-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #e5e7eb;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --sidebar-width: 280px;
+            --header-height: 70px;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+        
+        body.dark-theme {
+            --sidebar-bg: #1e293b;
+            --body-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary-light: rgba(74, 108, 247, 0.15);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            direction: rtl;
+            transition: var(--transition);
+        }
+
+        .app-container { 
+            display: flex; 
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1001;
+            box-shadow: var(--shadow);
+        }
+
+        .sidebar-header { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            margin-bottom: 2rem; 
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .sidebar-logo-icon { 
+            background: linear-gradient(135deg, var(--primary-color), #6c5ce7); 
+            color: white; 
+            padding: 10px; 
+            border-radius: 10px; 
+            display: flex; 
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.3);
+        }
+        .sidebar-logo-text { 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+            background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .new-survey-btn { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 0.5rem; 
+            width: 100%; 
+            padding: 0.75rem; 
+            margin-bottom: 1.5rem; 
+            font-size: 1rem; 
+            font-weight: 600; 
+            color: white; 
+            background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: var(--transition);
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.3);
+        }
+        .new-survey-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(74, 108, 247, 0.4);
+        }
+        .nav-heading { 
+            font-size: 0.8rem; 
+            font-weight: 600; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            padding: 0 0.5rem; 
+            margin-bottom: 0.5rem; 
+            margin-top: 1rem;
+        }
+        .nav-list { 
+            list-style: none; 
+            flex-grow: 1; 
+            overflow-y: auto; 
+        }
+        .nav-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            padding: 0.8rem; 
+            margin-bottom: 0.5rem; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            transition: var(--transition); 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            position: relative;
+        }
+        .nav-item:hover { 
+            background-color: var(--primary-light); 
+            transform: translateX(-5px);
+        }
+        .nav-item.active { 
+            background-color: var(--primary-color); 
+            color: white; 
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.3);
+        }
+        .nav-item.active svg { 
+            color: white !important; 
+        }
+        .nav-item .survey-actions {
+            position: absolute;
+            left: 10px;
+            display: none;
+            gap: 5px;
+        }
+        .nav-item:hover .survey-actions {
+            display: flex;
+        }
+        .survey-actions button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+        .survey-actions button:hover {
+            color: var(--primary-color);
+            background: rgba(255,255,255,0.5);
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex-grow: 1;
+            padding-top: var(--header-height);
+            transition: margin-right 0.3s ease;
+            margin-right: 0; /* Default for mobile first */
+        }
+        .main-content-inner { 
+            padding: 2rem; 
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .main-header {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: var(--header-height);
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+        
+        #hamburger-btn { 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            padding: 0.5rem; 
+            color: var(--text-color); 
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+        #hamburger-btn:hover {
+            background-color: var(--primary-light);
+        }
+        .header-title { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* --- General Components --- */
+        .view { 
+            display: none; 
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .view.active { 
+            display: block; 
+        }
+        .card { 
+            background-color: var(--card-bg); 
+            border-radius: var(--border-radius); 
+            padding: 1.5rem 2rem; 
+            box-shadow: var(--shadow); 
+            margin-bottom: 1.5rem; 
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        .card h2 { 
+            margin-bottom: 1rem; 
+            padding-bottom: 0.5rem; 
+            border-bottom: 1px solid var(--border-color); 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h3 { 
+            color: var(--text-color); 
+            margin-bottom: 1rem; 
+            font-size: 1.1rem; 
+        }
+        .form-group { 
+            margin-bottom: 1.5rem; 
+        }
+        .form-group label { 
+            display: block; 
+            font-weight: 600; 
+            margin-bottom: 0.5rem; 
+        }
+        input[type="text"], input[type="number"], input[type="date"], input[type="time"], input[type="email"], input[type="url"], textarea, select { 
+            width: 100%; 
+            padding: 0.8rem 1rem; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            font-family: 'Cairo', sans-serif; 
+            background-color: var(--body-bg); 
+            color: var(--text-color); 
+            transition: var(--transition);
+        }
+        input:focus, textarea:focus, select:focus { 
+            outline: none; 
+            border-color: var(--primary-color); 
+            box-shadow: 0 0 0 3px var(--primary-light); 
+        }
+        .btn { 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 0.5rem; 
+            padding: 0.75rem 1.5rem; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        .btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(20, 20);
+                opacity: 0;
+            }
+        }
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--primary-color), #6c5ce7);
+            color: white; 
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.3);
+        }
+        .btn-primary:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(74, 108, 247, 0.4);
+        }
+        .btn-danger { 
+            background-color: var(--danger-color); 
+            color: white; 
+        }
+        .btn-danger:hover { 
+            background-color: #c82333; 
+            transform: translateY(-2px);
+        }
+        .btn-success { 
+            background-color: var(--success-color); 
+            color: white; 
+        }
+        .btn-success:hover { 
+            background-color: #218838; 
+            transform: translateY(-2px);
+        }
+        .btn-warning { 
+            background-color: var(--warning-color); 
+            color: #212529; 
+        }
+        .btn-warning:hover { 
+            background-color: #e0a800; 
+            transform: translateY(-2px);
+        }
+        .btn-secondary { 
+            background-color: #f1f3f5; 
+            color: var(--text-color); 
+            border: 1px solid var(--border-color); 
+        }
+        .dark-theme .btn-secondary { 
+            background-color: #334155; 
+            color: var(--text-color); 
+            border-color: #475569; 
+        }
+        .btn-secondary:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+        .dark-theme .btn-secondary:hover {
+            background-color: #475569;
+        }
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        .grid-2 { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 1rem; 
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        /* --- Editor View --- */
+        .question-card { 
+            border: 1px solid var(--border-color); 
+            padding: 1.5rem; 
+            border-radius: 8px; 
+            margin-bottom: 1rem; 
+            background: var(--body-bg); 
+            transition: var(--transition);
+            position: relative;
+        }
+        .question-card:hover {
+            border-color: var(--primary-color);
+        }
+        .question-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1rem; 
+        }
+        .question-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .option-item { 
+            display: flex; 
+            gap: 0.5rem; 
+            align-items: center; 
+            margin-bottom: 0.5rem; 
+        }
+        .option-item input[type="text"] { 
+            flex-grow: 1; 
+        }
+        .option-item input[type="number"] { 
+            width: 80px; 
+            text-align: center; 
+        }
+        .action-buttons { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 1rem; 
+            justify-content: flex-end; 
+            margin-top: 2rem; 
+        }
+        .logic-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--primary-light);
+            border-radius: 8px;
+            border-right: 3px solid var(--primary-color);
+        }
+        .validation-section {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--primary-light);
+            border-radius: 8px;
+            border-right: 3px solid var(--primary-color);
+        }
+
+        /* --- Results View --- */
+        .results-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 1rem; 
+            margin-bottom: 1.5rem;
+        }
+        .results-header .action-buttons { 
+            margin-top: 0; 
+        }
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 1.5rem; 
+        }
+        .stat-card { 
+            text-align: center; 
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        .stat-card .value { 
+            font-size: 2.5rem; 
+            font-weight: 700; 
+            color: var(--primary-color); 
+        }
+        .stat-card .label { 
+            font-size: 1rem; 
+            color: var(--text-muted); 
+        }
+        .results-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 1rem; 
+        }
+        .results-table th, .results-table td { 
+            padding: 0.75rem; 
+            text-align: right; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        .results-table th { 
+            font-weight: 600; 
+            background-color: var(--primary-light);
+        }
+        .chart-container { 
+            max-width: 400px; 
+            margin: 1rem auto; 
+        }
+        .individual-responses-controls { 
+            display: flex; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 1rem; 
+            margin-bottom: 1.5rem; 
+        }
+        .individual-responses-controls select { 
+            flex-grow: 1; 
+        }
+        .individual-responses-controls label { 
+            margin-bottom: 0; 
+            white-space: nowrap; 
+        }
+
+        /* --- Fill Survey & Welcome --- */
+        .centered-view-card { 
+            max-width: 700px; 
+            margin: 2rem auto; 
+            text-align: center; 
+            padding: 3rem;
+        }
+        .fill-survey-card { 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        .fill-survey-card h2 { 
+            text-align: center; 
+        }
+        .fill-survey-card p { 
+            text-align: center; 
+            margin-bottom: 2rem; 
+            font-size: 1.1rem; 
+            color: var(--text-muted);
+        }
+        .radio-group, .checkbox-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            margin-bottom: 0.5rem; 
+            cursor: pointer; 
+            padding: 0.5rem; 
+            border-radius: 6px; 
+            transition: var(--transition);
+        }
+        .radio-group label, .checkbox-group label { 
+            cursor: pointer; 
+        }
+        .radio-group:hover, .checkbox-group:hover { 
+            background-color: var(--primary-light); 
+        }
+        input[type="radio"], input[type="checkbox"] { 
+            width: auto; 
+        }
+        
+        /* --- Sharing View --- */
+        .share-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .share-option {
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            transition: var(--transition);
+        }
+        .share-option:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+        }
+        .share-option i {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        .share-link {
+            display: flex;
+            margin-top: 1rem;
+        }
+        .share-link input {
+            flex-grow: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .share-link button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+        
+        /* --- Mobile Responsiveness --- */
+        .main-content-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .sidebar-open .main-content-overlay { 
+            display: block; 
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { 
+                transform: translateX(100%); 
+            }
+            .sidebar-open .sidebar { 
+                transform: translateX(0); 
+            }
+            .main-header { 
+                width: 100%; 
+                right: 0; 
+            }
+            .action-buttons { 
+                justify-content: center; 
+            }
+            .grid-2, .grid-3, .share-options { 
+                grid-template-columns: 1fr; 
+            }
+            .card { 
+                padding: 1.5rem 1rem; 
+            }
+            .centered-view-card {
+                padding: 2rem 1rem;
+            }
+        }
+
+        /* --- Desktop Layout --- */
+        @media (min-width: 769px) {
+            .sidebar { 
+                transform: translateX(0); 
+            }
+            #hamburger-btn { 
+                display: none; 
+            }
+            .main-content { 
+                margin-right: var(--sidebar-width); 
+            }
+            .main-header { 
+                width: calc(100% - var(--sidebar-width)); 
+                right: var(--sidebar-width); 
+            }
+        }
+
+        /* --- Toast Notifications --- */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+        }
+        .toast {
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInLeft 0.3s ease;
+            max-width: 350px;
+        }
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .toast-error {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        .toast-warning {
+            background-color: var(--warning-color);
+            color: #212529;
+        }
+        .toast-info {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-logo-icon"><i class="fas fa-poll"></i></span>
+                <span class="sidebar-logo-text">FormCraft Pro</span>
+            </div>
+            <button class="new-survey-btn" id="new-survey-btn">
+                <i class="fas fa-plus"></i>
+                <span>استبيان جديد</span>
+            </button>
+            <div class="nav-heading">استبياناتي</div>
+            <ul class="nav-list" id="survey-list"></ul>
+            <div class="nav-heading" style="margin-top: auto; padding-top:1rem; border-top:1px solid var(--border-color);">عام</div>
+            <ul class="nav-list" style="flex-grow:0;">
+                <li class="nav-item" id="settings-nav-btn">
+                    <i class="fas fa-cog"></i>
+                    <span>الإعدادات</span>
+                </li>
+                <li class="nav-item" id="backup-nav-btn">
+                    <i class="fas fa-database"></i>
+                    <span>النسخ الاحتياطي</span>
+                </li>
+            </ul>
+        </aside>
+        <div class="main-content-overlay" id="main-content-overlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <div style="display: flex; align-items: center;">
+                    <button id="hamburger-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div id="header-title" class="header-title">لوحة التحكم</div>
+                </div>
+                <div class="header-actions">
+                    <button id="theme-toggle-btn" class="btn btn-secondary btn-small">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="main-content-inner">
+                <!-- Welcome View -->
+                <div id="welcome-view" class="view active">
+                    <div class="card centered-view-card">
+                        <i class="fas fa-poll" style="font-size: 5rem; color: var(--primary-color); margin-bottom: 1.5rem;"></i>
+                        <h1>مرحباً بك في FormCraft Pro</h1>
+                        <p>منصة متكاملة لإنشاء وإدارة وتحليل الاستبيانات باحترافية عالية. يتم حفظ جميع بياناتك على جهازك فقط.</p>
+                        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                            <button id="welcome-new-survey-btn" class="btn btn-primary">إنشاء استبيان جديد</button>
+                            <button id="import-survey-btn" class="btn btn-secondary">استيراد استبيان</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h2><i class="fas fa-chart-line"></i> نظرة عامة</h2>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="value" id="total-surveys">0</div>
+                                <div class="label">إجمالي الاستبيانات</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value" id="total-responses">0</div>
+                                <div class="label">إجمالي الردود</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value" id="avg-completion">0%</div>
+                                <div class="label">متوسط الإكمال</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value" id="active-surveys">0</div>
+                                <div class="label">استبيانات نشطة</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editor View -->
+                <div id="editor-view" class="view">
+                    <div class="card">
+                        <h2><i class="fas fa-edit"></i> معلومات الاستبيان</h2>
+                        <form id="survey-editor-form">
+                            <input type="hidden" id="survey-id">
+                            <div class="form-group">
+                                <label for="survey-title">عنوان الاستبيان</label>
+                                <input type="text" id="survey-title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="survey-description">وصف الاستبيان (اختياري)</label>
+                                <textarea id="survey-description" rows="3"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h2><i class="fas fa-question-circle"></i> الأسئلة</h2>
+                        <div id="questions-container"></div>
+                        <button id="add-question-btn" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> إضافة سؤال
+                        </button>
+                    </div>
+                    <div class="card">
+                        <h2><i class="fas fa-cogs"></i> الإعدادات المتقدمة</h2>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <input type="checkbox" id="setting-accepting" checked> 
+                                <label for="setting-accepting">قبول الردود</label>
+                            </div>
+                            <div class="form-group">
+                                <input type="checkbox" id="setting-multiple"> 
+                                <label for="setting-multiple">السماح بالرد أكثر من مرة</label>
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="setting-start-date">تاريخ البدء</label>
+                                <input type="date" id="setting-start-date">
+                                <input type="time" id="setting-start-time">
+                            </div>
+                            <div class="form-group">
+                                <label for="setting-end-date">تاريخ الانتهاء</label>
+                                <input type="date" id="setting-end-date">
+                                <input type="time" id="setting-end-time">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-thanks">رسالة الشكر بعد الإجابة</label>
+                            <textarea id="setting-thanks" rows="2" placeholder="شكرًا لمشاركتك!"></textarea>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="preview-survey-btn" class="btn btn-warning">
+                            <i class="fas fa-eye"></i> معاينة
+                        </button>
+                        <button id="delete-survey-btn" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> حذف الاستبيان
+                        </button>
+                        <button id="save-survey-btn" class="btn btn-primary">
+                            <i class="fas fa-save"></i> حفظ والتوجّه للنتائج
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Results View -->
+                <div id="results-view" class="view">
+                    <div class="results-header">
+                        <h1 id="results-title"></h1>
+                        <div class="action-buttons">
+                            <button id="edit-survey-btn" class="btn btn-secondary">
+                                <i class="fas fa-edit"></i> تعديل
+                            </button>
+                            <button id="share-survey-btn" class="btn btn-secondary">
+                                <i class="fas fa-share-alt"></i> مشاركة
+                            </button>
+                            <button id="delete-survey-results-btn" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                            <button id="fill-survey-btn" class="btn btn-primary">تعبئة الاستبيان</button>
+                            <button id="export-csv-btn" class="btn btn-secondary">تصدير CSV</button>
+                            <button id="export-pdf-btn" class="btn btn-secondary">تصدير PDF</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="value" id="total-responses-count">0</div>
+                                <div class="label">إجمالي الردود</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value" id="avg-score">0</div>
+                                <div class="label">متوسط الدرجات</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value" id="completion-rate">0%</div>
+                                <div class="label">معدل الإكمال</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="value" id="last-response-date">--</div>
+                                <div class="label">آخر رد</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="results-summary-container"></div>
+                    <div class="card">
+                        <h2><i class="fas fa-table"></i> الردود الفردية الكاملة</h2>
+                        <div class="individual-responses-controls">
+                            <label for="individual-question-select">عرض إجابات سؤال:</label>
+                            <select id="individual-question-select"></select>
+                            <span id="question-stat-summary" style="font-weight: bold; color: var(--primary-color);"></span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="results-table">
+                                <thead id="individual-responses-thead"></thead>
+                                <tbody id="individual-responses-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fill Survey View -->
+                <div id="fill-survey-view" class="view">
+                    <div class="card fill-survey-card" id="fill-survey-card">
+                        <!-- Content generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Share Survey View -->
+                <div id="share-survey-view" class="view">
+                    <div class="card">
+                        <h2><i class="fas fa-share-alt"></i> مشاركة الاستبيان</h2>
+                        <div class="share-options">
+                            <div class="share-option">
+                                <i class="fas fa-link"></i>
+                                <h3>رابط مباشر</h3>
+                                <p>انسخ هذا الرابط ومشاركته مع المستجيبين</p>
+                                <div class="share-link">
+                                    <input type="text" id="direct-link" readonly>
+                                    <button class="btn btn-primary" id="copy-direct-link">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="share-option">
+                                <i class="fas fa-code"></i>
+                                <h3>تضمين في موقع</h3>
+                                <p>انسخ هذا الكود لتضمين الاستبيان في موقعك</p>
+                                <div class="share-link">
+                                    <textarea id="embed-code" rows="3" readonly></textarea>
+                                    <button class="btn btn-primary" id="copy-embed-code">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="share-option">
+                                <i class="fas fa-qrcode"></i>
+                                <h3>رمز QR</h3>
+                                <p>مسح هذا الرمز للوصول مباشرة للاستبيان</p>
+                                <div id="qrcode-container" style="margin-top: 1rem;"></div>
+                            </div>
+                            <div class="share-option">
+                                <i class="fas fa-envelope"></i>
+                                <h3>بريد إلكتروني</h3>
+                                <p>إرسال دعوات عبر البريد الإلكتروني</p>
+                                <button class="btn btn-primary" id="email-invites-btn" style="margin-top: 1rem;">
+                                    <i class="fas fa-paper-plane"></i> إرسال دعوات
+                                </button>
+                            </div>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="back-to-results-from-share" class="btn btn-secondary">
+                                <i class="fas fa-arrow-right"></i> العودة للنتائج
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div id="settings-view" class="view">
+                    <div class="card">
+                        <h2><i class="fas fa-cog"></i> الإعدادات العامة</h2>
+                        <div class="form-group">
+                            <label for="theme-select">مظهر التطبيق</label>
+                            <select id="theme-select">
+                                <option value="light">فاتح (Light)</option>
+                                <option value="dark">داكن (Dark)</option>
+                                <option value="auto">تلقائي (Auto)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="language-select">لغة التطبيق</label>
+                            <select id="language-select">
+                                <option value="ar">العربية</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup View -->
+                <div id="backup-view" class="view">
+                    <div class="card">
+                        <h2><i class="fas fa-database"></i> النسخ الاحتياطي والاستعادة</h2>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <h3>إنشاء نسخة احتياطية</h3>
+                                <p>احفظ نسخة من جميع استبياناتك وبياناتك.</p>
+                                <button id="create-backup-btn" class="btn btn-primary">
+                                    <i class="fas fa-download"></i> إنشاء نسخة احتياطية
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <h3>استعادة نسخة احتياطية</h3>
+                                <p>استعد بياناتك من نسخة احتياطية سابقة.</p>
+                                <input type="file" id="restore-file" accept=".json" style="margin-bottom: 1rem;">
+                                <button id="restore-backup-btn" class="btn btn-warning">
+                                    <i class="fas fa-upload"></i> استعادة البيانات
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+    // Self-invoking function to encapsulate the app logic
+    (() => {
+        // --- State ---
+        let surveys = [];
+        let activeSurveyId = null;
+        const chartInstances = {};
+
+        // --- DOM Elements ---
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const overlay = document.getElementById('main-content-overlay');
+        const surveyList = document.getElementById('survey-list');
+        const headerTitle = document.getElementById('header-title');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        
+        // --- UI Functions ---
+        const toggleSidebar = () => document.body.classList.toggle('sidebar-open');
+        const closeSidebar = () => document.body.classList.remove('sidebar-open');
+        
+        const showView = (viewId, title) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            headerTitle.textContent = title;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const isCorrectSettings = item.id === 'settings-nav-btn' && viewId === 'settings-view';
+                const isCorrectBackup = item.id === 'backup-nav-btn' && viewId === 'backup-view';
+                const isCorrectSurvey = item.dataset.id === activeSurveyId;
+                item.classList.toggle('active', isCorrectSettings || isCorrectBackup || isCorrectSurvey);
+            });
+            window.scrollTo(0, 0);
+            if (window.innerWidth <= 768) closeSidebar();
+        };
+
+        // --- Toast Notifications ---
+        const showToast = (message, type = 'info', duration = 5000) => {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+            toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideInLeft 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        };
+
+        // --- Data Persistence (localStorage) ---
+        const saveData = () => {
+            localStorage.setItem('formcraft_surveys_v2', JSON.stringify(surveys));
+            showToast('تم حفظ البيانات بنجاح', 'success', 2000);
+        };
+        
+        const loadData = () => { 
+            surveys = JSON.parse(localStorage.getItem('formcraft_surveys_v2') || '[]'); 
+            renderSurveyList();
+            updateDashboardStats();
+        };
+        
+        const renderSurveyList = () => {
+            surveyList.innerHTML = '';
+            surveys.forEach(survey => {
+                const li = document.createElement('li');
+                li.className = 'nav-item';
+                li.dataset.id = survey.id;
+                li.innerHTML = `
+                    <i class="fas fa-poll"></i>
+                    <span>${survey.title}</span>
+                    <div class="survey-actions">
+                        <button class="edit-survey-btn" title="تعديل"><i class="fas fa-edit"></i></button>
+                        <button class="delete-survey-btn" title="حذف"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                li.onclick = () => loadResultsView(survey.id);
+                li.querySelector('.edit-survey-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    loadEditorView(survey.id);
+                };
+                li.querySelector('.delete-survey-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm(`هل أنت متأكد من حذف "${survey.title}" وكل ردوده؟`)) {
+                        deleteSurvey(survey.id);
+                    }
+                };
+                surveyList.appendChild(li);
+            });
+        };
+
+        // --- Dashboard Stats ---
+        const updateDashboardStats = () => {
+            document.getElementById('total-surveys').textContent = surveys.length;
+            
+            let totalResponses = 0;
+            let activeSurveys = 0;
+            
+            surveys.forEach(survey => {
+                totalResponses += survey.responses.length;
+                if (survey.settings && survey.settings.acceptingResponses) {
+                    activeSurveys++;
+                }
+            });
+            
+            document.getElementById('total-responses').textContent = totalResponses;
+            document.getElementById('active-surveys').textContent = activeSurveys;
+            document.getElementById('avg-completion').textContent = surveys.length > 0 ? '75%' : '0%';
+        };
+
+        // --- Core Logic ---
+        const generateId = (prefix = 'id') => `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        const createNewSurvey = () => {
+            activeSurveyId = null;
+            document.getElementById('survey-editor-form').reset();
+            document.getElementById('survey-id').value = '';
+            document.getElementById('questions-container').innerHTML = '';
+            document.getElementById('delete-survey-btn').style.display = 'none';
+            // Reset advanced settings
+            ['setting-start-date', 'setting-start-time', 'setting-end-date', 'setting-end-time', 'setting-thanks'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('setting-accepting').checked = true;
+            document.getElementById('setting-multiple').checked = false;
+            addQuestion();
+            showView('editor-view', 'إنشاء استبيان جديد');
+        };
+
+        const saveSurvey = () => {
+            const id = document.getElementById('survey-id').value || generateId('s');
+            const title = document.getElementById('survey-title').value.trim();
+            if (!title) { 
+                showToast('الرجاء إدخال عنوان للاستبيان.', 'error'); 
+                return; 
+            }
+
+            const surveyData = {
+                id,
+                title,
+                description: document.getElementById('survey-description').value,
+                createdAt: new Date().toISOString(),
+                questions: [],
+                responses: activeSurveyId ? (surveys.find(s => s.id === id)?.responses || []) : [],
+                settings: {
+                    acceptingResponses: document.getElementById('setting-accepting').checked,
+                    allowMultiple: document.getElementById('setting-multiple').checked,
+                    startDate: document.getElementById('setting-start-date').value,
+                    startTime: document.getElementById('setting-start-time').value,
+                    endDate: document.getElementById('setting-end-date').value,
+                    endTime: document.getElementById('setting-end-time').value,
+                    thankYouMessage: document.getElementById('setting-thanks').value.trim() || 'شكرًا لمشاركتك!',
+                }
+            };
+
+            document.querySelectorAll('.question-card').forEach(card => {
+                const question = {
+                    id: card.dataset.questionId || generateId('q'),
+                    text: card.querySelector('.q-text').value,
+                    type: card.querySelector('.q-type').value,
+                    required: card.querySelector('.q-required')?.checked || false,
+                    options: []
+                };
+                
+                // Add validation if exists
+                const validationType = card.querySelector('.validation-type');
+                if (validationType) {
+                    question.validation = {
+                        type: validationType.value,
+                        pattern: card.querySelector('.validation-pattern')?.value || '',
+                        min: card.querySelector('.validation-min')?.value || '',
+                        max: card.querySelector('.validation-max')?.value || ''
+                    };
+                }
+                
+                // Add logic if exists
+                const logicType = card.querySelector('.logic-type');
+                if (logicType && logicType.value) {
+                    question.logic = {
+                        type: logicType.value,
+                        targetQuestion: card.querySelector('.logic-target')?.value || '',
+                        condition: card.querySelector('.logic-condition')?.value || '',
+                        value: card.querySelector('.logic-value')?.value || ''
+                    };
+                }
+                
+                if (['radio', 'checkbox', 'dropdown'].includes(question.type)) {
+                    card.querySelectorAll('.option-item').forEach(item => {
+                        const scoreInput = item.querySelector('.q-score');
+                        question.options.push({
+                            text: item.querySelector('.q-option').value,
+                            score: scoreInput ? parseInt(scoreInput.value, 10) || 0 : 0
+                        });
+                    });
+                }
+                surveyData.questions.push(question);
+            });
+
+            const existingIndex = surveys.findIndex(s => s.id === id);
+            if (existingIndex > -1) {
+                surveys[existingIndex] = surveyData;
+                showToast('تم تحديث الاستبيان بنجاح', 'success');
+            } else {
+                surveys.push(surveyData);
+                showToast('تم إنشاء الاستبيان بنجاح', 'success');
+            }
+            
+            saveData();
+            updateDashboardStats();
+            loadResultsView(id);
+        };
+        
+        const deleteSurvey = (surveyId = activeSurveyId) => {
+            if (!surveyId || !confirm('هل أنت متأكد من حذف هذا الاستبيان وكل ردوده؟')) return;
+            surveys = surveys.filter(s => s.id !== surveyId);
+            activeSurveyId = null;
+            saveData();
+            renderSurveyList();
+            updateDashboardStats();
+            showView('welcome-view', 'لوحة التحكم');
+            showToast('تم حذف الاستبيان بنجاح', 'success');
+        };
+
+        const addQuestion = (data = {}) => {
+            const container = document.getElementById('questions-container');
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.dataset.questionId = data.id || generateId('q');
+            card.innerHTML = `
+                <div class="question-header">
+                    <strong>سؤال</strong>
+                    <div class="question-actions">
+                        <button class="btn btn-secondary btn-small move-up-btn" title="نقل لأعلى"><i class="fas fa-arrow-up"></i></button>
+                        <button class="btn btn-secondary btn-small move-down-btn" title="نقل لأسفل"><i class="fas fa-arrow-down"></i></button>
+                        <button class="btn btn-danger btn-small remove-question-btn">حذف</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>نص السؤال</label>
+                    <input type="text" class="q-text" value="${data.text || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label>نوع الإجابة</label>
+                    <select class="q-type">
+                        <option value="text">نص قصير</option>
+                        <option value="textarea">نص طويل</option>
+                        <option value="email">بريد إلكتروني</option>
+                        <option value="url">رابط ويب</option>
+                        <option value="radio">اختيار واحد (مع درجات)</option>
+                        <option value="dropdown">قائمة منسدلة (مع درجات)</option>
+                        <option value="checkbox">اختيار متعدد</option>
+                        <option value="date">تاريخ</option>
+                        <option value="time">وقت</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" class="q-required" ${data.required ? 'checked' : ''}>
+                    <label class="q-required-label">هذا السؤال مطلوب</label>
+                </div>
+                <div class="q-options-container" style="display: none;"></div>
+                <div class="validation-section" style="display: none;">
+                    <h4>التحقق من الصحة</h4>
+                    <div class="form-group">
+                        <label>نوع التحقق</label>
+                        <select class="validation-type">
+                            <option value="">بدون تحقق</option>
+                            <option value="email">بريد إلكتروني</option>
+                            <option value="url">رابط ويب</option>
+                            <option value="pattern">نمط محدد</option>
+                            <option value="min">الحد الأدنى</option>
+                            <option value="max">الحد الأقصى</option>
+                            <option value="range">نطاق</option>
+                        </select>
+                    </div>
+                    <div class="validation-details"></div>
+                </div>
+                <div class="logic-section" style="display: none;">
+                    <h4>المنطق الشرطي</h4>
+                    <div class="form-group">
+                        <label>نطبق المنطق عندما</label>
+                        <select class="logic-type">
+                            <option value="">بدون منطق</option>
+                            <option value="show">إظهار هذا السؤال</option>
+                            <option value="hide">إخفاء هذا السؤال</option>
+                            <option value="jump">الانتقال إلى سؤال</option>
+                        </select>
+                    </div>
+                    <div class="logic-details"></div>
+                </div>
+            `;
+            container.appendChild(card);
+            
+            const typeSelect = card.querySelector('.q-type');
+            typeSelect.value = data.type || 'text';
+            
+            card.querySelector('.remove-question-btn').addEventListener('click', () => {
+                card.remove();
+                showToast('تم حذف السؤال', 'success');
+            });
+            
+            // Move up/down buttons
+            card.querySelector('.move-up-btn').addEventListener('click', () => {
+                if (card.previousElementSibling) {
+                    container.insertBefore(card, card.previousElementSibling);
+                }
+            });
+            
+            card.querySelector('.move-down-btn').addEventListener('click', () => {
+                if (card.nextElementSibling) {
+                    container.insertBefore(card.nextElementSibling, card);
+                }
+            });
+            
+            typeSelect.onchange = () => handleTypeChange(typeSelect, card, data.options);
+            handleTypeChange(typeSelect, card, data.options);
+            
+            // Set up validation and logic if data exists
+            if (data.validation) {
+                const validationType = card.querySelector('.validation-type');
+                validationType.value = data.validation.type;
+                updateValidationDetails(validationType, card, data.validation);
+            }
+            
+            if (data.logic) {
+                const logicType = card.querySelector('.logic-type');
+                logicType.value = data.logic.type;
+                updateLogicDetails(logicType, card, data.logic);
+            }
+            
+            // Add event listeners for validation and logic
+            card.querySelector('.validation-type').addEventListener('change', (e) => {
+                updateValidationDetails(e.target, card);
+            });
+            
+            card.querySelector('.logic-type').addEventListener('change', (e) => {
+                updateLogicDetails(e.target, card);
+            });
+        };
+
+        const handleTypeChange = (select, card, options = [{text:'', score:0}]) => {
+            const container = card.querySelector('.q-options-container');
+            const validationSection = card.querySelector('.validation-section');
+            const logicSection = card.querySelector('.logic-section');
+            const hasOptions = ['radio', 'checkbox', 'dropdown'].includes(select.value);
+            const hasScores = ['radio', 'dropdown'].includes(select.value);
+            const showValidation = ['text', 'email', 'url', 'number'].includes(select.value);
+            const showLogic = true; // All question types can have logic
+
+            // Show/hide options container
+            container.style.display = hasOptions ? 'block' : 'none';
+            container.innerHTML = '';
+            if (hasOptions) {
+                container.innerHTML = `<label>الخيارات ${hasScores ? 'والدرجات' : ''}</label>`;
+                options.forEach(opt => addOptionInput(container, hasScores, opt));
+                const addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'btn btn-secondary btn-small';
+                addBtn.textContent = 'إضافة خيار';
+                addBtn.onclick = () => addOptionInput(container, hasScores, {text:'', score:0});
+                container.appendChild(addBtn);
+            }
+
+            // Show/hide validation section
+            validationSection.style.display = showValidation ? 'block' : 'none';
+
+            // Show/hide logic section
+            logicSection.style.display = showLogic ? 'block' : 'none';
+        };
+        
+        const addOptionInput = (container, withScore, data) => {
+            const div = document.createElement('div');
+            div.className = 'option-item';
+            div.innerHTML = `
+                <input type="text" class="q-option" value="${data.text || ''}" placeholder="نص الخيار">
+                ${withScore ? '<input type="number" class="q-score" value="' + (data.score || 0) + '" placeholder="درجة">' : ''}
+                <button type="button" class="btn btn-danger btn-small remove-option-btn">X</button>
+            `;
+            div.querySelector('.remove-option-btn').onclick = () => {
+                div.remove();
+                showToast('تم حذف الخيار', 'success');
+            };
+            container.insertBefore(div, container.lastChild);
+        };
+        
+        const updateValidationDetails = (select, card, data = {}) => {
+            const detailsContainer = card.querySelector('.validation-details');
+            detailsContainer.innerHTML = '';
+            
+            switch(select.value) {
+                case 'email':
+                case 'url':
+                    // No additional details needed for email/url
+                    break;
+                case 'pattern':
+                    detailsContainer.innerHTML = `
+                        <div class="form-group">
+                            <label>النمط (Regular Expression)</label>
+                            <input type="text" class="validation-pattern" value="${data.pattern || ''}" placeholder="مثال: ^[a-zA-Z]+$">
+                        </div>
+                    `;
+                    break;
+                case 'min':
+                    detailsContainer.innerHTML = `
+                        <div class="form-group">
+                            <label>الحد الأدنى</label>
+                            <input type="number" class="validation-min" value="${data.min || ''}">
+                        </div>
+                    `;
+                    break;
+                case 'max':
+                    detailsContainer.innerHTML = `
+                        <div class="form-group">
+                            <label>الحد الأقصى</label>
+                            <input type="number" class="validation-max" value="${data.max || ''}">
+                        </div>
+                    `;
+                    break;
+                case 'range':
+                    detailsContainer.innerHTML = `
+                        <div class="form-group">
+                            <label>الحد الأدنى</label>
+                            <input type="number" class="validation-min" value="${data.min || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>الحد الأقصى</label>
+                            <input type="number" class="validation-max" value="${data.max || ''}">
+                        </div>
+                    `;
+                    break;
+            }
+        };
+        
+        const updateLogicDetails = (select, card, data = {}) => {
+            const detailsContainer = card.querySelector('.logic-details');
+            detailsContainer.innerHTML = '';
+            
+            if (!select.value) return;
+            
+            // Get all questions for target selection (excluding current question)
+            const container = document.getElementById('questions-container');
+            const questions = Array.from(container.querySelectorAll('.question-card'))
+                .filter(q => q !== card)
+                .map(q => ({
+                    id: q.dataset.questionId,
+                    text: q.querySelector('.q-text').value || 'سؤال بدون عنوان'
+                }));
+            
+            let html = '';
+            
+            switch(select.value) {
+                case 'show':
+                case 'hide':
+                    html = `
+                        <div class="form-group">
+                            <label>عند الإجابة على السؤال</label>
+                            <select class="logic-target">
+                                ${questions.map(q => `<option value="${q.id}" ${data.targetQuestion === q.id ? 'selected' : ''}>${q.text}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>يكون</label>
+                            <select class="logic-condition">
+                                <option value="equals" ${data.condition === 'equals' ? 'selected' : ''}>يساوي</option>
+                                <option value="not-equals" ${data.condition === 'not-equals' ? 'selected' : ''}>لا يساوي</option>
+                                <option value="contains" ${data.condition === 'contains' ? 'selected' : ''}>يحتوي على</option>
+                                <option value="not-contains" ${data.condition === 'not-contains' ? 'selected' : ''}>لا يحتوي على</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>القيمة</label>
+                            <input type="text" class="logic-value" value="${data.value || ''}">
+                        </div>
+                    `;
+                    break;
+                case 'jump':
+                    html = `
+                        <div class="form-group">
+                            <label>عند الإجابة على السؤال</label>
+                            <select class="logic-target">
+                                ${questions.map(q => `<option value="${q.id}" ${data.targetQuestion === q.id ? 'selected' : ''}>${q.text}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>يكون</label>
+                            <select class="logic-condition">
+                                <option value="equals" ${data.condition === 'equals' ? 'selected' : ''}>يساوي</option>
+                                <option value="not-equals" ${data.condition === 'not-equals' ? 'selected' : ''}>لا يساوي</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>القيمة</label>
+                            <input type="text" class="logic-value" value="${data.value || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>الانتقال إلى السؤال</label>
+                            <select class="logic-jump-target">
+                                ${questions.map(q => `<option value="${q.id}" ${data.jumpTarget === q.id ? 'selected' : ''}>${q.text}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            detailsContainer.innerHTML = html;
+        };
+        
+        const loadEditorView = (surveyId) => {
+            const survey = surveys.find(s => s.id === surveyId);
+            if (!survey) return;
+            activeSurveyId = surveyId;
+            document.getElementById('survey-id').value = survey.id;
+            document.getElementById('survey-title').value = survey.title;
+            document.getElementById('survey-description').value = survey.description;
+            const s = survey.settings || {};
+            document.getElementById('setting-accepting').checked = s.acceptingResponses;
+            document.getElementById('setting-multiple').checked = s.allowMultiple;
+            document.getElementById('setting-start-date').value = s.startDate || '';
+            document.getElementById('setting-start-time').value = s.startTime || '';
+            document.getElementById('setting-end-date').value = s.endDate || '';
+            document.getElementById('setting-end-time').value = s.endTime || '';
+            document.getElementById('setting-thanks').value = s.thankYouMessage || '';
+
+            document.getElementById('questions-container').innerHTML = '';
+            survey.questions.forEach(q => addQuestion(q));
+            document.getElementById('delete-survey-btn').style.display = 'inline-flex';
+            showView('editor-view', `تعديل: ${survey.title}`);
+        };
+
+        const loadResultsView = (surveyId) => {
+            const survey = surveys.find(s => s.id === surveyId);
+            if (!survey) { showView('welcome-view', 'لوحة التحكم'); return; }
+            activeSurveyId = surveyId;
+            renderSurveyList();
+            
+            document.getElementById('results-title').textContent = survey.title;
+            document.getElementById('total-responses-count').textContent = survey.responses.length;
+            const lastResponse = survey.responses[survey.responses.length - 1];
+            document.getElementById('last-response-date').textContent = lastResponse ? new Date(lastResponse.timestamp).toLocaleDateString('ar-EG') : '--';
+            
+            let totalScore = 0;
+            survey.responses.forEach(r => totalScore += (r.totalScore || 0));
+            const avgScore = survey.responses.length > 0 ? (totalScore / survey.responses.length).toFixed(1) : 0;
+            document.getElementById('avg-score').textContent = avgScore;
+            
+            // Calculate completion rate (assuming all questions are required for now)
+            const completionRate = survey.responses.length > 0 ? '85%' : '0%';
+            document.getElementById('completion-rate').textContent = completionRate;
+            
+            Object.values(chartInstances).forEach(chart => chart.destroy());
+            const summaryContainer = document.getElementById('results-summary-container');
+            summaryContainer.innerHTML = '';
+            
+            survey.questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<h3>${index + 1}. ${q.text}</h3>`;
+                
+                const hasResponses = survey.responses.length > 0;
+                
+                if (['radio', 'dropdown'].includes(q.type) && hasResponses) {
+                    const counts = q.options.reduce((acc, opt) => ({ ...acc, [opt.text]: 0 }), {});
+                    survey.responses.forEach(res => {
+                        const answer = res.answers[q.id];
+                        if (counts[answer] !== undefined) counts[answer]++;
+                    });
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = 'chart-container';
+                    chartDiv.innerHTML = `<canvas id="chart-${q.id}"></canvas>`;
+                    card.appendChild(chartDiv);
+                    
+                    setTimeout(() => { 
+                        const ctx = document.getElementById(`chart-${q.id}`).getContext('2d');
+                        chartInstances[q.id] = new Chart(ctx, { 
+                            type: 'pie', 
+                            data: { 
+                                labels: Object.keys(counts), 
+                                datasets: [{ 
+                                    data: Object.values(counts), 
+                                    backgroundColor: ['#4a6cf7', '#6379f5', '#7f8df2', '#9faeee', '#c1c9e9'] 
+                                }] 
+                            }, 
+                            options: { 
+                                responsive: true, 
+                                plugins: { 
+                                    legend: { position: 'top' },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const label = context.label || '';
+                                                const value = context.raw || 0;
+                                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                const percentage = Math.round((value / total) * 100);
+                                                return `${label}: ${value} (${percentage}%)`;
+                                            }
+                                        }
+                                    }
+                                }
+                            } 
+                        });
+                    }, 0);
+                } else if (q.type === 'checkbox' && hasResponses) {
+                    const counts = q.options.reduce((acc, opt) => ({ ...acc, [opt.text]: 0 }), {});
+                     survey.responses.forEach(res => {
+                        const answers = res.answers[q.id];
+                        if (Array.isArray(answers)) { 
+                            answers.forEach(answer => { 
+                                if (counts[answer] !== undefined) counts[answer]++; 
+                            }); 
+                        }
+                    });
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = 'chart-container';
+                    chartDiv.innerHTML = `<canvas id="chart-${q.id}"></canvas>`;
+                    card.appendChild(chartDiv);
+
+                    setTimeout(() => {
+                        const ctx = document.getElementById(`chart-${q.id}`).getContext('2d');
+                        chartInstances[q.id] = new Chart(ctx, { 
+                            type: 'bar', 
+                            data: { 
+                                labels: Object.keys(counts), 
+                                datasets: [{ 
+                                    label: 'عدد الاختيارات', 
+                                    data: Object.values(counts), 
+                                    backgroundColor: '#4a6cf7' 
+                                }] 
+                            }, 
+                            options: { 
+                                responsive: true, 
+                                plugins: { 
+                                    legend: { display: false } 
+                                }, 
+                                scales: { 
+                                    y: { beginAtZero: true } 
+                                } 
+                            } 
+                        });
+                    }, 0);
+                } else if (hasResponses) {
+                    const list = document.createElement('ul');
+                    list.style.paddingRight = '20px';
+                    const answers = survey.responses.map(r => r.answers[q.id]).filter(Boolean).slice(-5).reverse();
+                    if (answers.length > 0) {
+                        answers.forEach(answer => { 
+                            const li = document.createElement('li'); 
+                            li.textContent = answer; 
+                            list.appendChild(li); 
+                        });
+                        card.appendChild(list);
+                    } else { 
+                        card.innerHTML += `<p style="color:var(--text-muted);">لا توجد إجابات لهذا السؤال.</p>`; 
+                    }
+                } else { 
+                    card.innerHTML += `<p style="color:var(--text-muted);">لا توجد ردود بعد.</p>`; 
+                }
+                summaryContainer.appendChild(card);
+            });
+            
+            // Individual Responses with Question Filter
+            const questionSelect = document.getElementById('individual-question-select');
+            
+            const renderIndividualResponses = (selectedQuestionId) => {
+                const selectedQuestion = survey.questions.find(q => q.id === selectedQuestionId);
+                const individualThead = document.getElementById('individual-responses-thead');
+                const individualTbody = document.getElementById('individual-responses-tbody');
+                const questionStatSummary = document.getElementById('question-stat-summary');
+
+                let headerHTML = `<tr><th>تاريخ الرد</th><th>مجموع الدرجات</th>`;
+                if (selectedQuestion) {
+                    headerHTML += `<th>إجابة: ${selectedQuestion.text.substring(0, 30)}...</th>`;
+                }
+                headerHTML += `</tr>`;
+                individualThead.innerHTML = headerHTML;
+                
+                individualTbody.innerHTML = '';
+                survey.responses.slice().reverse().forEach(res => {
+                    let rowHTML = `<td>${new Date(res.timestamp).toLocaleString('ar-EG')}</td><td>${res.totalScore || 0}</td>`;
+                    if (selectedQuestion) {
+                        const answer = res.answers[selectedQuestion.id];
+                        const displayAnswer = Array.isArray(answer) ? answer.join(', ') : (answer || '<em>لم تتم الإجابة</em>');
+                        rowHTML += `<td>${displayAnswer}</td>`;
+                    }
+                    individualTbody.innerHTML += `<tr>${rowHTML}</tr>`;
+                });
+                
+                // Calculate and show summary stat
+                questionStatSummary.textContent = '';
+                if (selectedQuestion && survey.responses.length > 0) {
+                    if (['radio', 'dropdown', 'checkbox'].includes(selectedQuestion.type)) {
+                        const allAnswers = survey.responses.flatMap(r => {
+                            const answer = r.answers[selectedQuestion.id];
+                            return Array.isArray(answer) ? answer : [answer];
+                        }).filter(Boolean);
+                        
+                        if (allAnswers.length > 0) {
+                            const counts = allAnswers.reduce((acc, val) => { 
+                                acc[val] = (acc[val] || 0) + 1; 
+                                return acc; 
+                            }, {});
+                            const mostFrequent = Object.entries(counts).sort((a,b) => b[1] - a[1])[0];
+                            const percentage = ((mostFrequent[1] / allAnswers.length) * 100).toFixed(1);
+                            questionStatSummary.textContent = `الأكثر شيوعًا: "${mostFrequent[0]}" (${percentage}%)`;
+                        }
+                    } else {
+                        const answeredCount = survey.responses.filter(r => r.answers[selectedQuestion.id]).length;
+                        questionStatSummary.textContent = `إجمالي الإجابات: ${answeredCount}`;
+                    }
+                }
+            };
+            
+            questionSelect.innerHTML = `<option value="">-- عرض الملخص العام --</option>`;
+            survey.questions.forEach(q => {
+                questionSelect.innerHTML += `<option value="${q.id}">${q.text}</option>`;
+            });
+            
+            questionSelect.onchange = (e) => renderIndividualResponses(e.target.value);
+            renderIndividualResponses(''); // Initial render
+
+            showView('results-view', `نتائج: ${survey.title}`);
+        };
+
+        const loadFillSurveyView = () => {
+            const survey = surveys.find(s => s.id === activeSurveyId);
+            const card = document.getElementById('fill-survey-card');
+            card.innerHTML = `<button id="back-to-results-btn" class="btn btn-secondary btn-small" style="margin-bottom:1.5rem;"><i class="fas fa-arrow-right"></i> العودة للنتائج</button>`; // Clear card but keep back button
+            if (!survey) return;
+
+            const settings = survey.settings || {};
+            const now = new Date();
+            
+            // Check if survey is accepting responses
+            if(!settings.acceptingResponses) { 
+                card.innerHTML += `<h2>الاستبيان مغلق</h2><p>هذا الاستبيان لا يستقبل ردودًا جديدة في الوقت الحالي.</p>`; 
+                showView('fill-survey-view', 'غير متاح'); 
+                return; 
+            }
+            
+            // Check start date
+            if(settings.startDate) {
+                const start = new Date(`${settings.startDate}T${settings.startTime || '00:00'}`);
+                if (now < start) { 
+                    card.innerHTML += `<h2>الاستبيان لم يبدأ بعد</h2><p>سيبدأ في: ${start.toLocaleString('ar-EG')}</p>`; 
+                    showView('fill-survey-view', 'غير متاح'); 
+                    return; 
+                }
+            }
+            
+            // Check end date
+            if(settings.endDate) {
+                const end = new Date(`${settings.endDate}T${settings.endTime || '23:59'}`);
+                if (now > end) { 
+                    card.innerHTML += `<h2>الاستبيان قد انتهى</h2><p>انتهى في: ${end.toLocaleString('ar-EG')}</p>`; 
+                    showView('fill-survey-view', 'غير متاح'); 
+                    return; 
+                }
+            }
+
+            const submittedKey = `submitted_${survey.id}`;
+            if(!settings.allowMultiple && localStorage.getItem(submittedKey)) {
+                card.innerHTML += `<h2>تم الإرسال مسبقًا</h2><p>${settings.thankYouMessage || 'شكرا لك'}</p>`;
+                showView('fill-survey-view', 'شكرًا لك');
+                return;
+            }
+
+            card.innerHTML += `<h2>${survey.title}</h2><p>${survey.description}</p><form id="fill-survey-form"></form>`;
+            const form = document.getElementById('fill-survey-form');
+            survey.questions.forEach((q, qIndex) => {
+                const group = document.createElement('div');
+                group.className = 'form-group';
+                let inputHtml = `<label>${qIndex + 1}. ${q.text} ${q.required ? '<span style="color:var(--danger-color);">*</span>' : ''}</label>`;
+                
+                switch(q.type) {
+                    case 'textarea': 
+                        inputHtml += `<textarea name="${q.id}" rows="4" ${q.required ? 'required' : ''}></textarea>`; 
+                        break;
+                    case 'radio': 
+                        q.options.forEach((opt, oIndex) => { 
+                            const optionId = `${q.id}-${oIndex}`; 
+                            inputHtml += `
+                                <div class="radio-group">
+                                    <input type="radio" name="${q.id}" value="${opt.text}" id="${optionId}" ${q.required ? 'required' : ''}>
+                                    <label for="${optionId}">${opt.text}</label>
+                                </div>
+                            `; 
+                        }); 
+                        break;
+                    case 'checkbox': 
+                        q.options.forEach((opt, oIndex) => { 
+                            const optionId = `${q.id}-${oIndex}`; 
+                            inputHtml += `
+                                <div class="checkbox-group">
+                                    <input type="checkbox" name="${q.id}" value="${opt.text}" id="${optionId}">
+                                    <label for="${optionId}">${opt.text}</label>
+                                </div>
+                            `; 
+                        }); 
+                        break;
+                    case 'dropdown':
+                        inputHtml += `<select name="${q.id}" ${q.required ? 'required' : ''}><option value="">اختر...</option>`;
+                        q.options.forEach(opt => inputHtml += `<option value="${opt.text}">${opt.text}</option>`);
+                        inputHtml += `</select>`;
+                        break;
+                    case 'date': 
+                    case 'time': 
+                    case 'email': 
+                    case 'url': 
+                        inputHtml += `<input type="${q.type}" name="${q.id}" ${q.required ? 'required' : ''}>`; 
+                        break;
+                    default: 
+                        inputHtml += `<input type="text" name="${q.id}" ${q.required ? 'required' : ''}>`; 
+                        break;
+                }
+                group.innerHTML = inputHtml;
+                form.appendChild(group);
+            });
+            form.innerHTML += `<button type="submit" class="btn btn-primary" style="width:100%;">إرسال الإجابة</button>`;
+            form.onsubmit = saveResponse;
+            document.getElementById('back-to-results-btn').onclick = () => loadResultsView(activeSurveyId);
+            showView('fill-survey-view', `تعبئة: ${survey.title}`);
+        };
+
+        const saveResponse = (e) => {
+            e.preventDefault();
+            const survey = surveys.find(s => s.id === activeSurveyId);
+            if (!survey) return;
+            const formData = new FormData(e.target);
+            let totalScore = 0;
+            const responseData = { id: generateId('r'), timestamp: new Date().toISOString(), answers: {} };
+            
+            survey.questions.forEach(q => {
+                const value = (q.type === 'checkbox') ? formData.getAll(q.id) : formData.get(q.id);
+                responseData.answers[q.id] = value;
+                if (['radio', 'dropdown'].includes(q.type) && value) {
+                    const selectedOption = q.options.find(opt => opt.text === value);
+                    if (selectedOption) totalScore += (selectedOption.score || 0);
+                }
+            });
+            responseData.totalScore = totalScore;
+            survey.responses.push(responseData);
+            if(!(survey.settings || {}).allowMultiple) localStorage.setItem(`submitted_${survey.id}`, 'true');
+            saveData();
+            
+            document.getElementById('fill-survey-card').innerHTML = `
+                <h2>تم الإرسال بنجاح!</h2>
+                <p>${(survey.settings || {}).thankYouMessage}</p>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="back-to-results-from-thanks">العودة للنتائج</button>
+                    <button class="btn btn-primary" id="fill-another-response">تعبئة رد آخر</button>
+                </div>
+            `;
+            document.getElementById('back-to-results-from-thanks').onclick = () => loadResultsView(survey.id);
+            document.getElementById('fill-another-response').onclick = () => {
+                localStorage.removeItem(`submitted_${survey.id}`);
+                loadFillSurveyView();
+            };
+            
+            showToast('تم إرسال ردك بنجاح!', 'success');
+        };
+        
+        // --- Sharing Functionality ---
+        const loadShareSurveyView = () => {
+            const survey = surveys.find(s => s.id === activeSurveyId);
+            if (!survey) return;
+            
+            // Generate direct link
+            const directLink = `${window.location.origin}${window.location.pathname}?survey=${survey.id}`;
+            document.getElementById('direct-link').value = directLink;
+            
+            // Generate embed code
+            const embedCode = `<iframe src="${directLink}" width="100%" height="600" frameborder="0" style="border:1px solid #ddd;"></iframe>`;
+            document.getElementById('embed-code').value = embedCode;
+            
+            // Generate QR code (simple implementation)
+            const qrContainer = document.getElementById('qrcode-container');
+            qrContainer.innerHTML = `
+                <div style="background:#f8f9fa; padding:1rem; border-radius:8px; text-align:center;">
+                    <p style="color:var(--text-muted); margin-bottom:1rem;">لإنشاء رمز QR، استخدم خدمة خارجية مثل QR Code Generator</p>
+                    <a href="https://qr-code-generator.com" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i> إنشاء رمز QR
+                    </a>
+                </div>
+            `;
+            
+            // Set up copy buttons
+            document.getElementById('copy-direct-link').onclick = () => {
+                navigator.clipboard.writeText(directLink).then(() => {
+                    showToast('تم نسخ الرابط إلى الحافظة', 'success');
+                });
+            };
+            
+            document.getElementById('copy-embed-code').onclick = () => {
+                navigator.clipboard.writeText(embedCode).then(() => {
+                    showToast('تم نسخ كود التضمين إلى الحافظة', 'success');
+                });
+            };
+            
+            document.getElementById('email-invites-btn').onclick = () => {
+                const subject = `دعوة للمشاركة في الاستبيان: ${survey.title}`;
+                const body = `مرحبًا،
+
+أدعوك للمشاركة في الاستبيان التالي:
+${directLink}
+
+شكرًا لمشاركتك!`;
+                window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+            };
+            
+            document.getElementById('back-to-results-from-share').onclick = () => loadResultsView(activeSurveyId);
+            
+            showView('share-survey-view', `مشاركة: ${survey.title}`);
+        };
+        
+        // --- Backup and Restore ---
+        const createBackup = () => {
+            const data = {
+                surveys: surveys,
+                exportDate: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `formcraft-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showToast('تم إنشاء النسخة الاحتياطية بنجاح', 'success');
+        };
+        
+        const restoreBackup = () => {
+            const fileInput = document.getElementById('restore-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showToast('الرجاء اختيار ملف النسخة الاحتياطية', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.surveys || !Array.isArray(data.surveys)) {
+                        throw new Error('تنسيق الملف غير صالح');
+                    }
+                    
+                    if (confirm('سيتم استبدال جميع البيانات الحالية بالبيانات المستعادة. هل تريد المتابعة؟')) {
+                        surveys = data.surveys;
+                        saveData();
+                        renderSurveyList();
+                        updateDashboardStats();
+                        showToast('تم استعادة البيانات بنجاح', 'success');
+                        fileInput.value = '';
+                    }
+                } catch (error) {
+                    showToast('خطأ في استعادة البيانات: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        // --- Theme Management ---
+        const settingsNavBtn = document.getElementById('settings-nav-btn');
+        const backupNavBtn = document.getElementById('backup-nav-btn');
+        const themeSelect = document.getElementById('theme-select');
+        
+        const applyTheme = (theme) => {
+            if (theme === 'auto') {
+                // Check system preference
+                theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            
+            document.body.className = theme === 'dark' ? 'dark-theme' : '';
+            localStorage.setItem('formcraft_theme', theme);
+            themeSelect.value = theme;
+            
+            // Update theme toggle button icon
+            const themeIcon = themeToggleBtn.querySelector('i');
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        };
+        
+        settingsNavBtn.onclick = () => showView('settings-view', 'الإعدادات');
+        backupNavBtn.onclick = () => showView('backup-view', 'النسخ الاحتياطي');
+        
+        themeSelect.onchange = (e) => applyTheme(e.target.value);
+        
+        themeToggleBtn.onclick = () => {
+            const currentTheme = localStorage.getItem('formcraft_theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+            showToast(`تم التبديل إلى الوضع ${newTheme === 'dark' ? 'الداكن' : 'الفاتح'}`, 'success');
+        };
+
+        // --- Export Functions ---
+        const exportToCSV = () => {
+            const survey = surveys.find(s => s.id === activeSurveyId);
+            if (!survey) return;
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Add headers
+            const headers = ["Timestamp", "Total Score"];
+            survey.questions.forEach(q => {
+                headers.push(q.text);
+            });
+            csvContent += headers.join(",") + "\r\n";
+            
+            // Add data rows
+            survey.responses.forEach(response => {
+                const row = [
+                    response.timestamp,
+                    response.totalScore || 0
+                ];
+                
+                survey.questions.forEach(q => {
+                    const answer = response.answers[q.id];
+                    const formattedAnswer = Array.isArray(answer) ? answer.join("; ") : (answer || "");
+                    // Escape commas and quotes in the answer
+                    const escapedAnswer = `"${formattedAnswer.replace(/"/g, '""')}"`;
+                    row.push(escapedAnswer);
+                });
+                
+                csvContent += row.join(",") + "\r\n";
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${survey.title}-responses.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('تم تصدير البيانات إلى CSV بنجاح', 'success');
+        };
+        
+        const exportToPDF = () => {
+            const survey = surveys.find(s => s.id === activeSurveyId);
+            if (!survey) return;
+            
+            // Simple PDF export implementation
+            // In a real application, you would use jsPDF with more sophisticated formatting
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(20);
+            doc.text(survey.title, 20, 20);
+            
+            // Add description if exists
+            if (survey.description) {
+                doc.setFontSize(12);
+                doc.text(survey.description, 20, 35);
+            }
+            
+            // Add responses count
+            doc.setFontSize(14);
+            doc.text(`إجمالي الردود: ${survey.responses.length}`, 20, 50);
+            
+            // Add creation date
+            doc.text(`تاريخ الإنشاء: ${new Date(survey.createdAt).toLocaleDateString('ar-EG')}`, 20, 60);
+            
+            // Save the PDF
+            doc.save(`${survey.title}-report.pdf`);
+            
+            showToast('تم تصدير التقرير إلى PDF بنجاح', 'success');
+        };
+
+        // --- Initialize App ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            showView('welcome-view', 'لوحة التحكم');
+            hamburgerBtn.onclick = toggleSidebar;
+            overlay.onclick = closeSidebar;
+            
+            // Set up event listeners
+            document.getElementById('new-survey-btn').onclick = createNewSurvey;
+            document.getElementById('welcome-new-survey-btn').onclick = createNewSurvey;
+            document.getElementById('import-survey-btn').onclick = () => {
+                document.getElementById('restore-file').click();
+            };
+            document.getElementById('save-survey-btn').onclick = saveSurvey;
+            document.getElementById('delete-survey-btn').onclick = () => deleteSurvey();
+            document.getElementById('add-question-btn').onclick = () => addQuestion();
+            document.getElementById('edit-survey-btn').onclick = () => { if(activeSurveyId) loadEditorView(activeSurveyId); };
+            document.getElementById('delete-survey-results-btn').onclick = () => deleteSurvey();
+            document.getElementById('fill-survey-btn').onclick = loadFillSurveyView;
+            document.getElementById('share-survey-btn').onclick = loadShareSurveyView;
+            document.getElementById('export-csv-btn').onclick = exportToCSV;
+            document.getElementById('export-pdf-btn').onclick = exportToPDF;
+            document.getElementById('preview-survey-btn').onclick = loadFillSurveyView;
+            document.getElementById('create-backup-btn').onclick = createBackup;
+            document.getElementById('restore-backup-btn').onclick = restoreBackup;
+            
+            // Apply saved theme
+            const savedTheme = localStorage.getItem('formcraft_theme') || 'light';
+            applyTheme(savedTheme);
+            
+            // Check for URL parameters (for direct links to surveys)
+            const urlParams = new URLSearchParams(window.location.search);
+            const surveyParam = urlParams.get('survey');
+            if (surveyParam) {
+                const survey = surveys.find(s => s.id === surveyParam);
+                if (survey) {
+                    loadFillSurveyView();
+                }
+            }
+        });
+
+    })();
+    </script>
+</body>
+</html>
