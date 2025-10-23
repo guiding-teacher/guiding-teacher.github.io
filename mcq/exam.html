@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاختبار</title>
+    <link rel="stylesheet" href="css/exam-style.css">
+</head>
+<body>
+
+    <div id="exam-header">
+        <div id="exam-info">الاختبار قيد التقدم...</div>
+        <div id="timer">الوقت المتبقي: --:--:--</div>
+        <div id="current-date">التاريخ: --/--/----</div>
+    </div>
+
+    <div id="exam-container">
+        <div id="question-list-panel">
+            <ul id="question-index-list"></ul>
+        </div>
+        <div id="question-display-panel">
+            <h3 id="question-number">اختر سؤالاً من القائمة</h3>
+            <p id="question-text"></p>
+            <ul id="options-list" class="options-list"></ul>
+        </div>
+    </div>
+
+    <div id="exam-footer">
+        <div class="font-controls">
+            <button id="decrease-font">- حجم الخط</button>
+            <button id="increase-font">+ حجم الخط</button>
+        </div>
+        <button id="finish-exam-btn">إنهاء الاختبار</button>
+    </div>
+
+    <!-- Finish Confirmation Modal -->
+    <div id="finish-confirm-modal" class="modal">
+        <div class="modal-content">
+            <h4>تأكيد الإنهاء</h4>
+            <p>هل أنت متأكد أنك تريد إنهاء الاختبار؟</p>
+            <p>للتأكيد، الرجاء إدخال <strong>رمز إنهاء الاختبار</strong> الذي قدمه لك المشرف:</p>
+            <input type="text" id="finish-code-input" placeholder="رمز الإنهاء">
+            <p id="finish-error-message" style="color: red; min-height: 1em;"></p>
+            <button id="confirm-finish-btn" class="confirm">نعم، إنهاء</button>
+            <button class="cancel" onclick="closeModal('finish-confirm-modal')">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <!-- Results Modal -->
+<div id="results-modal" class="modal">
+    <div class="results-container">
+        <div id="results-header">
+            <h3 id="result-exam-title">امتحان الحاسوب</h3>
+        </div>
+        <div id="results-card">
+            <h4>نتيجة الامتحان</h4>
+            <p>لقد أجبت على <strong id="result-correct-count">0</strong> من أصل <strong id="result-total-questions">0</strong> سؤال بشكل صحيح</p>
+            <hr>
+            <h4>النتيجة النهائية</h4>
+            <p>لقد حصلت على <strong id="result-final-score">0</strong> من 100</p>
+            
+            <div id="results-buttons">
+                <button id="wrong-answers-btn">الإجابات الخاطئة</button>
+                <button id="retake-exam-btn">العودة للرئيسية</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+    <!-- Time Warning Modal -->
+    <div id="time-warning-modal" class="modal">
+        <div class="modal-content">
+            <h4>تنبيه الوقت</h4>
+            <p id="time-warning-message">الوقت المتبقي أقل من 10 دقائق!</p>
+            <button class="cancel" onclick="closeModal('time-warning-modal')">متابعة</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/exam.js"></script>
+    <script>
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+    </script>
+</body>
+</html>

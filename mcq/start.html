@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الاستعداد لبدء الاختبار</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .welcome-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .welcome-container h2 { color: #333; }
+        .welcome-container p { font-size: 1.2em; color: #555; line-height: 1.6; }
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .details-box {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .details-box h4 { margin-top: 0; }
+        #start-exam-btn {
+            width: 100%; padding: 15px; background-color: #28a745; color: white; border: none;
+            border-radius: 8px; font-size: 1.3em; cursor: pointer; transition: all 0.3s; margin-top: 20px;
+        }
+        #start-exam-btn:hover { background-color: #218838; transform: translateY(-2px); }
+        .loader-text { font-size: 1.2em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <h2 id="welcome-message">أهلاً بك</h2>
+        <p>أنت على وشك بدء الاختبار. يرجى مراجعة بياناتك والتأكد من صحتها قبل البدء.</p>
+        
+        <div class="details-grid">
+            <div class="details-box" id="student-details-box">
+                <h4>بيانات الطالب</h4>
+                <p><strong>الاسم:</strong> <span id="student-name-display" class="loader-text">...</span></p>
+                <p><strong>اسم الأم:</strong> <span id="student-mother-display" class="loader-text">...</span></p>
+                <p><strong>التسلسل:</strong> <span id="student-sequence-display" class="loader-text">...</span></p>
+            </div>
+            <div class="details-box" id="exam-details-box">
+                <h4>تفاصيل الاختبار</h4>
+                <p><strong>العنوان:</strong> <span id="exam-title-display" class="loader-text">...</span></p>
+                <p><strong>المدة:</strong> <span id="exam-duration-display" class="loader-text">...</span></p>
+            </div>
+        </div>
+
+        <button id="start-exam-btn" disabled>بدء الاختبار</button>
+    </div>
+
+    <script type="module">
+        import { db } from './js/firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const studentName = sessionStorage.getItem('studentName');
+        const studentId = sessionStorage.getItem('studentId');
+        const examId = sessionStorage.getItem('examId');
+
+        const startExamBtn = document.getElementById('start-exam-btn');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!studentId || !examId) {
+                alert('خطأ: بيانات الجلسة غير موجودة. سيتم إعادتك لصفحة الدخول.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('welcome-message').textContent = `أهلاً بك يا ${studentName}`;
+
+            let studentDataLoaded = false;
+            let examDataLoaded = false;
+            
+            // Function to enable start button when both data sets are loaded
+            const checkEnableButton = () => {
+                if(studentDataLoaded && examDataLoaded) {
+                    startExamBtn.disabled = false;
+                }
+            };
+
+            // Fetch Student Details
+            try {
+                const studentRef = doc(db, "students", studentId);
+                const studentSnap = await getDoc(studentRef);
+                if(studentSnap.exists()){
+                    const studentData = studentSnap.data();
+                    document.getElementById('student-name-display').textContent = studentData.name || '---';
+                    document.getElementById('student-mother-display').textContent = studentData.motherName || '---';
+                    document.getElementById('student-sequence-display').textContent = studentData.sequence || '---';
+                }
+                studentDataLoaded = true;
+                checkEnableButton();
+            } catch (error) {
+                console.error("Error fetching student details: ", error);
+                document.getElementById('student-details-box').innerHTML = "<h4>خطأ في تحميل بيانات الطالب.</h4>";
+            }
+            
+            // Fetch Exam Details
+            try {
+                const examRef = doc(db, "exams", examId);
+                const docSnap = await getDoc(examRef);
+                if (docSnap.exists()) {
+                    const examData = docSnap.data();
+                    document.getElementById('exam-title-display').textContent = examData.title;
+                    document.getElementById('exam-duration-display').textContent = `${examData.duration / 60} دقيقة`;
+                } else {
+                    document.getElementById('exam-details-box').innerHTML = "<h4>خطأ: الاختبار المحدد غير موجود.</h4>";
+                }
+                examDataLoaded = true;
+                checkEnableButton();
+            } catch (error) {
+                console.error("Error fetching exam details: ", error);
+                document.getElementById('exam-details-box').innerHTML = "<h4>حدث خطأ أثناء تحميل تفاصيل الاختبار.</h4>";
+            }
+        });
+
+        startExamBtn.addEventListener('click', () => {
+            window.location.href = 'exam.html';
+        });
+    </script>
+</body>
+</html>

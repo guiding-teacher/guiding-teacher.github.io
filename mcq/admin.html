@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المشرف</title>
+    <link rel="stylesheet" href="css/admin-style.css">
+    <!-- SheetJS Library for Excel Export/Import -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h3>لوحة التحكم</h3>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" onclick="showMainContent('exams-section')" class="nav-link active">إدارة الاختبارات</a></li>
+                <li><a href="#" onclick="showMainContent('students-section')" class="nav-link">إدارة الطلاب</a></li>
+                <li><a href="#" onclick="showMainContent('log-section')" class="nav-link">سجل الاختبارات</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Section: Exam Management -->
+            <div id="exams-section" class="admin-section">
+                <h3>إدارة الاختبارات</h3>
+                <p>نظام الاختبار يتم انشاء الاسئلة وتسجيل الاعضاء للدخول اونلاين برابط مباشر يتم ارساله لتلاميذك ويمكنك مشاهدة الاجابات وتنزيلها</p>
+                <button id="show-add-exam-form" class="btn-add">إضافة اختبار جديد</button>
+                <div id="add-edit-exam-form" class="form-container hidden">
+                    <h4><span id="exam-form-title">إضافة اختبار جديد</span></h4>
+                    <input type="hidden" id="exam-id">
+                    <div class="form-group"><label for="exam-title">عنوان الاختبار:</label><input type="text" id="exam-title" required></div>
+                    <div class="form-group"><label for="exam-duration">مدة الاختبار (بالدقائق):</label><input type="number" id="exam-duration" value="60" required></div>
+                    <div class="form-group"><label for="exam-finish-code">رمز إنهاء الاختبار (للطالب):</label><input type="text" id="exam-finish-code" required></div>
+                    <div class="advanced-settings">
+                        <h5>إعدادات الاختبار المتقدمة:</h5>
+                        <div class="form-group"><label for="exam-passing-percentage">نسبة النجاح (%):</label><input type="number" id="exam-passing-percentage" value="50" min="0" max="100" required></div>
+                        <div class="form-group checkbox-group"><input type="checkbox" id="exam-show-results" checked><label for="exam-show-results">السماح للطالب برؤية نتيجته</label></div>
+                        <div class="form-group checkbox-group"><input type="checkbox" id="exam-randomize-questions"><label for="exam-randomize-questions">ترتيب الأسئلة عشوائياً</label></div>
+                    </div>
+                    <button id="save-exam-btn" class="btn-save">حفظ الاختبار</button>
+                    <button type="button" onclick="hideExamForm()">إلغاء</button>
+                </div>
+                <h4>الاختبارات الحالية:</h4>
+                <table id="exams-table">
+                    <thead>
+                        <tr>
+                            <th>العنوان</th><th>رابط الدخول</th><th>المدة</th><th>إدارة الأسئلة</th><th>تعيين الطلاب</th><th>النتائج</th><th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody><!-- Exam rows here --></tbody>
+                </table>
+            </div>
+
+            <!-- Section: General Student Management -->
+            <div id="students-section" class="admin-section hidden">
+                <h3>إدارة الطلاب العامة</h3>
+                <div class="action-buttons">
+                    <button id="show-add-student-form-global" class="btn-add">إضافة طالب جديد</button>
+                    <label for="student-file-input" class="btn-import">
+                        استيراد طلاب من ملف Excel
+                    </label>
+                    <input type="file" id="student-file-input" accept=".xlsx, .xls" style="display: none;">
+                </div>
+                <p class="import-instructions">
+                    للاستيراد، يجب أن يحتوي ملف Excel على أعمدة بالأسماء التالية: <strong>الاسم</strong>, <strong>اسم الام</strong>, <strong>التسلسل</strong>.
+                </p>
+
+                <div id="add-edit-student-form-global" class="form-container hidden">
+                    <h4><span id="student-form-title-global">إضافة طالب جديد</span></h4>
+                    <input type="hidden" id="student-id-global">
+                    <div class="form-group"><label for="student-name-global">اسم الطالب:</label><input type="text" id="student-name-global" required></div>
+                    <div class="form-group"><label for="student-mother-name-global">اسم الأم:</label><input type="text" id="student-mother-name-global"></div>
+                    <div class="form-group"><label for="student-sequence-global">التسلسل:</label><input type="text" id="student-sequence-global"></div>
+                    <div class="form-group"><label for="student-code-global">رمز الدخول (اتركه فارغًا للتوليد التلقائي):</label><input type="text" id="student-code-global"></div>
+                    <button id="save-student-btn-global" class="btn-save">حفظ الطالب</button>
+                    <button type="button" onclick="hideGlobalStudentForm()">إلغاء</button>
+                </div>
+                <h4>الطلاب المسجلون في النظام:</h4>
+                <table id="students-table-global">
+                    <thead>
+                        <tr>
+                            <th>اسم الطالب</th><th>اسم الأم</th><th>التسلسل</th><th>رمز الدخول</th><th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody><!-- Student rows here --></tbody>
+                </table>
+            </div>
+
+            <!-- Section: Exam Log -->
+            <div id="log-section" class="admin-section hidden">
+                <h3>سجل الاختبارات العام</h3>
+                <p>يعرض هذا السجل جميع محاولات الاختبار المكتملة في النظام.</p>
+                <div class="action-buttons">
+                    <button id="export-log-btn" class="btn-import">تصدير السجل الكامل إلى Excel</button>
+                    <button id="delete-log-btn" class="btn-delete">حذف كل السجلات</button>
+                </div>
+                <table id="exam-log-table">
+                    <thead>
+                        <tr>
+                            <th>تاريخ الإنهاء</th><th>اسم الطالب</th><th>عنوان الاختبار</th><th>النتيجة</th><th>النسبة</th><th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="6">جاري تحميل السجل...</td></tr></tbody>
+                </table>
+            </div>
+
+            <!-- Sub-section: Question Management (No changes here) -->
+            <div id="question-management-section" class="admin-section hidden">
+                <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
+                <h3>إدارة أسئلة اختبار: <span id="selected-exam-title"></span></h3>
+                <input type="hidden" id="current-editing-exam-id">
+                <button id="show-add-question-form" class="btn-add">إضافة سؤال جديد</button>
+                <div id="add-edit-question-form" class="form-container hidden">
+                    <h4><span id="question-form-title">إضافة سؤال جديد</span></h4>
+                    <input type="hidden" id="question-id">
+                    <div class="form-group"><label for="question-text-input">نص السؤال:</label><textarea id="question-text-input" rows="3" required></textarea></div>
+                    <div class="form-group"><label for="question-points">الدرجة:</label><input type="number" id="question-points" value="1" min="1" required></div>
+                    <div class="form-group checkbox-group"><input type="checkbox" id="question-is-mandatory"><label for="question-is-mandatory">هذا السؤال إجباري</label></div>
+                    <h5>الخيارات (حدد الخيار الصحيح):</h5>
+                    <div id="question-options-container"></div>
+                    <button type="button" id="add-option-btn">إضافة خيار آخر</button>
+                    <hr>
+                    <button id="save-question-btn" class="btn-save">حفظ السؤال</button>
+                    <button type="button" onclick="document.getElementById('add-edit-question-form').classList.add('hidden')">إلغاء</button>
+                </div>
+                <h4>الأسئلة الحالية:</h4>
+                <table id="questions-table">
+                    <thead><tr><th>نص السؤال</th><th>الدرجة</th><th>الإجابة الصحيحة</th><th>إجباري</th><th>إجراءات</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Sub-section: Participant Management (No changes here) -->
+            <div id="participant-management-section" class="admin-section hidden">
+                <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
+                <h3>إدارة طلاب اختبار: <span id="selected-exam-title-participants"></span></h3>
+                <input type="hidden" id="current-managing-participants-exam-id">
+                <div class="form-container">
+                    <h4>تعيين طالب للاختبار</h4>
+                    <div class="form-group"><label for="assign-student-select">اختر طالب (سيتم إخفاء الطلاب المعينين بالفعل لهذا الاختبار):</label><select id="assign-student-select"></select></div>
+                    <button id="assign-student-btn" class="btn-assign">تعيين الطالب المحدد</button>
+                    <button id="assign-all-students-btn" class="btn-assign">تعيين كل الطلاب غير المعينين</button>
+                    <p id="assign-student-feedback"></p>
+                </div>
+                <h4>الطلاب المعينون لهذا الاختبار:</h4>
+                <table id="participants-table">
+                    <thead><tr><th>اسم الطالب</th><th>رمز الدخول</th><th>حالة الاختبار</th><th>النتيجة</th><th>إجراء</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- Sub-section: Statistics (Major changes here) -->
+            <div id="statistics-section" class="admin-section hidden">
+                <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
+                <h3>إحصائيات ونتائج اختبار: <span id="selected-exam-title-stats"></span></h3>
+                <input type="hidden" id="current-stats-exam-id">
+                <div class="stats-summary">
+                    <div>إجمالي الممتحنين: <strong id="stats-total-participants">0</strong></div>
+                    <div>متوسط النسبة: <strong id="stats-avg-percentage">0%</strong></div>
+                    <div>عدد الناجحين: <strong id="stats-passed-count">0</strong></div>
+                    <div>معيار النجاح: <strong id="stats-passing-criteria">50%</strong></div>
+                </div>
+                <div class="chart-container" style="max-width: 400px; margin: 20px auto;"><canvas id="results-distribution-chart"></canvas></div>
+                
+                <hr style="margin: 30px 0;">
+
+                <h4>سجل الناجحين في هذا الاختبار</h4>
+                <button id="export-success-log-btn" class="btn-import">تصدير سجل الناجحين إلى Excel</button>
+                <table id="success-log-table">
+                    <thead>
+                        <tr>
+                            <th>اسم الطالب</th>
+                            <th>الدرجة</th>
+                            <th>النسبة</th>
+                            <th>وقت البدء</th>
+                            <th>وقت الإنهاء</th>
+                            <th>الوقت المستغرق</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                
+                
+                <hr style="margin: 30px 0;">
+
+                <h4>سجل الراسبين في هذا الاختبار</h4>
+                <button id="export-failure-log-btn" class="btn-import">تصدير سجل الراسبين إلى Excel</button>
+                <table id="failure-log-table">
+                    <thead>
+                        <tr>
+                            <th>اسم الطالب</th>
+                            <th>الدرجة</th>
+                            <th>النسبة</th>
+                            <th>وقت البدء</th>
+                            <th>وقت الإنهاء</th>
+                            <th>الوقت المستغرق</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                
+                
+                
+                
+                <h4 style="margin-top: 30px;">تحليل صعوبة الأسئلة:</h4>
+                <table id="question-stats-table">
+                    <thead><tr><th>السؤال</th><th>نسبة الإجابات الصحيحة</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+    <script>
+        function hideExamForm() { document.getElementById('add-edit-exam-form').classList.add('hidden'); }
+        function hideGlobalStudentForm() { document.getElementById('add-edit-student-form-global').classList.add('hidden'); }
+    </script>
+</body>
+</html>
