@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     decreaseFontBtn.addEventListener('click', () => changeFontSize(-1));
     increaseFontBtn.addEventListener('click', () => changeFontSize(1));
     
-    // --- NEW: Event listeners for new results buttons ---
     document.getElementById('retake-exam-btn').addEventListener('click', () => {
         window.location.href = 'index.html';
     });
@@ -89,7 +88,6 @@ async function loadExamData() {
         if (participantSnap.exists() && (participantDataCache.status === 'finished' || participantDataCache.status === 'timed_out')) {
             alert('لقد أكملت هذا الاختبار بالفعل.');
             if (currentExamData.showResults !== false) {
-                 // --- CHANGE: Calculate extra data for the new results view ---
                  const { correctAnswersCount } = calculateScore(participantDataCache.answers);
                  const displayData = { 
                      ...participantDataCache, 
@@ -125,7 +123,6 @@ async function loadExamData() {
     }
 }
 
-// --- NEW: Helper function for score calculation to avoid repetition ---
 function calculateScore(answers) {
     let totalScore = 0;
     let totalPossiblePoints = 0;
@@ -148,9 +145,7 @@ function calculateScore(answers) {
     return { totalScore, totalPossiblePoints, correctAnswersCount };
 }
 
-
 function startTimer() { const endTime = examStartTime.getTime() + examDuration * 1000; timerInterval = setInterval(() => { const now = new Date().getTime(); const remaining = endTime - now; if (remaining <= 0) { clearInterval(timerInterval); timerDiv.textContent = 'الوقت المتبقي: 00:00:00'; timeUp(); return; } const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60)); const seconds = Math.floor((remaining % (1000 * 60)) / 1000); timerDiv.textContent = `الوقت المتبقي: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; if (remaining < 10 * 60 * 1000 && !warning10minShown) { showTimeWarning('الوقت المتبقي أقل من 10 دقائق!'); warning10minShown = true; } if (remaining < 5 * 60 * 1000 && !warning5minShown) { showTimeWarning('الوقت المتبقي أقل من 5 دقائق!'); warning5minShown = true; } }, 1000); }
-
 
 async function finishExam(isTimeUp = false) {
     if (!isTimeUp) {
@@ -167,21 +162,17 @@ async function finishExam(isTimeUp = false) {
     clearInterval(timerInterval);
     disableExam();
 
-    // --- CHANGE: Use the new helper function ---
     const { totalScore, totalPossiblePoints, correctAnswersCount } = calculateScore(userAnswers);
-
-    const percentageRaw = totalPossiblePoints > 0 ? (totalScore / totalPossiblePoints) * 100 : 0;
-    const percentage = parseFloat(percentageRaw.toFixed(2));
-
+    const percentage = parseFloat(totalPossiblePoints > 0 ? (totalScore / totalPossiblePoints) * 100 : 0).toFixed(2);
     const finalStatus = isTimeUp ? 'timed_out' : 'finished';
     const passingPercentage = currentExamData.passingPercentage || 50;
-    const hasPassed = percentage >= passingPercentage;
+    const hasPassed = parseFloat(percentage) >= passingPercentage;
     const statusText = hasPassed ? 'ناجح' : 'راسب';
     const finalStudentName = studentNameFromSession || participantDataCache?.name || 'اسم غير معروف';
     
     const resultsDataForDb = {
         endTime: Timestamp.now(), score: totalScore, totalPossiblePoints: totalPossiblePoints,
-        percentage: percentage, status: finalStatus, answers: userAnswers,
+        percentage: parseFloat(percentage), status: finalStatus, answers: userAnswers,
         passed: hasPassed, statusText: statusText
     };
     
@@ -190,10 +181,20 @@ async function finishExam(isTimeUp = false) {
         const participantRef = doc(db, "exams", examId, "participants", studentId);
         await updateDoc(participantRef, resultsDataForDb);
         
+        // **الإصلاح الرئيسي هنا**
+        // تمت إضافة `adminId` لضمان أن السجل يخص المشرف الصحيح
         await addDoc(collection(db, "exam_log"), {
-            studentId, studentName: finalStudentName, examId, examTitle: currentExamData.title,
-            score: totalScore, totalPossiblePoints, percentage, passed: hasPassed,
-            statusText, endTime: resultsDataForDb.endTime
+            studentId, 
+            studentName: finalStudentName, 
+            examId, 
+            examTitle: currentExamData.title,
+            adminId: currentExamData.adminId, // <-- هذا السطر هو الإصلاح
+            score: totalScore, 
+            totalPossiblePoints, 
+            percentage: parseFloat(percentage), 
+            passed: hasPassed,
+            statusText, 
+            endTime: resultsDataForDb.endTime
         });
 
     } catch (error) {
@@ -205,7 +206,6 @@ async function finishExam(isTimeUp = false) {
     if (!dbError) {
         if (currentExamData.showResults !== false) {
             try {
-                // --- CHANGE: Prepare complete data for the new display ---
                 const displayData = { 
                     ...resultsDataForDb, 
                     name: finalStudentName,
@@ -225,7 +225,6 @@ async function finishExam(isTimeUp = false) {
     }
 }
 
-
 function populateQuestionList() { questionIndexList.innerHTML = ''; questionIds.forEach((qId, index) => { const li = document.createElement('li'); const question = currentExamData.questions?.[qId]; if (!question) return; li.textContent = `س ${index + 1}${question.isMandatory ? ' *' : ''}`; li.dataset.questionIndex = index; li.dataset.questionId = qId; if (userAnswers[qId] !== undefined) li.classList.add('answered'); li.addEventListener('click', () => displayQuestion(index)); questionIndexList.appendChild(li); }); }
 function displayQuestion(index) { if (index < 0 || index >= questionIds.length) return; currentQuestionIndex = index; const qId = questionIds[index]; const question = currentExamData.questions?.[qId]; if (!question) { questionNumberH3.innerHTML = `خطأ`; questionTextP.textContent = `لا يمكن العثور على بيانات السؤال.`; optionsListUl.innerHTML = ''; return; } const isMandatoryText = question.isMandatory ? ' <span style="color:red; font-weight:bold;">* (إجباري)</span>' : ''; questionNumberH3.innerHTML = `السؤال ${index + 1} من ${questionIds.length}${isMandatoryText}`; questionTextP.textContent = question.text; optionsListUl.innerHTML = ''; (question.options || []).forEach((option, optionIndex) => { const li = document.createElement('li'); const radioId = `q${index}_option${optionIndex}`; li.innerHTML = `<input type="radio" name="question_${index}" id="${radioId}" value="${optionIndex}" data-question-id="${qId}" ${userAnswers[qId] === optionIndex ? 'checked' : ''}><label for="${radioId}">${option}</label>`; optionsListUl.appendChild(li); }); optionsListUl.querySelectorAll('input[type="radio"]').forEach(radio => { radio.addEventListener('change', handleAnswerSelection); }); document.querySelectorAll('#question-index-list li').forEach(li => { li.classList.remove('active'); if (parseInt(li.dataset.questionIndex) === index) li.classList.add('active'); }); }
 async function handleAnswerSelection(event) { const selectedOptionIndex = parseInt(event.target.value); const qId = event.target.dataset.questionId; userAnswers[qId] = selectedOptionIndex; const listItem = questionIndexList.querySelector(`li[data-question-id="${qId}"]`); if (listItem) listItem.classList.add('answered'); try { const participantRef = doc(db, "exams", examId, "participants", studentId); await updateDoc(participantRef, { [`answers.${qId}`]: selectedOptionIndex }); } catch (error) { console.error("Error saving answer:", error); } }
@@ -233,16 +232,6 @@ function showFinishConfirmation() { finishCodeInput.value = ''; finishErrorMessa
 function handleFinishConfirmation() { const enteredCode = finishCodeInput.value.trim(); if (enteredCode === currentExamData.finishCode) { finishExam(false); } else { finishErrorMessage.textContent = 'رمز الإنهاء غير صحيح.'; } }
 function timeUp() { alert('انتهى وقت الاختبار! سيتم إنهاء الاختبار الآن.'); finishExam(true); }
 function showTimeWarning(message) { document.getElementById('time-warning-message').textContent = message; document.getElementById('time-warning-modal').style.display = 'flex'; }
-
-// --- CHANGE: Updated showResults function for the new modal ---
-function showResults(data) {
-    document.getElementById('result-exam-title').textContent = currentExamData.title || 'نتيجة الاختبار';
-    document.getElementById('result-correct-count').textContent = data.correctAnswersCount;
-    document.getElementById('result-total-questions').textContent = data.totalQuestions;
-    document.getElementById('result-final-score').textContent = data.percentage; // Percentage is the score out of 100
-    
-    resultsModal.style.display = 'flex';
-}
-
+function showResults(data) { document.getElementById('result-exam-title').textContent = currentExamData.title || 'نتيجة الاختبار'; document.getElementById('result-correct-count').textContent = data.correctAnswersCount; document.getElementById('result-total-questions').textContent = data.totalQuestions; document.getElementById('result-final-score').textContent = data.percentage; resultsModal.style.display = 'flex'; }
 function disableExam() { document.querySelectorAll('input[type="radio"]').forEach(radio => radio.disabled = true); finishExamBtn.disabled = true; decreaseFontBtn.disabled = true; increaseFontBtn.disabled = true; questionIndexList.style.pointerEvents = 'none'; optionsListUl.style.pointerEvents = 'none'; }
 function changeFontSize(delta) { const currentSize = parseFloat(window.getComputedStyle(document.body, null).getPropertyValue('font-size')); const newSize = currentSize + delta; if (newSize >= 12 && newSize <= 28) { document.body.style.fontSize = newSize + 'px'; } }

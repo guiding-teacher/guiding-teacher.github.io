@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إنشاء حساب مشرف جديد</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="login-container">
+<h2>إنشاء حساب مشرف جديد</h2>
+<form id="signup-form">
+<input type="text" id="name" placeholder="الاسم الكامل *" required>
+<input type="email" id="email" placeholder="البريد الإلكتروني *" required>
+<input type="tel" id="phone" placeholder="رقم الهاتف *" required>
+<input type="text" id="institution" placeholder="المؤسسة *" required>
+<input type="text" id="governorate" placeholder="المحافظة *" required>
+<input type="date" id="dob" placeholder="المواليد *" required style="color-scheme: dark;">
+<input type="password" id="password" placeholder="كلمة المرور *" required>
+<input type="password" id="confirm-password" placeholder="تأكيد كلمة المرور *" required>
+<button type="submit">إنشاء حساب</button>
+</form>
+<p id="error-message"></p>
+<p style="margin-top: 20px;">
+لديك حساب بالفعل؟ <a href="admin-login.html">تسجيل الدخول</a>
+</p>
+</div>
+<script type="module" src="js/admin-auth.js"></script>
+</body>
+</html>

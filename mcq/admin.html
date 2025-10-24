@@ -1,29 +1,43 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم المشرف</title>
-    <link rel="stylesheet" href="css/admin-style.css">
-    <!-- SheetJS Library for Excel Export/Import -->
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم المشرف</title>
+<link rel="stylesheet" href="css/admin-style.css">
+<!-- SheetJS Library for Excel Export/Import -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-
-    <div class="admin-layout">
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar">
-            <div class="sidebar-header">
-                <h3>لوحة التحكم</h3>
+<div class="admin-layout">
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h3>لوحة التحكم</h3>
+            <div class="admin-sidebar-info">
+                <p id="sidebar-admin-name">...</p>
+                <p id="sidebar-admin-email">...</p>
             </div>
-            <ul class="nav-links">
-                <li><a href="#" onclick="showMainContent('exams-section')" class="nav-link active">إدارة الاختبارات</a></li>
-                <li><a href="#" onclick="showMainContent('students-section')" class="nav-link">إدارة الطلاب</a></li>
-                <li><a href="#" onclick="showMainContent('log-section')" class="nav-link">سجل الاختبارات</a></li>
-            </ul>
-        </nav>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#" onclick="showMainContent('exams-section')" class="nav-link active">إدارة الاختبارات</a></li>
+            <li><a href="#" onclick="showMainContent('students-section')" class="nav-link">إدارة الطلاب</a></li>
+            <li><a href="#" onclick="showMainContent('log-section')" class="nav-link">سجل الاختبارات</a></li>
+            <li><a href="#" onclick="showMainContent('settings-section')" class="nav-link">الإعدادات</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-content-wrapper">
+         <!-- Header for Admin Info and Logout -->
+        <header class="main-header">
+            <button class="menu-toggle" id="menu-toggle">☰</button>
+            <div class="admin-info">
+                مرحباً بك، <span id="admin-email-display">...</span>
+            </div>
+            <button class="logout-btn" id="logout-btn">تسجيل الخروج</button>
+        </header>
 
         <!-- Main Content Area -->
         <main class="main-content">
@@ -31,7 +45,6 @@
             <!-- Section: Exam Management -->
             <div id="exams-section" class="admin-section">
                 <h3>إدارة الاختبارات</h3>
-                <p>نظام الاختبار يتم انشاء الاسئلة وتسجيل الاعضاء للدخول اونلاين برابط مباشر يتم ارساله لتلاميذك ويمكنك مشاهدة الاجابات وتنزيلها</p>
                 <button id="show-add-exam-form" class="btn-add">إضافة اختبار جديد</button>
                 <div id="add-edit-exam-form" class="form-container hidden">
                     <h4><span id="exam-form-title">إضافة اختبار جديد</span></h4>
@@ -49,14 +62,16 @@
                     <button type="button" onclick="hideExamForm()">إلغاء</button>
                 </div>
                 <h4>الاختبارات الحالية:</h4>
-                <table id="exams-table">
-                    <thead>
-                        <tr>
-                            <th>العنوان</th><th>رابط الدخول</th><th>المدة</th><th>إدارة الأسئلة</th><th>تعيين الطلاب</th><th>النتائج</th><th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody><!-- Exam rows here --></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="exams-table">
+                        <thead>
+                            <tr>
+                                <th>العنوان</th><th>رابط الدخول</th><th>المدة</th><th>إدارة الأسئلة</th><th>تعيين الطلاب</th><th>النتائج</th><th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Exam rows here --></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Section: General Student Management -->
@@ -84,35 +99,87 @@
                     <button type="button" onclick="hideGlobalStudentForm()">إلغاء</button>
                 </div>
                 <h4>الطلاب المسجلون في النظام:</h4>
-                <table id="students-table-global">
-                    <thead>
-                        <tr>
-                            <th>اسم الطالب</th><th>اسم الأم</th><th>التسلسل</th><th>رمز الدخول</th><th>إجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody><!-- Student rows here --></tbody>
-                </table>
+                 <div class="table-responsive">
+                    <table id="students-table-global">
+                        <thead>
+                            <tr>
+                                <th>اسم الطالب</th><th>اسم الأم</th><th>التسلسل</th><th>رمز الدخول</th><th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Student rows here --></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Section: Exam Log -->
             <div id="log-section" class="admin-section hidden">
                 <h3>سجل الاختبارات العام</h3>
-                <p>يعرض هذا السجل جميع محاولات الاختبار المكتملة في النظام.</p>
+                <p>يعرض هذا السجل جميع محاولات الاختبار المكتملة الخاصة بك.</p>
                 <div class="action-buttons">
                     <button id="export-log-btn" class="btn-import">تصدير السجل الكامل إلى Excel</button>
                     <button id="delete-log-btn" class="btn-delete">حذف كل السجلات</button>
                 </div>
-                <table id="exam-log-table">
-                    <thead>
-                        <tr>
-                            <th>تاريخ الإنهاء</th><th>اسم الطالب</th><th>عنوان الاختبار</th><th>النتيجة</th><th>النسبة</th><th>الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody><tr><td colspan="6">جاري تحميل السجل...</td></tr></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="exam-log-table">
+                        <thead>
+                            <tr>
+                                <th>تاريخ الإنهاء</th><th>اسم الطالب</th><th>عنوان الاختبار</th><th>النتيجة</th><th>النسبة</th><th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody><tr><td colspan="6">جاري تحميل السجل...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Sub-section: Question Management (No changes here) -->
+             <!-- Section: Settings -->
+            <div id="settings-section" class="admin-section hidden">
+                <h3>الإعدادات الشخصية</h3>
+                <div class="form-container">
+                    <h4>معلومات المشرف</h4>
+                    <div id="profile-display" class="admin-profile">
+                        <div class="form-group"><label>الاسم الكامل:</label><span id="settings-admin-name">...</span></div>
+                        <div class="form-group"><label>البريد الإلكتروني:</label><span id="settings-admin-email">...</span></div>
+                        <div class="form-group"><label>رقم الهاتف:</label><span id="settings-admin-phone">...</span></div>
+                        <div class="form-group"><label>المؤسسة:</label><span id="settings-admin-institution">...</span></div>
+                        <div class="form-group"><label>المحافظة:</label><span id="settings-admin-governorate">...</span></div>
+                        <div class="form-group"><label>المواليد:</label><span id="settings-admin-dob">...</span></div>
+                        <div class="form-group"><label>تاريخ الإنشاء:</label><span id="settings-admin-created">...</span></div>
+                        <button id="edit-profile-btn" class="btn-edit">تعديل الملف الشخصي</button>
+                    </div>
+                    
+                    <div id="edit-profile-form" class="form-container hidden">
+                        <h4>تعديل الملف الشخصي</h4>
+                        <div class="form-group"><label for="admin-name-input">الاسم الكامل:</label><input type="text" id="admin-name-input" required></div>
+                        <div class="form-group"><label for="admin-phone-input">رقم الهاتف:</label><input type="tel" id="admin-phone-input" required></div>
+                        <div class="form-group"><label for="admin-institution-input">المؤسسة:</label><input type="text" id="admin-institution-input" required></div>
+                        <div class="form-group"><label for="admin-governorate-input">المحافظة:</label><input type="text" id="admin-governorate-input" required></div>
+                        <div class="form-group"><label for="admin-dob-input">المواليد:</label><input type="date" id="admin-dob-input" required></div>
+                        <button id="update-profile-btn" class="btn-save">حفظ التعديلات</button>
+                        <button type="button" onclick="cancelEditProfile()" class="btn-cancel">إلغاء</button>
+                    </div>
+
+                    <hr style="margin: 30px 0;">
+                    <h4>تغيير كلمة المرور</h4>
+                    <div id="change-password-form" class="form-container">
+                        <div class="form-group">
+                            <label for="current-password-input">كلمة المرور الحالية:</label>
+                            <input type="password" id="current-password-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password-input">كلمة المرور الجديدة:</label>
+                            <input type="password" id="new-password-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-new-password-input">تأكيد كلمة المرور الجديدة:</label>
+                            <input type="password" id="confirm-new-password-input" required>
+                        </div>
+                        <button id="change-password-btn" class="btn-save">تغيير كلمة المرور</button>
+                        <p id="password-change-feedback" style="min-height: 1em; margin-top: 10px;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub-section: Question Management -->
             <div id="question-management-section" class="admin-section hidden">
                 <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
                 <h3>إدارة أسئلة اختبار: <span id="selected-exam-title"></span></h3>
@@ -132,13 +199,15 @@
                     <button type="button" onclick="document.getElementById('add-edit-question-form').classList.add('hidden')">إلغاء</button>
                 </div>
                 <h4>الأسئلة الحالية:</h4>
-                <table id="questions-table">
-                    <thead><tr><th>نص السؤال</th><th>الدرجة</th><th>الإجابة الصحيحة</th><th>إجباري</th><th>إجراءات</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="questions-table">
+                        <thead><tr><th>نص السؤال</th><th>الدرجة</th><th>الإجابة الصحيحة</th><th>إجباري</th><th>إجراءات</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Sub-section: Participant Management (No changes here) -->
+            <!-- Sub-section: Participant Management -->
             <div id="participant-management-section" class="admin-section hidden">
                 <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
                 <h3>إدارة طلاب اختبار: <span id="selected-exam-title-participants"></span></h3>
@@ -151,13 +220,15 @@
                     <p id="assign-student-feedback"></p>
                 </div>
                 <h4>الطلاب المعينون لهذا الاختبار:</h4>
-                <table id="participants-table">
-                    <thead><tr><th>اسم الطالب</th><th>رمز الدخول</th><th>حالة الاختبار</th><th>النتيجة</th><th>إجراء</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table id="participants-table">
+                        <thead><tr><th>اسم الطالب</th><th>رمز الدخول</th><th>حالة الاختبار</th><th>النتيجة</th><th>إجراء</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Sub-section: Statistics (Major changes here) -->
+            <!-- Sub-section: Statistics -->
             <div id="statistics-section" class="admin-section hidden">
                 <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
                 <h3>إحصائيات ونتائج اختبار: <span id="selected-exam-title-stats"></span></h3>
@@ -174,57 +245,45 @@
 
                 <h4>سجل الناجحين في هذا الاختبار</h4>
                 <button id="export-success-log-btn" class="btn-import">تصدير سجل الناجحين إلى Excel</button>
-                <table id="success-log-table">
-                    <thead>
-                        <tr>
-                            <th>اسم الطالب</th>
-                            <th>الدرجة</th>
-                            <th>النسبة</th>
-                            <th>وقت البدء</th>
-                            <th>وقت الإنهاء</th>
-                            <th>الوقت المستغرق</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-
-                
+                <div class="table-responsive">
+                    <table id="success-log-table">
+                        <thead>
+                            <tr><th>اسم الطالب</th><th>الدرجة</th><th>النسبة</th><th>وقت البدء</th><th>وقت الإنهاء</th><th>الوقت المستغرق</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
                 
                 <hr style="margin: 30px 0;">
 
                 <h4>سجل الراسبين في هذا الاختبار</h4>
                 <button id="export-failure-log-btn" class="btn-import">تصدير سجل الراسبين إلى Excel</button>
-                <table id="failure-log-table">
-                    <thead>
-                        <tr>
-                            <th>اسم الطالب</th>
-                            <th>الدرجة</th>
-                            <th>النسبة</th>
-                            <th>وقت البدء</th>
-                            <th>وقت الإنهاء</th>
-                            <th>الوقت المستغرق</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                
-                
-                
+                <div class="table-responsive">
+                    <table id="failure-log-table">
+                        <thead>
+                            <tr><th>اسم الطالب</th><th>الدرجة</th><th>النسبة</th><th>وقت البدء</th><th>وقت الإنهاء</th><th>الوقت المستغرق</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
                 
                 <h4 style="margin-top: 30px;">تحليل صعوبة الأسئلة:</h4>
-                <table id="question-stats-table">
-                    <thead><tr><th>السؤال</th><th>نسبة الإجابات الصحيحة</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                 <div class="table-responsive">
+                    <table id="question-stats-table">
+                        <thead><tr><th>السؤال</th><th>نسبة الإجابات الصحيحة</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
         </main>
     </div>
+</div>
 
-    <script type="module" src="js/admin.js"></script>
-    <script>
-        function hideExamForm() { document.getElementById('add-edit-exam-form').classList.add('hidden'); }
-        function hideGlobalStudentForm() { document.getElementById('add-edit-student-form-global').classList.add('hidden'); }
-    </script>
+<script type="module" src="js/admin.js"></script>
+<script>
+    function hideExamForm() { document.getElementById('add-edit-exam-form').classList.add('hidden'); }
+    function hideGlobalStudentForm() { document.getElementById('add-edit-student-form-global').classList.add('hidden'); }
+</script>
 </body>
 </html>

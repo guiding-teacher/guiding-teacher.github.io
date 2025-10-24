@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <!-- === إعدادات SEO الأساسية === -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- === العنوان والوصف الأساسي === -->
+    <title>منصة الاختبارات الذكية EJAZ - الحل المتكامل للتعليم الإلكتروني</title>
+    <meta name="description" content="منصة EJAZ الذكية للاختبارات الإلكترونية - أنشئ وأدر وحلل اختباراتك بكل سهولة وأمان. الحل الأمثل للمدارس والجامعات والمراكز التعليمية">
+    
+    <!-- === كلمات مفتاحية === -->
+    <meta name="keywords" content="منصة اختبارات, تعليم إلكتروني, اختبارات ذكية, EJAZ, منصة تعليمية, مدارس, جامعات, اختبارات إلكترونية, تعليم عن بعد">
+    
+    <!-- === إعدادات SEO إضافية === -->
+    <meta name="author" content="منصة EJAZ">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#0a043c">
+    
+    <!-- === Open Graph لوسائل التواصل الاجتماعي === -->
+    <meta property="og:title" content="منصة الاختبارات الذكية EJAZ - الحل المتكامل للتعليم الإلكتروني">
+    <meta property="og:description" content="منصة EJAZ الذكية للاختبارات الإلكترونية - أنشئ وأدر وحلل اختباراتك بكل سهولة وأمان">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="ar_SA">
+    <meta property="og:site_name" content="منصة EJAZ">
+    
+    <!-- === Twitter Card === -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="منصة الاختبارات الذكية EJAZ">
+    <meta name="twitter:description" content="الحل المتكامل للتعليم الإلكتروني والاختبارات الذكية">
+    
+    <!-- === Structured Data (Schema.org) === -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "منصة الاختبارات الذكية EJAZ",
+        "description": "منصة متكاملة للاختبارات الإلكترونية والتعليم الذكي",
+        "url": "https://ejaz-platform.com",
+        "applicationCategory": "EducationApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "SAR"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "EJAZ Education Solutions"
+        },
+        "audience": {
+            "@type": "Audience",
+            "audienceType": "Educators, Students, Schools"
+        }
+    }
+    </script>
+    
+    <!-- === الروابط والخطوط === -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- === Canonical URL === -->
+    <link rel="canonical" href="https://ejaz-platform.com">
+    
+    <style>
+        /* --- إعدادات أساسية وخطوط --- */
+        :root {
+            --primary-color: #03e9f4;
+            --secondary-color: #9d00ff;
+            --dark-bg: #0a043c;
+            --light-text: #f0f0f0;
+            --border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--light-text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        
+        /* --- حاوية الخلفيات المتغيرة --- */
+        .page-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -2;
+            overflow: hidden;
+        }
+        
+        /* --- شريحة الخلفية الواحدة --- */
+        .page-background .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out, transform 8s ease-in-out;
+            transform: scale(1);
+        }
+        
+        .page-background .slide.active {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        /* روابط صورك */
+        .slide-1 { background-image: url('page/pg1.jpg'); }
+        .slide-2 { background-image: url('page/pg2.jpg'); }
+        .slide-3 { background-image: url('page/pg3.jpg'); }
+        .slide-4 { background-image: url('page/pg4.jpg'); }
+        .slide-5 { background-image: url('page/pg5.jpg'); }
+
+        /* طبقة التظليل فوق الخلفية */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(to bottom, rgba(10, 4, 60, 0.4), rgba(10, 4, 60, 0.9));
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* --- قسم الواجهة الرئيسية (Hero Section) --- */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* المحتوى الزجاجي */
+        .hero-content {
+            position: relative;
+            background: rgba(255, 30, 20, 0.03);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px 60px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(3, 233, 244, 0.6);
+        }
+
+        .hero-content .subtitle {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            color: var(--light-text);
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* --- تصميم الأزرار الجديد --- */
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: var(--dark-bg);
+            box-shadow: 0 4px 15px rgba(3, 233, 244, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 25px rgba(3, 233, 244, 0.5);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+            box-shadow: 0 4px 15px rgba(3, 233, 244, 0.3);
+        }
+
+        /* --- الأقسام العامة --- */
+        .content-section {
+            padding: 80px 0;
+            position: relative;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        
+        .section-description {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #ccc;
+            max-width: 700px;
+            margin: 0 auto 50px;
+        }
+
+        /* --- البطاقات --- */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.07);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-card .card-icon svg {
+            width: 60px;
+            height: 60px;
+            fill: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .feature-card:last-child .card-icon svg {
+            fill: var(--secondary-color);
+        }
+
+        .feature-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .feature-card ul {
+            list-style: none;
+            padding: 0;
+            text-align: right;
+        }
+
+        .feature-card ul li {
+            margin-bottom: 10px;
+            color: #bbb;
+        }
+
+        /* === قسم المميزات الإضافية لتحسين SEO === */
+        .benefits-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 60px 0;
+            margin: 40px 0;
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+
+        .benefit-item {
+            text-align: center;
+            padding: 25px;
+        }
+
+        .benefit-item h4 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        /* === قسم الأسئلة الشائعة لتحسين SEO === */
+        .faq-section {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 80px 0;
+        }
+
+        .faq-item {
+            background: rgba(255, 255, 255, 0.07);
+            margin-bottom: 20px;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .faq-question {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        /* --- قسم الحقوق (Footer) --- */
+        footer {
+            background-color: #050226;
+            color: #888;
+            text-align: center;
+            padding: 40px 0 20px;
+            position: relative;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+            text-align: right;
+        }
+
+        .footer-section h4 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+
+        .footer-section a {
+            color: #bbb;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary-color);
+        }
+
+        .copyright {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        /* --- التجاوب مع الشاشات الصغيرة --- */
+        @media (max-width: 768px) {
+            .hero-content {
+                padding: 30px 20px;
+            }
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            .hero-content .subtitle {
+                font-size: 1rem;
+            }
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+            .section-title {
+                font-size: 2rem;
+            }
+            .footer-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        /* === تحسينات إضافية للسرعة والأداء === */
+        .slide {
+            will-change: transform, opacity;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- حاوية الخلفيات المتغيرة -->
+    <div class="page-background">
+        <div class="slide slide-1 active"></div>
+        <div class="slide slide-2"></div>
+        <div class="slide slide-3"></div>
+        <div class="slide slide-4"></div>
+        <div class="slide slide-5"></div>
+    </div>
+
+    <!-- قسم الواجهة الرئيسية -->
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1>   E J A Z</h1>
+            <p class="subtitle">أنشئ، أدر، وحلل اختباراتك بكل سهولة وأمان. الحل الأمثل للمؤسسات التعليمية الحديثة والمدارس والجامعات</p>
+            <div class="cta-buttons">
+                <a href="admin-login.html" class="btn btn-primary">تسجيل الدخول للمشرفين</a>
+                <a href="admin-signup.html" class="btn btn-secondary">إنشاء حساب جديد</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- قسم شرح وظيفة الموقع -->
+    <section class="content-section">
+        <div class="container">
+            <h2 class="section-title">منصة الاختبارات المتكاملة للتعليم الرقمي </h2>
+            <p class="section-description">تنقسم منصة EJAZ إلى قسمين رئيسيين لخدمة كل من المشرفين والطلاب بفعالية، مع توفير أدوات قوية ومتقدمة لكل طرف</p>
+            <div class="features-grid">
+                <!-- بطاقة المشرف -->
+                <div class="feature-card">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M4 22C4 17.5817 7.58172 14 12 14C16.4183 14 20 17.5817 20 22H4ZM12 13C8.68629 13 6 10.3137 6 7C6 3.68629 8.68629 1 12 1C15.3137 1 18 3.68629 18 7C18 10.3137 15.3137 13 12 13Z"></path></svg>
+                    </div>
+                    <h3>لوحة تحكم المشرف المتكاملة</h3>
+                    <ul>
+                        <li>إدارة كاملة للاختبارات والأسئلة بأنواعها</li>
+                        <li>إضافة واستيراد قوائم الطلاب بسهولة</li>
+                        <li>تعيين الطلاب لاختبارات محددة</li>
+                        <li>تحليل النتائج وإحصائيات دقيقة</li>
+                        <li>تصدير السجلات والتقارير بضغطة زر</li>
+                    </ul>
+                </div>
+
+                <!-- بطاقة الطالب -->
+                <div class="feature-card">
+                    <div class="card-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14C9.23858 14 7 11.7614 7 9C7 6.23858 9.23858 4 12 4C14.7614 4 17 6.23858 17 9C17 11.7614 14.7614 14 12 14ZM12.3152 2.00445C12.2103 2.00149 12.105 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 11.895 21.9985 11.7897 21.9955 11.6848C19.6417 12.6365 17.0114 13.2 14.28 13.2C10.74 13.2 7.56 12.33 5 10.89C5.82 7.74 8.61 5.5 12 5.5C12.39 5.5 12.77 5.54 13.14 5.62C13.7 4.27 13.1 2.81 12.3152 2.00445Z"></path></svg>
+                    </div>
+                    <h3>واجهة اختبار الطالب الذكية</h3>
+                    <ul>
+                        <li>واجهة بسيطة وسهلة الاستخدام</li>
+                        <li>دخول آمن عبر رمز دخول خاص</li>
+                        <li>عرض الأسئلة بشكل منظم وواضح</li>
+                        <li>مؤقت زمني لتتبع وقت الاختبار</li>
+                        <li>عرض النتيجة النهائية فور انتهاء الاختبار</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+
+    <!-- قسم الحقوق -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>منصة EJAZ</h4>
+                    <p>الحل المتكامل للتعليم الإلكتروني والاختبارات الذكية للمؤسسات التعليمية</p>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <ul>
+                        <li><a href="admin-login.html">تسجيل الدخول</a></li>
+                        <li><a href="admin-signup.html">إنشاء حساب</a></li>
+                        <li><a href=" ">المميزات</a></li>
+                        <li><a href="/index.html">اتصل بنا</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>معلومات الاتصال</h4>
+                    <ul>
+                        <li>البريد الإلكتروني: info@ejaz-platform.com</li>
+                        <li>الهاتف:  
+                        +9647708077310
+                        </li>
+                        <li>الدعم الفني: support@ejaz-platform.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2024   -منصة المعلم المرشد 
+                 <br>للاختبارات الذكية   EJAZ. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // الحل الجذري باستخدام JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            const slides = document.querySelectorAll('.slide');
+            let currentSlide = 0;
+            const slideInterval = 5000; // 5 ثواني لكل شريحة
+            
+            // تأكد من تحميل الصور أولاً
+            function preloadImages() {
+                slides.forEach(slide => {
+                    const img = new Image();
+                    img.src = slide.style.backgroundImage.replace(/url\(['"]?(.*?)['"]?\)/i, '$1');
+                });
+            }
+            
+            // تغيير الشريحة
+            function nextSlide() {
+                // إخفاء الشريحة الحالية
+                slides[currentSlide].classList.remove('active');
+                
+                // الانتقال للشريحة التالية
+                currentSlide = (currentSlide + 1) % slides.length;
+                
+                // إظهار الشريحة الجديدة
+                slides[currentSlide].classList.add('active');
+            }
+            
+            // بدء العرض التلقائي بعد تحميل الصفحة
+            function startSlideshow() {
+                // تأكد من أن الشريحة الأولى مرئية
+                slides[0].classList.add('active');
+                
+                // بدء التبديل التلقائي
+                setInterval(nextSlide, slideInterval);
+            }
+            
+            // بدء العرض بعد تحميل جميع الصور
+            window.addEventListener('load', function() {
+                preloadImages();
+                setTimeout(startSlideshow, 1000); // انتظر ثانية للتأكد من تحميل الصور
+            });
+            
+            // بديل: إذا استمرت المشاكل، استخدم هذا الكود البسيط
+            function simpleSlideshow() {
+                let index = 0;
+                const totalSlides = slides.length;
+                
+                // إخفاء جميع الشرائح أولاً
+                slides.forEach(slide => slide.classList.remove('active'));
+                
+                // إظهار الشريحة الأولى
+                slides[0].classList.add('active');
+                
+                // تبديل الشرائح كل 5 ثواني
+                setInterval(() => {
+                    slides[index].classList.remove('active');
+                    index = (index + 1) % totalSlides;
+                    slides[index].classList.add('active');
+                }, 5000);
+            }
+            
+            // استخدم الدالة البسيطة مباشرة
+            simpleSlideshow();
+        });
+    </script>
+
+</body>
+</html>
