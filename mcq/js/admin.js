@@ -332,7 +332,9 @@ async function loadExams() {
             const exam = doc.data();
             const examId = doc.id;
             allExamsCache[examId] = exam;
-            const examLink = `${window.location.origin}/index.html?exam=${examId}`;
+            
+            const examLink = generateExamLink(examId);
+            
             const row = examsTableBody.insertRow();
             row.innerHTML = `<td>${exam.title || ''}</td><td><button class="btn-copy" onclick="copyToClipboard('${examLink}')">نسخ الرابط</button></td><td>${exam.duration ? exam.duration / 60 : 'N/A'} دقيقة</td><td><button class="btn-edit" onclick="showQuestionManagement('${examId}', '${exam.title.replace(/'/g, "\\'")}')">الأسئلة</button></td><td><button class="btn-assign" onclick="showParticipantManagement('${examId}', '${exam.title.replace(/'/g, "\\'")}')">الطلاب</button></td><td><button class="btn-view" onclick="showStatistics('${examId}', '${exam.title.replace(/'/g, "\\'")}')">الإحصائيات</button></td><td><button class="btn-edit" onclick="editExam('${examId}')">تعديل</button><button class="btn-delete" onclick="deleteExam('${examId}')">حذف</button></td>`;
         });
@@ -743,6 +745,26 @@ async function handleChangePassword() {
 // --- Utility Functions ---
 // =================================================================
 
+// =================================================================
+// --- Utility Functions ---
+// =================================================================
+
+function generateExamLink(examId) {
+    // حل متطور يناسب جميع أنواع الاستضافات
+    const currentUrl = window.location.href;
+    const currentPath = window.location.pathname;
+    
+    // إذا كنا في admin.html، نزيلها من المسار
+    if (currentPath.endsWith('admin.html')) {
+        const baseUrl = currentUrl.replace('/admin.html', '');
+        return `${baseUrl}/index.html?exam=${examId}`;
+    }
+    
+    // إذا لم نكن في admin.html، نستخدم المسار الحالي
+    const baseUrl = currentUrl.split('/').slice(0, -1).join('/');
+    return `${baseUrl}/index.html?exam=${examId}`;
+}
+
 function showMainContent(sectionIdToShow) {
     document.querySelectorAll('.page-content-wrapper > .main-content > .admin-section').forEach(section => {
         section.classList.add('hidden');
@@ -781,25 +803,10 @@ function handleFirebaseError(error, context) {
     return userMessage;
 }
 
-function getAdminDataFromSession() {
-    try {
-        const sessionData = sessionStorage.getItem('newAdminData');
-        if (sessionData) {
-            const parsedData = JSON.parse(sessionData);
-            console.log('Loaded admin data from session storage');
-            // تنظيف البيانات بعد الاستخدام
-            sessionStorage.removeItem('newAdminData');
-            return parsedData;
-        }
-    } catch (error) {
-        console.error('Error loading from session storage:', error);
-    }
-    return null;
-}
-
 // =================================================================
 // --- Global Window Functions ---
 // =================================================================
+
 window.showMainContent = showMainContent;
 window.copyToClipboard = copyToClipboard;
 window.showQuestionManagement = showQuestionManagement;
@@ -813,3 +820,5 @@ window.showStatistics = showStatistics;
 window.editStudentGlobal = editStudentGlobal;
 window.deleteStudentGlobal = deleteStudentGlobal;
 window.cancelEditProfile = cancelEditProfile;
+// أضف الدالة الجديدة للوصول العالمي
+window.generateExamLink = generateExamLink;
