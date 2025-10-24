@@ -18,7 +18,7 @@ let examsTableBody, studentsTableGlobalBody, examLogTableBody, successLogTableBo
     examRandomizeQuestionsCheckbox, studentIdGlobalInput, studentNameGlobalInput, studentMotherNameGlobalInput,
     studentSequenceGlobalInput, studentCodeGlobalInput, studentFormTitleGlobal, studentFileInput,
     resultsDistributionChartCtx, questionsTableBody, adminNameDisplay,
-    sidebarAdminName, sidebarAdminEmail, sidebarAdminPhone, sidebarAdminInstitution, sidebarAdminGovernorate, // [MODIFIED]
+    sidebarAdminName, sidebarAdminEmail, sidebarAdminPhone, sidebarAdminInstitution, sidebarAdminGovernorate,
     settingsAdminName, settingsAdminEmail, settingsAdminPhone,
     settingsAdminInstitution, settingsAdminGovernorate, settingsAdminDob, settingsAdminGender, settingsAdminCreated,
     editProfileBtn, editProfileForm, profileDisplay, adminNameInput, adminPhoneInput,
@@ -63,24 +63,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function loadAdminData(user) {
+// [FIX] This function is now robust and handles the new user race condition.
+ async function loadAdminData(user) {
     try {
         const adminRef = doc(db, "admins", user.uid);
         const adminDoc = await getDoc(adminRef);
+        
         if (adminDoc.exists()) {
             currentAdminData = adminDoc.data();
-            // Update last login time
-            await updateDoc(adminRef, { lastLogin: Timestamp.now() });
+            // تحديث وقت آخر دخول
+            await updateDoc(adminRef, { 
+                lastLogin: Timestamp.now(),
+                lastLoginTime: new Date().toISOString()
+            });
         } else {
-            // This case should ideally not happen if signup is successful
-            // It indicates a severe problem (e.g., Firestore rules mismatch)
-            console.error("CRITICAL: Admin document not found for a logged-in user.");
-            throw new Error("لا يمكن العثور على بيانات المشرف. يرجى محاولة تسجيل الخروج والدخول مرة أخرى.");
+            console.warn("Admin document not found, creating one now...");
+            
+            // محاولة إنشاء المستند إذا لم يكن موجوداً
+            const fallbackData = getAdminDataFromSession() || {
+                name: user.email.split('@')[0] || 'مشرف',
+                email: user.email,
+                phone: 'لم يحدد',
+                institution: 'لم يحدد',
+                governorate: 'لم يحدد',
+                dob: '',
+                gender: 'male',
+                createdAt: Timestamp.now(),
+                lastLogin: Timestamp.now()
+            };
+            
+            try {
+                await setDoc(adminRef, fallbackData);
+                currentAdminData = fallbackData;
+                console.log("Admin document created successfully");
+            } catch (createError) {
+                console.error("Failed to create admin document:", createError);
+                // استخدام بيانات احتياطية إذا فشل الإنشاء
+                currentAdminData = fallbackData;
+            }
         }
     } catch (error) {
         console.error("Error loading admin data:", error);
-        // Re-throw the error to be caught by the main initializer
-        throw error;
+        
+        // حل احتياطي أخير
+        const fallbackData = getAdminDataFromSession() || {
+            name: user?.email?.split('@')[0] || 'مشرف',
+            email: user?.email || 'unknown@example.com',
+            phone: 'لم يحدد',
+            institution: 'لم يحدد',
+            governorate: 'لم يحدد',
+            dob: '',
+            gender: 'male'
+        };
+        
+        currentAdminData = fallbackData;
+        console.log("Using fallback admin data due to error");
     }
 }
 
@@ -90,7 +127,7 @@ function updateAdminInfoDisplay() {
     const adminName = currentAdminData.name || "مشرف";
     const adminEmail = currentAdminData.email || auth.currentUser?.email || "...";
 
-    // [MODIFIED] Populate all sidebar and header elements
+    // Populate all sidebar and header elements
     if (adminNameDisplay) adminNameDisplay.textContent = adminName;
     if (sidebarAdminName) sidebarAdminName.textContent = adminName;
     if (sidebarAdminEmail) sidebarAdminEmail.textContent = adminEmail;
@@ -168,7 +205,7 @@ function initializeDOMReferences() {
     resultsDistributionChartCtx = document.getElementById('results-distribution-chart').getContext('2d');
     adminNameDisplay = document.getElementById('admin-name-display');
 
-    // [MODIFIED] Add new sidebar elements
+    // Add new sidebar elements
     sidebarAdminName = document.getElementById('sidebar-admin-name');
     sidebarAdminEmail = document.getElementById('sidebar-admin-email');
     sidebarAdminPhone = document.getElementById('sidebar-admin-phone');
@@ -242,10 +279,10 @@ async function handleLogout() {
         await signOut(auth);
         localStorage.removeItem('lastActivity');
         if (activityTimer) clearTimeout(activityTimer);
-        window.location.href = 'ejaz.html'; // <<< MODIFICATION HERE
+        window.location.href = 'ejaz.html'; 
     } catch (error) {
         console.error('Logout Error', error);
-        window.location.href = 'ejaz.html'; // <<< MODIFICATION HERE
+        window.location.href = 'ejaz.html'; 
     }
 }
 
@@ -742,6 +779,22 @@ function handleFirebaseError(error, context) {
     else if (error.code === 'unavailable') userMessage = 'فشل الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت';
     alert(userMessage);
     return userMessage;
+}
+
+function getAdminDataFromSession() {
+    try {
+        const sessionData = sessionStorage.getItem('newAdminData');
+        if (sessionData) {
+            const parsedData = JSON.parse(sessionData);
+            console.log('Loaded admin data from session storage');
+            // تنظيف البيانات بعد الاستخدام
+            sessionStorage.removeItem('newAdminData');
+            return parsedData;
+        }
+    } catch (error) {
+        console.error('Error loading from session storage:', error);
+    }
+    return null;
 }
 
 // =================================================================

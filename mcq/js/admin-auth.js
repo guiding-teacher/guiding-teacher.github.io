@@ -1,10 +1,9 @@
 import { auth, db } from './firebase-config.js';
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    onAuthStateChanged,
-    signOut
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // معالجة تسجيل الدخول
@@ -17,11 +16,8 @@ if (loginForm) {
         const errorMessage = document.getElementById('error-message');
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            console.log('تم تسجيل الدخول بنجاح:', userCredential.user);
-            
+            await signInWithEmailAndPassword(auth, email, password);
             localStorage.setItem('lastActivity', Date.now().toString());
-            
             window.location.href = 'admin.html';
         } catch (error) {
             console.error('خطأ في تسجيل الدخول:', error);
@@ -62,10 +58,11 @@ if (signupForm) {
         }
 
         try {
+            // Step 1: Create user in Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             
-            const newAdminDataForFirestore = {
+            const newAdminData = {
                 name: name,
                 email: email,
                 phone: phone,
@@ -73,24 +70,22 @@ if (signupForm) {
                 governorate: governorate,
                 dob: dob,
                 gender: gender,
-                createdAt: new Date(),
-                lastLogin: new Date()
+                createdAt: Timestamp.now(), // Use Firestore Timestamp
+                lastLogin: Timestamp.now()
             };
 
-            await setDoc(doc(db, "admins", user.uid), newAdminDataForFirestore);
+            // Step 2: Create user document in Firestore and WAIT for it to finish
+            await setDoc(doc(db, "admins", user.uid), newAdminData);
 
-            // تخزين البيانات الأساسية فقط في الجلسة لاستخدامها كحل احتياطي في الصفحة التالية
-            const newAdminDataForSession = {
-                name: name,
-                phone: phone,
-                institution: institution,
-                governorate: governorate,
-                dob: dob,
-                gender: gender
-            };
-            sessionStorage.setItem('newAdminData', JSON.stringify(newAdminDataForSession));
+            // [FIX] Store data in sessionStorage as a temporary bridge for the first page load
+            // This solves the race condition where the redirect is faster than Firestore's data propagation.
+            sessionStorage.setItem('newAdminData', JSON.stringify({
+                ...newAdminData,
+                createdAt: newAdminData.createdAt.toDate().toISOString() // Convert Timestamp to string for storage
+            }));
             
             localStorage.setItem('lastActivity', Date.now().toString());
+            
             alert('تم إنشاء الحساب بنجاح!');
             window.location.href = 'admin.html';
 
@@ -101,7 +96,7 @@ if (signupForm) {
             } else if (error.code === 'auth/weak-password') {
                 errorMessage.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل.';
             } else {
-                errorMessage.textContent = 'حدث خطأ أثناء إنشاء الحساب.';
+                errorMessage.textContent = 'حدث خطأ أثناء إنشاء الحساب. تأكد من صلاحيات قاعدة البيانات.';
             }
         }
     });
@@ -121,3 +116,55 @@ onAuthStateChanged(auth, (user) => {
         }
     }
 });
+
+
+// حل طارئ لتحميل البيانات من الجلسة إذا فشل تحميلها من Firestore
+function getAdminDataFromSession() {
+    try {
+        const sessionData = sessionStorage.getItem('newAdminData');
+        if (sessionData) {
+            const parsedData = JSON.parse(sessionData);
+            console.log('Loaded admin data from session storage as fallback');
+            return parsedData;
+        }
+    } catch (error) {
+        console.error('Error loading from session storage:', error);
+    }
+    return null;
+}
+
+// تأكد من أن البيانات الأساسية متاحة دائمًا
+onAuthStateChanged(auth, (user) => {
+    const path = window.location.pathname;
+    
+    if (user) {
+        // تخزين بيانات احتياطية في الجلسة
+        if (path.includes('admin-signup.html')) {
+            const name = document.getElementById('name')?.value;
+            if (name) {
+                const backupData = {
+                    name: name,
+                    email: user.email,
+                    phone: document.getElementById('phone')?.value || '',
+                    institution: document.getElementById('institution')?.value || '',
+                    governorate: document.getElementById('governorate')?.value || '',
+                    dob: document.getElementById('dob')?.value || '',
+                    gender: document.getElementById('gender')?.value || 'male'
+                };
+                sessionStorage.setItem('newAdminData', JSON.stringify(backupData));
+            }
+        }
+        
+        if (path.includes('admin-login.html') || path.includes('admin-signup.html')) {
+            window.location.replace('admin.html');
+        }
+    } else {
+        if (path.includes('admin.html')) {
+            window.location.replace('admin-login.html');
+        }
+    }
+});
+
+
+
+
