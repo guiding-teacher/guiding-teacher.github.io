@@ -9,6 +9,150 @@
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* --- CSS لتحسين تجاوب الصفحة مع الهواتف --- */
+    :root {
+        --sidebar-width: 260px;
+    }
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-top: 1em;
+    }
+    .admin-layout {
+        display: flex;
+    }
+    .sidebar {
+        width: var(--sidebar-width);
+        transition: transform 0.3s ease;
+    }
+    .page-content-wrapper {
+        flex-grow: 1;
+        width: calc(100% - var(--sidebar-width));
+    }
+    .menu-toggle {
+        display: none; /* يظهر فقط في الشاشات الصغيرة */
+        font-size: 24px;
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    /* --- CSS مخصص ومنسق لقسم الإعدادات --- */
+    .settings-card {
+        background-color: #fff;
+        color: #333;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-width: 800px;
+        margin: auto;
+    }
+    .settings-card h4 {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        color: #0056b3;
+    }
+    .info-row, .form-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+        flex-wrap: wrap;
+    }
+    .info-row:last-child, .form-row:last-child {
+        border-bottom: none;
+    }
+    .info-row label, .form-row label {
+        flex: 0 0 150px; /* عرض ثابت للعنوان */
+        font-weight: bold;
+        color: #555;
+    }
+    .info-row span, .form-row input, .form-row select {
+        flex: 1 1 auto;
+    }
+    .form-row input, .form-row select {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f8f9fa;
+    }
+    #change-password-form input {
+        text-align: right;
+        direction: rtl;
+    }
+
+    /* === [NEW] تنسيقات الشريط الجانبي المحسنة === */
+    .admin-sidebar-info {
+        padding: 15px;
+        text-align: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #sidebar-admin-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin: 0;
+        color: #fff;
+    }
+    #sidebar-admin-email {
+        font-size: 0.9em;
+        color: #ccc;
+        margin-top: 5px;
+        margin-bottom: 15px; /* مسافة قبل الخط */
+        word-break: break-all;
+    }
+    .sidebar-details-list {
+        list-style: none;
+        padding: 15px;
+        margin: 0;
+    }
+    .sidebar-details-list li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 0.95em;
+        color: #ddd;
+    }
+    .sidebar-details-list svg {
+        width: 18px;
+        height: 18px;
+        fill: #03e9f4; /* لون الأيقونة */
+        margin-left: 12px; /* مسافة بين الأيقونة والنص */
+    }
+    
+    @media (max-width: 768px) {
+        .admin-layout {
+            flex-direction: column;
+        }
+        .sidebar {
+            position: fixed; top: 0; right: 0; height: 100vh;
+            z-index: 1000; transform: translateX(100%);
+            background-color: #333;
+        }
+        .sidebar.sidebar-visible { transform: translateX(0); }
+        .page-content-wrapper { width: 100%; }
+        .menu-toggle { display: block; }
+        .main-header { justify-content: space-between; }
+        .admin-info { display: none; }
+        
+        .info-row, .form-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .info-row label, .form-row label {
+            margin-bottom: 5px;
+            flex-basis: auto;
+        }
+        .info-row span, .form-row input, .form-row select {
+            width: 100%;
+        }
+    }
+</style>
 </head>
 <body>
 <div class="admin-layout">
@@ -16,11 +160,29 @@
     <nav class="sidebar">
         <div class="sidebar-header">
             <h3>لوحة التحكم</h3>
-            <div class="admin-sidebar-info">
-                <p id="sidebar-admin-name">...</p>
-                <p id="sidebar-admin-email">...</p>
-            </div>
         </div>
+
+        <!-- [MODIFIED] قسم معلومات المشرف المنسق -->
+        <div class="admin-sidebar-info">
+            <p id="sidebar-admin-name">...</p>
+            <p id="sidebar-admin-email">...</p>
+        </div>
+        
+        <ul class="sidebar-details-list">
+            <li>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16.5 2h-9C6.67 2 6 2.67 6 3.5v17c0 .83.67 1.5 1.5 1.5h9c.83 0 1.5-.67 1.5-1.5v-17c0-.83-.67-1.5-1.5-1.5zM12 21c-.83 0-1.5-.67-1.5-1.5S11.17 18 12 18s1.5.67 1.5 1.5S12.83 21 12 21zm3-4H9V5h6v12z"></path></svg>
+                <span id="sidebar-admin-phone">...</span>
+            </li>
+            <li>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L1 12v2l11 6 9-4.91V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"></path></svg>
+                <span id="sidebar-admin-institution">...</span>
+            </li>
+            <li>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path></svg>
+                <span id="sidebar-admin-governorate">...</span>
+            </li>
+        </ul>
+        
         <ul class="nav-links">
             <li><a href="#" onclick="showMainContent('exams-section')" class="nav-link active">إدارة الاختبارات</a></li>
             <li><a href="#" onclick="showMainContent('students-section')" class="nav-link">إدارة الطلاب</a></li>
@@ -34,7 +196,7 @@
         <header class="main-header">
             <button class="menu-toggle" id="menu-toggle">☰</button>
             <div class="admin-info">
-                مرحباً بك، <span id="admin-email-display">...</span>
+                مرحباً بك، <span id="admin-name-display">...</span>
             </div>
             <button class="logout-btn" id="logout-btn">تسجيل الخروج</button>
         </header>
@@ -44,6 +206,7 @@
 
             <!-- Section: Exam Management -->
             <div id="exams-section" class="admin-section">
+                <!-- محتوى إدارة الاختبارات هنا كما هو -->
                 <h3>إدارة الاختبارات</h3>
                 <button id="show-add-exam-form" class="btn-add">إضافة اختبار جديد</button>
                 <div id="add-edit-exam-form" class="form-container hidden">
@@ -76,7 +239,8 @@
 
             <!-- Section: General Student Management -->
             <div id="students-section" class="admin-section hidden">
-                <h3>إدارة الطلاب العامة</h3>
+                <!-- محتوى إدارة الطلاب هنا كما هو -->
+                 <h3>إدارة الطلاب العامة</h3>
                 <div class="action-buttons">
                     <button id="show-add-student-form-global" class="btn-add">إضافة طالب جديد</button>
                     <label for="student-file-input" class="btn-import">
@@ -113,7 +277,8 @@
 
             <!-- Section: Exam Log -->
             <div id="log-section" class="admin-section hidden">
-                <h3>سجل الاختبارات العام</h3>
+                 <!-- محتوى سجل الاختبارات هنا كما هو -->
+                 <h3>سجل الاختبارات العام</h3>
                 <p>يعرض هذا السجل جميع محاولات الاختبار المكتملة الخاصة بك.</p>
                 <div class="action-buttons">
                     <button id="export-log-btn" class="btn-import">تصدير السجل الكامل إلى Excel</button>
@@ -134,42 +299,53 @@
              <!-- Section: Settings -->
             <div id="settings-section" class="admin-section hidden">
                 <h3>الإعدادات الشخصية</h3>
-                <div class="form-container">
-                    <h4>معلومات المشرف</h4>
-                    <div id="profile-display" class="admin-profile">
-                        <div class="form-group"><label>الاسم الكامل:</label><span id="settings-admin-name">...</span></div>
-                        <div class="form-group"><label>البريد الإلكتروني:</label><span id="settings-admin-email">...</span></div>
-                        <div class="form-group"><label>رقم الهاتف:</label><span id="settings-admin-phone">...</span></div>
-                        <div class="form-group"><label>المؤسسة:</label><span id="settings-admin-institution">...</span></div>
-                        <div class="form-group"><label>المحافظة:</label><span id="settings-admin-governorate">...</span></div>
-                        <div class="form-group"><label>المواليد:</label><span id="settings-admin-dob">...</span></div>
-                        <div class="form-group"><label>تاريخ الإنشاء:</label><span id="settings-admin-created">...</span></div>
-                        <button id="edit-profile-btn" class="btn-edit">تعديل الملف الشخصي</button>
+                <div class="settings-card">
+                    <!-- وضع عرض المعلومات -->
+                    <div id="profile-display">
+                        <h4>معلومات المشرف</h4>
+                        <div class="info-row"><label>الاسم الكامل:</label><span id="settings-admin-name">...</span></div>
+                        <div class="info-row"><label>البريد الإلكتروني:</label><span id="settings-admin-email">...</span></div>
+                        <div class="info-row"><label>رقم الهاتف:</label><span id="settings-admin-phone">...</span></div>
+                        <div class="info-row"><label>المؤسسة:</label><span id="settings-admin-institution">...</span></div>
+                        <div class="info-row"><label>المحافظة:</label><span id="settings-admin-governorate">...</span></div>
+                        <div class="info-row"><label>المواليد:</label><span id="settings-admin-dob">...</span></div>
+                        <div class="info-row"><label>الجنس:</label><span id="settings-admin-gender">...</span></div>
+                        <div class="info-row"><label>تاريخ الإنشاء:</label><span id="settings-admin-created">...</span></div>
+                        <button id="edit-profile-btn" class="btn-edit" style="margin-top: 20px;">تعديل الملف الشخصي</button>
                     </div>
                     
-                    <div id="edit-profile-form" class="form-container hidden">
+                    <!-- وضع تعديل المعلومات -->
+                    <div id="edit-profile-form" class="hidden">
                         <h4>تعديل الملف الشخصي</h4>
-                        <div class="form-group"><label for="admin-name-input">الاسم الكامل:</label><input type="text" id="admin-name-input" required></div>
-                        <div class="form-group"><label for="admin-phone-input">رقم الهاتف:</label><input type="tel" id="admin-phone-input" required></div>
-                        <div class="form-group"><label for="admin-institution-input">المؤسسة:</label><input type="text" id="admin-institution-input" required></div>
-                        <div class="form-group"><label for="admin-governorate-input">المحافظة:</label><input type="text" id="admin-governorate-input" required></div>
-                        <div class="form-group"><label for="admin-dob-input">المواليد:</label><input type="date" id="admin-dob-input" required></div>
-                        <button id="update-profile-btn" class="btn-save">حفظ التعديلات</button>
+                        <div class="form-row"><label for="admin-name-input">الاسم الكامل:</label><input type="text" id="admin-name-input" required></div>
+                        <div class="form-row"><label for="admin-phone-input">رقم الهاتف:</label><input type="tel" id="admin-phone-input" required></div>
+                        <div class="form-row"><label for="admin-institution-input">المؤسسة:</label><input type="text" id="admin-institution-input" required></div>
+                        <div class="form-row"><label for="admin-governorate-input">المحافظة:</label><input type="text" id="admin-governorate-input" required></div>
+                        <div class="form-row"><label for="admin-dob-input">المواليد:</label><input type="date" id="admin-dob-input" required></div>
+                        <div class="form-row">
+                            <label for="admin-gender-input">الجنس:</label>
+                            <select id="admin-gender-input" required>
+                                <option value="male">ذكر</option>
+                                <option value="female">أنثى</option>
+                            </select>
+                        </div>
+                        <button id="update-profile-btn" class="btn-save" style="margin-right: 10px;">حفظ التعديلات</button>
                         <button type="button" onclick="cancelEditProfile()" class="btn-cancel">إلغاء</button>
                     </div>
+                </div>
 
-                    <hr style="margin: 30px 0;">
+                <div class="settings-card" style="margin-top: 30px;">
                     <h4>تغيير كلمة المرور</h4>
-                    <div id="change-password-form" class="form-container">
-                        <div class="form-group">
+                    <div id="change-password-form">
+                        <div class="form-row">
                             <label for="current-password-input">كلمة المرور الحالية:</label>
                             <input type="password" id="current-password-input" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="new-password-input">كلمة المرور الجديدة:</label>
                             <input type="password" id="new-password-input" required>
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="confirm-new-password-input">تأكيد كلمة المرور الجديدة:</label>
                             <input type="password" id="confirm-new-password-input" required>
                         </div>
@@ -179,7 +355,7 @@
                 </div>
             </div>
 
-            <!-- Sub-section: Question Management -->
+            <!-- باقي الأقسام الفرعية (الأسئلة، الطلاب، الإحصائيات) تبقى كما هي -->
             <div id="question-management-section" class="admin-section hidden">
                 <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
                 <h3>إدارة أسئلة اختبار: <span id="selected-exam-title"></span></h3>
@@ -207,7 +383,6 @@
                 </div>
             </div>
 
-            <!-- Sub-section: Participant Management -->
             <div id="participant-management-section" class="admin-section hidden">
                 <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
                 <h3>إدارة طلاب اختبار: <span id="selected-exam-title-participants"></span></h3>
@@ -228,7 +403,6 @@
                 </div>
             </div>
 
-            <!-- Sub-section: Statistics -->
             <div id="statistics-section" class="admin-section hidden">
                 <button onclick="showMainContent('exams-section')">&larr; العودة إلى الاختبارات</button>
                 <h3>إحصائيات ونتائج اختبار: <span id="selected-exam-title-stats"></span></h3>
@@ -240,33 +414,24 @@
                     <div>معيار النجاح: <strong id="stats-passing-criteria">50%</strong></div>
                 </div>
                 <div class="chart-container" style="max-width: 400px; margin: 20px auto;"><canvas id="results-distribution-chart"></canvas></div>
-                
                 <hr style="margin: 30px 0;">
-
                 <h4>سجل الناجحين في هذا الاختبار</h4>
                 <button id="export-success-log-btn" class="btn-import">تصدير سجل الناجحين إلى Excel</button>
                 <div class="table-responsive">
                     <table id="success-log-table">
-                        <thead>
-                            <tr><th>اسم الطالب</th><th>الدرجة</th><th>النسبة</th><th>وقت البدء</th><th>وقت الإنهاء</th><th>الوقت المستغرق</th></tr>
-                        </thead>
+                        <thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>النسبة</th><th>وقت البدء</th><th>وقت الإنهاء</th><th>الوقت المستغرق</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                
                 <hr style="margin: 30px 0;">
-
                 <h4>سجل الراسبين في هذا الاختبار</h4>
                 <button id="export-failure-log-btn" class="btn-import">تصدير سجل الراسبين إلى Excel</button>
                 <div class="table-responsive">
                     <table id="failure-log-table">
-                        <thead>
-                            <tr><th>اسم الطالب</th><th>الدرجة</th><th>النسبة</th><th>وقت البدء</th><th>وقت الإنهاء</th><th>الوقت المستغرق</th></tr>
-                        </thead>
+                        <thead><tr><th>اسم الطالب</th><th>الدرجة</th><th>النسبة</th><th>وقت البدء</th><th>وقت الإنهاء</th><th>الوقت المستغرق</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
-                
                 <h4 style="margin-top: 30px;">تحليل صعوبة الأسئلة:</h4>
                  <div class="table-responsive">
                     <table id="question-stats-table">
@@ -275,7 +440,6 @@
                     </table>
                 </div>
             </div>
-
         </main>
     </div>
 </div>

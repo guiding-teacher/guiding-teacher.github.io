@@ -41,11 +41,12 @@ if (signupForm) {
         const institution = document.getElementById('institution').value.trim();
         const governorate = document.getElementById('governorate').value.trim();
         const dob = document.getElementById('dob').value.trim();
+        const gender = document.getElementById('gender').value;
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
         const errorMessage = document.getElementById('error-message');
 
-        if (!name || !email || !phone || !institution || !governorate || !dob || !password) {
+        if (!name || !email || !phone || !institution || !governorate || !dob || !password || !gender) {
             errorMessage.textContent = 'جميع الحقول إجبارية. يرجى ملء جميع البيانات.';
             return;
         }
@@ -63,20 +64,33 @@ if (signupForm) {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-
-            await setDoc(doc(db, "admins", user.uid), {
+            
+            const newAdminDataForFirestore = {
                 name: name,
                 email: email,
                 phone: phone,
                 institution: institution,
                 governorate: governorate,
                 dob: dob,
+                gender: gender,
                 createdAt: new Date(),
                 lastLogin: new Date()
-            });
+            };
 
-            localStorage.setItem('lastActivity', Date.now().toString());
+            await setDoc(doc(db, "admins", user.uid), newAdminDataForFirestore);
+
+            // تخزين البيانات الأساسية فقط في الجلسة لاستخدامها كحل احتياطي في الصفحة التالية
+            const newAdminDataForSession = {
+                name: name,
+                phone: phone,
+                institution: institution,
+                governorate: governorate,
+                dob: dob,
+                gender: gender
+            };
+            sessionStorage.setItem('newAdminData', JSON.stringify(newAdminDataForSession));
             
+            localStorage.setItem('lastActivity', Date.now().toString());
             alert('تم إنشاء الحساب بنجاح!');
             window.location.href = 'admin.html';
 

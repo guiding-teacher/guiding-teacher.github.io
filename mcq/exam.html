@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -5,6 +6,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>الاختبار</title>
     <link rel="stylesheet" href="css/exam-style.css">
+    <style>
+        /* CSS for Mobile Responsiveness */
+        @media (max-width: 768px) {
+            #exam-container {
+                flex-direction: column;
+                height: auto;
+            }
+            #question-list-panel {
+                width: 100%;
+                height: auto;
+                max-height: 150px;
+                overflow-y: auto;
+                border-bottom: 2px solid #ddd;
+                border-right: none;
+            }
+            #question-index-list {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 5px;
+            }
+            #question-index-list li {
+                margin: 4px;
+            }
+            #question-display-panel {
+                width: 100%;
+                flex-grow: 1;
+                padding: 15px;
+            }
+            #exam-header, #exam-footer {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 10px;
+                height: auto;
+            }
+            .font-controls {
+                order: 1;
+            }
+            #finish-exam-btn {
+                width: 80%;
+                order: 2;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -46,7 +92,6 @@
         </div>
     </div>
 
-    <!-- Results Modal -->
     <!-- Results Modal -->
 <div id="results-modal" class="modal">
     <div class="results-container">
