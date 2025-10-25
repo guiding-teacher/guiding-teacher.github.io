@@ -1,12 +1,35 @@
+// --- START OF FILE admin-auth.js ---
 import { auth, db } from './firebase-config.js';
-import { doc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// معالجة تسجيل الدخول
+
+/**
+ * Helper function to show a redirect message and disable the form.
+ * @param {string} messageId - The ID of the message element.
+ * @param {HTMLButtonElement} button - The button element to disable.
+ * @param {HTMLFormElement} form - The form element to disable.
+ */
+function showRedirectMessage(messageId, button, form) {
+    const messageEl = document.getElementById(messageId);
+    if (messageEl) {
+        messageEl.style.display = 'block';
+    }
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'جاري التوجيه...';
+    }
+    if (form) {
+        Array.from(form.elements).forEach(el => el.disabled = true);
+    }
+}
+
+
+// --- معالجة تسجيل الدخول ---
 const loginForm = document.getElementById('login-form');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
@@ -14,36 +37,45 @@ if (loginForm) {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const errorMessage = document.getElementById('error-message');
+        const loginButton = document.getElementById('login-button'); // Assume login button has this ID
+
+        errorMessage.textContent = ''; // Clear previous errors
 
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            localStorage.setItem('lastActivity', Date.now().toString());
-            window.location.href = 'admin.html';
+            // [NEW] Show redirect message on successful login
+            showRedirectMessage('redirect-message', loginButton, loginForm);
+            // onAuthStateChanged will handle the actual redirect
         } catch (error) {
-            console.error('خطأ في تسجيل الدخول:', error);
+            console.error('Login Error:', error);
             errorMessage.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
         }
     });
 }
 
-// معالجة إنشاء الحساب
+// --- معالجة إنشاء الحساب ---
 const signupForm = document.getElementById('signup-form');
 if (signupForm) {
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const institution = document.getElementById('institution').value.trim();
-        const governorate = document.getElementById('governorate').value.trim();
-        const dob = document.getElementById('dob').value.trim();
-        const gender = document.getElementById('gender').value;
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
         const errorMessage = document.getElementById('error-message');
+        const signupButton = document.getElementById('signup-button');
+        
+        errorMessage.textContent = '';
 
-        if (!name || !email || !phone || !institution || !governorate || !dob || !password || !gender) {
-            errorMessage.textContent = 'جميع الحقول إجبارية. يرجى ملء جميع البيانات.';
+        // [IMPROVED] JavaScript validation for password and email
+        const emailRegex = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+        if (!emailRegex.test(email)) {
+            errorMessage.textContent = 'الرجاء إدخال بريد إلكتروني صالح.';
+            return;
+        }
+
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            errorMessage.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على أحرف وأرقام.';
             return;
         }
 
@@ -52,119 +84,55 @@ if (signupForm) {
             return;
         }
 
-        if (password.length < 6) {
-            errorMessage.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل.';
-            return;
-        }
-
         try {
-            // Step 1: Create user in Authentication
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            
-            const newAdminData = {
-                name: name,
-                email: email,
-                phone: phone,
-                institution: institution,
-                governorate: governorate,
-                dob: dob,
-                gender: gender,
-                createdAt: Timestamp.now(), // Use Firestore Timestamp
-                lastLogin: Timestamp.now()
-            };
+            // Disable button to prevent multiple submissions
+            signupButton.disabled = true;
+            signupButton.textContent = 'جاري الإنشاء...';
 
-            // Step 2: Create user document in Firestore and WAIT for it to finish
-            await setDoc(doc(db, "admins", user.uid), newAdminData);
-
-            // [FIX] Store data in sessionStorage as a temporary bridge for the first page load
-            // This solves the race condition where the redirect is faster than Firestore's data propagation.
-            sessionStorage.setItem('newAdminData', JSON.stringify({
-                ...newAdminData,
-                createdAt: newAdminData.createdAt.toDate().toISOString() // Convert Timestamp to string for storage
-            }));
+            await createUserWithEmailAndPassword(auth, email, password);
+            // [NEW] Show redirect message on successful signup
+            showRedirectMessage('redirect-message', signupButton, signupForm);
+            // onAuthStateChanged will handle the redirect
             
-            localStorage.setItem('lastActivity', Date.now().toString());
-            
-            alert('تم إنشاء الحساب بنجاح!');
-            window.location.href = 'admin.html';
-
         } catch (error) {
-            console.error('خطأ في إنشاء الحساب:', error);
+            console.error('Signup Error:', error);
             if (error.code === 'auth/email-already-in-use') {
                 errorMessage.textContent = 'هذا البريد الإلكتروني مستخدم بالفعل.';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage.textContent = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل.';
             } else {
-                errorMessage.textContent = 'حدث خطأ أثناء إنشاء الحساب. تأكد من صلاحيات قاعدة البيانات.';
+                errorMessage.textContent = `فشل إنشاء الحساب. الخطأ: ${error.message}`;
             }
+            // Re-enable button on error
+            signupButton.disabled = false;
+            signupButton.textContent = 'إنشاء حساب';
         }
     });
 }
 
-// التحقق من حالة المستخدم
-onAuthStateChanged(auth, (user) => {
-    const path = window.location.pathname;
-    
+// --- التحقق من حالة المستخدم وتوجيهه (منظم الآن) ---
+onAuthStateChanged(auth, async (user) => {
+    const currentPage = window.location.pathname.split('/').pop();
+
     if (user) {
-        if (path.includes('admin-login.html') || path.includes('admin-signup.html')) {
-            window.location.replace('admin.html');
-        }
-    } else {
-        if (path.includes('admin.html')) {
-            window.location.replace('admin-login.html');
-        }
-    }
-});
+        // User is logged in, check if their profile is complete
+        const adminRef = doc(db, "admins", user.uid);
+        const adminDoc = await getDoc(adminRef);
 
-
-// حل طارئ لتحميل البيانات من الجلسة إذا فشل تحميلها من Firestore
-function getAdminDataFromSession() {
-    try {
-        const sessionData = sessionStorage.getItem('newAdminData');
-        if (sessionData) {
-            const parsedData = JSON.parse(sessionData);
-            console.log('Loaded admin data from session storage as fallback');
-            return parsedData;
-        }
-    } catch (error) {
-        console.error('Error loading from session storage:', error);
-    }
-    return null;
-}
-
-// تأكد من أن البيانات الأساسية متاحة دائمًا
-onAuthStateChanged(auth, (user) => {
-    const path = window.location.pathname;
-    
-    if (user) {
-        // تخزين بيانات احتياطية في الجلسة
-        if (path.includes('admin-signup.html')) {
-            const name = document.getElementById('name')?.value;
-            if (name) {
-                const backupData = {
-                    name: name,
-                    email: user.email,
-                    phone: document.getElementById('phone')?.value || '',
-                    institution: document.getElementById('institution')?.value || '',
-                    governorate: document.getElementById('governorate')?.value || '',
-                    dob: document.getElementById('dob')?.value || '',
-                    gender: document.getElementById('gender')?.value || 'male'
-                };
-                sessionStorage.setItem('newAdminData', JSON.stringify(backupData));
+        if (!adminDoc.exists() || !adminDoc.data().name) {
+            // Profile is INCOMPLETE, force redirect to complete-profile.html
+            if (currentPage !== 'complete-profile.html') {
+                window.location.replace('complete-profile.html');
+            }
+        } else {
+            // Profile is COMPLETE, redirect to admin panel
+            if (currentPage !== 'admin.html') {
+                window.location.replace('admin.html');
             }
         }
-        
-        if (path.includes('admin-login.html') || path.includes('admin-signup.html')) {
-            window.location.replace('admin.html');
-        }
     } else {
-        if (path.includes('admin.html')) {
+        // User is not logged in
+        const protectedPages = ['admin.html', 'complete-profile.html'];
+        if (protectedPages.includes(currentPage)) {
             window.location.replace('admin-login.html');
         }
     }
 });
-
-
-
-

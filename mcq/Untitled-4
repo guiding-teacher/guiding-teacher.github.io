@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. المشرفون (Admins)
+    // - اسمح للمستخدم بإنشاء مستند لنفسه فقط.
+    // - اسمح للمستخدم بقراءة وتحديث بياناته فقط.
+    match /admins/{userId} {
+      allow create: if request.auth.uid == userId;
+      allow read, update: if request.auth.uid == userId;
+    }
+
+    // 2. الطلاب (Students)
+    match /students/{studentId} {
+      allow create: if request.auth.uid == request.resource.data.adminId;
+      allow read, update, delete: if request.auth.uid == resource.data.adminId;
+    }
+
+    // 3. الاختبارات (Exams)
+    match /exams/{examId} {
+      allow create: if request.auth.uid == request.resource.data.adminId;
+      allow read, update, delete: if request.auth.uid == resource.data.adminId;
+      
+      // المشاركون (Participants)
+      match /participants/{participantId} {
+        allow read, write: if true;
+      }
+    }
+
+    // 4. سجل الاختبارات (Exam Log)
+    match /exam_log/{logId} {
+       allow create: if request.auth.uid == request.resource.data.adminId;
+       allow read: if request.auth.uid == resource.data.adminId;
+       allow update, delete: if false; 
+    }
+  }
+}

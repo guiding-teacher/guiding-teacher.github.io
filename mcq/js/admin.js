@@ -64,23 +64,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // [FIX] This function is now robust and handles the new user race condition.
- async function loadAdminData(user) {
+  async function loadAdminData(user) {
     try {
         const adminRef = doc(db, "admins", user.uid);
         const adminDoc = await getDoc(adminRef);
         
         if (adminDoc.exists()) {
             currentAdminData = adminDoc.data();
-            // تحديث وقت آخر دخول
+            console.log('تم تحميل بيانات المشرف:', currentAdminData);
+            
             await updateDoc(adminRef, { 
                 lastLogin: Timestamp.now(),
                 lastLoginTime: new Date().toISOString()
             });
         } else {
-            console.warn("Admin document not found, creating one now...");
+            console.error("مستند المشرف غير موجود!:", user.uid);
             
-            // محاولة إنشاء المستند إذا لم يكن موجوداً
-            const fallbackData = getAdminDataFromSession() || {
+            // محاولة إنشاء المستند تلقائياً
+            const fallbackData = {
                 name: user.email.split('@')[0] || 'مشرف',
                 email: user.email,
                 phone: 'لم يحدد',
@@ -89,35 +90,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 dob: '',
                 gender: 'male',
                 createdAt: Timestamp.now(),
-                lastLogin: Timestamp.now()
+                lastLogin: Timestamp.now(),
+                status: 'active'
             };
             
             try {
                 await setDoc(adminRef, fallbackData);
                 currentAdminData = fallbackData;
-                console.log("Admin document created successfully");
+                console.log("تم إنشاء مستند المشرف تلقائياً");
             } catch (createError) {
-                console.error("Failed to create admin document:", createError);
-                // استخدام بيانات احتياطية إذا فشل الإنشاء
-                currentAdminData = fallbackData;
+                console.error("فشل في إنشاء مستند المشرف:", createError);
+                throw new Error("لا يمكن الوصول إلى بيانات المشرف");
             }
         }
     } catch (error) {
         console.error("Error loading admin data:", error);
-        
-        // حل احتياطي أخير
-        const fallbackData = getAdminDataFromSession() || {
-            name: user?.email?.split('@')[0] || 'مشرف',
-            email: user?.email || 'unknown@example.com',
-            phone: 'لم يحدد',
-            institution: 'لم يحدد',
-            governorate: 'لم يحدد',
-            dob: '',
-            gender: 'male'
-        };
-        
-        currentAdminData = fallbackData;
-        console.log("Using fallback admin data due to error");
+        throw error;
     }
 }
 
