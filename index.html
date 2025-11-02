@@ -2,122 +2,2160 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رحلة الكاتب السومري: إرث الرافدين</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-</head>
-<body>
-    <!-- شاشة التحميل -->
-    <div id="loader">
-        <div class="spinner"></div>
-        <p>جاري استدعاء حكمة الأجداد...</p>
-    </div>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Crucial for responsiveness -->
+     <title>منصة المعلم المرشد - بوابتك للمعرفة</title> <!-- More engaging title -->
+    
+    <!-- وصف لمحركات البحث (SEO) -->
+<meta name="description" content="منصة عراقية تخدم الكوادر التربوية و التلاميذ عبر محتوى تعليمي وألعاب تفاعلية، مع خدمات مجانية للمعلمين تساعد في ايداء العمل المدرسي.">
 
-    <!-- الخلفية المتحركة -->
-    <div class="stars-bg"></div>
+<!-- Open Graph (لوسائل التواصل مثل فيسبوك وواتساب) -->
+<meta property="og:title" content="المعلم المرشد - منصة تعليمية عراقية">
+<meta property="og:description" content=" منصة عراقية تخدم الكوادر التربوية و التلاميذ عبر محتوى تعليمي وألعاب تفاعلية، مع خدمات مجانية للمعلمين تساعد في ايداء العمل المدرسي.">
+<meta property="og:image" content="https://guiding-teacher.web.app/images/reter1.jpg"> <!-- غيّر هذا للرابط الصحيح لصورتك -->
+<meta property="og:url" content="https://guiding-teacher.web.app/images/reter1.jpg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_IQ">
 
-    <!-- عناصر الصوت للتأثيرات -->
-    <audio id="click-sound" src="https://assets.codepen.io/217233/click.mp3" preload="auto"></audio>
-    <audio id="success-sound" src="https://assets.codepen.io/217233/success.mp3" preload="auto"></audio>
-    <audio id="achievement-sound" src="https://assets.codepen.io/217233/achievement.mp3" preload="auto"></audio>
-    <audio id="error-sound" src="https://assets.codepen.io/217233/error.mp3" preload="auto"></audio>
+<!-- Twitter Card (لظهور أنيق على تويتر) -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="المعلم المرشد - منصة تعليمية عراقية">
+<meta name="twitter:description" content=" منصة عراقية تخدم الكوادر التربوية و التلاميذ عبر محتوى تعليمي وألعاب تفاعلية، مع خدمات مجانية للمعلمين تساعد في ايداء العمل المدرسي.">
+<meta name="twitter:image" content="https://guiding-teacher.web.app/images/reter1.jpg"> <!-- نفس رابط الصورة -->
+    
+  <meta name="google-site-verification" content="9_No18sSgEBR-P7f60upNdcGdH4XIt52sWAlq9Dvr9k" />
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
 
-    <div class="container">
-        <!-- لوحة الإعدادات والتقدم -->
-        <div class="persistent-header">
-            <div id="achievements-tracker">
-                <h3>📜 لوح الحكمة</h3>
-                <div class="seals-container">
-                    <div class="seal" id="seal-cuneiform" title="إنجاز: كاتب مسماري"><i class="fas fa-pen-fancy"></i></div>
-                    <div class="seal" id="seal-inventions" title="إنجاز: مُبتكر عظيم"><i class="fas fa-lightbulb"></i></div>
-                    <div class="seal" id="seal-artifacts" title="إنجاز: مُرمم آثار"><i class="fas fa-gem"></i></div>
-                    <div class="seal" id="seal-quiz" title="إنجاز: حكيم الرافدين"><i class="fas fa-brain"></i></div>
-                </div>
-            </div>
-            <div id="settings-panel">
-                <div class="settings-toggle active" id="sfx-toggle" title="تشغيل/إيقاف المؤثرات الصوتية"><i class="fas fa-volume-high"></i> <span>الأصوات</span></div>
-                <div class="settings-toggle active" id="voice-toggle" title="تشغيل/إيقاف المرشد الصوتي"><i class="fas fa-comment-dots"></i> <span>المرشد</span></div>
-            </div>
-        </div>
+    <link rel="icon" type="image/png" href="images/favicon_48x48.png">
+<link rel="apple-touch-icon" href="images/favicon_192x192.png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"> <!-- Added 600 weight -->
 
-        <header>
-            <svg class="ziggurat-svg" viewBox="0 0 200 100">
-                <path d="M 10 90 H 190 L 170 70 H 30 Z"></path>
-                <path d="M 40 70 H 160 L 150 50 H 50 Z"></path>
-                <path d="M 60 50 H 140 L 130 30 H 70 Z"></path>
-                <path d="M 80 30 H 120 L 110 10 H 90 Z"></path>
-            </svg>
-            <h1 class="main-title">رحلة الكاتب السومري</h1>
-            <p class="subtitle">اكتشف أسرار مهد الحضارات، تعلم، وابتكر كما فعل أجدادك العظماء.</p>
-        </header>
+  <link rel="stylesheet" href="nasher3.css">  
+    <script src="js/nsherr.js"></script> 
+     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"> <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" /> <!-- Animate On Scroll Library -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" /> <!-- Swiper JS for Testimonials -->    
+    
+     
+    <style>
+        :root {
+            /* Define color themes */
+            --theme-default-main: #1a1a2e; /* Deep Indigo */
+            --theme-default-accent: #e94560; /* Vibrant Coral */
+            --theme-default-second: #f0a500; /* Warm Amber */
+            --theme-default-text: #f0f0f5; /* Light Gray/Off-white */
+            --theme-default-text-muted: #b0b0c0; /* Muted text */
+            --theme-default-bg-section: #16213e; /* Darker Indigo */
+            --theme-default-card-bg: #2a2b31; /* Slightly Lighter Indigo */
+            --theme-default-shadow: rgba(233, 69, 96, 0.25);
+            --theme-default-border: rgba(240, 240, 245, 0.1);
 
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="timeline">شريط الزمن</button>
-            <button class="tab-btn" data-tab="inventions">اختراعات خالدة</button>
-            <button class="tab-btn" data-tab="artifacts">تجميع الآثار</button>
-            <button class="tab-btn" data-tab="cuneiform">الكتابة المسمارية</button>
-            <button class="tab-btn" data-tab="quiz">اختبر حكمتك</button>
-            <button class="tab-btn" data-tab="ai">اسأل جلجامش</button>
-        </div>
+            --theme-light-main: #ffffff; /* White */
+            --theme-light-accent: #0056b3; /* Stronger Blue */
+            --theme-light-second: #ffc107; /* Amber */
+            --theme-light-text: #212529; /* Dark Gray */
+            --theme-light-text-muted: #6c757d; /* Gray */
+            --theme-light-bg-section: #f8f9fa; /* Off-white */
+            --theme-light-card-bg: #ffffff; /* White */
+            --theme-light-shadow: rgba(0, 86, 179, 0.15);
+            --theme-light-border: rgba(0, 0, 0, 0.1);
 
-        <!-- قسم شريط الزمن -->
-        <section class="section tab-content active" id="timeline-tab">
-            <div class="center-title"><h2 class="section-title">⏳ رحلة عبر آلاف السنين</h2></div>
-            <div class="timeline-container">
-                <div class="timeline-event" data-year="4500 ق.م" data-info="ظهور السومريين: بدأت أولى بوادر الحضارة في جنوب بلاد الرافدين مع تطور الزراعة والقرى الأولى."><span>فجر السومريين</span></div>
-                <div class="timeline-event" data-year="3200 ق.م" data-info="اختراع الكتابة: ابتكر السومريون الكتابة المسمارية، وهي نقطة تحول في تاريخ البشرية سمحت بتسجيل المعرفة والقوانين."><span>ولادة الكتابة</span></div>
-                <div class="timeline-event" data-year="2900 ق.م" data-info="عصر جلجامش: حكم الملك الأسطوري جلجامش مدينة أوروك، وتم تدوين ملحمته الشهيرة التي تعد أقدم عمل أدبي في التاريخ."><span>عهد جلجامش</span></div>
-                <div class="timeline-event" data-year="1792 ق.م" data-info="شريعة حمورابي: أصدر الملك حمورابي، سادس ملوك بابل، واحدة من أقدم وأشمل مجموعات القوانين المكتوبة."><span>قانون حمورابي</span></div>
-                <div class="timeline-event" data-year="605 ق.م"  data-info="عظمة بابل: في عهد نبوخذ نصر الثاني، وصلت الإمبراطورية البابلية الحديثة إلى أوجها، وشيدت فيها عجائب مثل بوابة عشتار وحدائق بابل المعلقة."><span>مجد بابل</span></div>
-            </div>
-        </section>
+            --theme-forest-main: #2d4a4e; /* Deep Teal */
+            --theme-forest-accent: #a4d4ae; /* Soft Mint */
+            --theme-forest-second: #f5b971; /* Light Orange */
+            --theme-forest-text: #f0f5f1; /* Off-white */
+            --theme-forest-text-muted: #c0d0c5; /* Muted Mint */
+            --theme-forest-bg-section: #3b5d5f; /* Darker Teal */
+            --theme-forest-card-bg: #4a7275; /* Mid Teal */
+            --theme-forest-shadow: rgba(164, 212, 174, 0.25);
+            --theme-forest-border: rgba(240, 245, 241, 0.1);
 
-        <!-- قسم الاختراعات -->
-        <section class="section tab-content" id="inventions-tab">
-            <!-- (الكود لم يتغير بشكل كبير، سيتم التحكم به عبر JS) -->
-        </section>
+            /* Set default theme */
+            --main-color: var(--theme-default-main);
+            --accent-color: var(--theme-default-accent);
+            --second-color: var(--theme-default-second);
+            --text-color: var(--theme-default-text);
+            --text-muted-color: var(--theme-default-text-muted);
+            --bg-section: var(--theme-default-bg-section);
+            --card-bg: var(--theme-default-card-bg);
+            --shadow-color: var(--theme-default-shadow);
+            --border-color: var(--theme-default-border);
+            --main-rgb: 26, 26, 46; /* Default RGB for gradient */
 
-        <!-- قسم تجميع الآثار -->
-        <section class="section tab-content" id="artifacts-tab">
-            <div class="center-title"><h2 class="section-title">💎 كنوز من الماضي</h2></div>
-            <div class="artifact-gallery">
-                <div class="artifact-selector">
-                    <h3>اختر قطعة أثرية لترميمها:</h3>
-                    <button class="artifact-choice-btn active" data-artifact="helmet">خوذة مسكلامدك</button>
-                    <button class="artifact-choice-btn" data-artifact="standard">معيار أور</button>
-                </div>
-                <div id="artifact-assembly-game">
-                    <!-- اللعبة سيتم بناؤها هنا بواسطة JS -->
-                </div>
-            </div>
-        </section>
+            /* Typography & Spacing */
+            --font-family-base: 'Cairo', sans-serif;
+            --base-font-size: 16px; /* Base for rem calculation */
+            --line-height-base: 1.8;
+            --spacing-unit: 1rem; /* Base spacing unit */
+        }
 
-        <!-- قسم الكتابة المسمارية -->
-        <section class="section tab-content" id="cuneiform-tab">
-             <!-- (الكود لم يتغير، سيتم التحكم به عبر JS) -->
-        </section>
+        * {
+            
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease, fill 0.4s ease; /* Smoother theme transitions */
+        }
 
-        <!-- قسم الاختبار -->
-        <section class="section tab-content" id="quiz-tab">
-             <!-- (الكود لم يتغير، سيتم التحكم به عبر JS) -->
-        </section>
+        html {
+            font-size: var(--base-font-size);
+            scroll-behavior: smooth; /* Apply smooth scroll to html */
+            scroll-padding-top: 80px; /* Offset for sticky nav */
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--main-color);
+            color: var(--text-color);
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            line-height: var(--line-height-base);
+            margin: 0;
+            padding: 0;
+
+        }
+
+        /* --- Utility Classes --- */
+        .container {
+            width: 100%;
+            max-width: 1221px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: calc(var(--spacing-unit) * 1);
+            padding-right: calc(var(--spacing-unit) * 1);
+        }
+
+        /* --- Header --- min-height: 70vh;*/
+        header {
+            
+             /* Updated Background: Student image + dimmed overlay */
+             background:
+                /* Dimming Overlay - Kept the gradient for good text contrast & theme tint */
+                linear-gradient(140deg, rgba(0,0,0,0.7), rgba(var(--main-rgb, 26, 26, 46), 0.75)),
+                /* Background Image - Replace with your preferred student image URL */
+                url('images/reter1.jpg') center center/cover;  
+            padding: clamp(140px, 50vh, 250px) calc(var(--spacing-unit) * 1.5) clamp(80px, 12vh, 120px); /* Responsive padding */
+            
+            text-align: center;
+            position: relative;
+            color: #fff; /* Ensure text is white */
+            border-bottom: 5px solid var(--accent-color);
+        }
+
+       header h1 {
+            font-size: clamp(2.5rem, 8vw, 4.5rem); /* Responsive & Larger font size */
+            color: white;
+            font-weight: 900; /* Extra Bold */
+            position: relative;
+            z-index: 2;
+            display: inline-flex; /* مهم لمحاذاة الصورة والنص */
+            align-items: center;  /* لمحاذاة الصورة والنص عمودياً */
+            gap: 0.5em;           /* مسافة بين الصورة والنص (يمكنك تعديلها) */
+            margin-bottom: calc(var(--spacing-unit) * 0.75); /* Spacing */
+            animation: fadeInUpSlight 1s ease-out; /* Subtle animation */
+            text-shadow: 0 4px 12px rgba(0,0,0,0.7); /* More pronounced shadow for readability */
+            letter-spacing: -1px; /* Slightly tighter spacing for large headers */
+        }
+
         
-        <!-- قسم المساعد الذكي -->
-        <section class="section tab-content" id="ai-tab">
-             <!-- (الكود لم يتغير، سيتم التحكم به عبر JS) -->
-        </section>
-    </div>
 
-    <!-- نافذة منبثقة (Modal) لمعلومات الشريط الزمني -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div id="modal-body"></div>
+        
+        .header-title-icon {
+            display: inline-block; /* أو block، بما أن الأب inline-flex */
+            
+            /* حجم الدائرة التي ستحتوي الصورة. استخدم em ليكون متناسباً مع حجم الخط */
+            width: 2.0em;  /* مثال: أعرض قليلاً من ارتفاع الحرف الكبير */
+            height: 2.0em; /* يجب أن يكون نفس العرض لجعلها دائرية */
+            
+            border-radius: 50%; /* هذا يجعلها دائرية */
+            
+            object-fit: cover;   /* هذا يضمن أن الصورة تغطي كامل مساحة الدائرة.
+                                    قد يقص أجزاء من الصورة إذا لم تكن مربعة.
+                                    بديل: object-fit: contain; لإظهار الصورة كاملة داخل الدائرة،
+                                    قد يترك مساحات فارغة إذا لم تكن الصورة مربعة. */
+            
+            /* يمكنك إضافة إطار إذا أردت */
+            /* border: 2px solid var(--accent-color); */ 
+            
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35); /* ظل خفيف */
+            
+            /* إذا كانت صورتك بخلفية شفافة وتريد لون خلفية للدائرة نفسها: */
+            /* background-color: rgba(255, 255, 255, 0.15); */ /* مثال: أبيض شبه شفاف */
+            
+            vertical-align: middle; /* يساعد في المحاذاة الدقيقة مع النص */
+        }
+        
+        
+        
+        header p.subtitle {
+            font-size: clamp(1.0rem, 3vw, 1.0rem); /* Responsive & Slightly larger */
+            margin-top: 0; /* Reset margin */
+            color: rgba(255, 255, 255, 0.95); /* Slightly brighter subtitle */
+            font-weight: 400;
+            position: relative;
+            z-index: 2;
+            color: #a6a6a6;
+            max-width: 700px; /* Limit width */
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInUpSlight 1s ease-out 0.3s;
+            animation-fill-mode: backwards;
+            text-shadow: 0 3px 8px rgba(0,0,0,0.6); /* Enhanced shadow */
+        }
+
+        /* --- Navigation --- */
+        nav {
+            background: var(--card-bg);
+            padding: calc(var(--spacing-unit) * 0.8) calc(var(--spacing-unit) * 1.5); /* Use spacing unit */
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: calc(var(--spacing-unit) * 1.8); /* Generous gap */
+            box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: background-color 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease;
+        }
+        /* Scrolled state */
+        nav.scrolled {
+             background: hsla(from var(--card-bg) h s l / 0.95); /* Use hsla from variable with alpha */
+             padding: calc(var(--spacing-unit) * 0.6) calc(var(--spacing-unit) * 1.5);
+             backdrop-filter: blur(6px); /* Slightly more blur */
+             box-shadow: 0 3px 15px rgba(0,0,0,0.3);
+        }
+        nav a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 600; /* Semi-bold */
+            font-size: 1.05rem; /* Slightly larger */
+            position: relative;
+            padding: calc(var(--spacing-unit) * 0.5) calc(var(--spacing-unit) * 0.3); /* Add padding for tap target */
+            transition: color 0.3s ease;
+            letter-spacing: 0.5px; /* Subtle spacing */
+        }
+        nav a::after {
+            content: '';
+            width: 0;
+            height: 3px; /* Thicker underline */
+            background: var(--accent-color);
+            position: absolute;
+            bottom: -2px; /* Adjust position */
+            left: 50%;
+            transform: translateX(-50%);
+            transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Smoother transition */
+            border-radius: 3px;
+        }
+        nav a:hover, nav a.active {
+            color: var(--accent-color);
+        }
+        nav a:hover::after, nav a.active::after {
+            width: 80%; /* Don't make it full width for style */
+        }
+
+        /* --- Sections General --- */
+        section {
+            padding: clamp(60px, 10vh, 100px) 0; /* Vertical padding controlled here */
+            text-align: center;
+            overflow: hidden;
+        }
+        .section-bg { /* Applied within the container for padding control */
+            background-color: #2a2b31;
+            border-radius: 20px; /* Softer radius */
+            padding: clamp(40px, 6vw, 80px) clamp(15px, 4vw, 50px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3); /* Softer shadow */
+            margin-bottom: calc(var(--spacing-unit) * 2.5); /* Space between sections */
+        }
+        h2 {
+            color: var(--accent-color);
+            margin-bottom: calc(var(--spacing-unit) * 1.5);
+            font-size: clamp(2.1rem, 5.5vw, 3rem); /* Adjusted heading size */
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+        /* Underline effect for headings */
+        h2::after {
+            content: '';
+            display: block;
+            width: 70px;
+            height: 5px;
+            background: var(--second-color);
+            margin: calc(var(--spacing-unit) * 0.6) auto 0;
+            border-radius: 3px;
+        }
+        section p:not(.subtitle):not(.testimonial-content) { /* Target general paragraphs */
+            font-size: 1.1rem;
+            max-width: 750px;
+            margin: 0 auto calc(var(--spacing-unit) * 1.8) auto; /* Consistent bottom margin */
+            line-height: var(--line-height-base);
+            color: var(--text-muted-color); /* Use muted color for general text */
+        }
+
+        /* --- Features Section --- */
+        .features-grid {
+            display: grid;
+            /* Responsive columns: 1 on small, up to 4 on large */
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+            gap: calc(var(--spacing-unit) * 2); /* Increased gap */
+            margin-top: calc(var(--spacing-unit) * 2.5);
+        }
+        .feature {
+            background: var(--card-bg);
+            padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 1.5);
+            border-radius: 15px;
+            transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color); /* Subtle border always */
+            min-height: 300px; /* Ensure consistent height */
+            justify-content: flex-start; /* Align content top */
+        }
+        .feature:hover {
+            transform: translateY(-12px); /* More lift */
+            box-shadow: 0 18px 40px var(--shadow-color);
+            border-color: var(--accent-color);
+        }
+        .feature .icon {
+            font-size: 3.8rem; /* Slightly larger icon */
+            color: var(--accent-color);
+            margin-bottom: calc(var(--spacing-unit) * 1.2);
+            transition: transform 0.4s ease;
+            line-height: 1; /* Prevent extra space */
+        }
+        .feature:hover .icon {
+            transform: scale(1.15) rotate(8deg);
+        }
+        .feature h3 {
+            margin-bottom: calc(var(--spacing-unit) * 0.8);
+            font-size: 1.45rem; /* Larger heading */
+            color: var(--second-color); /* Use second accent for variety */
+            font-weight: 700;
+        }
+        .feature p {
+            font-size: 1rem; /* Slightly larger paragraph */
+            line-height: 1.7;
+            color: var(--text-muted-color);
+            margin-bottom: 0;
+        }
+
+        /* --- Testimonials Section (Swiper) --- */
+        .testimonials {
+            position: relative;
+            padding-bottom: 80px; /* Space for pagination/navigation */
+        }
+        .swiper-container {
+            width: 100%; /* Use full container width */
+            max-width: 900px;
+            margin: calc(var(--spacing-unit) * 2) auto 0 auto;
+            padding: calc(var(--spacing-unit) * 1) 0 calc(var(--spacing-unit) * 3) 0; /* Padding for quote and navigation */
+            overflow: visible; /* Allow shadow visibility */
+        }
+        .swiper-slide {
+            background: var(--card-bg);
+            padding: calc(var(--spacing-unit) * 2.5) calc(var(--spacing-unit) * 2); /* More padding */
+            border-radius: 18px; /* Softer radius */
+            font-style: italic;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            border: 1px solid var(--border-color);
+            opacity: 0.85; /* Slightly faded non-active */
+            transform: scale(0.98);
+        }
+        .swiper-slide-active {
+             opacity: 1;
+             transform: scale(1);
+             box-shadow: 0 12px 35px var(--shadow-color);
+             border-color: transparent; /* Hide border on active */
+        }
+
+        .testimonial-content {
+            font-size: 1.15rem; /* Slightly larger */
+            line-height: 1.9;
+            color: var(--text-color); /* Use main text color */
+            margin-bottom: calc(var(--spacing-unit) * 1.2);
+            font-style: normal; /* Remove italic from main content */
+        }
+        .testimonial-author {
+            font-style: normal;
+            font-weight: 700; /* Bold author */
+            color: var(--accent-color);
+            margin-top: calc(var(--spacing-unit) * 1);
+            display: block;
+            font-size: 1rem;
+        }
+        .swiper-slide.testimonial::before { /* Decorative quote */
+            content: "“";
+            font-size: 7rem;
+            font-family: Georgia, serif;
+            color: var(--accent-color);
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            opacity: 0.1; /* More subtle */
+            z-index: 0;
+            line-height: 1;
+        }
+        /* Swiper Pagination and Navigation */
+        .swiper-pagination {
+            bottom: 10px !important; /* Ensure pagination is below */
+        }
+        .swiper-pagination-bullet {
+            background: var(--text-muted-color);
+            opacity: 0.7;
+            width: 11px;
+            height: 11px;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+        }
+        .swiper-pagination-bullet-active {
+            background: var(--accent-color);
+            opacity: 1;
+        }
+        .swiper-button-next, .swiper-button-prev {
+            color: var(--accent-color);
+            width: 44px; /* Slightly larger */
+            height: 44px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            transition: background-color 0.3s, color 0.3s, transform 0.3s ease;
+            border: 1px solid var(--border-color);
+            top: 50%; /* Vertically center */
+            transform: translateY(-50%); /* Adjust vertical center */
+        }
+         /* Adjust position if overlapping content */
+        .swiper-button-prev { left: -10px; }
+        .swiper-button-next { right: -10px; }
+
+        .swiper-button-next:hover, .swiper-button-prev:hover {
+            background-color: var(--accent-color);
+            color: var(--card-bg); /* Invert colors */
+            transform: translateY(-50%) scale(1.1); /* Add scale effect */
+        }
+        .swiper-button-next::after, .swiper-button-prev::after {
+            font-size: 1.1rem; /* Slightly smaller icon */
+        }
+
+        /* --- FAQ Section --- */
+        .faq-item {
+            background: var(--card-bg);
+            margin: calc(var(--spacing-unit) * 1) auto; /* Use spacing unit */
+            width: 100%; /* Full width within container */
+            border-radius: 12px; /* Softer radius */
+            cursor: pointer;
+            text-align: right;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .faq-item:hover {
+            border-color: var(--accent-color);
+            box-shadow: 0 5px 15px rgba(0,0,0, 0.1);
+        }
+         .faq-item.active { /* Style active item differently */
+             border-color: var(--accent-color);
+             box-shadow: 0 5px 20px var(--shadow-color);
+         }
+        .faq-question {
+            padding: calc(var(--spacing-unit) * 1.2) calc(var(--spacing-unit) * 1.5); /* More padding */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .faq-item h4 {
+            margin: 0;
+            font-size: 1.2rem; /* Slightly larger question */
+            color: var(--text-color);
+            font-weight: 600; /* Semi-bold */
+            transition: color 0.3s ease;
+            flex-grow: 1; /* Allow text to take space */
+            margin-left: var(--spacing-unit); /* Space between text and icon */
+        }
+         .faq-item.active h4 {
+             color: var(--accent-color);
+         }
+
+        .faq-toggle-icon {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            flex-shrink: 0; /* Prevent icon shrinking */
+        }
+        .faq-item.active .faq-toggle-icon {
+            transform: rotate(135deg); /* Rotate to 'x' or '-' */
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding 0.5s ease, background-color 0.5s ease;
+            font-size: 1.05rem; /* Slightly larger answer */
+            padding: 0 calc(var(--spacing-unit) * 1.5); /* Horizontal padding */
+            background-color: hsla(from var(--main-color) h s l / 0.3); /* Slightly different background based on main */
+            line-height: 1.8;
+            color: var(--text-muted-color); /* Use muted color */
+        }
+        .faq-item.active .faq-answer {
+            max-height: 400px; /* Generous max height */
+            padding: calc(var(--spacing-unit) * 1.2) calc(var(--spacing-unit) * 1.5);
+            border-top: 1px solid var(--border-color);
+        }
+        .faq-answer p { /* Target paragraph within answer */
+             margin-bottom: 0; /* Remove extra margin if p is used */
+             color: inherit; /* Inherit color from .faq-answer */
+        }
+        
+        
+        .dark-button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 20px;
+  background-color: #414040;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 12px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+
+.dark-button .icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+  color: #ff7300; /* نفس طابع ألوان الأيقونات بالصورة */
+}
+
+.dark-button:hover {
+  background-color: #232340;
+  transform: translateY(-2px);
+}
+        
+        .ASS{
+            
+            text-decoration: none;
+        }
+        /* --- Footer --- */
+        footer {
+            background: #111; /* Darker footer */
+            color: #ccc; /* Lighter text */
+            padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 1.5);
+            font-size: 0.95rem;
+            text-align: center;
+            margin-top: calc(var(--spacing-unit) * 3); /* More space before footer */
+            border-top: 4px solid var(--accent-color); /* Thicker border */
+        }
+        footer p {
+            margin: 0;
+            opacity: 1;
+            color: inherit; /* Ensure it uses footer color */
+        }
+        a{
+           text-decoration: none; 
+            color: inherit;
+        }
+        /* --- Theme Toggle Button --- */
+        #themeToggle {
+            position: fixed;
+            bottom: calc(var(--spacing-unit) * 1.5);
+            left: calc(var(--spacing-unit) * 1.5);
+            background: var(--card-bg);
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            width: 55px; /* Slightly larger */
+            height: 55px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 6px 18px var(--shadow-color);
+            z-index: 1100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.6rem;
+            transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        #themeToggle:hover {
+            transform: scale(1.12) rotate(20deg);
+            background: var(--accent-color);
+            color: var(--card-bg); /* Invert color */
+            box-shadow: 0 10px 25px var(--shadow-color);
+            border-color: var(--accent-color);
+        }
+        #themeToggle .fa-sun,
+        #themeToggle .fa-seedling { display: none; } /* Hide other icons */
+
+        /* Theme specific icon display */
+        body.light-theme #themeToggle .fa-moon { display: none; }
+        body.light-theme #themeToggle .fa-sun { display: inline-block; }
+        body.forest-theme #themeToggle .fa-moon { display: none; }
+        body.forest-theme #themeToggle .fa-seedling { display: inline-block; }
+
+
+        /* --- Animations --- */
+        @keyframes fadeInUpSlight { /* More subtle fade up */
+            from {
+                transform: translateY(25px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        #coonten {
+      width: 100%;
+      max-width: 100%;
+      height: 80%; /* 80% من ارتفاع الشاشة */
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      overflow: auto;
+    }
+
+    /* للموبايل */
+    @media (max-width: 600px) {
+      #coonten {
+        width: 95%;
+        height: 60vh;
+        padding: 15px;
+      }
+    }
+        /* --- Media Queries for Responsiveness --- */
+
+        /* Tablet and smaller */
+        @media (max-width: 992px) {
+            html {
+                scroll-padding-top: 70px; /* Adjust for potentially smaller nav */
+            }
+            .container {
+                width: 92%;
+            }
+             .swiper-button-next, .swiper-button-prev {
+                /* Hide arrows on tablets or make smaller/reposition */
+                 display: none; /* Simpler for tablet */
+             }
+             .features-grid {
+                 grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+                 gap: calc(var(--spacing-unit) * 1.5);
+             }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            html {
+                font-size: 15px; /* Slightly reduce base font size */
+                scroll-padding-top: 65px;
+            }
+            header {
+                padding-top: clamp(100px, 30vh, 200px);
+                padding-bottom: clamp(50px, 10vh, 100px);
+                background-attachment: scroll; /* Disable fixed background on mobile for performance/compatibility */
+                
+            }
+            nav {
+                justify-content: space-around; /* Better spacing on mobile */
+                gap: calc(var(--spacing-unit) * 1);
+                padding: calc(var(--spacing-unit) * 0.7) var(--spacing-unit);
+            }
+            nav.scrolled {
+                padding: calc(var(--spacing-unit) * 0.5) var(--spacing-unit);
+            }
+            nav a {
+                font-size: 1rem;
+                padding: calc(var(--spacing-unit) * 0.4) calc(var(--spacing-unit) * 0.2);
+            }
+            section {
+                padding: clamp(50px, 8vh, 80px) 0;
+            }
+            .section-bg {
+                padding: clamp(30px, 5vw, 60px) clamp(10px, 3vw, 30px);
+                border-radius: 15px;
+            }
+            h2 {
+                font-size: clamp(1.8rem, 5vw, 2.5rem);
+            }
+             h2::after {
+                 width: 60px;
+                 height: 4px;
+             }
+            section p:not(.subtitle):not(.testimonial-content) {
+                 font-size: 1rem;
+                 line-height: 1.7;
+            }
+            .features-grid {
+                 grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+                 gap: calc(var(--spacing-unit) * 1.2);
+            }
+            .feature {
+                 min-height: auto; /* Allow natural height */
+                 padding: calc(var(--spacing-unit) * 1.5) var(--spacing-unit);
+            }
+            .feature h3 {
+                 font-size: 1.3rem;
+            }
+            .feature p {
+                 font-size: 0.78rem;
+            }
+             .testimonial-content {
+                 font-size: 1.05rem;
+             }
+             .testimonial-author {
+                  font-size: 0.95rem;
+             }
+             .faq-item h4 {
+                 font-size: 1.1rem;
+             }
+             .faq-answer {
+                  font-size: 1rem;
+             }
+            #themeToggle {
+                 width: 50px;
+                 height: 50px;
+                 font-size: 1.4rem;
+                 bottom: var(--spacing-unit);
+                 left: var(--spacing-unit);
+            }
+        }
+
+        @media (max-width: 480px) {
+            html {
+                font-size: 14.5px;
+            }
+            header{
+                min-height: 85%; 
+            }
+            .container {
+                
+                 width: 95%; /* More width on very small screens */
+                 padding-left: calc(var(--spacing-unit) * 0.5);
+                 padding-right: calc(var(--spacing-unit) * 0.5);
+                margin-top: 100px;
+            }
+            nav {
+                 gap: calc(var(--spacing-unit) * 0.8);
+             }
+             nav a {
+                 font-size: 0.95rem;
+             }
+             .features-grid {
+                 /* Force single column on very small screens */
+                 grid-template-columns: 1fr;
+             }
+             .feature {
+                 box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Reduce shadow */
+             }
+             .feature:hover {
+                  transform: translateY(-8px); /* Less lift */
+ 36            }
+            header{
+                height: 401px;
+            }
+            .header-title-text{
+                font-size: 16px;
+            }
+            #ssr{
+             font-size: 10px;
+            }
+            #dsd {
+            width: 100%;   
+            margin:-26px;
+            margin-right: 5px  ; 
+                margin-top: 75px;
+            padding-left: calc(var(--spacing-unit) * 2);
+            padding-right: calc(var(--spacing-unit) * 2);
+        }
+            .ddd{
+                text-align: right;
+                width: 100%;
+            } 
+            .section {
+       
+      font-size: 10px;
+      margin-right: 0px;
+       margin-left: 10px;
+               
+            }
+        
+            
+        }
+        
+ .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .section {
+      width: 48%;
+      background: #414a4a;
+      padding: 15px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #1fcccc;
+    }
+    ul {
+      padding-right: 20px;
+      margin: 0;
+        margin-left: 100px;
+    }
+   li {
+  margin-bottom: 5px;
+  color: #b2b2b2;
+  white-space: nowrap;       /* يمنع النص من النزول لسطر ثاني */
+  text-align: right;  
+  text-overflow: ellipsis;   /* يظهر "..." إذا كان النص طويل */
+}
+        
+/*بحث*/   
+        
+ 
+.universal-search-container {
+  max-width: 800px;
+  margin: 20px auto;
+  position: relative;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.search-box {
+  display: flex;
+  border-radius: 30px;
+  overflow: hidden;
+  color: wheat;
+  border: 1px solid #ddd;
+background-color: rgba(255, 255, 255, 0.2); /* شفافية 20% */
+  backdrop-filter: blur(8px); /* تأثير ضبابي للخلفية */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* حدود شفافة */
+transition: all 0.3s ease;
+}
+
+.search-box:focus-within {
+  border-color: #4a90e2;
+  box-shadow: 0 2px 15px rgba(74,144,226,0.2);
+}
+
+#universalSearchInput {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  font-size: 16px;
+  outline: none;
+  direction: rtl;
+background-color: transparent;
+}
+
+.search-btn {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 0 25px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.search-btn:hover {
+  background: #3a7bc8;
+}
+
+.result-card {
+    border-bottom: 2px solid; transparent;
+    background-image: linear-gradient(to right, #e0e0e0, #e0e0e0);
+    background-position: bottom;
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+    padding-bottom: 12px;
+}
+
+.universal-results {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #EBF1ED;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 9999;
+  margin-top: 5px;
+  padding: 10px 0;
+}
+
+.universal-results.visible {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-card {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.result-card:hover {
+  background: #f8f9fa;
+}
+
+.result-link {
+  display: block;
+  text-decoration: none;
+  color: #333;
+}
+
+.result-title {
+  color: #1a73e8;
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 16px;
+}
+
+.result-content {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 5px;
+}
+
+.result-url {
+  color: #0d652d;
+  font-size: 13px;
+  display: block;
+}
+
+.highlight {
+  background: #fff9c4;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.result-type {
+  display: inline-block;
+  background: #e9f5ff;
+  color: #1a73e8;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  .universal-search-container {
+    max-width: 90%;
+  }
+  
+  #universalSearchInput {
+    padding: 10px 15px;
+  }
+  
+  .search-btn {
+    padding: 0 20px;
+  }
+  
+  .universal-results {
+    max-height: 60vh;
+  }
+}         
+        
+        
+    </style>
+    
+    
+    
+   
+    
+    
+</head>
+  
+<!-- Add theme class to body for JS targeting -->
+<body class="default-theme">
+
+<header>
+    <!-- Use container for better control -->
+    <div class="container" id="dsd">
+        <h1 class="ddd">
+            <img src="images/logoart.png" alt="أيقونة " class="header-title-icon">
+            <span class="header-title-text">المعلم المرشد</span>
+        </h1>
+        <p class="subtitle" id="ssr">جسرك نحو التميز الرقمي في التعليم,
+           حيث  يلتقي الشغف بالمعرفة والابتكار.</p>
+    </div>
+    
+</header>
+
+    
+<nav id="mainNav">
+   <!-- Start with 'active' class on first item -->
+    <a href="#feet">الرئيسية</a>
+  <a href="#features">خدماتنا</a>
+  <a href="#testimonials">الادوات  </a>
+    <a href="pdf/index.html">PDF  </a>
+  <a href="mcq/ejaz.html">MCQ</a>
+   <a href="ntaeja/index.html">النتائج</a>
+    <a href="amthanat/index.html">الامتحانات</a>
+     <a href="ahtpar/index.html">الاختبارات</a>
+  <a href="#about" class="active">من نحن</a>
+    <a href="program/index.html" class="active">البرامج</a>
+    <a href="shhadate/shhadat.html" class="">شهاداتي</a>
+  <a href="#faq">الاقسام</a>
+</nav>
+   
+    
+    <div class="universal-search-container">
+  <form id="universalSearchForm" class="universal-search-form">
+    <div class="search-box">
+      <input type="text" 
+             id="universalSearchInput" 
+             placeholder="ابحث في كل المحتوى..." 
+             minlength="2"
+             required
+             aria-label="بحث شامل">
+      <button type="submit" class="search-btn">
+        <i class="fas fa-search"></i>
+      </button>
+    </div>
+    <div class="universal-results" id="universalResults"></div>
+  </form>
+</div>
+  
+    
+<!-- Wrap sections in a main tag for semantic structure -->
+<main>
+    
+    <section id="feet" data-aos="fade-up">
+           
+        <div class="container">
+             <div class="section-bg">               
+                 <!-- Lightbox for image preview -->    
+                  
+                 
+                    <div id="fb-root"></div>
+   <div class="lightbox" id="lightbox">
+    <img id="lightbox-img" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="">
+    <a class="lightbox-download" id="lightbox-download" href="" download>
+        <i class="fas fa-download"></i>
+    </a>
+    <span class="lightbox-close">×</span>
+</div>
+
+    
+        <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-photo-video" style="margin-left: 10px;"></i> ما الجديد ؟</h1>
+            <p class="page-subtitle">أحدث الاقسام المميزة لمنصة المعلم المرشد</p>
         </div>
-    </div>
 
-    <script src="script.js"></script>
+        <div id="video-posts-list">
+            <p class="status-message"><span class="loading-spinner"></span> جاري تحميل المنشورات...</p>
+        </div>
+
+        <div class="pagination" id="pagination" style="display: none;">
+            <button id="prev-btn" disabled><i class="fas fa-arrow-right"></i> السابق</button>
+            <span id="page-indicator"></span>
+            <button id="next-btn" disabled>التالي <i class="fas fa-arrow-left"></i></button>
+        </div>
+
+
+         <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js"></script>
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/ar_AR/sdk.js"></script>
+        
+           <script src="nsherr.js"></script>       
+                 
+                 
+             </div>
+            
+        </div>
+    </section>
+    
+    
+    <section id="features" data-aos="fade-up" data-aos-delay="100">
+        <div class="container">
+            <h2>(قُلْ هَلْ يَسْتَوِي الَّذِينَ يَعْلَمُونَ وَالَّذِينَ لَا يَعْلَمُونَ ۗ إِنَّمَا يَتَذَكَّرُ أُولُو الْأَلْبَابِ)</h2>
+            <div class="features-grid">
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="200"> <!-- Different animation --> 
+                    <a href="amthanat/toziatlameth.html" CLASS="ASS" >                
+                    <i class="fas fa-map icon"></i>
+                    <h3> خرائط الامتحانات الوزارية</h3></a> 
+                    <p>قم بتوزيع التلاميذ بسهولة ودقة عالية في الخرائط الامتحانية الوزارية</p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                     <a href="program/kodedeck.html" CLASS="ASS" >
+                    <i class="fas fa-layer-group icon"></i>
+                         <h3>   Kodedeck</h3> </a>
+                    <p> كودديك  هو محرر أكواد عربي متقدم ومجاني يعمل مباشرة في متصفحك. اكتب وجرب أكواد HTML, CSS, و JavaScript مع معاينة مباشرة، حفظ المشاريع، بحث متقدم، ومشاركة إبداعاتك بسهولة.  </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                     <a href="amthanat/jdolamthan.html" CLASS="ASS" >
+                    <i class="fas fa-chalkboard-teacher icon"></i>
+                         <h3>  جدول الامتحانات</h3> </a>
+                    <p>   جدول الامتحانات العامة بحجم ورقة قم بانشاء الجدول وملئ الحقول المناسبة  </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="amthanat/zhretajlos.html" CLASS="ASS" >
+                    <i class="fas fa-map-marked icon"></i>
+                        <h3>  خارطة جلوس اليدوية</h3> </a>
+                    <p> قم بعمل خاطة جلوس التلاميذ في الامتحانات الوزارية والمدرسية العامة بسهولة وتنسيق جاهز للتعديل عليه </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="mnhaj.html" CLASS="ASS" >
+                    <i class="fas fa-project-diagram icon"></i>
+                        <h3> الخطة السنوية واليومية</h3> </a>
+                    <p>ابدأ بعمل خطة ييومية وسنوية بكل سهولة وتنزيلها وطباعتها بالمادة والاسم والتاريخ</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="amthanat/ptaqa.html" CLASS="ASS" >
+                    <i class="fas fa-credit-card icon"></i>
+                        <h3> بطاقة الاشتراك الوزاري </h3> </a>
+                    <p> لاصدار بطاقات الاشتراك لتلاميذ الصفوف الوزارية، مع امكانية تحميلها وطباعتها، وتصديرها بصيغة pdf , Excel. </p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="ahtpar/index.html" CLASS="ASS" >
+                    <i class="fas fa-laptop-code  icon"></i>
+                        <h3>  عمل اختبارالكتروني</h3> </a>
+                    <p> أنشئ استطلاعات رأي واختبارات تفاعلية وشاركها مع تلاميذك بتصميم مميز وحصري وسجل الدخول لرؤية النتائج والاجابات وتحميلها مباشرة.</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="pankalmalomat.html" CLASS="ASS" >
+                    <i class="fas fa-circle-info  icon"></i>
+                        <h3>  استمارة بنك المعلومات</h3> </a>
+                    <p>قم بانشاء استمارة بنك المعلومات الكترونيا وارسالها للقسم المعني</p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="400">
+                    <a href="jadol.html" CLASS="ASS" >
+                    <i class="fas fa-file-alt icon"></i>
+                        <h3>المحرر</h3> </a>
+                    <p>يمكنك من خلال المحرر كتابة الاسئلة وبنائها وتحريرها وطباعتها مباشرة</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="400">
+                    <a href="nhsapdrjat.html" CLASS="ASS" >
+                    <i class="fas fa-volume-up icon"></i>
+                        <h3>استخراج المعدل بالصوت</h3> </a>
+                    <p>تستطيع من خلال هذه الاداة التحدث بالصوت لتقوم بحساب الارقام بدقة عالية</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="200"> <!-- Different animation --> 
+                    <a href="tpar.html" CLASS="ASS" >                
+                    <i class="fas fa-clipboard-question icon"></i>
+                    <h3> الاختبار MCQ</h3></a> 
+                    <p>يمكنك من خلال هذه الخدمة عمل اختبار للتلاميذ وسحبه بشكل ورقي او ملف وطباعته مباشرة</p>
+                </div>
+                
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="madal.html" CLASS="ASS" >  
+                    <i class="fas fa-laptop-code icon"></i>
+                    <h3> حساب المعدل</h3></a> 
+                    <p>احدى الادوات التي تمكنك من استخراج المعدل العام للتلاميذ</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="jtmaaiat.html" CLASS="ASS" >  
+                    <i class="fas fa-laptop icon"></i>
+                    <h3>  اسئلة اجتماعيات</h3></a> 
+                    <p> يمكنك تعديل نموذج الاسئلة الحالي وانشاء اسئلة نموذجية لتلاميذك للمادة للامتحانات الشفوية</p>
+                </div>
+                  
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                     <a href="jadolhass.html" CLASS="ASS" >
+                    <i class="fas fa-chalkboard-teacher icon"></i>
+                         <h3>  جدول الحصص المتقدم</h3> </a>
+                    <p> الاداة المتطورة والمتقدمة في توزيع جدول الحصص من خلال ملئ حقول البيانات بالصفوف والمعلمين وتوزيعهم واختيار عدد الحصص وغيرها  </p>
+                </div>
+                
+                
+                 
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                     <a href="pdf/Qr.html" CLASS="ASS" >
+                    <i class="fas  fa-qrcode icon"></i>
+                         <h3> اداة بناء QR</h3> </a>
+                    <p>   اداة احترافية في صناعة QR للنصوص والروابط والبريد ورقم الهاتف  </p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                     <a href="jdol.html" CLASS="ASS" >
+                    <i class="fas  fa-book icon"></i>
+                         <h3> جدول الحصص اليدوي</h3> </a>
+                    <p> اداة التعديل التي تسمح في توزيع جدول الحصص وطباعته بسهولة ودقة عالية  </p>
+                </div>
+                
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="jdolalhsas.html" CLASS="ASS" >
+                    <i class="fas fa-chart-pie icon"></i>
+                        <h3> حصصي</h3> </a>
+                    <p>يمكنك حفظ  جدول حصصك بالمواد والصفوف وحسب جدولك المدرسي وتنزيله بصيغ متعددة وحفظه تلقائيا</p>
+                </div>
+                
+               
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="nspa.html" CLASS="ASS" >
+                    <i class="fas fa-calculator icon"></i>
+                        <h3> النسبة المئوية</h3> </a>
+                    <p>اداة معرفة النسبة المئوية للامتحانات العامة</p>
+                </div>
+                
+                  
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="ntejaaolea.html" CLASS="ASS" >
+                    <i class="fas  fa-users icon"></i>
+                        <h3> النتائج الالكترونية</h3> </a>
+                    <p>قم بعمل جداول واصدار نتائج الامتحانات النهائية للتلاميذ بضغطة زر بسهولة ودقة عالية</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="sjlalmalm.html" CLASS="ASS" >
+                    <i class="fas  fa-users icon"></i>
+                        <h3> سجل المعلم الخاص</h3> </a>
+                    <p>حفظ تلقائي للبيانات يمكنك اضافة اسماء تلاميذك وطباعتها حسب المادة</p>
+                </div>
+                
+                
+                  
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="mcq/ejaz.html" CLASS="ASS" >
+                    <i class="fas  fa-file-circle-check icon"></i>
+                        <h3> منصة ejaz </h3> </a>
+                    <p>ايجاز هو نظام الاختبار يتم انشاء الاسئلة وتسجيل حساب مشرف ودعوة الطلاب للدخول اونلاين برابط مباشر يتم ارساله لتلاميذك ويمكنك مشاهدة الاجابات وتنزيلها.</p>
+                </div>
+                
+                
+                
+                 
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="tadelktaap.html" CLASS="ASS" >
+                    <i class="fas  fa-pen-nib icon"></i>
+                        <h3>  محرر الكتب الرسمية</h3> </a>
+                    <p>تستطيع من خلال هذه الاداة تحرير الكتب الرسمية الادارية بسهولة </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="amthanat/naatt.html" CLASS="ASS" >
+                    <i class="fas  fa-table icon"></i>
+                        <h3> خرائط الجلوس العامة</h3> </a>
+                    <p>الاداة المخصصة لانشاء خرائط الجلوس للتلاميذ للامتحانات المدرسية العامة </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="text.html" CLASS="ASS" >
+                    <i class="fas  fa-image  icon"></i>
+                        <h3> النص الى صورة </h3> </a>
+                    <p>حول النص الى صورة وقم بعمل قصاصات بسهولة واستخدم الادوات المتاحة  </p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="spa.html" CLASS="ASS" >
+                    <i class="fas  fa-calculator icon"></i>
+                        <h3> الاختبار الحسابي </h3> </a>
+                    <p>انشأ اختبار للتلاميذ لتعلم العمليات الحسابية بسهولة  </p>
+                </div>
+                
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="qushin.html" CLASS="ASS" >
+                    <i class="fas  fa-clipboard-question icon"></i>
+                        <h3> نموذج اسئلة علوم </h3> </a>
+                    <p>اعد كتابة الاسئلة داخل الحقول من جديد واستخدم الازرار بالاعلى للاضافة والحذف ولا تظهر في الطباعة </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="500">
+                    <a href="x_and_o.html" CLASS="ASS" >
+                    <i class="fas  fa-gamepad icon"></i>
+                        <h3> game x - o </h3> </a>
+                    <p>لعبة اكس او التفاعلية :) </p>
+                </div>
+                
+                
+            </div>
+        </div>
+    </section>
+
+    
+   <!-- فاصل ملفات بي دي اف  --> 
+    
+    <section class="testimonials" id="testimonials" data-aos="fade-up">
+         
+        
+         <div class="container">
+            <h2>ماهي ادوات الملفات ؟</h2>
+            <div class="features-grid">
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="200"> <!-- Different animation --> 
+                    <a href="pdf/trqempdf.html" CLASS="ASS" >                
+                    <i class="fas fa-clipboard-question icon"></i>
+                    <h3>  ترقيم PDF </h3></a> 
+                    <p>قم بترقيم ملفاتك بسهولة ودقة عالية وبالترقيم العربي , يمكنك ترقيم ملفك مرتين بالاحرف والارقام</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/jpgalpdf.html" CLASS="ASS" >  
+                    <i class="fas fa-exchange-alt icon"></i>
+                    <h3> تحويل الصورة لملف</h3></a> 
+                    <p>حول ما يقارب الى 10 صور الى ملف pdf مع امكانية حفظها بالحجم الطبيعي او بحجم ورقة a4</p>
+                </div>
+                                 
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/imageexsil.html" CLASS="ASS" >  
+                    <i class="fas fa-file-excel icon"></i>
+                    <h3> الصورة الى Excel</h3></a> 
+                    <p>حول جميع صورك الى ملفات اكسل وقم بتنزيلها بسهولة ودقة</p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="program/piane.html" CLASS="ASS" >  
+                    <i class="fas fa-chart-bar icon"></i>
+                    <h3> الرسم البياني والمعادلات</h3></a> 
+                    <p>اداة تحويل البيانات الى رسم بياني باشكال وانماط مختلفة وحل المسائل المتعلقة بالقوانين الفيزيائية والرياضيات وغيرها بسهولة ودقة </p>
+                </div>
+                                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/zip.html" CLASS="ASS" >  
+                    <i class="fas fa-file-archive icon"></i>
+                    <h3> الملفات الى Zip</h3></a> 
+                    <p>حول جميع ملفاتك الى ملفات مضغوطة بواسطة zip</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="mpiaate/mpiaat.html" CLASS="ASS" >  
+                    <i class="fas fa-credit-card icon"></i>
+                    <h3> برنامج اقساطي</h3></a> 
+                    <p> برنامج ادارة المبيعات للمشتركين يستخدم للمحال التجارية والمحال الصغيرة لادارة عمليات البيع والحساب مجاني بالكامل</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="shhadate/shhadat.html" CLASS="ASS" >  
+                    <i class="fas fa-award icon"></i>
+                    <h3> برنامج شهاداتي</h3></a> 
+                    <p> صمم وأنشئ شهادات تقديرية احترافية للتلاميذ والمعلمين وغيرهم بضغطة زر مع ميزات متقدمة تمكنك من انشاء ملف كامل باستخدام نماذج جاهزة او استخدام صورة من هاتفك</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="foice_text.html" CLASS="ASS" >  
+                    <i class="fas  fa-volume-up  icon"></i>
+                    <h3> الصوت الى نص</h3></a> 
+                    <p>الاداة الاحترافية في تحويل الصوت الى نص ,تدعم اللهجة العراقية بالذكاء الاصطناعي</p>
+                </div>
+                
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/msthraj.html" CLASS="ASS" >  
+                    <i class="fas fa-chart-line icon"></i>
+                    <h3> التحليل والترتيب الابجدي</h3></a> 
+                    <p>قم بترتيب الاسماء والنصوص ترتيبا ابجديا واستخرج النصوص من الصور والملفات وانسخها بشكل نص</p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/scutpdf.html" CLASS="ASS" >  
+                    <i class="fas fa-scissors icon"></i>
+                    <h3> اقتطاع جزء PDF</h3></a> 
+                    <p>  اداة اقتطاع جزء من pdf يمكنك من خلال هذه الاداة اقتطاع اي جزء تود من ملفاتك بسهولة ودقة عالية</p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/ndeletpdf.html" CLASS="ASS" >  
+                    <i class="fas fa-trash icon"></i>
+                    <h3> حذف صفحات PDF</h3></a> 
+                    <p> احذف صفحات من ملف  pdf من خلال تحديد الصفحة التي تود حذفها </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/pdddf.html" CLASS="ASS" >  
+                    <i class="fas fa-compress icon"></i>
+                    <h3> ضاغط ملفات PDF</h3></a> 
+                    <p> قم بضغط ملفات pdf بدقة عالية وباحجام ضغط مختلفة القياسي والضغط العالي</p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/tqsempdf.html" CLASS="ASS" >  
+                    <i class="fas fa-object-ungroup icon"></i>
+                    <h3> تقسيم PDF</h3></a> 
+                    <p> قم بتقسيم ملفات pdf بدقة عالية الى اقسام مختلفة حسب عدد الصفحات التي تريدها في كل قسم </p>
+                </div>
+                
+                  
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/zdmgpdf.html" CLASS="ASS" >  
+                    <i class="fas fa-layer-group icon"></i>
+                    <h3> دمج ملفات PDF</h3></a> 
+                    <p>  اختر ما لا يتجاوز 5 ملفات لدمجها بسهولة في ملف واحد وتستطيع ترتيبها قبل البدأ </p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/tadeelpdf.html" CLASS="ASS" >  
+                    <i class="fas fa-pen-to-square icon"></i>
+                    <h3>  تعديل PDF</h3></a> 
+                    <p>        الكود قيد التجربة</p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/sorapdf.html" CLASS="ASS" >  
+                    <i class="fas fa-images icon"></i>
+                    <h3>   PDF الى صور</h3></a> 
+                    <p>  حول  PDF  الى صور عالية الدقة وبسهولة واختر نوع الامتداد الخاص بالصورة </p>
+                </div>
+                
+                <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/mayia.html" CLASS="ASS" >  
+                    <i class="fas fa-tint icon"></i>
+                    <h3> علامة  PDF المائية</h3></a> 
+                    <p>  اضف علامة مائية لملفاتك بنوعين صورة او كتابة نص حسب رغبتك </p>
+                </div>
+                
+                 <div class="feature" data-aos="zoom-in-up" data-aos-delay="300">
+                     <a href="pdf/sthrajpdf.html" CLASS="ASS" >  
+                    <i class="fas fa-font icon"></i>
+                    <h3>    PDF  الى نص</h3></a> 
+                    <p>  استخرج النص من ملفاتك بسهولة بواسطة هذه الاداة المحترفة </p>
+                </div>               
+            </div>
+        </div>            
+    </section>
+    
+    <section id="about" data-aos="fade-up">
+        <div class="container">
+             <div class="section-bg">
+                <h2>اكتشف رؤيتنا</h2>
+                <p>نحن فريق شغوف بالتعليم والتكنولوجيا، نؤمن بأن المعرفة قوة تمكن الأفراد والمجتمعات. نسعى لإنشاء بيئة تعليمية رقمية ملهمة وتفاعلية، تربط بين المعلمين الأكفاء والتلاميذ الطموحين، وتوفر أدوات مبتكرة لتسهيل رحلة التعلم وتطوير المهارات لمستقبل واعد.</p>
+                  
+                 
+                 <br> 
+                 <div style="color:#982; font-size: 20px;">تواصل معنا عبر مواقع التواصل الاجتماعي </div>
+                 
+                 
+                <div>
+                    <br>
+فيسبوك
+<a href="intent://facewebmodal/f?href=https://www.facebook.com/abrahimaabd#Intent;package=com.facebook.katana;scheme=fb;end;" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg" width="30" height="30" alt="فيسبوك">
+        </a>
+تيلكرام
+        <a href="intent://resolve?domain=T_abrahim#Intent;package=org.telegram.messenger;scheme=tg;end;" target="_blank">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" width="30" height="30" alt="تيليغرام">
+        </a>
+                    واتساب
+        <a href="intent://send?phone=+9647708077310#Intent;package=com.whatsapp;scheme=whatsapp;end;" target="_blank">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="35" height="35" alt="واتساب">
+        </a>
+    </div>
+                 
+               
+                 
+               <br>
+                 
+                  <div style="color:#982; font-size: 20px;">او عن طريق ملئ نموذج البريد الالكتروني 
+                 
+                 <a href="toaselmana%20(1).html" style="color: aqua" >اضغط هنا</a></div>
+                 
+                 
+                 
+               <br>
+            <br>
+                <h2>أسئلة تدور في ذهنك؟</h2>
+                <div class="faq-item" data-aos="fade-right" data-aos-delay="100">
+                    <div class="faq-question" role="button" aria-expanded="false" aria-controls="faq1">
+                        <h4>هل الموقع مجاني؟</h4>
+                        <i class="fas fa-plus faq-toggle-icon"></i>
+                    </div>
+                    <div class="faq-answer" id="faq1">
+                        <p>تعلم وتواصل بحرية في أي وقت ومن أي مكان يناسبك لا توجد خطة او اشتراكات حاليا نعمل على توفير احدث الخدمات.  جميع الخدمات مجانية ومتاحة للاستخدام الشخصي</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-aos="fade-right" data-aos-delay="200">
+                     <div class="faq-question" role="button" aria-expanded="false" aria-controls="faq2">
+                        <h4>ماذا استفيد من منصة المعلم المرشد؟</h4>
+                         <i class="fas fa-plus faq-toggle-icon"></i>
+                    </div>
+                    <div class="faq-answer" id="faq2">
+                        <p> منصة المعلم المرشد تمثل منطلق لادارة السجلات والقوائم بما يحقق الاكتفاء  بالعمل الاداري في المدرسة انطلقت من واقع الشعور بالحاجة لادوات العمل المكتبي وايمانا منا باهمية التطور التكنلوجي في صناعة المحتوى".</p>
+                    </div>
+                </div>
+                <div class="faq-item" data-aos="fade-right" data-aos-delay="300">
+                     <div class="faq-question" role="button" aria-expanded="false" aria-controls="faq3">
+                        <h4>هل يمكنني الوصول للمنصة من الهاتف المحمول؟</h4>
+                        <i class="fas fa-plus faq-toggle-icon"></i>
+                    </div>
+                    <div class="faq-answer" id="faq3">
+                        <p> نعم بالتأكيد! منصة المعلم المرشد مصممة لتكون متجاوبة بالكامل وتعمل بكفاءة عالية على جميع الأجهزة، بما في ذلك الهواتف الذكية والأجهزة اللوحية وأجهزة الكمبيوتر المكتبية..</p>
+                    </div>
+                </div>
+                                  
+                 
+                 <div class="faq-item" data-aos="fade-right" data-aos-delay="400">
+                     <div class="faq-question" role="button" aria-expanded="false" aria-controls="faq4">
+                        <h4>كيف تضمنون جودة المعلمين والمحتوى التعليمي؟</h4>
+                        <i class="fas fa-plus faq-toggle-icon"></i>
+                    </div>
+                    <div class="faq-answer" id="faq4">
+                        <p> نتبع احدث التقنيات لاعداد الادوات التي تحقق الاكتفاء بالعمل المدرسي، الخبرات العملية، ومهارات التدريس،  نتبع التقدم لضمان جودة التعلم،و دقته، ومواكبته لأحدث المناهج والمعايير التعليمية.</p>
+                    </div>
+                </div>
+ 
+                 <div class="faq-item" data-aos="fade-right" data-aos-delay="500">
+                     <div class="faq-question" role="button" aria-expanded="false" aria-controls="faq5">
+                        <h4>هل تقومون بجمع البيانات من المستخدمين؟</h4>
+                        <i class="fas fa-plus faq-toggle-icon"></i>
+                    </div>
+                    <div class="faq-answer" id="faq5">
+                        <p>  منصة المعلم المرشد لا تستخدم نظام المصادقة والعضوية وهي مفتوحة امام المستخدمين دون حاجة للتسجيل فيها.</p>
+                    </div>
+                </div>
+ 
+             </div>
+        </div>
+                     
+    </section>  
+    <section class="faq" id="faq" data-aos="fade-up">
+         <div class="container">
+             <div class="section-bg">
+                <h2>الاقسام التي توفرها المنصة</h2>
+                
+  <div class="row">
+    <div class="section">
+      <div class="section-title"> الخدمات المدرسية</div>
+      <ul>
+        <li><a href="toziatlameth.html"> الخرائط الامتحانية الوزارية</a></li>
+        <li><a href="jdolamthan.html">  جدول الامتحانات</a></li>
+        <li><a href="mnhaj.html">  الخطة اليومية والسنوية</a></li> 
+        <li><a href="jadol.html"> المحرر </a></li>
+        <li><a href="tpar.html"> الاختبارات المتعددة </a></li>
+        <li><a href="madal.html"> حساب المعدل </a></li>  
+        <li><a href="jadolhass.html"> جدول توزيع الحصص </a></li>
+        <li><a href="Qr.html"> بناء QR </a></li>
+        <li><a href="jdol.html"> جدول الحصص اليدوي </a></li>  
+        <li><a href="jadolhass.html"> حصصي </a></li>
+        <li><a href=""> النسبة المئوية </a></li>
+        <li><a href="sjlalmalm.html"> سجل المعلم الخاص </a></li>  
+        <li><a href="tadelktaap.html"> محرر الكتب الرسمية </a></li>  
+        <li><a href="jadolhass.html"> خرائط الجلوس الامتحانية </a></li>
+        <li><a href="text.html"> النص الى صورة </a></li>
+        <li><a href="spa.html"> الاختبار الحسابي </a></li>  
+        <li><a href="qushin.html"> نموذج اسئلة علوم </a></li>
+          
+      </ul>
+    </div>
+    <div class="section">
+      <div class="section-title">ملفات PDF</div>
+      <ul>
+        <li><a href="trqempdf.html"> ترقيم PDF</a></li>
+        <li><a href="jpgalpdf.html"> تحويل الصورة الى PDF</a></li>  
+        <li><a href="msthraj.html"> التحليل والترتيب الابجدي </a></li>
+        <li><a href="scutpdf.html"> اقتطاع جزء من  PDF</a></li>
+        <li><a href="ndeletpdf.html"> حذف صفحات من  PDF</a></li>  
+        <li><a href="pdddf.html"> ضاغط ملفات  PDF</a></li>
+        <li><a href="tqsempdf.html"> تقسيم ملف PDF</a></li>
+        <li><a href="zdmgpdf.html"> دمج ملف  PDF</a></li>
+        <li><a href="tadeelpdf.html"> تعديل ملف  PDF</a></li>  
+        <li><a href="sorapdf.html">PDF الى صور </a></li>
+        <li><a href="mayia.html"> علامة مائية  PDF</a></li>
+        <li><a href="sthrajpdf.html">PDF الى نص </a></li>  
+        <li><a href="aetherlink-web/index.html"> asd </a></li>
+        <li><a href="">  </a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="section">
+      <div class="section-title">دليل المدارس GPS</div>
+      <ul>
+        <li><a href="lhretacom.html"> البحث عن موقع المدرسة </a></li>
+        <li>             
+            <a href="intent://resolve?domain=T_abrahim#Intent;package=org.telegram.messenger;scheme=tg;end;" target="_blank">
+            ارسال الموقع تيلكرام
+            </a>
+            
+        </li>
+      </ul>   
+    </div>
+   
+     <div class="section">
+      <div class="section-title">الاستبيان</div>
+      <ul>
+        <li><a href="astbian/admin.html">  انشاء استبيان جديد </a></li> 
+           <li><a href="astbian/survey.html">  البحث عن استبياني </a></li>
+      </ul>
+    </div>  
+    </div>  
+ 
+             <div class="row">
+    <div class="section">
+      <div class="section-title">قرأتي</div>
+      <ul>
+        <li><a href="">  </a></li>
+        <li><a href="">  </a></li>
+        <li><a href="">  </a></li>
+        <li><a href="">  </a></li>
+      </ul>   
+    </div>
+ 
+     <div class="section">
+      <div class="section-title">اتصل بنا</div>
+      <ul>
+        <li><a href="toaselmana%20(1).html"> نموذج الاتصال </a></li>
+        <li><a href="#about"> معلومات التواصل </a></li>
+        <li><a href="#faq"> من نحن </a></li>
+        <li><a href="siasthsosea.html"> سياسة الخصوصية </a></li> 
+      </ul>
+             </div>  
+             </div>                
+             </div>
+             </div>
+        
+    </section>
+</main>
+
+<footer>
+    <p>© 2025 جميع الحقوق محفوظة لمنصة المعلم المرشد   </p>
+    <a href="siasthsosea.html" style="color: aqua">سياسة الخصوصية</a>
+     <h4> الاصدار : 4.6.0</h4>
+    
+</footer>
+
+<!-- Theme Toggle Button -->
+<button id="themeToggle" title="تغيير النمط">
+    <i class="fas fa-moon"></i>      <!-- Default: Dark -->
+    <i class="fas fa-sun"></i>       <!-- Light -->
+    <i class="fas fa-seedling"></i> <!-- Forest -->
+</button>
+  <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-firestore-compat.js"></script>
+    
+   
+<!-- Scripts -->
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+<script>
+    
+    
+    
+      function loadPage(page) {
+      fetch(page)
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('coonten').innerHTML = data;
+        });
+    }
+
+    // تحميل محتوى about.html مباشرة عند فتح الصفحة
+    loadPage('nasher.html');
+  
+    
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- Root Element for CSS Variables ---
+        const root = document.documentElement;
+        const body = document.body;
+
+        // --- Initialize AOS (Animate On Scroll) ---
+        AOS.init({
+            duration: 700, // Slightly faster general duration
+            easing: 'ease-out-cubic', // Smoother easing
+            once: true,
+            mirror: false,
+            offset: 50, // Trigger animations a bit earlier
+        });
+
+        // --- Initialize Swiper JS for Testimonials ---
+        const swiper = new Swiper('.swiper-container', {
+            loop: true,
+            autoplay: {
+                delay: 6000, // Slightly longer delay
+                disableOnInteraction: false,
+            },
+            pagination: {
+                el: '.swiper-pagination',
+                clickable: true,
+            },
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            grabCursor: true,
+            effect: 'slide', // Keep slide effect, good balance
+            slidesPerView: 1,
+            spaceBetween: 40, // Increase space if needed visually
+             // Responsive breakpoints for Swiper (Optional: Adjust if needed)
+            // breakpoints: {
+            //     // when window width is >= 768px
+            //     768: {
+            //         slidesPerView: 2,
+            //         spaceBetween: 30
+            //     },
+            //     // when window width is >= 992px
+            //     992: {
+            //          slidesPerView: 1, // Keep 1 for focus on testimonials
+            //          spaceBetween: 40
+            //     }
+            // }
+        });
+
+        // --- FAQ Accordion Functionality ---
+        const faqItems = document.querySelectorAll('.faq-item');
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            const answer = item.querySelector('.faq-answer');
+            const icon = item.querySelector('.faq-toggle-icon');
+            const questionButton = question; // The whole div acts as the button
+
+            question.addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+
+                // --- Optional: Close other FAQs when one opens ---
+                // faqItems.forEach(otherItem => {
+                //     if (otherItem !== item && otherItem.classList.contains('active')) {
+                //         otherItem.classList.remove('active');
+                //         otherItem.querySelector('.faq-answer').style.maxHeight = null; // Use null to collapse
+                //         otherItem.querySelector('.faq-answer').style.paddingTop = '0';
+                //         otherItem.querySelector('.faq-answer').style.paddingBottom = '0';
+                //         otherItem.querySelector('.faq-toggle-icon').classList.replace('fa-minus', 'fa-plus');
+                //         otherItem.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+                //     }
+                // });
+
+                // --- Toggle Current FAQ Item ---
+                if (isActive) {
+                    item.classList.remove('active');
+                    answer.style.maxHeight = null; // Collapse smoothly
+                    // Adjust padding smoothly on collapse as well
+                    answer.style.paddingTop = '0';
+                    answer.style.paddingBottom = '0';
+                    icon.classList.replace('fa-minus', 'fa-plus');
+                    questionButton.setAttribute('aria-expanded', 'false');
+                } else {
+                    item.classList.add('active');
+                    // Set padding before calculating scrollHeight for accuracy
+                    answer.style.paddingTop = 'calc(var(--spacing-unit) * 1.2)';
+                    answer.style.paddingBottom = 'calc(var(--spacing-unit) * 1.2)';
+                    answer.style.maxHeight = answer.scrollHeight + "px"; // Expand to content height
+                    icon.classList.replace('fa-plus', 'fa-minus');
+                    questionButton.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
+        // --- Sticky Navigation Bar Styling on Scroll ---
+        const nav = document.getElementById('mainNav');
+        const headerHeight = document.querySelector('header')?.offsetHeight || 200; // Get header height or use default
+        let lastScrollTop = 0; // To detect scroll direction
+
+        window.addEventListener('scroll', () => {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > headerHeight * 0.5) { // Add scrolled class earlier
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+
+            // Optional: Hide nav on scroll down, show on scroll up (for mobile focus)
+            // if (scrollTop > lastScrollTop && scrollTop > nav.offsetHeight + 50){
+            //     // Scroll Down
+            //     nav.style.top = `-${nav.offsetHeight}px`; // Hide
+            // } else {
+            //     // Scroll Up
+            //     nav.style.top = "0"; // Show
+            // }
+            // lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // For Mobile or negative scrolling
+
+        }, { passive: true }); // Use passive listener for scroll performance
+
+        // --- Active Navigation Link Highlighting on Scroll ---
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('nav a');
+        const navHeight = nav.offsetHeight;
+
+        const observerOptions = {
+            root: null,
+            rootMargin: `-${navHeight}px 0px -40% 0px`, // Adjust top margin by nav height, bottom margin to trigger earlier
+            threshold: 0 // Trigger as soon as any part enters the adjusted view
+        };
+
+        let currentlyActiveLink = null; // Keep track of the currently active link
+
+        const sectionObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                 const id = entry.target.getAttribute('id');
+                 const correspondingLink = document.querySelector(`nav a[href="#${id}"]`);
+
+                 if (entry.isIntersecting && correspondingLink) {
+                     // Remove active from the *previous* active link only
+                     if (currentlyActiveLink && currentlyActiveLink !== correspondingLink) {
+                         currentlyActiveLink.classList.remove('active');
+                     }
+                     // Add active to the new current link
+                     correspondingLink.classList.add('active');
+                     currentlyActiveLink = correspondingLink; // Update the tracker
+                 }
+                 // Optional: Logic to handle when scrolling back up or no section is intersecting
+                 // Could add logic here to make 'about' active if scrolled to top, etc.
+            });
+        }, observerOptions);
+
+        sections.forEach(section => {
+            sectionObserver.observe(section);
+        });
+
+        // --- Advanced Theme Switcher with Local Storage ---
+        const themeToggleButton = document.getElementById('themeToggle');
+        const themes = ['default', 'light', 'forest'];
+        let currentThemeIndex = 0; // Start with default index
+
+        // Function to apply a theme
+        const applyTheme = (themeName) => {
+            // Update body class
+            body.className = `${themeName}-theme`; // Replace existing theme class
+
+            // Update CSS Variables
+            root.style.setProperty('--main-color', `var(--theme-${themeName}-main)`);
+            root.style.setProperty('--accent-color', `var(--theme-${themeName}-accent)`);
+            root.style.setProperty('--second-color', `var(--theme-${themeName}-second)`);
+            root.style.setProperty('--text-color', `var(--theme-${themeName}-text)`);
+            root.style.setProperty('--text-muted-color', `var(--theme-${themeName}-text-muted)`);
+            root.style.setProperty('--bg-section', `var(--theme-${themeName}-bg-section)`);
+            root.style.setProperty('--card-bg', `var(--theme-${themeName}-card-bg)`);
+            root.style.setProperty('--shadow-color', `var(--theme-${themeName}-shadow)`);
+            root.style.setProperty('--border-color', `var(--theme-${themeName}-border)`);
+
+            // Special handling for header background gradient based on main color
+             const mainColorValue = getComputedStyle(root).getPropertyValue(`--theme-${themeName}-main`).trim();
+             let mainRgb = '26, 26, 46'; // Default fallback (dark theme)
+
+             // Basic Hex to RGB Converter
+             const hexToRgb = (hex) => {
+                 hex = hex.replace('#', '');
+                 if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+                 const bigint = parseInt(hex, 16);
+                 return `${(bigint >> 16) & 255}, ${(bigint >> 8) & 255}, ${bigint & 255}`;
+             }
+
+             // Basic HSL(A) to RGB Converter (Simplified - handles hsl(h, s%, l%))
+             const hslToRgb = (hsl) => {
+                 try {
+                     const match = hsl.match(/hsl\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)/);
+                     if (!match) return null;
+                     let h = parseInt(match[1]);
+                     let s = parseInt(match[2]) / 100;
+                     let l = parseInt(match[3]) / 100;
+
+                     let c = (1 - Math.abs(2 * l - 1)) * s;
+                     let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                     let m = l - c / 2;
+                     let r = 0, g = 0, b = 0;
+
+                     if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+                     else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+                     else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+                     else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+                     else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+                     else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+
+                     r = Math.round((r + m) * 255);
+                     g = Math.round((g + m) * 255);
+                     b = Math.round((b + m) * 255);
+                     return `${r}, ${g}, ${b}`;
+                 } catch {
+                     return null;
+                 }
+             }
+
+             try {
+                 if (mainColorValue.startsWith('#')) {
+                     mainRgb = hexToRgb(mainColorValue);
+                 } else if (mainColorValue.startsWith('hsl')) {
+                      const rgbResult = hslToRgb(mainColorValue);
+                      if (rgbResult) mainRgb = rgbResult;
+                 } else if (mainColorValue === 'ffffff') { // Handle named 'white' case specifically
+                    mainRgb = '255, 255, 255';
+                 }
+                 // Add more parsers if needed (rgb(), rgba(), named colors etc.)
+             } catch (e) {
+                 console.error("Could not parse main color for gradient:", mainColorValue, e);
+             }
+
+             root.style.setProperty('--main-rgb', mainRgb); // Set RGB variable for header gradient
+
+
+            // Update toggle button icon and title
+            const icons = themeToggleButton.querySelectorAll('i');
+            icons.forEach(icon => icon.style.display = 'none'); // Hide all icons first
+
+            let nextThemeIndex = (themes.indexOf(themeName) + 1) % themes.length;
+            let nextThemeName = themes[nextThemeIndex];
+            let title = `التحويل إلى النمط ${nextThemeName === 'light' ? 'الفاتح' : nextThemeName === 'forest' ? 'الغابة' : 'الافتراضي'}`; // Dynamic title
+
+            if (themeName === 'light') {
+                themeToggleButton.querySelector('.fa-sun').style.display = 'inline-block';
+            } else if (themeName === 'forest') {
+                themeToggleButton.querySelector('.fa-seedling').style.display = 'inline-block';
+            } else { // Default (dark)
+                themeToggleButton.querySelector('.fa-moon').style.display = 'inline-block';
+            }
+            themeToggleButton.title = title;
+
+            // Update current theme index
+            currentThemeIndex = themes.indexOf(themeName);
+        };
+
+        // Load saved theme from Local Storage
+        const savedTheme = localStorage.getItem('selectedTheme');
+        if (savedTheme && themes.includes(savedTheme)) {
+            applyTheme(savedTheme);
+        } else {
+            applyTheme(themes[0]); // Apply default theme if nothing saved or invalid
+        }
+
+        // Theme toggle button click listener
+        themeToggleButton.addEventListener('click', () => {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const nextTheme = themes[currentThemeIndex];
+            applyTheme(nextTheme);
+            localStorage.setItem('selectedTheme', nextTheme);
+        });
+
+        // Set initial 'active' class based on page load hash or default
+        const initialHash = window.location.hash;
+        let initialActiveSet = false;
+        if (initialHash) {
+            const initialLink = document.querySelector(`nav a[href="${initialHash}"]`);
+            if (initialLink) {
+                 navLinks.forEach(link => link.classList.remove('active'));
+                 initialLink.classList.add('active');
+                 currentlyActiveLink = initialLink;
+                 initialActiveSet = true;
+            }
+        }
+        // If no hash or hash didn't match, activate the first link
+        if (!initialActiveSet) {
+             const firstLink = document.querySelector('nav a');
+             if (firstLink) {
+                navLinks.forEach(link => link.classList.remove('active'));
+                firstLink.classList.add('active');
+                currentlyActiveLink = firstLink;
+             }
+        }
+   
+      
+    
+        
+    }); // End DOMContentLoaded
+    
+    
+</script>
+ 
+    <script>
+  document.querySelectorAll('a[href]').forEach(function(link) {
+    const href = link.getAttribute('href');
+    // استثناء الروابط التي تبدأ بـ "#" أو تحتوي على "#" فقط
+    if (href && !href.startsWith('#') && !href.includes('#') && link.hostname === window.location.hostname) {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+</script>
+      
+    
+<script>
+    
+    //قسم البحث
+document.addEventListener('DOMContentLoaded', function() {
+  const searchForm = document.getElementById('universalSearchForm');
+  const searchInput = document.getElementById('universalSearchInput');
+  const resultsContainer = document.getElementById('universalResults');
+  
+  // جمع كل المحتوى القابل للبحث
+  function collectAllContent() {
+    const contentItems = [];
+    
+    // 1. البحث في البطاقات والمنشورات
+    const cards = document.querySelectorAll('.card, .post, .article, [data-card]');
+    cards.forEach(card => {
+      if (card.textContent.trim()) {
+        const title = card.querySelector('h1, h2, h3, h4, [data-title]')?.textContent || 'عنوان البطاقة';
+        contentItems.push({
+          type: 'بطاقة',
+          title: title.trim(),
+          content: card.textContent.trim(),
+          url: card.querySelector('a')?.href || getParentLink(card) || '#',
+          element: card
+        });
+      }
+    });
+    
+    // 2. البحث في جميع الروابط
+    const links = document.querySelectorAll('a[href]:not([href="#"])');
+    links.forEach(link => {
+      if (link.textContent.trim() && !link.href.includes('javascript:')) {
+        contentItems.push({
+          type: 'رابط',
+          title: link.textContent.trim(),
+          content: getLinkContext(link),
+          url: link.href,
+          element: link
+        });
+      }
+    });
+    
+    // 3. البحث في أقسام المحتوى الرئيسية
+    const sections = document.querySelectorAll('section, article, main, [data-section]');
+    sections.forEach(section => {
+      if (section.textContent.trim()) {
+        const title = section.querySelector('h1, h2, h3')?.textContent || 'قسم المحتوى';
+        contentItems.push({
+          type: 'قسم',
+          title: title.trim(),
+          content: section.textContent.trim(),
+          url: '#' + (section.id || ''),
+          element: section
+        });
+      }
+    });
+    
+    return contentItems;
+  }
+  
+  // الحصول على الرابط الأقرب للعنصر
+  function getParentLink(element) {
+    return element.closest('a[href]')?.href || null;
+  }
+  
+  // الحصول على محتوى حول الرابط
+  function getLinkContext(link) {
+    const parentText = link.parentElement?.textContent?.trim() || '';
+    const containerText = link.closest('div, section, article')?.textContent?.trim() || '';
+    return (parentText.length > containerText.length ? parentText : containerText).substring(0, 200);
+  }
+  
+  // تنفيذ البحث
+  function performUniversalSearch(query) {
+    const terms = query.toLowerCase().split(' ').filter(term => term.length > 1);
+    if (terms.length === 0) return [];
+    
+    const allContent = collectAllContent();
+    return allContent.filter(item => {
+      const searchText = (item.type + ' ' + item.title + ' ' + item.content).toLowerCase();
+      return terms.some(term => searchText.includes(term));
+    });
+  }
+  
+  // تمييز النص المطابق
+  function highlightMatches(text, query) {
+    const terms = query.toLowerCase().split(' ').filter(term => term.length > 1);
+    return terms.reduce((result, term) => {
+      const regex = new RegExp(term, 'gi');
+      return result.replace(regex, match => `<span class="highlight">${match}</span>`);
+    }, text);
+  }
+  
+  // عرض النتائج
+  function displaySearchResults(results, query) {
+    if (results.length === 0) {
+      resultsContainer.innerHTML = `
+        <div class="no-results">
+          <i class="fas fa-search-minus" style="color:#ddd;font-size:24px;margin-bottom:10px;"></i>
+          <p>لا توجد نتائج مطابقة</p>
+        </div>
+      `;
+    } else {
+      resultsContainer.innerHTML = results.slice(0, 15).map(result => `
+        <div class="result-card">
+          <a href="${result.url}" class="result-link">
+            <div class="result-title">${highlightMatches(result.title, query)}</div>
+            <div class="result-content">${highlightMatches(result.content.substring(0, 150) + '...', query)}</div>
+            <div class="result-url">${new URL(result.url, window.location.href).pathname}</div>
+            <span class="result-type">${result.type}</span>
+          </a>
+        </div>
+      `).join('');
+    }
+    resultsContainer.classList.add('visible');
+  }
+  
+  // إخفاء النتائج
+  function hideResults() {
+    resultsContainer.classList.remove('visible');
+  }
+  
+  // أحداث البحث
+  searchInput.addEventListener('input', function() {
+    const query = this.value.trim();
+    if (query.length >= 2) {
+      const results = performUniversalSearch(query);
+      displaySearchResults(results, query);
+    } else {
+      hideResults();
+    }
+  });
+  
+  searchForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const query = searchInput.value.trim();
+    if (query.length >= 2) {
+      const results = performUniversalSearch(query);
+      if (results.length > 0) {
+        window.location.href = results[0].url;
+      }
+    }
+  });
+  
+  // إغلاق النتائج عند النقر خارجها
+  document.addEventListener('click', function(e) {
+    if (!searchForm.contains(e.target)) {
+      hideResults();
+    }
+  });
+  
+  // تحميل Font Awesome إذا لم تكن موجودة
+  if (!document.querySelector('link[href*="font-awesome"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+    document.head.appendChild(link);
+  }
+});
+</script>
+
+        
+    
 </body>
 </html>
