@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام الامتحان المتعدد</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    body {
+      font-family: 'Tahoma', sans-serif;
+      background-color:#000945;
+      margin: 0;
+      padding: 15px;
+    }
+
+    .page {
+      max-width: 100%;
+      margin: auto;
+      background-color: #F6F6F6;
+      padding: 20px;
+      border: 2px solid #444;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.15);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #2c3e50;
+    }
+
+    .header-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+    }
+
+    .exam-title-row {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .flex-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .flex-row label {
+      width: 100px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #34495e;
+      margin-bottom: 5px;
+    }
+
+    .flex-row input {
+      flex: 1;
+      min-width: 200px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+      transition: 0.3s;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .flex-row input:focus {
+      border-color: #3498db;
+      background-color: #fff;
+      outline: none;
+      box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    }
+
+    .question {
+      border: 1px solid #ddd;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      background-color: #fdfdfd;
+      position: relative;
+    }
+
+    .question-number {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #2c3e50;
+    }
+
+    .question-note {
+      font-size: 12px;
+      color: #666;
+      margin-right: 10px;
+    }
+
+    .remove-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .remove-btn:hover {
+      background-color: #c0392b;
+    }
+
+    .answers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .answer-row {
+      display: flex;
+      width: 100%;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .answer-pair {
+      display: flex;
+      flex: 1;
+      min-width: calc(50% - 10px);
+      gap: 10px;
+    }
+
+    .answers label {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      font-size: 14px;
+      flex: 1;
+    }
+
+    .answers input[type="text"] {
+      flex: 1;
+      padding: 6px;
+      font-size: 14px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      background-color: #f9f9f9;
+      min-width: 0;
+    }
+
+    .answers input[type="checkbox"] {
+      width: 22px;
+      height: 22px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+
+.small-input {
+  width: 200px;
+  min-width: 100px;
+  max-width: 200px;
+  flex: none;
+}
+
+
+    .button-group {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    
+    
+
+    .button-group button {
+      padding: 10px 15px;
+      margin: 0;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .add-btn { background-color: #2ecc71; color: white; }
+    .add-btn:hover { background-color: #27ae60; }
+
+    .pdf-btn { background-color: #3498db; color: white; }
+    .pdf-btn:hover { background-color: #2980b9; }
+
+    .print-btn { background-color: #9b59b6; color: white; }
+    .print-btn:hover { background-color: #8e44ad; }
+
+    .delete-btn { background-color: #e74c3c; color: white; }
+    .delete-btn:hover { background-color: #c0392b; }
+
+    .save-btn { background-color: #f39c12; color: white; }
+    .save-btn:hover { background-color: #d35400; }
+
+    .update-btn { background-color: #2ecc71; color: white; display: none; }
+    .update-btn:hover { background-color: #27ae60; }
+
+    .question-text {
+      width: 95%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #f9f9f9;
+      margin-bottom: 10px;
+      resize: vertical;
+      min-height: 60px;
+      transition: height 0.2s;
+    }
+
+    .resizable-textarea {
+      resize: both;
+      overflow: auto;
+      min-height: 60px;
+      max-height: 300px;
+    }
+
+    .saved-tests {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .saved-tests th, .saved-tests td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .saved-tests th {
+      background-color: #3498db;
+      color: white;
+    }
+
+    .saved-tests tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    .saved-tests tr:hover {
+      background-color: #e6f7ff;
+    }
+
+    .action-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      margin: 2px;
+      transition: background-color 0.3s;
+    }
+
+    .action-btn:hover {
+      background-color: #2980b9;
+    }
+
+    .delete-test-btn {
+      background-color: #e74c3c;
+    }
+
+    .delete-test-btn:hover {
+      background-color: #c0392b;
+    }
+
+    .pdf-content {
+      direction: rtl;
+      text-align: right;
+      padding: 10px;
+    }
+
+    .pdf-question {
+      margin-bottom: 15px;
+      page-break-inside: avoid;
+    }
+
+    @media (max-width: 768px) {
+      .page {
+        padding: 15px;
+      }
+      
+      .flex-row label {
+        width: 100%;
+      }
+      
+      .flex-row input {
+        min-width: 95%;
+      }
+      
+      .answer-pair {
+        min-width: 95%;
+      }
+      
+      .button-group button {
+        min-width: 100%;
+      }
+      
+      .header-row, .exam-title-row {
+        flex-direction: column;
+      }
+      
+      .question-number {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .question-note {
+        margin-right: 0;
+        margin-top: 5px;
+      }
+    }
+
+    @media print {
+      .remove-btn, .button-group, .saved-tests-container { display: none; }
+      body { background: white; padding: 0; }
+      .page { border: none; box-shadow: none; margin: 0; padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page" id="worksheet">
+    <div class="exam-title-row">
+      <h1>نظام الامتحان المتعدد لمادة:</h1>
+      <input type="text" id="examTitle" placeholder="أدخل اسم المادة" style="flex: 1; padding: 8px; font-size: 16px;">
+    </div>
+
+    <div class="header-row">
+      <div style="flex: 1;">
+        <div class="flex-row">
+          <label>التاريخ:</label>
+          <input type="date" id="examDate">
+        </div>
+      </div>
+      <div style="flex: 1;">
+        <div class="flex-row">
+          <label>اسم الطالب:</label>
+          <input type="text" id="studentName" placeholder="">
+        </div>
+      </div>
+    </div>
+
+    <div id="questions-container"></div>
+
+<div class="flex-row" style="margin-top: 15px;">
+  <label>اسم المعلم:</label>
+  <input type="text" id="teacherName" placeholder="أدخل اسم المعلم" class="small-input">
+</div>
+  </div>
+
+  <div class="button-group">
+    <button class="add-btn" onclick="addQuestion()">إضافة سؤال</button>
+    <button class="pdf-btn" onclick="generatePDF()">تحميل كـ PDF</button>
+    <button class="print-btn" onclick="window.print()">طباعة الورقة</button>
+    <button class="save-btn" onclick="saveTest()">حفظ الاختبار</button>
+    <button class="update-btn" id="updateBtn" onclick="updateTest()">حفظ التعديلات</button>
+  </div>
+
+  <div class="page saved-tests-container" id="saved-tests">
+    <h2 style="text-align: center; margin-bottom: 15px;">الاختبارات المحفوظة</h2>
+    <table class="saved-tests">
+      <thead>
+        <tr>
+          <th>اسم المادة</th>
+          <th>التاريخ</th>
+          <th>عدد الأسئلة</th>
+          <th>تاريخ الإنشاء</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody id="saved-tests-body">
+        <!-- سيتم ملؤها بالبيانات المحفوظة -->
+      </tbody>
+    </table>
+    <div class="button-group" style="margin-top: 15px;">
+      <button class="delete-btn" onclick="clearAllTests()">حذف جميع الاختبارات</button>
+    </div>
+  </div>
+
+  <script>
+    let questionCount = 0;
+    let savedTests = JSON.parse(localStorage.getItem('savedTests')) || [];
+    let currentTestId = null;
+
+    function addQuestion() {
+      questionCount++;
+      const container = document.getElementById('questions-container');
+
+      const div = document.createElement('div');
+      div.className = 'question';
+      div.innerHTML = `
+        <div class="question-number">
+          <span>السؤال ${questionCount}
+          
+          :(ضع علامة ✔️ بجانب الخيار الصحيح)
+          
+          </span>
+          <span class="question-note"></span>
+        </div>
+        <button class="remove-btn" onclick="removeQuestion(this)">حذف</button>
+        <textarea class="question-text resizable-textarea" placeholder="اكتب نص السؤال هنا"></textarea>
+        <div class="answers">
+          <div class="answer-row">
+            <div class="answer-pair">
+              <label><input type="checkbox"><input type="text" placeholder="الخيار الأول"></label>
+            </div>
+            <div class="answer-pair">
+              <label><input type="checkbox"><input type="text" placeholder="الخيار الثاني"></label>
+            </div>
+          </div>
+          <div class="answer-row">
+            <div class="answer-pair">
+              <label><input type="checkbox"><input type="text" placeholder="الخيار الثالث"></label>
+            </div>
+            <div class="answer-pair">
+              <label><input type="checkbox"><input type="text" placeholder="الخيار الرابع"></label>
+            </div>
+          </div>
+        </div>
+      `;
+      container.appendChild(div);
+      
+      // جعل حقول النص قابلة للتكبير
+      const textarea = div.querySelector('.question-text');
+      textarea.addEventListener('mousedown', function(e) {
+        if (e.offsetX > this.offsetWidth - 10 && e.offsetY > this.offsetHeight - 10) {
+          e.preventDefault();
+          const startX = e.clientX;
+          const startY = e.clientY;
+          const startWidth = this.offsetWidth;
+          const startHeight = this.offsetHeight;
+
+          function doDrag(e) {
+            this.style.width = (startWidth + e.clientX - startX) + 'px';
+            this.style.height = (startHeight + e.clientY - startY) + 'px';
+          }
+
+          function stopDrag() {
+            document.documentElement.removeEventListener('mousemove', doDrag, false);
+            document.documentElement.removeEventListener('mouseup', stopDrag, false);
+          }
+
+          document.documentElement.addEventListener('mousemove', doDrag.bind(this), false);
+          document.documentElement.addEventListener('mouseup', stopDrag, false);
+        }
+      });
+    }
+
+    function removeQuestion(button) {
+      if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+        button.parentElement.remove();
+        updateQuestionNumbers();
+      }
+    }
+
+    function updateQuestionNumbers() {
+      const questions = document.querySelectorAll('.question');
+      questionCount = 0;
+      questions.forEach((q, index) => {
+        questionCount++;
+        q.querySelector('.question-number').innerHTML = `
+          <span>السؤال ${questionCount}</span>
+          <span class="question-note">(ضع علامة ✔️ بجانب الخيار الصحيح)</span>
+        `;
+      });
+    }
+
+ 
+ 
+function generatePDF() {
+  const element = document.getElementById('worksheet');
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: 'ورقة_امتحان.pdf',
+    image: { type: 'jpeg', quality: 1 },
+    html2canvas: {
+      scale: 3,
+      dpi: 300, // إضافة جديدة
+letterRendering: true ,// إضافة جديدة
+      logging: true,
+      useCORS: true,
+      allowTaint: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowHeight: element.scrollHeight + 100
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait',
+      compress: false
+    },
+    pagebreak: {
+      mode: ['avoid-all', 'css', 'legacy']
+    }
+  };
+  
+  // إنشاء نسخة من العنصر للتعديل عليها
+  const clonedElement = element.cloneNode(true);
+  
+  // إزالة العناصر غير المرغوب فيها
+  clonedElement.querySelectorAll('.remove-btn, .button-group, .saved-tests-container').forEach(el => el.remove());
+  
+  // تطبيق تنسيق RTL على جميع العناصر
+  clonedElement.style.direction = 'rtl';
+  clonedElement.style.textAlign = 'right';
+  
+  // تعديل تنسيق الأسئلة
+  clonedElement.querySelectorAll('.question').forEach(q => {
+    q.style.marginBottom = '15px';
+    q.style.pageBreakInside = 'avoid';
+    q.style.direction = 'rtl';
+    q.style.textAlign = 'right';
+  });
+  
+  // إنشاء محتوى PDF مع تنسيق RTL
+  const pdfContent = document.createElement('div');
+  pdfContent.className = 'pdf-content-rtl';
+  pdfContent.style.direction = 'rtl';
+  pdfContent.style.textAlign = 'right';
+  pdfContent.style.fontFamily = 'Tahoma, sans-serif';
+  pdfContent.appendChild(clonedElement);
+  
+  // إضافة أنماط إضافية للتأكد من اتجاه النص
+  const style = document.createElement('style');
+  style.innerHTML = `
+    .pdf-content-rtl * {
+      direction: rtl !important;
+      text-align: right !important;
+      font-family: 'Tahoma', sans-serif !important;
+    }
+    .question-number, .answers label {
+      direction: rtl !important;
+      text-align: right !important;
+    }
+  `;
+  pdfContent.appendChild(style);
+  
+  // إضافة عنصر مؤقت
+  const tempDiv = document.createElement('div');
+  tempDiv.style.position = 'absolute';
+  tempDiv.style.left = '-9999px';
+  tempDiv.appendChild(pdfContent);
+  document.body.appendChild(tempDiv);
+  
+  // التحويل إلى PDF
+  setTimeout(() => {
+    html2pdf().set(opt).from(pdfContent).save().then(() => {
+      document.body.removeChild(tempDiv);
+    });
+  }, 500);
+}
+ 
+    function saveTest() {
+      const examTitle = document.getElementById('examTitle').value;
+      const examDate = document.getElementById('examDate').value;
+      const studentName = document.getElementById('studentName').value;
+      const teacherName = document.getElementById('teacherName').value;
+      
+      if (!examTitle) {
+        alert('الرجاء إدخال اسم المادة');
+        return;
+      }
+      
+      const questions = [];
+      document.querySelectorAll('.question').forEach(q => {
+        const questionText = q.querySelector('.question-text').value;
+        const options = [];
+        const correctAnswers = [];
+        
+        q.querySelectorAll('.answers label').forEach((label, index) => {
+          const optionText = label.querySelector('input[type="text"]').value;
+          const isCorrect = label.querySelector('input[type="checkbox"]').checked;
+          if (optionText) {
+            options.push(optionText);
+            if (isCorrect) correctAnswers.push(index);
+          }
+        });
+        
+        if (questionText || options.length > 0) {
+          questions.push({
+            text: questionText,
+            options: options,
+            correctAnswers: correctAnswers
+          });
+        }
+      });
+      
+      if (questions.length === 0) {
+        alert('الرجاء إضافة أسئلة إلى الاختبار قبل الحفظ');
+        return;
+      }
+      
+      const testData = {
+        id: Date.now(),
+        title: examTitle,
+        date: examDate,
+        studentName: studentName,
+        teacherName: teacherName,
+        questions: questions,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      if (currentTestId) {
+        // تحديث الاختبار الحالي
+        const index = savedTests.findIndex(t => t.id === currentTestId);
+        if (index !== -1) {
+          testData.createdAt = savedTests[index].createdAt; // الحفاظ على تاريخ الإنشاء الأصلي
+          savedTests[index] = testData;
+        }
+      } else {
+        // إضافة اختبار جديد
+        savedTests.push(testData);
+      }
+      
+      localStorage.setItem('savedTests', JSON.stringify(savedTests));
+      renderSavedTests();
+      alert('تم حفظ الاختبار بنجاح');
+      
+      // إخفاء زر التحديث وإعادة تعيين الحالة
+      document.getElementById('updateBtn').style.display = 'none';
+      currentTestId = null;
+    }
+
+    function updateTest() {
+      saveTest(); // نفس وظيفة الحفظ ولكن مع تحديث البيانات
+    }
+
+    function renderSavedTests() {
+      const tbody = document.getElementById('saved-tests-body');
+      tbody.innerHTML = '';
+      
+      savedTests.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).forEach(test => {
+        const tr = document.createElement('tr');
+        const createdAt = new Date(test.createdAt);
+        const formattedDate = `${createdAt.getFullYear()}/${createdAt.getMonth()+1}/${createdAt.getDate()}`;
+        
+        tr.innerHTML = `
+          <td>${test.title}</td>
+          <td>${test.date || 'غير محدد'}</td>
+          <td>${test.questions.length}</td>
+          <td>${formattedDate}</td>
+          <td>
+            <button class="action-btn" onclick="loadTest(${test.id})">تعديل</button>
+            <button class="action-btn delete-test-btn" onclick="deleteTest(${test.id})">حذف</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function loadTest(testId) {
+      const test = savedTests.find(t => t.id === testId);
+      if (!test) {
+        alert('حدث خطأ أثناء تحميل الاختبار');
+        return;
+      }
+      
+      // تعبئة البيانات في النموذج
+      document.getElementById('examTitle').value = test.title || '';
+      document.getElementById('examDate').value = test.date || '';
+      document.getElementById('studentName').value = test.studentName || '';
+      document.getElementById('teacherName').value = test.teacherName || '';
+      
+      // تعبئة الأسئلة
+      const container = document.getElementById('questions-container');
+      container.innerHTML = '';
+      questionCount = 0;
+      
+      test.questions.forEach(q => {
+        questionCount++;
+        const div = document.createElement('div');
+        div.className = 'question';
+        div.innerHTML = `
+          <div class="question-number">
+            <span>السؤال ${questionCount}</span>
+            <span class="question-note">(ضع علامة ✔️ بجانب الخيار الصحيح)</span>
+          </div>
+          <button class="remove-btn" onclick="removeQuestion(this)">حذف</button>
+          <textarea class="question-text resizable-textarea">${q.text || ''}</textarea>
+          <div class="answers">
+            <div class="answer-row">
+              <div class="answer-pair">
+                <label><input type="checkbox" ${q.correctAnswers.includes(0) ? 'checked' : ''}><input type="text" value="${q.options[0] || ''}"></label>
+              </div>
+              <div class="answer-pair">
+                <label><input type="checkbox" ${q.correctAnswers.includes(1) ? 'checked' : ''}><input type="text" value="${q.options[1] || ''}"></label>
+              </div>
+            </div>
+            <div class="answer-row">
+              <div class="answer-pair">
+                <label><input type="checkbox" ${q.correctAnswers.includes(2) ? 'checked' : ''}><input type="text" value="${q.options[2] || ''}"></label>
+              </div>
+              <div class="answer-pair">
+                <label><input type="checkbox" ${q.correctAnswers.includes(3) ? 'checked' : ''}><input type="text" value="${q.options[3] || ''}"></label>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      
+      // تعيين معرف الاختبار الحالي وإظهار زر التحديث
+      currentTestId = test.id;
+      document.getElementById('updateBtn').style.display = 'block';
+      document.querySelector('.save-btn').style.display = 'none';
+      
+      // حفظ بيانات النموذج تلقائياً
+      saveFormData();
+      
+      // التمرير إلى أعلى الصفحة
+      window.scrollTo(0, 0);
+    }
+
+    function deleteTest(testId) {
+      if (confirm('هل أنت متأكد من حذف هذا الاختبار؟')) {
+        savedTests = savedTests.filter(t => t.id !== testId);
+        localStorage.setItem('savedTests', JSON.stringify(savedTests));
+        renderSavedTests();
+      }
+    }
+
+    function clearAllTests() {
+      if (confirm('هل أنت متأكد من حذف جميع الاختبارات المحفوظة؟ هذا الإجراء لا يمكن التراجع عنه.')) {
+        savedTests = [];
+        localStorage.setItem('savedTests', JSON.stringify(savedTests));
+        renderSavedTests();
+      }
+    }
+
+    function saveFormData() {
+      const examData = {
+        title: document.getElementById('examTitle').value,
+        date: document.getElementById('examDate').value,
+        studentName: document.getElementById('studentName').value,
+        teacherName: document.getElementById('teacherName').value
+      };
+      localStorage.setItem('examData', JSON.stringify(examData));
+    }
+
+    window.onload = () => {
+      addQuestion(); // إضافة أول سؤال تلقائي
+      renderSavedTests();
+      
+      // تحميل البيانات المحفوظة إذا وجدت
+      if (localStorage.getItem('examData')) {
+        const examData = JSON.parse(localStorage.getItem('examData'));
+        document.getElementById('examTitle').value = examData.title || '';
+        document.getElementById('examDate').value = examData.date || '';
+        document.getElementById('studentName').value = examData.studentName || '';
+        document.getElementById('teacherName').value = examData.teacherName || '';
+      }
+      
+      // حفظ البيانات تلقائياً عند التغيير
+      document.getElementById('examTitle').addEventListener('input', saveFormData);
+      document.getElementById('examDate').addEventListener('input', saveFormData);
+      document.getElementById('studentName').addEventListener('input', saveFormData);
+      document.getElementById('teacherName').addEventListener('input', saveFormData);
+    }
+  </script>
+
+</body>
+</html>
