@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام أسرار  </title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* نفس تصميم CSS السابق، تم اختصاره هنا للمساحة */
+        :root { --bg-color: #1a1a1a; --primary-color: #2c2c2c; --secondary-color: #d4af37; --text-color: #f0f0f0; --border-radius: 12px; --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); --error-color: #ff5c5c; --success-color: #a7ff8a; } body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; } .container { width: 100%; max-width: 500px; background-color: var(--primary-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow); overflow: hidden; border: 1px solid var(--secondary-color); } .header { background-color: var(--secondary-color); color: var(--bg-color); padding: 20px; text-align: center; } .header h1 { margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); } .header p { margin: 5px 0 0; font-size: 1.1em; } .panel { padding: 30px; } h2 { color: var(--secondary-color); border-bottom: 2px solid var(--secondary-color); padding-bottom: 10px; margin-top: 0; } .form-group { margin-bottom: 20px; } label { display: block; margin-bottom: 8px; font-weight: bold; } input[type="password"], input[type="file"] { width: 100%; padding: 12px; background-color: var(--bg-color); border: 1px solid #555; border-radius: 8px; color: var(--text-color); font-size: 1em; box-sizing: border-box; } input[type="file"] { padding: 5px; } input:focus { outline: none; border-color: var(--secondary-color); box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); } button { background-color: var(--secondary-color); color: var(--bg-color); border: none; padding: 12px 20px; font-size: 1.1em; font-family: 'Cairo', sans-serif; font-weight: bold; border-radius: 8px; cursor: pointer; transition: transform 0.2s, background-color 0.3s; width: 100%; } button:hover:not(:disabled) { transform: translateY(-2px); background-color: #e7c35a; } button:disabled { background-color: #555; cursor: not-allowed; } #decoded-result { margin-top: 20px; background-color: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px dashed #555; min-height: 50px; word-wrap: break-word; text-align: center; font-size: 1.2em; } .status-message { font-size: 0.9em; text-align: center; margin-top: 15px; padding: 10px; border-radius: 8px; display: none; } .nav-link { color: #aaa; text-align: center; margin-top: 20px; display: block; } .nav-link:hover { color: var(--secondary-color); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>كاشف الأسرار</h1><p>ارفع الرمز لفك تشفيره هنا</p></div>
+        <div class="panel">
+            <h2>قراءة الرمز السري</h2>
+            <div class="form-group"><label for="qr-image-input">ارفع صورة الرمز (QR Code):</label><input type="file" id="qr-image-input" accept="image/*"></div>
+            <div class="form-group"><label for="decoder-key">المفتاح السري (لحل الرمز):</label><input type="password" id="decoder-key" placeholder="أدخل كلمة المرور لفك التشفير" disabled></div>
+            <button id="decrypt-btn" onclick="decryptFromUpload()" disabled>فك التشفير الآن</button>
+            <div id="status-message" class="status-message"></div>
+            <div id="decoded-result">الرسالة بعد فك التشفير...</div>
+            <a href="encoder.html" class="nav-link">الانتقال إلى صفحة إنشاء الرمز &larr;</a>
+        </div>
+    </div>
+    
+    <script>
+        
+
+
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBTv82wJjF_d505typpdsozHl7nBcVwp5k",
+    authDomain: "asrarsystem-c02c7.firebaseapp.com",
+    projectId: "asrarsystem-c02c7",
+    storageBucket: "asrarsystem-c02c7.firebasestorage.app",
+    messagingSenderId: "919458653886",
+    appId: "1:919458653886:web:159646ab17318bacdde0ef"
+};
+
+        // تهيئة Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        const imageInput = document.getElementById('qr-image-input');
+        const keyInput = document.getElementById('decoder-key');
+        const decryptBtn = document.getElementById('decrypt-btn');
+        const resultDiv = document.getElementById('decoded-result');
+        const statusMsg = document.getElementById('status-message');
+        
+        let currentQRData = null;
+        const MAX_ATTEMPTS = 3;
+
+        imageInput.addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+                    resetUI();
+                    if (code) { processQRContent(code.data); } 
+                    else { showStatus("لم يتم العثور على رمز صالح في الصورة.", 'error'); }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processQRContent(content) {
+            try {
+                const parsedData = JSON.parse(content);
+                if (!parsedData.id || !parsedData.data) throw new Error("Invalid format");
+                currentQRData = parsedData;
+
+                showStatus("جاري التحقق من حالة الرمز...", "info");
+                const docRef = db.collection("qrcodes").doc(currentQRData.id);
+                const doc = await docRef.get();
+
+                if (!doc.exists) {
+                    showStatus("هذا الرمز غير صالح أو لم يتم إنشاؤه عبر نظامنا.", 'error');
+                    return;
+                }
+                
+                const dbData = doc.data();
+                if (dbData.status === "redeemed") {
+                    showStatus("هذا الرمز تم استخدامه من قبل وهو غير صالح الآن.", 'error');
+                } else if (dbData.status === "blocked") {
+                    showStatus("هذا الرمز محظور بشكل دائم بسبب محاولات فاشلة.", 'error');
+                } else if (dbData.status === "active") {
+                    showStatus(`تم قراءة الرمز. المحاولات المتبقية: ${MAX_ATTEMPTS - dbData.attempts}`, 'success');
+                    keyInput.disabled = false;
+                    decryptBtn.disabled = false;
+                }
+
+            } catch (e) {
+                showStatus("هذا الرمز ليس من نظام أسرار أو أنه تالف.", 'error');
+                currentQRData = null;
+            }
+        }
+
+        async function decryptFromUpload() {
+            if (!currentQRData) return;
+            const key = keyInput.value;
+            if (!key) { alert("الرجاء إدخال المفتاح السري."); return; }
+            
+            decryptBtn.disabled = true;
+            keyInput.disabled = true;
+            
+            const docRef = db.collection("qrcodes").doc(currentQRData.id);
+
+            try {
+                const bytes = CryptoJS.AES.decrypt(currentQRData.data, key);
+                const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+                if (originalText) {
+                    resultDiv.textContent = originalText;
+                    resultDiv.style.borderColor = 'var(--success-color)';
+                    showStatus("تم فك التشفير بنجاح! تم الآن إبطال هذا الرمز.", 'success');
+                    await docRef.update({ status: "redeemed" }); // إبطال الرمز
+                } else {
+                    throw new Error("Invalid key");
+                }
+            } catch (error) {
+                const doc = await docRef.get();
+                const currentAttempts = doc.data().attempts;
+                const newAttempts = currentAttempts + 1;
+
+                if (newAttempts >= MAX_ATTEMPTS) {
+                    await docRef.update({ status: "blocked", attempts: newAttempts });
+                    showStatus("مفتاح خاطئ! لقد استنفدت كل محاولاتك! تم حظر الرمز.", 'error');
+                    resultDiv.textContent = "الرمز محظور";
+                } else {
+                    await docRef.update({ attempts: newAttempts });
+                    showStatus(`مفتاح غير صحيح! تبقى لديك ${MAX_ATTEMPTS - newAttempts} محاولة.`, 'error');
+                    resultDiv.textContent = "فشل فك التشفير...";
+                    keyInput.disabled = false; // السماح بالمحاولة مرة أخرى
+                    decryptBtn.disabled = false;
+                }
+                 resultDiv.style.borderColor = 'var(--error-color)';
+            }
+        }
+        
+        function showStatus(message, type) {
+            statusMsg.textContent = message;
+            statusMsg.style.color = type === 'error' ? 'var(--error-color)' : (type === 'success' ? 'var(--success-color)' : 'var(--text-color)');
+            statusMsg.style.display = 'block';
+        }
+
+        function resetUI() {
+            keyInput.value = ''; keyInput.disabled = true; decryptBtn.disabled = true;
+            resultDiv.textContent = 'الرسالة بعد فك التشفير...'; resultDiv.style.borderColor = '#555';
+            statusMsg.style.display = 'none'; currentQRData = null;
+        }
+    </script>
+</body>
+</html>

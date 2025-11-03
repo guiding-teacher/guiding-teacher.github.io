@@ -1,123 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رحلة الكاتب السومري: إرث الرافدين</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-</head>
-<body>
-    <!-- شاشة التحميل -->
-    <div id="loader">
-        <div class="spinner"></div>
-        <p>جاري استدعاء حكمة الأجداد...</p>
-    </div>
-
-    <!-- الخلفية المتحركة -->
-    <div class="stars-bg"></div>
-
-    <!-- عناصر الصوت للتأثيرات -->
-    <audio id="click-sound" src="https://assets.codepen.io/217233/click.mp3" preload="auto"></audio>
-    <audio id="success-sound" src="https://assets.codepen.io/217233/success.mp3" preload="auto"></audio>
-    <audio id="achievement-sound" src="https://assets.codepen.io/217233/achievement.mp3" preload="auto"></audio>
-    <audio id="error-sound" src="https://assets.codepen.io/217233/error.mp3" preload="auto"></audio>
-
-    <div class="container">
-        <!-- لوحة الإعدادات والتقدم -->
-        <div class="persistent-header">
-            <div id="achievements-tracker">
-                <h3>📜 لوح الحكمة</h3>
-                <div class="seals-container">
-                    <div class="seal" id="seal-cuneiform" title="إنجاز: كاتب مسماري"><i class="fas fa-pen-fancy"></i></div>
-                    <div class="seal" id="seal-inventions" title="إنجاز: مُبتكر عظيم"><i class="fas fa-lightbulb"></i></div>
-                    <div class="seal" id="seal-artifacts" title="إنجاز: مُرمم آثار"><i class="fas fa-gem"></i></div>
-                    <div class="seal" id="seal-quiz" title="إنجاز: حكيم الرافدين"><i class="fas fa-brain"></i></div>
-                </div>
-            </div>
-            <div id="settings-panel">
-                <div class="settings-toggle active" id="sfx-toggle" title="تشغيل/إيقاف المؤثرات الصوتية"><i class="fas fa-volume-high"></i> <span>الأصوات</span></div>
-                <div class="settings-toggle active" id="voice-toggle" title="تشغيل/إيقاف المرشد الصوتي"><i class="fas fa-comment-dots"></i> <span>المرشد</span></div>
-            </div>
-        </div>
-
-        <header>
-            <svg class="ziggurat-svg" viewBox="0 0 200 100">
-                <path d="M 10 90 H 190 L 170 70 H 30 Z"></path>
-                <path d="M 40 70 H 160 L 150 50 H 50 Z"></path>
-                <path d="M 60 50 H 140 L 130 30 H 70 Z"></path>
-                <path d="M 80 30 H 120 L 110 10 H 90 Z"></path>
-            </svg>
-            <h1 class="main-title">رحلة الكاتب السومري</h1>
-            <p class="subtitle">اكتشف أسرار مهد الحضارات، تعلم، وابتكر كما فعل أجدادك العظماء.</p>
-        </header>
-
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="timeline">شريط الزمن</button>
-            <button class="tab-btn" data-tab="inventions">اختراعات خالدة</button>
-            <button class="tab-btn" data-tab="artifacts">تجميع الآثار</button>
-            <button class="tab-btn" data-tab="cuneiform">الكتابة المسمارية</button>
-            <button class="tab-btn" data-tab="quiz">اختبر حكمتك</button>
-            <button class="tab-btn" data-tab="ai">اسأل جلجامش</button>
-        </div>
-
-        <!-- قسم شريط الزمن -->
-        <section class="section tab-content active" id="timeline-tab">
-            <div class="center-title"><h2 class="section-title">⏳ رحلة عبر آلاف السنين</h2></div>
-            <div class="timeline-container">
-                <div class="timeline-event" data-year="4500 ق.م" data-info="ظهور السومريين: بدأت أولى بوادر الحضارة في جنوب بلاد الرافدين مع تطور الزراعة والقرى الأولى."><span>فجر السومريين</span></div>
-                <div class="timeline-event" data-year="3200 ق.م" data-info="اختراع الكتابة: ابتكر السومريون الكتابة المسمارية، وهي نقطة تحول في تاريخ البشرية سمحت بتسجيل المعرفة والقوانين."><span>ولادة الكتابة</span></div>
-                <div class="timeline-event" data-year="2900 ق.م" data-info="عصر جلجامش: حكم الملك الأسطوري جلجامش مدينة أوروك، وتم تدوين ملحمته الشهيرة التي تعد أقدم عمل أدبي في التاريخ."><span>عهد جلجامش</span></div>
-                <div class="timeline-event" data-year="1792 ق.م" data-info="شريعة حمورابي: أصدر الملك حمورابي، سادس ملوك بابل، واحدة من أقدم وأشمل مجموعات القوانين المكتوبة."><span>قانون حمورابي</span></div>
-                <div class="timeline-event" data-year="605 ق.م"  data-info="عظمة بابل: في عهد نبوخذ نصر الثاني، وصلت الإمبراطورية البابلية الحديثة إلى أوجها، وشيدت فيها عجائب مثل بوابة عشتار وحدائق بابل المعلقة."><span>مجد بابل</span></div>
-            </div>
-        </section>
-
-        <!-- قسم الاختراعات -->
-        <section class="section tab-content" id="inventions-tab">
-            <!-- (الكود لم يتغير بشكل كبير، سيتم التحكم به عبر JS) -->
-        </section>
-
-        <!-- قسم تجميع الآثار -->
-        <section class="section tab-content" id="artifacts-tab">
-            <div class="center-title"><h2 class="section-title">💎 كنوز من الماضي</h2></div>
-            <div class="artifact-gallery">
-                <div class="artifact-selector">
-                    <h3>اختر قطعة أثرية لترميمها:</h3>
-                    <button class="artifact-choice-btn active" data-artifact="helmet">خوذة مسكلامدك</button>
-                    <button class="artifact-choice-btn" data-artifact="standard">معيار أور</button>
-                </div>
-                <div id="artifact-assembly-game">
-                    <!-- اللعبة سيتم بناؤها هنا بواسطة JS -->
-                </div>
-            </div>
-        </section>
-
-        <!-- قسم الكتابة المسمارية -->
-        <section class="section tab-content" id="cuneiform-tab">
-             <!-- (الكود لم يتغير، سيتم التحكم به عبر JS) -->
-        </section>
-
-        <!-- قسم الاختبار -->
-        <section class="section tab-content" id="quiz-tab">
-             <!-- (الكود لم يتغير، سيتم التحكم به عبر JS) -->
-        </section>
-        
-        <!-- قسم المساعد الذكي -->
-        <section class="section tab-content" id="ai-tab">
-             <!-- (الكود لم يتغير، سيتم التحكم به عبر JS) -->
-        </section>
-    </div>
-
-    <!-- نافذة منبثقة (Modal) لمعلومات الشريط الزمني -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div id="modal-body"></div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>

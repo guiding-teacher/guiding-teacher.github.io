@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لعبة تجميع صور الحيوانات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --primary: #FF6B6B;
+      --secondary: #4ECDC4;
+      --accent: #FFE66D;
+      --dark: #292F36;
+      --light: #F7FFF7;
+    }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    /* --- تعديل جديد: زر كتم الصوت --- */
+    .mute-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px; /* في اليسار ليكون في الزاوية المقابلة للكلام العربي */
+      z-index: 250;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--secondary);
+      color: white;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .mute-btn:hover {
+      transform: scale(1.1);
+    }
+    .mute-btn.muted {
+        background-color: var(--primary);
+    }
+    /* --- نهاية التعديل --- */
+    
+    h1 {
+      color: var(--dark);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      font-size: 2.2rem;
+      background: linear-gradient(to right, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulse 2s infinite;
+    }
+    h1 .fa-paw { margin: 0 10px; }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .screen { display: none; width: 100%; max-width: 800px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+    #roundsScreen h2 {
+      font-size: 2rem;
+      color: var(--dark);
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    #roundsContainer {
+        width: 100%;
+        display: grid;
+        gap: 15px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 15px;
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .round-btn {
+        padding: 15px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid var(--secondary);
+        background-color: var(--light);
+        color: var(--dark);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        aspect-ratio: 1 / 1;
+    }
+    .round-btn:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 8px 15px rgba(78, 205, 196, 0.3);
+    }
+    .round-btn.locked {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+        color: #adb5bd;
+        cursor: not-allowed;
+    }
+    .round-btn.locked:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    .round-btn .fa-lock, .round-btn .fa-play { font-size: 1.5rem; }
+
+    @media (min-width: 480px) { #roundsContainer { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 768px) { #roundsContainer { grid-template-columns: repeat(4, 1fr); gap: 20px; } }
+    @media (min-width: 1024px) { #roundsContainer { grid-template-columns: repeat(5, 1fr); } }
+
+    .game-header { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 500px; margin-bottom: 20px; }
+    .animal-name { font-size: 1.8rem; font-weight: bold; color: var(--dark); background-color: var(--accent); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 10px; text-align: center; animation: bounce 0.5s ease infinite alternate; }
+    @keyframes bounce { to { transform: translateY(-5px); } }
+    .level-info { font-size: 1.2rem; color: var(--dark); background-color: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; display: flex; gap: 15px; text-align: right; }
+    .timer-container { position: relative; width: 100px; height: 100px; }
+    .timer { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(var(--secondary) calc(var(--time) * 1%), #ddd 0%); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: bold; color: var(--dark); box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; z-index: 2; }
+    .timer::before { content: ''; position: absolute; width: 85%; height: 85%; background: white; border-radius: 50%; z-index: -1; }
+    .top-container { width: 100%; max-width: 500px; display: flex; justify-content: center; gap: 25px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.1); margin-bottom: 25px; border: 3px dashed var(--accent); min-height: 150px; align-items: center; }
+    .top-slot { width: 100px; height: 100px; background: #f0f4f8; border-radius: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 3px solid var(--secondary); transition: all 0.3s ease; position: relative; }
+    .top-slot::after { content: '?'; position: absolute; font-size: 2.5rem; color: rgba(0,0,0,0.1); z-index: 1; }
+    .top-slot.filled::after { display: none; }
+    .top-slot img { width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+    .images-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; width: 100%; max-width: 500px; margin-bottom: 20px; }
+    .image-box { aspect-ratio: 1/1; border-radius: 15px; overflow: hidden; cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transition: all 0.3s ease; position: relative; background: #f0f4f8; border: 3px solid white; }
+    .image-box:hover { transform: scale(1.05); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+    .image-box img { width: 100%; height: 100%; object-fit: cover; }
+    .image-box.wrong { animation: shake 0.5s; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+    .image-box.correct { animation: pop 0.5s; }
+    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .controls { display: flex; gap: 15px; margin-bottom: 20px; }
+    .btn { padding: 12px 25px; font-size: 1rem; font-weight: bold; border: none; border-radius: 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+    .btn:active { transform: translateY(1px); }
+    .help-btn { background: var(--primary); color: white; }
+    .back-btn { background: #6c757d; color: white; }
+    .stars-container { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+    .star { font-size: 1.5rem; color: #ddd; transition: all 0.3s ease; }
+    .star.filled { color: var(--accent); text-shadow: 0 0 10px rgba(255, 230, 109, 0.7); animation: twinkle 0.5s ease-in-out; }
+    @keyframes twinkle { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    .results { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(41, 47, 54, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .results.show { opacity: 1; pointer-events: all; }
+    .results-content { background: white; border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: scale(0.9); transition: transform 0.3s ease; position: relative; overflow: hidden; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: 3px solid var(--accent); }
+    .results.show .results-content { transform: scale(1); }
+    .results h2 { color: var(--primary); margin-bottom: 15px; font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+    .results p { font-size: 1.2rem; margin-bottom: 10px; color: var(--dark); }
+    .results-stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 15px 0; }
+    .result-star { font-size: 1.5rem; color: #ddd; }
+    .result-star.filled { color: var(--accent); text-shadow: 0 0 10px rgba(255, 230, 109, 0.7); }
+    .next-btn { background: var(--secondary); color: white; margin-top: 20px; font-size: 1.1rem; padding: 15px 30px; }
+    .confetti { position: absolute; width: 10px; height: 10px; background-color: var(--accent); opacity: 0; }
+    .firework { position: absolute; width: 5px; height: 5px; border-radius: 50%; box-shadow: 0 0 10px 5px rgba(255, 230, 109, 0.7); opacity: 0; }
+    .celebration-text { position: absolute; font-size: 1.5rem; font-weight: bold; color: var(--primary); opacity: 0; animation: floatUp 2s ease-out forwards; }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-100px) scale(1.5); opacity: 0; } }
+    .instructions { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(41, 47, 54, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+    .instructions-content { background: white; border-radius: 20px; padding: 30px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border: 3px solid var(--primary); }
+    .instructions h2 { color: var(--primary); margin-bottom: 20px; font-size: 1.8rem; }
+    .instructions p { font-size: 1.1rem; margin-bottom: 15px; color: var(--dark); line-height: 1.6; }
+    .start-btn { background: var(--secondary); color: white; margin-top: 20px; font-size: 1.2rem; padding: 15px 40px; border: none; border-radius: 30px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .start-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+    .start-btn:active { transform: translateY(1px); }
+    .rating { font-size: 1.5rem; font-weight: bold; margin: 15px 0; padding: 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.7); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .excellent { color: #4CAF50; } .very-good { color: #8BC34A; } .good { color: #FFC107; } .average { color: #FF9800; } .below-average { color: #F44336; }
+    .header-content { display: flex; flex-direction: row-reverse; align-items: center; justify-content: space-between; width: 100%; gap: 10px; }
+    .header-text { display: flex; flex-direction: column; align-items: flex-end; }
+    .timer-container { margin-left: 10px; margin-bottom: 0; width: 70px; height: 70px; }
+    @media (max-width: 600px) { h1 { font-size: 1.5rem; } .animal-name { font-size: 1.4rem; } }          
+    @media (max-width: 400px) { .images-container { grid-template-columns: repeat(3, 1fr); gap: 10px; } .top-container { flex-direction: row; gap: 10px; min-height: auto;} .top-slot { width: 70px; height: 70px; } }
+  </style>
+</head>
+<body>
+
+  <!-- --- تعديل جديد: زر كتم الصوت --- -->
+  <button id="muteBtn" class="mute-btn">
+    <i class="fas fa-volume-high"></i>
+  </button>
+  <!-- --- نهاية التعديل --- -->
+
+  <h1><i class="fa-solid fa-paw"></i> لعبة تجميع صور الحيوانات <i class="fa-solid fa-paw"></i></h1>
+  
+  <div id="roundsScreen" class="screen">
+    <h2>اختر جولة</h2>
+    <div id="roundsContainer"></div>
+  </div>
+
+  <div id="gameContainer" class="screen">
+    <div class="game-header">
+      <div class="header-content">
+          <div class="timer-container">
+              <div class="timer" id="timer">60</div>
+          </div>
+          <div class="header-text">
+              <div class="animal-name" id="animalName">---</div>
+              <div class="level-info">
+                  <span>المستوى: <span id="level">1</span></span>
+                  <span>الجولة: <span id="roundDisplay">1</span></span>
+              </div>
+          </div>
+      </div>
+    </div>
+    <div class="top-container" id="topContainer"></div>
+    <div class="images-container" id="imagesContainer"></div>
+    <div class="controls">
+      <button class="btn help-btn" onclick="showHint()">مساعدة <i class="fa-solid fa-bullseye"></i></button>
+      <button class="btn back-btn" onclick="showRoundsScreen()">عودة <i class="fa-solid fa-arrow-left"></i></button>
+    </div>
+    <div class="stars-container" id="stars"></div>
+  </div>
+  
+  <div class="results" id="results">
+    <div class="results-content">
+      <h2 id="resultsTitle"></h2>
+      <p id="resultsMessage"></p>
+      <div class="rating" id="rating"></div>
+      <div class="results-stars" id="resultsStars"></div>
+      <p>النجوم: <span id="totalStars">0</span></p>
+      <p>الوقت المتبقي: <span id="remainingTime">0</span> ثانية</p>
+      <button class="btn next-btn" id="nextActionBtn"></button>
+    </div>
+  </div>
+  
+  <div class="instructions" id="instructions">
+    <div class="instructions-content">
+      <h2>مرحباً بك في لعبة تجميع صور الحيوانات!</h2>
+      <p>🎮 أكمل 10 جولات من التحدي، كل جولة بها 15 مستوى.</p>
+      <p id="instructionsStarsNeeded"></p> <!-- سيتم تحديثه برمجياً -->
+      <p>🚀 هل أنت مستعد للمغامرة؟</p>
+      <button class="start-btn" onclick="startAdventure()">بدء المغامرة! <i class="fa-solid fa-rocket"></i></button>
+    </div>
+  </div>
+  
+  <audio id="correctSound" preload="auto" src="https://www.myinstants.com/media/sounds/correct.mp3"></audio>
+  <audio id="wrongSound" preload="auto" src="https://www.myinstants.com/media/sounds/wrong.mp3"></audio>
+  <audio id="winSound" preload="auto" src="https://www.myinstants.com/media/sounds/success-fanfare-trumpets.mp3"></audio>
+  <audio id="levelUpSound" preload="auto" src="https://www.myinstants.com/media/sounds/level-up.mp3"></audio>
+  <audio id="celebrationSound" preload="auto" src="https://www.myinstants.com/media/sounds/applause.mp3"></audio>
+  <audio id="wrongChoiceSound" preload="auto" src="https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3"></audio>
+  
+  <script>
+    // --- إعدادات اللعبة ---
+    const ROUNDS_COUNT = 10;
+    const LEVELS_PER_ROUND = 15;
+    const TIME_PER_ROUND = 90;
+    // --- تعديل جديد: تعريف عدد النجوم للنجاح ديناميكياً ---
+    // يجب أن يكون أكثر من النصف. Math.floor(15 / 2) + 1 = 7 + 1 = 8
+    const MIN_STARS_TO_PASS = Math.floor(LEVELS_PER_ROUND / 2) + 1;
+    // --- نهاية التعديل ---
+
+    const masterAnimalList = [
+      { name: "أسد", emoji: "🦁" }, { name: "نمر", emoji: "🐯" }, { name: "قطة", emoji: "🐱" }, { name: "كلب", emoji: "🐶" }, { name: "ثعلب", emoji: "🦊" },
+      { name: "دب", emoji: "🐻" }, { name: "باندا", emoji: "🐼" }, { name: "كوالا", emoji: "🐨" }, { name: "أرنب", emoji: "🐰" }, { name: "فأر", emoji: "🐭" },
+      { name: "هامستر", emoji: "🐹" }, { name: "قرد", emoji: "🐵" }, { name: "دجاجة", emoji: "🐔" }, { name: "بطريق", emoji: "🐧" }, { name: "ضفدع", emoji: "🐸" },
+      { name: "فيل", emoji: "🐘" }, { name: "زرافة", emoji: "🦒" }, { name: "جمل", emoji: "🐪" }, { name: "بقرة", emoji: "🐄" }, { name: "خنزير", emoji: "🐖" },
+      { name: "حصان", emoji: "🐎" }, { name: "خروف", emoji: "🐑" }, { name: "حمار وحشي", emoji: "🦓" }, { name: "دولفين", emoji: "🐬" }, { name: "سمكة", emoji: "🐠" },
+      { name: "حوت", emoji: "🐳" }, { name: "أخطبوط", emoji: "🐙" }, { name: "بومة", emoji: "🦉" }, { name: "فراشة", emoji: "🦋" }, { name: "حلزون", emoji: "🐌" },
+      { name: "سنجاب", emoji: "🐿️" }, { name: "غزال", emoji: "🦌" }, { name: "ذئب", emoji: "🐺" }, { name: "خفاش", emoji: "🦇" }, { name: "عنكبوت", emoji: "🕷️" },
+      { name: "سلحفاة", emoji: "🐢" }, { name: "تمساح", emoji: "🐊" }, { name: "ديناصور", emoji: "🦖" }, { name: "تنين", emoji: "🐉" }, { name: "نحلة", emoji: "🐝" },
+      { name: "صرصور", emoji: "🦗" }, { name: "طاووس", emoji: "🦚" }, { name: "ببغاء", emoji: "🦜" }, { name: "نسر", emoji: "🦅" }, { name: "بطة", emoji: "🦆" },
+      { name: "قنفذ", emoji: "🦔" }, { name: "كنغر", emoji: "🦘" }, { name: "لاما", emoji: "🦙" }, { name: "فرس النهر", emoji: "🦛" }, { name: "وحيد القرن", emoji: "🦏" },
+      { name: "فقمة", emoji: "🦭" }, { name: "كسلان", emoji: "🦥" }, { name: "جراد البحر", emoji: "🦞" }, { name: "سرطان البحر", emoji: "🦀" }, { name: "جمبري", emoji: "🦐" },
+      { name: "قنديل البحر", emoji: " jellyfish" }, { name: "دودة", emoji: "🐛" }, { name: "نملة", emoji: "🐜" }, { name: "عقرب", emoji: "🦂" }, { name: "فلامنغو", emoji: "🦩" },
+      { name: "سحلية", emoji: "🦎" }, { name: "ثعبان", emoji: "🐍" }, { name: "صقر", emoji: " Falcon" }, { name: "غوريلا", emoji: "🦍" }, { name: "فهد", emoji: "🐆" },
+      { name: "نمر أسود", emoji: "🐈‍⬛" }, { name: "ماعز", emoji: "🐐" }, { name: "ديك رومي", emoji: "🦃" }, { name: "حمامة", emoji: "🕊️" }, { name: "أوزة", emoji: "🦢" },
+      { name: "راكون", emoji: "🦝" }, { name: "فأر كنغر", emoji: "🐁" }, { name: "فأر كبير", emoji: "🐀" }, { name: "قندس", emoji: "🦫" }, { name: "دولار", emoji: "🐬" },
+      { name: "قنفذ البحر", emoji: " urchin" }, { name: "حصان البحر", emoji: " seahorse" }, { name: "نجم البحر", emoji: " starfish" }, { name: "صدفة", emoji: "🐚" }, { name: "مرجان", emoji: " coral" },
+      { name: "حشرة", emoji: "🐞" }, { name: "يعسوب", emoji: " Dragonfly" }, { name: "بعوضة", emoji: " Mosquito" }, { name: "عثة", emoji: " Moth" }, { name: "كريكيت", emoji: " Cricket" },
+      { name: "أسد جبلي", emoji: " Puma" }, { name: "فهد صياد", emoji: " Cheetah" }, { name: "ضبع", emoji: " Hyena" }, { name: "جاموس", emoji: "🐃" }, { name: "ثور", emoji: "🐂" },
+      { name: "جمل ذو سنامين", emoji: "🐫" }, { name: "ظبي", emoji: " Antelope" }, { name: "إنسان الغاب", emoji: "🦧" }, { name: "شمبانزي", emoji: " Chimpanzee" }, { name: "قط بري", emoji: " Lynx" },
+      { name: "دب قطبي", emoji: "🐻‍❄️" }, { name: "فيل آسيوي", emoji: " Asian Elephant" }, { name: "ماموث", emoji: "🦣" }, { name: "بيسون", emoji: "🦬" }, { name: "فيل البحر", emoji: " Walrus" },
+      { name: "خنزير بري", emoji: "🐗" }, { name: "أرماديلو", emoji: " Armadillo" }, { name: "خلد", emoji: " Mole" }, { name: "ظربان", emoji: " Skunk" }, { name: "غرير", emoji: " Badger" },
+      { name: "سمور", emoji: " Otter" }, { name: "كوجر", emoji: " Cougar" }, { name: "جاكوار", emoji: " Jaguar" }, { name: "وشق", emoji: " Bobcat" }, { name: "كابيبارا", emoji: " Capybara" },
+      { name: "ليمور", emoji: " Lemur" }, { name: "ميركات", emoji: " Meerkat" }, { name: "كوكا", emoji: " Quokka" }, { name: "ومبت", emoji: " Wombat" }, { name: "تابير", emoji: " Tapir" },
+      { name: "أوكابي", emoji: " Okapi" }, { name: "آردفارك", emoji: " Aardvark" }, { name: "بانجولين", emoji: " Pangolin" }, { name: "نورس", emoji: " Gull" }, { name: "بفن", emoji: " Puffin" },
+      { name: "طوقان", emoji: " Toucan" }, { name: "لقلق", emoji: " Stork" }, { name: "كركي", emoji: " Crane" }, { name: "بلشون", emoji: " Heron" }, { name: "كيوي", emoji: " Kiwi" },
+      { name: "نقار الخشب", emoji: " Woodpecker" }, { name: "طنان", emoji: " Hummingbird" }, { name: "روبن", emoji: " Robin" }, { name: "جاي", emoji: " Jay" }, { name: "كاردينال", emoji: " Cardinal" },
+    ];
+    
+    let allAnimalsData = [];
+    const wrongEmojis = ["🍎", "⚽️", "🚗", "🏠", "⏰", "❤️", "⭐️", "🌵", "🍕", "🎸", "💡", "📚", "💻", "☎️", "🎁", "🔑", "💎", "⚙️", "🎈", "☂️", "🌍", "☀️", "🌙", "☁️", "⛄️", "🚲", "✈️", "🚀", "⛵️", "⚓️"];
+    let wrongImages = [];
+
+    let currentRoundNumber = 1;
+    let currentLevelInRound = 0;
+    let levelsForCurrentRound = [];
+    let starsInRound = 0;
+    let found = 0;
+    let timeLeft = TIME_PER_ROUND;
+    let interval;
+    let unlockedRounds = 1;
+    // --- تعديل جديد: متغير لحالة الصوت ---
+    let isMuted = false;
+    // --- نهاية التعديل ---
+
+    const gameContainer = document.getElementById('gameContainer');
+    const roundsScreen = document.getElementById('roundsScreen');
+    const resultsScreen = document.getElementById('results');
+    
+    const correctSound = document.getElementById('correctSound');
+    const wrongSound = document.getElementById('wrongSound');
+    const winSound = document.getElementById('winSound');
+    const levelUpSound = document.getElementById('levelUpSound');
+    const celebrationSound = document.getElementById('celebrationSound');
+
+    // --- تعديل جديد: دوال التحكم بالصوت ---
+    function applyMuteState() {
+        const muteBtn = document.getElementById('muteBtn');
+        const muteIcon = muteBtn.querySelector('i');
+        const allAudio = document.querySelectorAll('audio');
+
+        if (isMuted) {
+            muteIcon.classList.remove('fa-volume-high');
+            muteIcon.classList.add('fa-volume-xmark');
+            muteBtn.classList.add('muted');
+        } else {
+            muteIcon.classList.remove('fa-volume-xmark');
+            muteIcon.classList.add('fa-volume-high');
+            muteBtn.classList.remove('muted');
+        }
+
+        allAudio.forEach(audio => {
+            audio.muted = isMuted;
+        });
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        localStorage.setItem('animalGameMuted', isMuted);
+        applyMuteState();
+    }
+    // --- نهاية التعديل ---
+
+    function createEmojiSVG(emoji, bgColor) {
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+        <rect width='100' height='100' fill='${bgColor}' rx='15'></rect>
+        <text x='50' y='65' font-size='60' text-anchor='middle' alignment-baseline='middle'>${emoji}</text>
+      </svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    function prepareGameData() {
+        const bgColors = ["#a8dadc", "#f1faee", "#e63946", "#457b9d", "#1d3557"];
+        allAnimalsData = masterAnimalList.map(animal => ({
+            name: animal.name,
+            correct: Array.from({ length: 3 }, (_, i) => createEmojiSVG(animal.emoji, bgColors[i % bgColors.length]))
+        }));
+        wrongImages = wrongEmojis.map(emoji => createEmojiSVG(emoji, '#6c757d'));
+    }
+
+    function shuffle(array) {
+      const newArray = [...array];
+      for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+      }
+      return newArray;
+    }
+
+    function showScreen(screenToShow) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        screenToShow.classList.add('active');
+    }
+
+    function startAdventure() {
+      document.getElementById('instructions').style.display = 'none';
+      showRoundsScreen();
+    }
+    
+    function showRoundsScreen() {
+      clearInterval(interval);
+      resultsScreen.classList.remove("show");
+      unlockedRounds = parseInt(localStorage.getItem('animalGameProgress')) || 1;
+      const container = document.getElementById('roundsContainer');
+      container.innerHTML = '';
+
+      for (let i = 1; i <= ROUNDS_COUNT; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'round-btn';
+        if (i > unlockedRounds) {
+          btn.classList.add('locked');
+          btn.innerHTML = `الجولة ${i}<i class="fas fa-lock"></i>`;
+          btn.disabled = true;
+        } else {
+          btn.innerHTML = `الجولة ${i}<i class="fas fa-play"></i>`;
+          btn.onclick = () => startGame(i);
+        }
+        container.appendChild(btn);
+      }
+      showScreen(roundsScreen);
+    }
+    
+    function startGame(roundNum) {
+      currentRoundNumber = roundNum;
+      currentLevelInRound = 0;
+      starsInRound = 0;
+      found = 0;
+      
+      const startIndex = (roundNum - 1) * LEVELS_PER_ROUND;
+      const endIndex = startIndex + LEVELS_PER_ROUND;
+      levelsForCurrentRound = shuffle(allAnimalsData.slice(startIndex, endIndex));
+      
+      document.getElementById("stars").innerHTML = '';
+      resultsScreen.classList.remove("show");
+      timeLeft = TIME_PER_ROUND;
+      
+      clearInterval(interval);
+      interval = setInterval(updateTimer, 1000);
+      
+      showScreen(gameContainer);
+      loadLevel();
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      const timerElement = document.getElementById("timer");
+      timerElement.style.setProperty('--time', timeLeft / TIME_PER_ROUND * 100);
+      timerElement.textContent = timeLeft;
+      
+      if (timeLeft <= 10) {
+        timerElement.style.color = '#F44336';
+        timerElement.style.animation = 'pulse 0.5s infinite';
+      } else {
+        timerElement.style.color = 'var(--dark)';
+        timerElement.style.animation = 'none';
+      }
+      
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        showResults(false);
+      }
+    }
+
+    function loadLevel() {
+      const topContainer = document.getElementById("topContainer");
+      const imagesContainer = document.getElementById("imagesContainer");
+      const animal = levelsForCurrentRound[currentLevelInRound];
+
+      document.getElementById("roundDisplay").textContent = currentRoundNumber;
+      document.getElementById("level").textContent = currentLevelInRound + 1;
+      document.getElementById("animalName").textContent = animal.name;
+
+      topContainer.innerHTML = "";
+      imagesContainer.innerHTML = "";
+
+      animal.correct.forEach(() => {
+        const slot = document.createElement("div");
+        slot.className = "top-slot";
+        topContainer.appendChild(slot);
+      });
+      
+      const selectedWrongImages = shuffle(wrongImages).slice(0, 9);
+      const allImages = shuffle([...animal.correct, ...selectedWrongImages]);
+      
+      allImages.forEach(src => {
+        const box = document.createElement("div");
+        box.className = "image-box";
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = "صورة";
+        img.onclick = () => checkImage(src, box);
+        box.appendChild(img);
+        imagesContainer.appendChild(box);
+      });
+    }
+
+    function checkImage(src, box) {
+      const animal = levelsForCurrentRound[currentLevelInRound];
+      
+      if (animal.correct.includes(src)) {
+        correctSound.play();
+        box.classList.add("correct");
+        
+        const slot = document.querySelector(".top-slot:not(.filled)");
+        if (slot) {
+          const img = document.createElement("img");
+          img.src = src;
+          slot.appendChild(img);
+          slot.classList.add("filled");
+          box.style.pointerEvents = "none";
+          box.style.opacity = "0.5";
+          found++;
+          
+          if (found === animal.correct.length) {
+            starsInRound++;
+            updateStars();
+            
+            setTimeout(() => {
+              currentLevelInRound++;
+              if (currentLevelInRound < LEVELS_PER_ROUND) {
+                found = 0;
+                levelUpSound.play();
+                loadLevel();
+              } else {
+                clearInterval(interval);
+                showResults(true);
+              }
+            }, 1000);
+          }
+        }
+      } else {
+        wrongSound.play();
+        box.classList.add("wrong");
+        setTimeout(() => box.classList.remove("wrong"), 500);
+      }
+    }
+
+    function updateStars() {
+      const starsContainer = document.getElementById("stars");
+      starsContainer.innerHTML = '';
+      for (let i = 0; i < starsInRound; i++) {
+        starsContainer.innerHTML += '<div class="star filled">★</div>';
+      }
+    }
+
+    function showHint() {
+      if(currentLevelInRound < levelsForCurrentRound.length) {
+        alert(`تلميح: اختر صور ${levelsForCurrentRound[currentLevelInRound].name}`);
+      }
+    }
+
+    function showResults(completed) {
+      const passed = completed && starsInRound >= MIN_STARS_TO_PASS;
+      
+      document.getElementById("resultsTitle").innerHTML = `نتيجة الجولة ${currentRoundNumber} <i class="fa-solid fa-trophy"></i>`;
+      document.getElementById("totalStars").textContent = `${starsInRound}/${LEVELS_PER_ROUND}`;
+      document.getElementById("remainingTime").textContent = timeLeft > 0 ? timeLeft : 0;
+      
+      const ratingElement = document.getElementById("rating");
+      let ratingText = '';
+      if (passed) {
+        if (starsInRound === LEVELS_PER_ROUND) { ratingText = 'مثالي! 👑'; ratingElement.className = 'rating excellent'; }
+        else if (starsInRound >= 12) { ratingText = 'ممتاز! ⭐⭐⭐⭐'; ratingElement.className = 'rating very-good'; }
+        else { ratingText = 'جيد! ⭐⭐⭐'; ratingElement.className = 'rating good'; }
+      } else {
+        ratingText = 'حاول مرة أخرى! ⭐'; ratingElement.className = 'rating below-average';
+      }
+      ratingElement.innerHTML = ratingText;
+      
+      const nextBtn = document.getElementById("nextActionBtn");
+      if (passed) {
+        document.getElementById("resultsMessage").textContent = "لقد نجحت في هذه الجولة!";
+        winSound.play();
+        createConfetti();
+        const nextRound = currentRoundNumber + 1;
+        if (nextRound <= ROUNDS_COUNT) {
+          unlockedRounds = Math.max(unlockedRounds, nextRound);
+          localStorage.setItem('animalGameProgress', unlockedRounds);
+          nextBtn.innerHTML = `الانتقال للجولة ${nextRound} <i class="fa-solid fa-arrow-right"></i>`;
+          nextBtn.onclick = () => startGame(nextRound);
+        } else {
+          nextBtn.innerHTML = `العودة للقائمة الرئيسية <i class="fa-solid fa-home"></i>`;
+          nextBtn.onclick = showRoundsScreen;
+        }
+      } else {
+        document.getElementById("resultsMessage").textContent = completed ? `لم تحصل على النجوم الكافية (${MIN_STARS_TO_PASS}) للمرور.` : "انتهى الوقت!";
+        nextBtn.innerHTML = `أعد لعب الجولة ${currentRoundNumber} <i class="fa-solid fa-arrows-rotate"></i>`;
+        nextBtn.onclick = () => startGame(currentRoundNumber);
+      }
+      
+      const resultsStars = document.getElementById("resultsStars");
+      resultsStars.innerHTML = '';
+      for (let i = 0; i < LEVELS_PER_ROUND; i++) {
+        resultsStars.innerHTML += `<span class="result-star ${i < starsInRound ? 'filled' : ''}">★</span>`;
+      }
+      
+      resultsScreen.classList.add("show");
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement("div");
+        confetti.className = "confetti";
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+        const animation = confetti.animate([
+          { top: '-10px', opacity: 1 },
+          { top: '100vh', opacity: 0, transform: `rotate(${Math.random() * 720}deg)` }
+        ], { duration: Math.random() * 2000 + 1500, easing: 'ease-out' });
+        animation.onfinish = () => confetti.remove();
+        document.body.appendChild(confetti);
+      }
+    }
+
+    window.onload = function() {
+      prepareGameData();
+
+      // --- تعديل جديد: إعداد حالة الصوت عند تحميل الصفحة ---
+      isMuted = localStorage.getItem('animalGameMuted') === 'true';
+      applyMuteState();
+      document.getElementById('muteBtn').onclick = toggleMute;
+      // --- نهاية التعديل ---
+      
+      document.getElementById('instructionsStarsNeeded').textContent = `💡 اجمع ${MIN_STARS_TO_PASS} نجوم على الأقل في كل جولة لفتح الجولة التالية.`;
+      document.getElementById('instructions').style.display = 'flex';
+    };
+  </script>
+</body>
+</html>

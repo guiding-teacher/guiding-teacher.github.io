@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نَظِّم الذكية - منظّم حياتك الرقمي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #f8fafc;
+            --secondary-bg: #ffffff;
+            --primary-text: #1e293b;
+            --secondary-text: #64748b;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --border-color: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --shadow-hover: rgba(0, 0, 0, 0.12);
+            --red: #ef4444;
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        body.dark-mode {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --primary-text: #f1f5f9;
+            --secondary-text: #94a3b8;
+            --accent-color: #60a5fa;
+            --accent-hover: #3b82f6;
+            --border-color: #334155;
+            --shadow-color: rgba(0, 0, 0, 0.25);
+            --shadow-hover: rgba(0, 0, 0, 0.35);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--primary-text);
+            transition: var(--transition);
+            overflow-x: hidden;
+        }
+
+        .app-container { display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background-color: var(--secondary-bg);
+            box-shadow: 0 2px 10px var(--shadow-color);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo h1 { font-size: 24px; font-weight: 800; color: var(--accent-color); }
+        .logo-icon { font-size: 28px; color: var(--accent-color); }
+        .nav-tabs { display: flex; background-color: var(--primary-bg); border-radius: var(--radius); padding: 5px; }
+        .nav-tab { padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: var(--transition); font-weight: 500; }
+        .nav-tab.active { background-color: var(--accent-color); color: white; }
+        
+        .main-content { display: flex; flex: 1; height: calc(100vh - 70px); }
+
+        /* --- الشريط الجانبي --- */
+        .sidebar {
+            width: 320px;
+            background-color: var(--secondary-bg);
+            border-left: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+            overflow-y: auto;
+        }
+        .add-event-btn {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600;
+            cursor: pointer; margin: 20px 0; transition: var(--transition); box-shadow: 0 4px 6px var(--shadow-color);
+        }
+        .add-event-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px var(--shadow-hover); }
+        .add-event-btn i { margin-left: 8px; }
+        .sidebar-section { margin-bottom: 25px; }
+        .sidebar-section h3 {
+            margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid var(--accent-color);
+            font-weight: 700; color: var(--accent-color);
+        }
+        .category-filters { display: flex; flex-wrap: wrap; gap: 8px; }
+        .category-filter {
+            padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer;
+            transition: var(--transition); background-color: var(--primary-bg); border: 1px solid var(--border-color);
+        }
+        .category-filter.active { background-color: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .upcoming-events-container { flex-grow: 1; overflow-y: auto; }
+        .upcoming-event-item {
+            background-color: var(--primary-bg); border-radius: 8px; padding: 12px; margin-bottom: 10px;
+            border-right: 4px solid var(--blue); transition: var(--transition); cursor: pointer;
+        }
+        .upcoming-event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 8px var(--shadow-color); }
+        .upcoming-event-item .title { font-weight: 600; margin-bottom: 5px; }
+        .upcoming-event-item .date { font-size: 12px; color: var(--secondary-text); }
+        
+        .main-area { flex-grow: 1; padding: 20px; display: none; flex-direction: column; overflow: hidden; }
+        .main-area.active { display: flex; }
+        
+        /* --- منطقة الروزنامة --- */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .calendar-nav { display: flex; align-items: center; gap: 15px; }
+        .calendar-nav h2 {
+            width: 200px; text-align: center; font-weight: 700; font-size: 24px; cursor: pointer;
+            padding: 5px; border-radius: 8px; transition: var(--transition);
+        }
+        .calendar-nav h2:hover { background-color: var(--primary-bg); }
+        .nav-btn {
+            background: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition); color: var(--primary-text);
+        }
+        .nav-btn:hover { background-color: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .search-and-voice { display: flex; align-items: center; gap: 10px; }
+        #search-input {
+            border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 15px; background: var(--secondary-bg);
+            color: var(--primary-text); width: 250px; transition: var(--transition);
+        }
+        #search-input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        #voice-command-btn {
+            background: var(--accent-color); color: white; border: none; border-radius: 50%; width: 40px; height: 40px;
+            cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center;
+        }
+        #voice-command-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+
+        .calendar-grid-container {
+            flex-grow: 1; display: flex; flex-direction: column; background-color: var(--secondary-bg);
+            border-radius: var(--radius); box-shadow: 0 4px 6px var(--shadow-color); overflow: hidden;
+        }
+        .calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+        .calendar-weekdays div { font-weight: 700; padding: 15px 0; background-color: var(--primary-bg); border-bottom: 1px solid var(--border-color); }
+        .calendar-grid { flex-grow: 1; }
+        .calendar-day {
+            border: 1px solid var(--border-color); padding: 10px; transition: var(--transition); position: relative;
+            cursor: pointer; min-height: 120px; display: flex; flex-direction: column;
+        }
+        .calendar-day:hover { background-color: var(--primary-bg); }
+        .calendar-day.not-current-month { color: var(--secondary-text); background-color: transparent; }
+        .calendar-day.selected { background-color: rgba(59, 130, 246, 0.1); border: 2px solid var(--accent-color); }
+        .day-number { font-size: 16px; margin-bottom: 8px; font-weight: 600; align-self: flex-start; }
+        .calendar-day.today .day-number {
+            background-color: var(--accent-color); color: white; border-radius: 50%;
+            width: 30px; height: 30px; line-height: 30px; display: inline-block; font-weight: 700;
+        }
+        .day-events { flex-grow: 1; font-size: 12px; overflow: hidden; }
+        .event-pill {
+            display: block; background-color: var(--blue); color: white; border-radius: 4px; padding: 4px 6px;
+            margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+        }
+        .more-events { font-size: 11px; color: var(--accent-color); margin-top: 5px; font-weight: 600; }
+        
+        #daily-details-panel {
+            margin-top: 20px; background-color: var(--secondary-bg); border-radius: var(--radius);
+            padding: 20px; box-shadow: 0 4px 6px var(--shadow-color); min-height: 150px;
+        }
+        #daily-details-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; }
+        #daily-events-list .event-detail-item {
+            display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px;
+            background-color: var(--primary-bg); margin-bottom: 10px; border-right: 4px solid;
+        }
+        #daily-events-list .event-info { display: flex; flex-direction: column; }
+        #daily-events-list .event-info .title { font-weight: 600; }
+        #daily-events-list .event-info .time { font-size: 12px; color: var(--secondary-text); }
+        #daily-events-list .event-actions button {
+            background: none; border: none; cursor: pointer; color: var(--secondary-text);
+            font-size: 16px; margin-right: 10px; transition: var(--transition);
+        }
+        #daily-events-list .event-actions button:hover { color: var(--primary-text); }
+        #daily-events-list .event-actions .edit-btn:hover { color: var(--accent-color); }
+        #daily-events-list .event-actions .delete-btn:hover { color: var(--red); }
+
+        /* --- منطقة المدونة والإعدادات --- */
+        .blog-header, .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .blog-header h2, .settings-header h2 { font-size: 28px; font-weight: 800; color: var(--accent-color); }
+        .create-post-btn {
+            padding: 12px 20px; background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white; border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;
+            transition: var(--transition); box-shadow: 0 4px 6px var(--shadow-color);
+        }
+        .create-post-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px var(--shadow-hover); }
+        .blog-posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .blog-post {
+            background-color: var(--secondary-bg); border-radius: var(--radius); overflow: hidden;
+            box-shadow: 0 4px 6px var(--shadow-color); transition: var(--transition); display: flex; flex-direction: column;
+        }
+        .blog-post:hover { transform: translateY(-5px); box-shadow: 0 10px 15px var(--shadow-hover); }
+        .post-content { padding: 20px; flex-grow: 1; }
+        .post-title { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+        .post-excerpt { color: var(--secondary-text); margin-bottom: 15px; line-height: 1.5; }
+        .post-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--secondary-text); margin-top: auto; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .post-actions button { background: none; border: none; color: var(--secondary-text); cursor: pointer; font-size: 14px; }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        .setting-card { background-color: var(--secondary-bg); padding: 25px; border-radius: var(--radius); box-shadow: 0 4px 6px var(--shadow-color); }
+        .setting-card h3 { margin-bottom: 20px; font-size: 18px; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px; color: var(--accent-color); }
+        .setting-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+        .setting-item label { font-weight: 500; }
+        .category-management-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-radius: 6px; }
+        .category-management-list li:nth-child(odd) { background-color: var(--primary-bg); }
+        .delete-category-btn { background: none; border: none; color: var(--red); cursor: pointer; }
+        .add-category-form { display: flex; gap: 10px; margin-top: 15px; }
+        .add-category-form input { flex-grow: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--primary-bg); }
+        .data-buttons button, .add-category-form button {
+            padding: 10px 15px; border: none; border-radius: 8px; color: white; cursor: pointer;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+        }
+
+        /* --- النوافذ المنبثقة --- */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: var(--secondary-bg); padding: 30px; border-radius: var(--radius); width: 90%;
+            max-width: 600px; position: relative; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-height: 90vh; overflow-y: auto; animation: fadeIn 0.3s ease;
+        }
+        .close-btn {
+            position: absolute; top: 15px; left: 20px; font-size: 28px; font-weight: bold;
+            cursor: pointer; color: var(--secondary-text); transition: var(--transition);
+        }
+        .close-btn:hover { color: var(--red); }
+        #modal-title, #post-modal-title, #date-picker-title { margin-bottom: 20px; font-weight: 700; color: var(--accent-color); }
+        #event-form input, #event-form textarea, #event-form select, #post-form input, #post-form textarea {
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);
+            border-radius: 8px; background-color: var(--primary-bg); color: var(--primary-text); transition: var(--transition);
+        }
+        #event-form input:focus, #event-form textarea:focus, #event-form select:focus, #post-form input:focus, #post-form textarea:focus {
+            outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .form-row { display: flex; align-items: center; margin-bottom: 15px; }
+        .form-row label { width: 120px; font-weight: 600; }
+        .color-picker .colors { display: flex; gap: 10px; }
+        .color-dot { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: var(--transition); }
+        .color-dot.selected { border-color: var(--primary-text); transform: scale(1.1); }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-save, .btn-delete {
+            padding: 12px 24px; border: none; border-radius: 8px; color: white; cursor: pointer;
+            font-weight: 600; transition: var(--transition);
+        }
+        .btn-save { background: linear-gradient(135deg, var(--accent-color), var(--accent-hover)); }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 4px 8px var(--shadow-color); }
+        .btn-delete { background: linear-gradient(135deg, var(--red), #dc2626); }
+        .btn-delete:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3); }
+
+        /* Date Picker Modal */
+        .date-picker-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #year-display { font-size: 20px; font-weight: 700; }
+        .date-picker-nav button { background: none; border: none; font-size: 20px; cursor: pointer; }
+        .months-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .month-cell {
+            padding: 15px; text-align: center; border-radius: 8px; cursor: pointer; transition: var(--transition);
+        }
+        .month-cell:hover { background-color: var(--primary-bg); }
+        .month-cell.current { background-color: var(--accent-color); color: white; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-left: none; border-bottom: 1px solid var(--border-color); }
+            .upcoming-events-container { max-height: 200px; }
+            .calendar-header { flex-direction: column; gap: 15px; }
+            .search-and-voice { width: 100%; justify-content: center; }
+            #search-input { width: 100%; }
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .top-nav { flex-direction: column; gap: 15px; }
+            .nav-tabs { width: 100%; justify-content: center; }
+            .blog-posts { grid-template-columns: 1fr; }
+            .calendar-weekdays div { padding: 10px 0; font-size: 14px; }
+            .calendar-day { min-height: 100px; padding: 8px; }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- شريط التنقل العلوي -->
+        <nav class="top-nav">
+            <div class="logo">
+                <span class="logo-icon">🗓️</span>
+                <h1>نَظِّم الذكية</h1>
+            </div>
+            <div class="nav-tabs">
+                <div class="nav-tab active" data-tab="calendar">الروزنامة</div>
+                <div class="nav-tab" data-tab="blog">المدونة</div>
+                <div class="nav-tab" data-tab="settings">الإعدادات</div>
+            </div>
+        </nav>
+
+        <!-- المحتوى الرئيسي -->
+        <div class="main-content">
+            <!-- الشريط الجانبي (مشترك) -->
+            <aside class="sidebar">
+                <button id="addEventBtn" class="add-event-btn"><i class="fas fa-plus"></i> إضافة حدث جديد</button>
+                <div class="sidebar-section">
+                    <h3>التصنيفات</h3>
+                    <div id="category-filters" class="category-filters">
+                        <!-- سيتم ملؤها عبر JavaScript -->
+                    </div>
+                </div>
+                <div class="sidebar-section">
+                    <h3>الأحداث القادمة</h3>
+                    <div id="upcoming-events-list" class="upcoming-events-container">
+                        <!-- سيتم ملؤها عبر JavaScript -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- منطقة الروزنامة -->
+            <section id="calendar-area" class="main-area active">
+                <header class="calendar-header">
+                    <div class="calendar-nav">
+                        <button id="prev-month-btn" class="nav-btn"><i class="fas fa-chevron-right"></i></button>
+                        <h2 id="current-month-year"></h2>
+                        <button id="next-month-btn" class="nav-btn"><i class="fas fa-chevron-left"></i></button>
+                    </div>
+                    <div class="search-and-voice">
+                        <input type="text" id="search-input" placeholder="ابحث عن حدث...">
+                        <button id="voice-command-btn" title="إضافة حدث بالصوت"><i class="fas fa-microphone"></i></button>
+                    </div>
+                </header>
+                <div class="calendar-grid-container">
+                    <div class="calendar-weekdays">
+                        <div>الأحد</div><div>الإثنين</div><div>الثلاثاء</div><div>الأربعاء</div><div>الخميس</div><div>الجمعة</div><div>السبت</div>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid"></div>
+                </div>
+                <div id="daily-details-panel">
+                    <h3 id="daily-details-header">اختر يوماً لعرض التفاصيل</h3>
+                    <div id="daily-events-list"></div>
+                </div>
+            </section>
+
+            <!-- منطقة المدونة -->
+            <section id="blog-area" class="main-area">
+                <header class="blog-header">
+                    <h2>مدونة نَظِّم</h2>
+                    <button id="create-post-btn" class="create-post-btn"><i class="fas fa-plus"></i> إنشاء منشور جديد</button>
+                </header>
+                <div id="blog-posts" class="blog-posts"></div>
+            </section>
+            
+            <!-- منطقة الإعدادات -->
+            <section id="settings-area" class="main-area">
+                <header class="settings-header"><h2>الإعدادات</h2></header>
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <h3>المظهر</h3>
+                        <div class="setting-item">
+                            <label for="theme-switcher">الوضع الليلي</label>
+                            <label class="switch"><input type="checkbox" id="theme-switcher"><span class="slider"></span></label>
+                        </div>
+                    </div>
+                    <div class="setting-card">
+                        <h3>إدارة البيانات</h3>
+                        <div class="setting-item data-buttons">
+                            <button id="export-data-btn"><i class="fas fa-download"></i> تصدير البيانات</button>
+                            <button id="import-data-btn"><i class="fas fa-upload"></i> استيراد البيانات</button>
+                            <input type="file" id="import-file-input" style="display: none;" accept=".json">
+                        </div>
+                    </div>
+                    <div class="setting-card">
+                        <h3>إدارة التصنيفات</h3>
+                        <ul id="category-management-list" class="category-management-list"></ul>
+                        <form id="add-category-form" class="add-category-form">
+                            <input type="text" id="new-category-name" placeholder="اسم التصنيف الجديد" required>
+                            <button type="submit"><i class="fas fa-plus"></i> إضافة</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- النوافذ المنبثقة -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span><h3 id="modal-title"></h3>
+            <form id="event-form">
+                <input type="hidden" id="event-id">
+                <input type="text" id="event-title" placeholder="عنوان الحدث" required>
+                <textarea id="event-description" placeholder="الوصف..." rows="3"></textarea>
+                <div class="form-row"><label>التاريخ والوقت:</label><input type="datetime-local" id="event-date" required></div>
+                <div class="form-row"><label>النوع:</label><select id="event-category"></select></div>
+                <div class="form-row color-picker"><label>اللون:</label><div id="color-options" class="colors"></div></div>
+                <input type="hidden" id="event-color">
+                <div class="form-row"><label>تذكير قبل:</label><select id="event-reminder"><option value="none">بدون تذكير</option><option value="5">5 دقائق</option><option value="15">15 دقيقة</option><option value="60">ساعة</option><option value="1440">يوم</option></select></div>
+                <div class="modal-buttons"><button type="button" id="delete-event-btn" class="btn-delete" style="display: none;">حذف</button><button type="submit" class="btn-save">حفظ</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="post-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span><h3 id="post-modal-title"></h3>
+            <form id="post-form">
+                <input type="hidden" id="post-id">
+                <input type="text" id="post-title" placeholder="عنوان المنشور" required>
+                <textarea id="post-content" placeholder="محتوى المنشور..." rows="8" required></textarea>
+                <div class="modal-buttons"><button type="submit" class="btn-save">حفظ المنشور</button></div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="date-picker-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span><h3 id="date-picker-title">اختر الشهر والسنة</h3>
+            <div class="date-picker-nav">
+                <button id="prev-year-btn"><i class="fas fa-chevron-right"></i></button>
+                <span id="year-display"></span>
+                <button id="next-year-btn"><i class="fas fa-chevron-left"></i></button>
+            </div>
+            <div id="months-grid" class="months-grid"></div>
+        </div>
+    </div>
+
+    <script src="store.js">
+      
+      
+      
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام أسرار - صانع الأسرار</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* نفس تصميم CSS السابق، تم اختصاره هنا للمساحة */
+        :root { --bg-color: #1a1a1a; --primary-color: #2c2c2c; --secondary-color: #d4af37; --text-color: #f0f0f0; --border-radius: 12px; --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); } body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; } .container { width: 100%; max-width: 500px; background-color: var(--primary-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow); overflow: hidden; border: 1px solid var(--secondary-color); } .header { background-color: var(--secondary-color); color: var(--bg-color); padding: 20px; text-align: center; } .header h1 { margin: 0; font-size: 2.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); } .header p { margin: 5px 0 0; font-size: 1.1em; } .panel { padding: 30px; } h2 { color: var(--secondary-color); border-bottom: 2px solid var(--secondary-color); padding-bottom: 10px; margin-top: 0; } .form-group { margin-bottom: 20px; } label { display: block; margin-bottom: 8px; font-weight: bold; } input[type="text"], input[type="password"], textarea { width: 100%; padding: 12px; background-color: var(--bg-color); border: 1px solid #555; border-radius: 8px; color: var(--text-color); font-size: 1em; box-sizing: border-box; transition: border-color 0.3s, box-shadow 0.3s; } input:focus, textarea:focus { outline: none; border-color: var(--secondary-color); box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); } button, .download-btn { display: block; text-decoration: none; text-align: center; background-color: var(--secondary-color); color: var(--bg-color); border: none; padding: 12px 20px; font-size: 1.1em; font-family: 'Cairo', sans-serif; font-weight: bold; border-radius: 8px; cursor: pointer; transition: transform 0.2s, background-color 0.3s; width: 100%; margin-top: 10px; } button:hover:not(:disabled), .download-btn:hover { transform: translateY(-2px); background-color: #e7c35a; } button:disabled { background-color: #555; cursor: not-allowed; } #qr-code-container { margin-top: 20px; display: flex; justify-content: center; align-items: center; background: #fff; padding: 15px; border-radius: var(--border-radius); min-height: 250px; width: 90%; margin-right: auto; margin-left: auto; border: 5px solid var(--secondary-color); } .download-btn { background-color: #28a745; color: white; display: none; } .nav-link { color: #aaa; text-align: center; margin-top: 20px; display: block; } .nav-link:hover { color: var(--secondary-color); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header"><h1>صانع الأسرار</h1><p>قم بتشفير رسائلك هنا</p></div>
+        <div class="panel">
+            <h2>إنشاء الرمز السري</h2>
+            <div class="form-group"><label for="text-to-encode">النص المُراد تشفيره:</label><textarea id="text-to-encode" rows="4" placeholder="اكتب رسالتك السرية هنا..."></textarea></div>
+            <div class="form-group"><label for="encoder-key">المفتاح السري (كلمة المرور):</label><input type="password" id="encoder-key" placeholder="كلمة المرور لإنشاء الرمز"></div>
+            <button id="generate-btn" onclick="generateSecureQR()">أنشئ الرمز الآن</button>
+            <div id="qr-code-container"><p style="color:#555; text-align:center;">سيظهر الرمز المشفر هنا</p></div>
+            <a id="download-link" class="download-btn" href="#" download="Asrar-Code.png">تنزيل الرمز</a>
+            <a href="decoder.html" class="nav-link">الانتقال إلى صفحة فك التشفير &larr;</a>
+        </div>
+    </div>
+
+    <script>
+const firebaseConfig = {
+    apiKey: "AIzaSyBTv82wJjF_d505typpdsozHl7nBcVwp5k",
+    authDomain: "asrarsystem-c02c7.firebaseapp.com",
+    projectId: "asrarsystem-c02c7",
+    storageBucket: "asrarsystem-c02c7.firebasestorage.app",
+    messagingSenderId: "919458653886",
+    appId: "1:919458653886:web:159646ab17318bacdde0ef"
+};
+        
+
+        // تهيئة Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const qrCodeContainer = document.getElementById('qr-code-container');
+        const downloadLink = document.getElementById('download-link');
+        const generateBtn = document.getElementById('generate-btn');
+        let qrcode = null;
+
+        async function generateSecureQR() {
+            const text = document.getElementById('text-to-encode').value;
+            const key = document.getElementById('encoder-key').value;
+
+            if (!text || !key) {
+                alert("الرجاء إدخال النص والمفتاح السري.");
+                return;
+            }
+            if (!firebase.apps.length) {
+                alert("خطأ: لم يتم تكوين Firebase. الرجاء لصق كود الإعدادات في ملف encoder.html");
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.textContent = "جاري الإنشاء...";
+
+            try {
+                const encrypted = CryptoJS.AES.encrypt(text, key).toString();
+                const uniqueId = db.collection("qrcodes").doc().id; // إنشاء ID فريد من Firestore
+                
+                // إنشاء سجل في قاعدة البيانات
+                await db.collection("qrcodes").doc(uniqueId).set({
+                    status: "active", // active, redeemed, blocked
+                    attempts: 0,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                const payload = { id: uniqueId, data: encrypted };
+                const payloadString = JSON.stringify(payload);
+
+                qrCodeContainer.innerHTML = "";
+                downloadLink.style.display = 'none';
+
+                qrcode = new QRCode(qrCodeContainer, {
+                    text: payloadString,
+                    width: 256, height: 256,
+                    colorDark: "#1a1a1a", colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
+                setTimeout(() => {
+                    const qrImage = qrCodeContainer.querySelector('img');
+                    if (qrImage) {
+                        downloadLink.href = qrImage.src;
+                        downloadLink.style.display = 'block';
+                    }
+                }, 500);
+
+            } catch (error) {
+                console.error("Error during QR generation:", error);
+                alert("حدث خطأ أثناء إنشاء الرمز. تحقق من اتصالك بالإنترنت وإعدادات Firebase.");
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = "أنشئ الرمز الآن";
+            }
+        }
+    </script>
+</body>
+</html>
