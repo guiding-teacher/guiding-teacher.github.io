@@ -1,0 +1,1904 @@
+{
+  "levels": [
+    {
+      "id": 1,
+      "title": "Beginner Level",
+      "description": "Basic vocabulary and simple sentences",
+      "icon": "fas fa-seedling",
+      "unlocked": true,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Happy", "Big", "Smart", "Fast", "Beautiful", "Small", "Strong", "Angry", "Tired", "Rich"],
+            "right": ["Large", "Clever", "Glad", "Pretty", "Quick", "Little", "Powerful", "Mad", "Sleepy", "Wealthy"],
+            "answers": {
+              "Happy": "Glad",
+              "Big": "Large",
+              "Smart": "Clever",
+              "Fast": "Quick",
+              "Beautiful": "Pretty",
+              "Small": "Little",
+              "Strong": "Powerful",
+              "Angry": "Mad",
+              "Tired": "Sleepy",
+              "Rich": "Wealthy"
+            }
+          }
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "She ___ a sandwich and ___ orange juice for lunch.",
+          "explanation": "اختر الكلمات الصحيحة لإكمال الجملة",
+          "options": ["drank", "ate"],
+          "answers": ["ate", "drank"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "Where is Tom going this afternoon?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["To the park", "To the store", "To the school"],
+          "answer": "To the park"
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is the opposite of 'hot'?",
+          "explanation": "اختر الكلمة التي تعني عكس الكلمة المعطاة",
+          "options": ["Cold", "Warm", "Cool", "Freezing"],
+          "answer": "Cold"
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["I", "to", "school", "go", "every", "day"],
+          "answer": ["I", "go", "to", "school", "every", "day"]
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Hot", "Fast", "Old", "Tall", "Light", "Rich", "Easy", "Full", "Wet", "Noisy"],
+            "right": ["Young", "Cold", "Slow", "Dark", "Short", "Poor", "Hard", "Empty", "Dry", "Quiet"],
+            "answers": {
+              "Hot": "Cold",
+              "Fast": "Slow",
+              "Old": "Young",
+              "Tall": "Short",
+              "Light": "Dark",
+              "Rich": "Poor",
+              "Easy": "Hard",
+              "Full": "Empty",
+              "Wet": "Dry",
+              "Noisy": "Quiet"
+            }
+          }
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "They ___ to the cinema yesterday.",
+          "explanation": "اختر الفعل في الزمن الصحيح",
+          "options": ["go", "went"],
+          "answers": ["went"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "Which word means 'a large body of water'?",
+          "explanation": "اختر الكلمة التي تعني 'مسطح مائي كبير'",
+          "options": ["Ocean", "River", "Lake", "Pond"],
+          "answer": "Ocean"
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The test was very ___, I couldn't answer most of the questions.",
+              "answer": "difficult"
+            },
+            {
+              "text": "This book is really ___, I love the story and the characters.",
+              "answer": "interesting"
+            }
+          ],
+          "options": ["interesting", "difficult"]
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["you", "do", "like", "ice cream", "?"],
+          "answer": ["Do", "you", "like", "ice cream", "?"]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Elementary Level",
+      "description": "Basic grammar and common expressions",
+      "icon": "fas fa-leaf",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "We ___ playing football when it started to rain.",
+          "explanation": "اختر زمن الفعل المناسب للجملة",
+          "options": ["were", "are"],
+          "answers": ["were"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What does Sarah want to drink?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Coffee", "Tea", "Juice"],
+          "answer": "Coffee"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Begin", "End", "Buy", "Sell", "Find", "Lost", "Create", "Destroy", "Win", "Lose"],
+            "right": ["Start", "Finish", "Purchase", "Trade", "Discover", "Missing", "Make", "Ruin", "Victory", "Defeat"],
+            "answers": {
+              "Begin": "Start",
+              "End": "Finish",
+              "Buy": "Purchase",
+              "Sell": "Trade",
+              "Find": "Discover",
+              "Lost": "Missing",
+              "Create": "Make",
+              "Destroy": "Ruin",
+              "Win": "Victory",
+              "Lose": "Defeat"
+            }
+          }
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "Which sentence is correct?",
+          "explanation": "اختر الجملة النحوية الصحيحة",
+          "options": ["She don't like apples", "She doesn't like apples", "She not like apples"],
+          "answer": "She doesn't like apples"
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["usually", "I", "at", "7 AM", "wake up"],
+          "answer": ["I", "usually", "wake up", "at", "7 AM"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "My brother is very ___, he exercises every day.",
+              "answer": "active"
+            },
+            {
+              "text": "The movie was so ___ that I fell asleep.",
+              "answer": "boring"
+            }
+          ],
+          "options": ["active", "boring"]
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "If I ___ you, I would study harder.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط",
+          "options": ["am", "were"],
+          "answers": ["were"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is the past tense of 'go'?",
+          "explanation": "اختر تصريف الفعل في الماضي",
+          "options": ["Goed", "Went", "Gone"],
+          "answer": "Went"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Above", "Before", "Inside", "Up", "Forward", "North", "East", "Left", "Top", "Start"],
+            "right": ["Below", "After", "Outside", "Down", "Backward", "South", "West", "Right", "Bottom", "Finish"],
+            "answers": {
+              "Above": "Below",
+              "Before": "After",
+              "Inside": "Outside",
+              "Up": "Down",
+              "Forward": "Backward",
+              "North": "South",
+              "East": "West",
+              "Left": "Right",
+              "Top": "Bottom",
+              "Start": "Finish"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["where", "your", "is", "book", "?"],
+          "answer": ["Where", "is", "your", "book", "?"]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Pre-Intermediate",
+      "description": "Building conversational skills",
+      "icon": "fas fa-tree",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The weather is ___ today, I think I'll go for a walk.",
+              "answer": "pleasant"
+            },
+            {
+              "text": "This phone is too ___, I can't afford it.",
+              "answer": "expensive"
+            }
+          ],
+          "options": ["expensive", "pleasant"]
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "You ___ called me last week.",
+          "explanation": "اختر الفعل المساعد المناسب للنفي في الماضي",
+          "options": ["didn't", "don't"],
+          "answers": ["didn't"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "Which word means 'extremely good'?",
+          "explanation": "اختر الكلمة التي تعني 'جيد جداً'",
+          "options": ["Excellent", "Good", "Nice", "Okay"],
+          "answer": "Excellent"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Complex", "Mysterious", "Rare", "Ancient", "Wealthy", "Famous", "Important", "Dangerous", "Beautiful", "Intelligent"],
+            "right": ["Obscure", "Unique", "Difficult", "Rich", "Old", "Well-known", "Significant", "Risky", "Gorgeous", "Smart"],
+            "answers": {
+              "Complex": "Difficult",
+              "Mysterious": "Obscure",
+              "Rare": "Unique",
+              "Ancient": "Old",
+              "Wealthy": "Rich",
+              "Famous": "Well-known",
+              "Important": "Significant",
+              "Dangerous": "Risky",
+              "Beautiful": "Gorgeous",
+              "Intelligent": "Smart"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["she", "to", "wants", "become", "a", "doctor"],
+          "answer": ["She", "wants", "to", "become", "a", "doctor"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is John's favorite food?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Pizza", "Sushi", "Burger"],
+          "answer": "Pizza"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "If I ___ time, I would go with you.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط",
+          "options": ["had", "have"],
+          "answers": ["had"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is the synonym of 'brave'?",
+          "explanation": "اختر المرادف الصحيح للكلمة",
+          "options": ["Courageous", "Scared", "Timid", "Fearful"],
+          "answer": "Courageous"
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "This solution is ___ for the problem.",
+              "answer": "effective"
+            },
+            {
+              "text": "The movie was ___, I couldn't watch it till the end.",
+              "answer": "boring"
+            }
+          ],
+          "options": ["boring", "effective"]
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["how", "you", "do", "spell", "your", "name", "?"],
+          "answer": ["How", "do", "you", "spell", "your", "name", "?"]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Intermediate",
+      "description": "Expanding vocabulary and grammar",
+      "icon": "fas fa-mountain",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Accurate", "Brief", "Cautious", "Diligent", "Eager", "Fragile", "Generous", "Humorous", "Innovative", "Jealous"],
+            "right": ["Precise", "Concise", "Careful", "Hardworking", "Enthusiastic", "Delicate", "Charitable", "Funny", "Creative", "Envious"],
+            "answers": {
+              "Accurate": "Precise",
+              "Brief": "Concise",
+              "Cautious": "Careful",
+              "Diligent": "Hardworking",
+              "Eager": "Enthusiastic",
+              "Fragile": "Delicate",
+              "Generous": "Charitable",
+              "Humorous": "Funny",
+              "Innovative": "Creative",
+              "Jealous": "Envious"
+            }
+          }
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "By next year, I ___ English for five years.",
+          "explanation": "اختر زمن الفعل المستقبلي التام المناسب",
+          "options": ["will have studied", "will study", "have studied"],
+          "answers": ["will have studied"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "Which word is a synonym for 'abundant'?",
+          "explanation": "اختر المرادف الصحيح للكلمة",
+          "options": ["Plentiful", "Scarce", "Limited", "Rare"],
+          "answer": "Plentiful"
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "students", "are", "their", "exams", "preparing", "for"],
+          "answer": ["The", "students", "are", "preparing", "for", "their", "exams"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The manager was very ___ with the employees' performance.",
+              "answer": "satisfied"
+            },
+            {
+              "text": "It's ___ to drive without a seatbelt.",
+              "answer": "dangerous"
+            }
+          ],
+          "options": ["satisfied", "dangerous"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What did the woman buy at the store?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Milk and bread", "Fruits and vegetables", "Meat and fish"],
+          "answer": "Milk and bread"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "If she ___ earlier, she wouldn't have missed the bus.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["had woken up", "woke up", "would wake up"],
+          "answers": ["had woken up"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is the antonym of 'benevolent'?",
+          "explanation": "اختر الكلمة التي تعني عكس الكلمة المعطاة",
+          "options": ["Malevolent", "Kind", "Generous", "Friendly"],
+          "answer": "Malevolent"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Accept", "Arrive", "Build", "Create", "Include", "Increase", "Marry", "Remember", "Succeed", "Win"],
+            "right": ["Refuse", "Depart", "Destroy", "Destroy", "Exclude", "Decrease", "Divorce", "Forget", "Fail", "Lose"],
+            "answers": {
+              "Accept": "Refuse",
+              "Arrive": "Depart",
+              "Build": "Destroy",
+              "Create": "Destroy",
+              "Include": "Exclude",
+              "Increase": "Decrease",
+              "Marry": "Divorce",
+              "Remember": "Forget",
+              "Succeed": "Fail",
+              "Win": "Lose"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["how", "long", "have", "you", "been", "studying", "English", "?"],
+          "answer": ["How", "long", "have", "you", "been", "studying", "English", "?"]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Upper Intermediate",
+      "description": "Advanced grammar and complex sentences",
+      "icon": "fas fa-rocket",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Not only ___ late, but he also forgot the documents.",
+          "explanation": "اختر التركيب النحوي الصحيح للجملة",
+          "options": ["was he", "he was", "did he be"],
+          "answers": ["was he"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "Which word means 'to make something less severe'?",
+          "explanation": "اختر الكلمة التي تعني 'جعل الشيء أقل حدة'",
+          "options": ["Alleviate", "Aggravate", "Intensify", "Worsen"],
+          "answer": "Alleviate"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Ambiguous", "Benevolent", "Cognizant", "Diligent", "Eloquent", "Frugal", "Gregarious", "Hindrance", "Impartial", "Juxtapose"],
+            "right": ["Vague", "Kind", "Aware", "Hardworking", "Articulate", "Thrifty", "Sociable", "Obstacle", "Unbiased", "Compare"],
+            "answers": {
+              "Ambiguous": "Vague",
+              "Benevolent": "Kind",
+              "Cognizant": "Aware",
+              "Diligent": "Hardworking",
+              "Eloquent": "Articulate",
+              "Frugal": "Thrifty",
+              "Gregarious": "Sociable",
+              "Hindrance": "Obstacle",
+              "Impartial": "Unbiased",
+              "Juxtapose": "Compare"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["despite", "the", "rain", "they", "decided", "to", "go", "ahead", "with", "the", "picnic"],
+          "answer": ["Despite", "the", "rain", "they", "decided", "to", "go", "ahead", "with", "the", "picnic"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The new policy was ___ by most employees.",
+              "answer": "welcomed"
+            },
+            {
+              "text": "His argument was ___ and well-supported.",
+              "answer": "convincing"
+            }
+          ],
+          "options": ["welcomed", "convincing"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "Why is the man late for the meeting?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Traffic jam", "Car trouble", "Overslept"],
+          "answer": "Traffic jam"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had I known about the problem, I ___ helped.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would have", "will have", "would"],
+          "answers": ["would have"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'ephemeral' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["Lasting for a very short time", "Eternal", "Beautiful", "Complex"],
+          "answer": "Lasting for a very short time"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Abstract", "Concrete", "Explicit", "Implicit", "Major", "Minor", "Objective", "Subjective", "Superior", "Inferior"],
+            "right": ["Concrete", "Abstract", "Implicit", "Explicit", "Minor", "Major", "Subjective", "Objective", "Inferior", "Superior"],
+            "answers": {
+              "Abstract": "Concrete",
+              "Concrete": "Abstract",
+              "Explicit": "Implicit",
+              "Implicit": "Explicit",
+              "Major": "Minor",
+              "Minor": "Major",
+              "Objective": "Subjective",
+              "Subjective": "Objective",
+              "Superior": "Inferior",
+              "Inferior": "Superior"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["what", "would", "you", "do", "if", "you", "won", "the", "lottery", "?"],
+          "answer": ["What", "would", "you", "do", "if", "you", "won", "the", "lottery", "?"]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Advanced",
+      "description": "Complex vocabulary and nuanced expressions",
+      "icon": "fas fa-crown",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "___ had the concert begun than it started to rain.",
+          "explanation": "اختر التركيب النحوي الصحيح للجملة",
+          "options": ["No sooner", "Hardly", "Scarcely"],
+          "answers": ["No sooner"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "Which word means 'to publicly recommend or support'?",
+          "explanation": "اختر الكلمة التي تعني 'التوصية أو الدعم العلني'",
+          "options": ["Endorse", "Criticize", "Oppose", "Reject"],
+          "answer": "Endorse"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Abrogate", "Belligerent", "Capricious", "Didactic", "Ebullient", "Fastidious", "Garrulous", "Harangue", "Iconoclast", "Laconic"],
+            "right": ["Cancel", "Hostile", "Unpredictable", "Instructive", "Enthusiastic", "Meticulous", "Talkative", "Tirade", "Rebel", "Brief"],
+            "answers": {
+              "Abrogate": "Cancel",
+              "Belligerent": "Hostile",
+              "Capricious": "Unpredictable",
+              "Didactic": "Instructive",
+              "Ebullient": "Enthusiastic",
+              "Fastidious": "Meticulous",
+              "Garrulous": "Talkative",
+              "Harangue": "Tirade",
+              "Iconoclast": "Rebel",
+              "Laconic": "Brief"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "project", "would", "have", "been", "completed", "on", "time", "had", "they", "worked", "more", "efficiently"],
+          "answer": ["The", "project", "would", "have", "been", "completed", "on", "time", "had", "they", "worked", "more", "efficiently"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The scientist's findings were ___ and challenged existing theories.",
+              "answer": "groundbreaking"
+            },
+            {
+              "text": "Her speech was so ___ that the audience was moved to tears.",
+              "answer": "poignant"
+            }
+          ],
+          "options": ["groundbreaking", "poignant"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the main point of the lecture?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Climate change effects", "Economic theories", "Historical events"],
+          "answer": "Climate change effects"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "So difficult ___ that few people could understand it.",
+          "explanation": "اختر التركيب النحوي الصحيح للجملة",
+          "options": ["was the concept", "the concept was", "the concept"],
+          "answers": ["was the concept"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'quintessential' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["Representing the most perfect example", "Ordinary", "Complex", "Ancient"],
+          "answer": "Representing the most perfect example"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Benevolent", "Cacophony", "Ephemeral", "Gregarious", "Magnanimous", "Ostentatious", "Pragmatic", "Reticent", "Sagacious", "Verbose"],
+            "right": ["Malevolent", "Harmony", "Eternal", "Reclusive", "Petty", "Modest", "Idealistic", "Talkative", "Foolish", "Concise"],
+            "answers": {
+              "Benevolent": "Malevolent",
+              "Cacophony": "Harmony",
+              "Ephemeral": "Eternal",
+              "Gregarious": "Reclusive",
+              "Magnanimous": "Petty",
+              "Ostentatious": "Modest",
+              "Pragmatic": "Idealistic",
+              "Reticent": "Talkative",
+              "Sagacious": "Foolish",
+              "Verbose": "Concise"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["to", "what", "extent", "do", "you", "agree", "with", "the", "statement", "that", "technology", "has", "improved", "our", "lives", "?"],
+          "answer": ["To", "what", "extent", "do", "you", "agree", "with", "the", "statement", "that", "technology", "has", "improved", "our", "lives", "?"]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Business English",
+      "description": "Professional vocabulary and workplace communication",
+      "icon": "fas fa-briefcase",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The report ___ by the end of the week.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["will be completed", "will complete", "is completing"],
+          "answers": ["will be completed"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'leverage' mean in business context?",
+          "explanation": "اختر المعنى الصحيح للكلمة في السياق التجاري",
+          "options": ["To use something to maximum advantage", "To reduce costs", "To hire new employees", "To expand business"],
+          "answer": "To use something to maximum advantage"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Acquisition", "Benchmark", "Consensus", "Diversify", "Feasibility", "Incentive", "Leverage", "Merit", "Outsource", "Quarterly"],
+            "right": ["Purchase", "Standard", "Agreement", "Expand", "Practicality", "Motivation", "Utilize", "Worth", "Contract", "Every three months"],
+            "answers": {
+              "Acquisition": "Purchase",
+              "Benchmark": "Standard",
+              "Consensus": "Agreement",
+              "Diversify": "Expand",
+              "Feasibility": "Practicality",
+              "Incentive": "Motivation",
+              "Leverage": "Utilize",
+              "Merit": "Worth",
+              "Outsource": "Contract",
+              "Quarterly": "Every three months"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["we", "need", "to", "increase", "our", "market", "share", "by", "the", "end", "of", "the", "year"],
+          "answer": ["We", "need", "to", "increase", "our", "market", "share", "by", "the", "end", "of", "the", "year"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The company decided to ___ its operations to reduce costs.",
+              "answer": "streamline"
+            },
+            {
+              "text": "We need to ___ our strategy to stay competitive.",
+              "answer": "revise"
+            }
+          ],
+          "options": ["streamline", "revise"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the main agenda for the meeting?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Quarterly budget review", "New hiring process", "Marketing campaign"],
+          "answer": "Quarterly budget review"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had the company invested more in research, it ___ more innovative products.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would have developed", "will develop", "would develop"],
+          "answers": ["would have developed"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is a 'stakeholder'?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["A person with an interest in the business", "A shareholder only", "A company employee", "A government regulator"],
+          "answer": "A person with an interest in the business"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Assets", "Revenue", "Profit", "Expansion", "Hiring", "Increase", "Invest", "Merge", "Acquire", "Promote"],
+            "right": ["Liabilities", "Expenses", "Loss", "Contraction", "Laying off", "Decrease", "Divest", "Separate", "Sell", "Demote"],
+            "answers": {
+              "Assets": "Liabilities",
+              "Revenue": "Expenses",
+              "Profit": "Loss",
+              "Expansion": "Contraction",
+              "Hiring": "Laying off",
+              "Increase": "Decrease",
+              "Invest": "Divest",
+              "Merge": "Separate",
+              "Acquire": "Sell",
+              "Promote": "Demote"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["what", "are", "the", "key", "performance", "indicators", "for", "this", "quarter", "?"],
+          "answer": ["What", "are", "the", "key", "performance", "indicators", "for", "this", "quarter", "?"]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Academic English",
+      "description": "Formal language for academic contexts",
+      "icon": "fas fa-graduation-cap",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The results of the study ___ in the next issue of the journal.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["will be published", "will publish", "are publishing"],
+          "answers": ["will be published"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'hypothesis' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["A proposed explanation for a phenomenon", "A proven fact", "A research method", "A conclusion"],
+          "answer": "A proposed explanation for a phenomenon"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Analysis", "Citation", "Empirical", "Framework", "Hypothesis", "Methodology", "Paradigm", "Quantitative", "Variable", "Validate"],
+            "right": ["Examination", "Reference", "Observational", "Structure", "Theory", "Approach", "Model", "Numerical", "Factor", "Confirm"],
+            "answers": {
+              "Analysis": "Examination",
+              "Citation": "Reference",
+              "Empirical": "Observational",
+              "Framework": "Structure",
+              "Hypothesis": "Theory",
+              "Methodology": "Approach",
+              "Paradigm": "Model",
+              "Quantitative": "Numerical",
+              "Variable": "Factor",
+              "Validate": "Confirm"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "research", "findings", "strongly", "support", "the", "initial", "hypothesis"],
+          "answer": ["The", "research", "findings", "strongly", "support", "the", "initial", "hypothesis"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The study employed a ___ approach to data collection.",
+              "answer": "systematic"
+            },
+            {
+              "text": "The results were ___ and required further investigation.",
+              "answer": "inconclusive"
+            }
+          ],
+          "options": ["systematic", "inconclusive"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the main conclusion of the research?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Correlation doesn't imply causation", "The hypothesis was proven", "More research is needed"],
+          "answer": "Correlation doesn't imply causation"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Not until the data was analyzed ___ the significance of the findings.",
+          "explanation": "اختر التركيب النحوي الصحيح للجملة",
+          "options": ["did the researchers understand", "the researchers understood", "understood the researchers"],
+          "answers": ["did the researchers understand"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is 'peer review'?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["Evaluation of work by others in the same field", "Self-assessment", "Student evaluation", "Public opinion"],
+          "answer": "Evaluation of work by others in the same field"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Qualitative", "Subjective", "Theoretical", "Abstract", "Deductive", "Primary", "Reliable", "Valid", "Significant", "Correlation"],
+            "right": ["Quantitative", "Objective", "Practical", "Concrete", "Inductive", "Secondary", "Unreliable", "Invalid", "Insignificant", "Causation"],
+            "answers": {
+              "Qualitative": "Quantitative",
+              "Subjective": "Objective",
+              "Theoretical": "Practical",
+              "Abstract": "Concrete",
+              "Deductive": "Inductive",
+              "Primary": "Secondary",
+              "Reliable": "Unreliable",
+              "Valid": "Invalid",
+              "Significant": "Insignificant",
+              "Correlation": "Causation"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["what", "methodological", "limitations", "did", "the", "study", "have", "?"],
+          "answer": ["What", "methodological", "limitations", "did", "the", "study", "have", "?"]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Medical English",
+      "description": "Healthcare terminology and patient communication",
+      "icon": "fas fa-heartbeat",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The patient ___ to take the medication three times daily.",
+          "explanation": "اختر الفعل المناسب للجملة",
+          "options": ["is advised", "advises", "advising"],
+          "answers": ["is advised"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'diagnosis' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["Identification of a disease", "Treatment plan", "Medical history", "Patient symptoms"],
+          "answer": "Identification of a disease"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Symptom", "Treatment", "Prescription", "Dosage", "Therapy", "Prognosis", "Chronic", "Acute", "Benign", "Malignant"],
+            "right": ["Sign", "Care", "Medication order", "Amount", "Treatment", "Outlook", "Long-term", "Severe", "Non-cancerous", "Cancerous"],
+            "answers": {
+              "Symptom": "Sign",
+              "Treatment": "Care",
+              "Prescription": "Medication order",
+              "Dosage": "Amount",
+              "Therapy": "Treatment",
+              "Prognosis": "Outlook",
+              "Chronic": "Long-term",
+              "Acute": "Severe",
+              "Benign": "Non-cancerous",
+              "Malignant": "Cancerous"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "patient", "should", "avoid", "strenuous", "activity", "for", "two", "weeks"],
+          "answer": ["The", "patient", "should", "avoid", "strenuous", "activity", "for", "two", "weeks"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The ___ was successful and the patient recovered quickly.",
+              "answer": "surgery"
+            },
+            {
+              "text": "Regular exercise can help ___ the risk of heart disease.",
+              "answer": "reduce"
+            }
+          ],
+          "options": ["surgery", "reduce"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What are the patient's main symptoms?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Fever and cough", "Headache and dizziness", "Nausea and vomiting"],
+          "answer": "Fever and cough"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had the disease been diagnosed earlier, the treatment ___ more effective.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would have been", "will be", "would be"],
+          "answers": ["would have been"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is a 'placebo'?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["A substance with no therapeutic effect", "A strong medication", "A surgical procedure", "A diagnostic tool"],
+          "answer": "A substance with no therapeutic effect"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Health", "Prevention", "Treatment", "Recovery", "Remission", "Sterile", "Therapeutic", "Vital", "Beneficial", "Congenital"],
+            "right": ["Disease", "Cure", "Neglect", "Relapse", "Progression", "Contaminated", "Harmful", "Fatal", "Detrimental", "Acquired"],
+            "answers": {
+              "Health": "Disease",
+              "Prevention": "Cure",
+              "Treatment": "Neglect",
+              "Recovery": "Relapse",
+              "Remission": "Progression",
+              "Sterile": "Contaminated",
+              "Therapeutic": "Harmful",
+              "Vital": "Fatal",
+              "Beneficial": "Detrimental",
+              "Congenital": "Acquired"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["how", "often", "should", "the", "medication", "be", "taken", "?"],
+          "answer": ["How", "often", "should", "the", "medication", "be", "taken", "?"]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Legal English",
+      "description": "Legal terminology and formal documents",
+      "icon": "fas fa-gavel",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The contract ___ by both parties yesterday.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["was signed", "signed", "has signed"],
+          "answers": ["was signed"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'liable' mean in legal context?",
+          "explanation": "اختر المعنى الصحيح للكلمة في السياق القانوني",
+          "options": ["Legally responsible", "Not responsible", "Possible", "Unlikely"],
+          "answer": "Legally responsible"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Lawsuit", "Defendant", "Plaintiff", "Testimony", "Evidence", "Verdict", "Appeal", "Jurisdiction", "Litigation", "Negligence"],
+            "right": ["Case", "Accused", "Complainant", "Statement", "Proof", "Decision", "Challenge", "Authority", "Lawsuit", "Carelessness"],
+            "answers": {
+              "Lawsuit": "Case",
+              "Defendant": "Accused",
+              "Plaintiff": "Complainant",
+              "Testimony": "Statement",
+              "Evidence": "Proof",
+              "Verdict": "Decision",
+              "Appeal": "Challenge",
+              "Jurisdiction": "Authority",
+              "Litigation": "Lawsuit",
+              "Negligence": "Carelessness"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "court", "dismissed", "the", "case", "due", "to", "lack", "of", "evidence"],
+          "answer": ["The", "court", "dismissed", "the", "case", "due", "to", "lack", "of", "evidence"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The witness provided ___ testimony during the trial.",
+              "answer": "credible"
+            },
+            {
+              "text": "The judge issued a ___ to protect the victim's identity.",
+              "answer": "gag order"
+            }
+          ],
+          "options": ["credible", "gag order"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the basis for the lawsuit?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Breach of contract", "Personal injury", "Property damage"],
+          "answer": "Breach of contract"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Should the defendant be found guilty, he ___ to prison for five years.",
+          "explanation": "اختر الفعل المناسب للجملة الشرطية",
+          "options": ["could be sentenced", "will sentence", "sentences"],
+          "answers": ["could be sentenced"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is 'precedent' in law?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["A previous case used as an example", "A new law", "A court decision", "A legal argument"],
+          "answer": "A previous case used as an example"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Guilty", "Liable", "Valid", "Legal", "Binding", "Criminal", "Civil", "Plaintiff", "Defendant", "Conviction"],
+            "right": ["Innocent", "Exempt", "Invalid", "Illegal", "Non-binding", "Civil", "Criminal", "Defendant", "Plaintiff", "Acquittal"],
+            "answers": {
+              "Guilty": "Innocent",
+              "Liable": "Exempt",
+              "Valid": "Invalid",
+              "Legal": "Illegal",
+              "Binding": "Non-binding",
+              "Criminal": "Civil",
+              "Civil": "Criminal",
+              "Plaintiff": "Defendant",
+              "Defendant": "Plaintiff",
+              "Conviction": "Acquittal"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["on", "what", "grounds", "can", "the", "verdict", "be", "appealed", "?"],
+          "answer": ["On", "what", "grounds", "can", "the", "verdict", "be", "appealed", "?"]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Technical English",
+      "description": "Technology and engineering terminology",
+      "icon": "fas fa-cogs",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The software ___ to be compatible with all operating systems.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["was designed", "designed", "has designed"],
+          "answers": ["was designed"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'algorithm' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["A set of rules for solving a problem", "A computer program", "A type of hardware", "A programming language"],
+          "answer": "A set of rules for solving a problem"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Algorithm", "Application", "Bandwidth", "Firewall", "Interface", "Network", "Protocol", "Server", "Syntax", "Virtual"],
+            "right": ["Procedure", "Program", "Capacity", "Security", "Connection", "System", "Standard", "Computer", "Grammar", "Simulated"],
+            "answers": {
+              "Algorithm": "Procedure",
+              "Application": "Program",
+              "Bandwidth": "Capacity",
+              "Firewall": "Security",
+              "Interface": "Connection",
+              "Network": "System",
+              "Protocol": "Standard",
+              "Server": "Computer",
+              "Syntax": "Grammar",
+              "Virtual": "Simulated"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "new", "update", "will", "enhance", "system", "performance", "and", "security"],
+          "answer": ["The", "new", "update", "will", "enhance", "system", "performance", "and", "security"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The engineer designed a more ___ cooling system for the processor.",
+              "answer": "efficient"
+            },
+            {
+              "text": "The software has a user-friendly ___ that makes it easy to navigate.",
+              "answer": "interface"
+            }
+          ],
+          "options": ["efficient", "interface"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the main feature of the new software?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Enhanced security", "Faster processing", "Better compatibility"],
+          "answer": "Enhanced security"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had the bug been detected earlier, the system ___ crashed.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would not have", "will not have", "would not"],
+          "answers": ["would not have"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is 'encryption'?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["Converting information into a code", "Deleting data", "Copying files", "Compressing data"],
+          "answer": "Converting information into a code"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Input", "Digital", "Hardware", "Software", "Online", "Download", "Encode", "Encrypt", "Compress", "Install"],
+            "right": ["Output", "Analog", "Software", "Hardware", "Offline", "Upload", "Decode", "Decrypt", "Decompress", "Uninstall"],
+            "answers": {
+              "Input": "Output",
+              "Digital": "Analog",
+              "Hardware": "Software",
+              "Software": "Hardware",
+              "Online": "Offline",
+              "Download": "Upload",
+              "Encode": "Decode",
+              "Encrypt": "Decrypt",
+              "Compress": "Decompress",
+              "Install": "Uninstall"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["how", "does", "the", "new", "algorithm", "improve", "data", "processing", "speed", "?"],
+          "answer": ["How", "does", "the", "new", "algorithm", "improve", "data", "processing", "speed", "?"]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Media English",
+      "description": "Journalism and communication terminology",
+      "icon": "fas fa-newspaper",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The news report ___ by millions of viewers yesterday.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["was watched", "watched", "has watched"],
+          "answers": ["was watched"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'headline' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["The title of a news article", "The conclusion", "The main content", "The author's name"],
+          "answer": "The title of a news article"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Article", "Broadcast", "Headline", "Journalist", "Media", "News", "Reporter", "Source", "Story", "Update"],
+            "right": ["Piece", "Transmission", "Title", "Correspondent", "Press", "Information", "Journalist", "Origin", "Report", "Bulletin"],
+            "answers": {
+              "Article": "Piece",
+              "Broadcast": "Transmission",
+              "Headline": "Title",
+              "Journalist": "Correspondent",
+              "Media": "Press",
+              "News": "Information",
+              "Reporter": "Journalist",
+              "Source": "Origin",
+              "Story": "Report",
+              "Update": "Bulletin"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "journalist", "interviewed", "several", "witnesses", "to", "verify", "the", "facts"],
+          "answer": ["The", "journalist", "interviewed", "several", "witnesses", "to", "verify", "the", "facts"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The newspaper published an ___ about the political situation.",
+              "answer": "editorial"
+            },
+            {
+              "text": "The reporter received information from an anonymous ___.",
+              "answer": "source"
+            }
+          ],
+          "options": ["editorial", "source"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the main topic of the news report?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Economic developments", "Sports events", "Entertainment news"],
+          "answer": "Economic developments"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had the journalist verified the information, the newspaper ___ published the false story.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would not have", "will not have", "would not"],
+          "answers": ["would not have"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is 'bias' in journalism?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["Prejudice in favor of or against something", "Objectivity", "Factual reporting", "Neutral perspective"],
+          "answer": "Prejudice in favor of or against something"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Fact", "Objective", "Verified", "Credible", "Accurate", "Transparent", "Independent", "Primary", "Domestic", "Print"],
+            "right": ["Opinion", "Subjective", "Unverified", "Unreliable", "Inaccurate", "Secretive", "Biased", "Secondary", "International", "Digital"],
+            "answers": {
+              "Fact": "Opinion",
+              "Objective": "Subjective",
+              "Verified": "Unverified",
+              "Credible": "Unreliable",
+              "Accurate": "Inaccurate",
+              "Transparent": "Secretive",
+              "Independent": "Biased",
+              "Primary": "Secondary",
+              "Domestic": "International",
+              "Print": "Digital"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["what", "sources", "did", "the", "reporter", "use", "to", "research", "the", "story", "?"],
+          "answer": ["What", "sources", "did", "the", "reporter", "use", "to", "research", "the", "story", "?"]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Travel English",
+      "description": "Vocabulary for tourism and transportation",
+      "icon": "fas fa-plane",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The flight ___ due to bad weather conditions.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["was delayed", "delayed", "has delayed"],
+          "answers": ["was delayed"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'itinerary' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["A travel plan or route", "A passport", "A ticket", "A hotel reservation"],
+          "answer": "A travel plan or route"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Accommodation", "Baggage", "Boarding", "Destination", "Itinerary", "Passport", "Reservation", "Sightseeing", "Tourist", "Visa"],
+            "right": ["Lodging", "Luggage", "Embarkation", "Endpoint", "Schedule", "Document", "Booking", "Tour", "Traveler", "Permit"],
+            "answers": {
+              "Accommodation": "Lodging",
+              "Baggage": "Luggage",
+              "Boarding": "Embarkation",
+              "Destination": "Endpoint",
+              "Itinerary": "Schedule",
+              "Passport": "Document",
+              "Reservation": "Booking",
+              "Sightseeing": "Tour",
+              "Tourist": "Traveler",
+              "Visa": "Permit"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["we", "need", "to", "check", "in", "at", "the", "airport", "two", "hours", "before", "the", "flight"],
+          "answer": ["We", "need", "to", "check", "in", "at", "the", "airport", "two", "hours", "before", "the", "flight"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The hotel offers ___ accommodation with beautiful sea views.",
+              "answer": "luxurious"
+            },
+            {
+              "text": "We took a guided ___ of the historical city center.",
+              "answer": "tour"
+            }
+          ],
+          "options": ["luxurious", "tour"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the flight destination?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Paris", "London", "New York"],
+          "answer": "Paris"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had we left earlier, we ___ the traffic jam.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would have avoided", "will avoid", "would avoid"],
+          "answers": ["would have avoided"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is a 'layover'?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["A wait between flights", "A direct flight", "A canceled flight", "A delayed flight"],
+          "answer": "A wait between flights"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Arrival", "Departure", "Domestic", "International", "Direct", "Non-stop", "One-way", "Round-trip", "Economy", "First class"],
+            "right": ["Departure", "Arrival", "International", "Domestic", "Indirect", "Stopover", "Round-trip", "One-way", "First class", "Economy"],
+            "answers": {
+              "Arrival": "Departure",
+              "Departure": "Arrival",
+              "Domestic": "International",
+              "International": "Domestic",
+              "Direct": "Indirect",
+              "Non-stop": "Stopover",
+              "One-way": "Round-trip",
+              "Round-trip": "One-way",
+              "Economy": "First class",
+              "First class": "Economy"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["how", "long", "is", "the", "layover", "between", "flights", "?"],
+          "answer": ["How", "long", "is", "the", "layover", "between", "flights", "?"]
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "title": "Culinary English",
+      "description": "Food preparation and restaurant terminology",
+      "icon": "fas fa-utensils",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "The cake ___ at 350 degrees for 30 minutes.",
+          "explanation": "اختر صيغة الفعل المناسبة للجملة",
+          "options": ["should be baked", "should bake", "bakes"],
+          "answers": ["should be baked"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'sauté' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["To fry quickly in a small amount of oil", "To bake", "To boil", "To grill"],
+          "answer": "To fry quickly in a small amount of oil"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Appetizer", "Beverage", "Cuisine", "Entrée", "Gourmet", "Ingredient", "Recipe", "Seasoning", "Simmer", "Whisk"],
+            "right": ["Starter", "Drink", "Food style", "Main course", "Connoisseur", "Component", "Instructions", "Flavoring", "Boil gently", "Beat"],
+            "answers": {
+              "Appetizer": "Starter",
+              "Beverage": "Drink",
+              "Cuisine": "Food style",
+              "Entrée": "Main course",
+              "Gourmet": "Connoisseur",
+              "Ingredient": "Component",
+              "Recipe": "Instructions",
+              "Seasoning": "Flavoring",
+              "Simmer": "Boil gently",
+              "Whisk": "Beat"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "chef", "added", "fresh", "herbs", "to", "enhance", "the", "flavor", "of", "the", "sauce"],
+          "answer": ["The", "chef", "added", "fresh", "herbs", "to", "enhance", "the", "flavor", "of", "the", "sauce"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The restaurant is known for its ___ Mediterranean dishes.",
+              "answer": "authentic"
+            },
+            {
+              "text": "For dessert, we have a ___ chocolate cake.",
+              "answer": "decadent"
+            }
+          ],
+          "options": ["authentic", "decadent"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the special of the day?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Grilled salmon", "Beef stew", "Vegetable pasta"],
+          "answer": "Grilled salmon"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Had the chef used less salt, the soup ___ better.",
+          "explanation": "اختر الفعل المناسب لجملة الشرط في الماضي",
+          "options": ["would have tasted", "will taste", "would taste"],
+          "answers": ["would have tasted"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What is 'al dente'?",
+          "explanation": "اختر التعريف الصحيح للمصطلح",
+          "options": ["Pasta cooked to be firm to the bite", "Overcooked pasta", "Undercooked pasta", "Cold pasta"],
+          "answer": "Pasta cooked to be firm to the bite"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Raw", "Fresh", "Sweet", "Bitter", "Spicy", "Salty", "Hot", "Cold", "Crispy", "Tender"],
+            "right": ["Cooked", "Stale", "Savory", "Sweet", "Mild", "Bland", "Cold", "Hot", "Soggy", "Tough"],
+            "answers": {
+              "Raw": "Cooked",
+              "Fresh": "Stale",
+              "Sweet": "Savory",
+              "Bitter": "Sweet",
+              "Spicy": "Mild",
+              "Salty": "Bland",
+              "Hot": "Cold",
+              "Cold": "Hot",
+              "Crispy": "Soggy",
+              "Tender": "Tough"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["what", "ingredients", "are", "used", "in", "the", "signature", "dish", "?"],
+          "answer": ["What", "ingredients", "are", "used", "in", "the", "signature", "dish", "?"]
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "title": "Mastery Level",
+      "description": "Advanced vocabulary and complex structures",
+      "icon": "fas fa-trophy",
+      "unlocked": false,
+      "stars": 0,
+      "questions": [
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "Not only ___ the project ahead of schedule, but they also exceeded quality expectations.",
+          "explanation": "اختر التركيب النحوي الصحيح للجملة",
+          "options": ["did they complete", "they completed", "they did complete"],
+          "answers": ["did they complete"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'ubiquitous' mean?",
+          "explanation": "اختر المعنى الصحيح للكلمة",
+          "options": ["Present everywhere", "Rare", "Temporary", "Important"],
+          "answer": "Present everywhere"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Synonyms",
+          "question": "Connect each word with its synonym",
+          "explanation": "اربط كل كلمة بمرادفها الصحيح",
+          "data": {
+            "left": ["Ambivalent", "Capricious", "Dichotomy", "Ephemeral", "Idiosyncratic", "Magnanimous", "Ostensible", "Perfunctory", "Quintessential", "Vicarious"],
+            "right": ["Uncertain", "Unpredictable", "Division", "Temporary", "Unique", "Generous", "Apparent", "Superficial", "Typical", "Indirect"],
+            "answers": {
+              "Ambivalent": "Uncertain",
+              "Capricious": "Unpredictable",
+              "Dichotomy": "Division",
+              "Ephemeral": "Temporary",
+              "Idiosyncratic": "Unique",
+              "Magnanimous": "Generous",
+              "Ostensible": "Apparent",
+              "Perfunctory": "Superficial",
+              "Quintessential": "Typical",
+              "Vicarious": "Indirect"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct sentence",
+          "explanation": "رتب الكلمات لتكوين جملة صحيحة",
+          "words": ["the", "committee's", "decision", "was", "based", "on", "a", "comprehensive", "analysis", "of", "all", "available", "data"],
+          "answer": ["The", "committee's", "decision", "was", "based", "on", "a", "comprehensive", "analysis", "of", "all", "available", "data"]
+        },
+        {
+          "type": "integrate",
+          "title": "Word Integration",
+          "question": "Fill in the blanks with the correct words",
+          "explanation": "املأ الفراغات بالكلمات الصحيحة",
+          "questions": [
+            {
+              "text": "The author's writing style is remarkably ___ and engaging.",
+              "answer": "lucid"
+            },
+            {
+              "text": "The negotiations reached an ___ after hours of discussion.",
+              "answer": "impasse"
+            }
+          ],
+          "options": ["lucid", "impasse"]
+        },
+        {
+          "type": "listen",
+          "title": "Listen & Choose",
+          "question": "What is the speaker's main argument?",
+          "explanation": "استمع إلى السؤال واختر الإجابة الصحيحة",
+          "options": ["Technology's impact on society", "Economic theories", "Environmental policies"],
+          "answer": "Technology's impact on society"
+        },
+        {
+          "type": "structure",
+          "title": "Sentence Structure",
+          "question": "So compelling ___ that the audience was completely captivated.",
+          "explanation": "اختر التركيب النحوي الصحيح للجملة",
+          "options": ["was the presentation", "the presentation was", "the presentation"],
+          "answers": ["was the presentation"]
+        },
+        {
+          "type": "multipleChoice",
+          "title": "Multiple Choice",
+          "question": "What does 'paradigm shift' mean?",
+          "explanation": "اختر المعنى الصحيح للمصطلح",
+          "options": ["A fundamental change in approach", "A small adjustment", "A temporary change", "A controversial idea"],
+          "answer": "A fundamental change in approach"
+        },
+        {
+          "type": "synonym",
+          "title": "Match Antonyms",
+          "question": "Connect each word with its opposite",
+          "explanation": "اربط كل كلمة بعكسها",
+          "data": {
+            "left": ["Cacophony", "Ephemeral", "Esoteric", "Laconic", "Magnanimous", "Ostentatious", "Prosaic", "Sagacious", "Verbose", "Vivacious"],
+            "right": ["Euphony", "Eternal", "Mainstream", "Loquacious", "Petty", "Modest", "Poetic", "Foolish", "Concise", "Lethargic"],
+            "answers": {
+              "Cacophony": "Euphony",
+              "Ephemeral": "Eternal",
+              "Esoteric": "Mainstream",
+              "Laconic": "Loquacious",
+              "Magnanimous": "Petty",
+              "Ostentatious": "Modest",
+              "Prosaic": "Poetic",
+              "Sagacious": "Foolish",
+              "Verbose": "Concise",
+              "Vivacious": "Lethargic"
+            }
+          }
+        },
+        {
+          "type": "wordOrder",
+          "title": "Word Order",
+          "question": "Arrange the words to form a correct question",
+          "explanation": "رتب الكلمات لتكوين سؤال صحيح",
+          "words": ["to", "what", "extent", "do", "you", "believe", "that", "technological", "advancements", "have", "enhanced", "the", "quality", "of", "human", "life", "?"],
+          "answer": ["To", "what", "extent", "do", "you", "believe", "that", "technological", "advancements", "have", "enhanced", "the", "quality", "of", "human", "life", "?"]
+        }
+      ]
+    }
+  ]
+}

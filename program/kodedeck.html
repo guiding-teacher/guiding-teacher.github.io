@@ -24,7 +24,9 @@
   <meta property="twitter:image" content=" /images/Kodedeck2.png"> <!-- ✨ استبدل هذا برابط صورتك -->
   <!-- END: SEO Meta Tags -->
 
+  <!-- ✨ MODIFIED: The viewport tag is essential for the new desktop view feature -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -33,9 +35,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/lint.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/dialog/dialog.css">
-  <!-- ✨ START: NEW - Code Folding CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/foldgutter.css">
-  <!-- ✨ END: NEW - Code Folding CSS -->
 
   <!-- CodeMirror Themes (Dracula is default) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/dracula.min.css">
@@ -55,6 +55,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/htmlmixed/htmlmixed.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/closetag.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/matchtags.js"></script>
   
   <!-- Linting Addons -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/lint.js"></script>
@@ -62,13 +63,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/css-lint.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/html-lint.js"></script>
 
-  <!-- ✨ START: NEW - Code Folding Scripts -->
+  <!-- Code Folding Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/foldcode.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/foldgutter.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/brace-fold.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/xml-fold.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/comment-fold.js"></script>
-  <!-- ✨ END: NEW - Code Folding Scripts -->
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/selection/active-line.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/display/placeholder.js"></script>
@@ -106,7 +106,6 @@
       border-bottom: 2px solid var(--gutter-bg);
       flex-shrink: 0;
     }
-    /* ✨ START: NEW - Header Center for Filename */
     .header-center {
         flex-grow: 1;
         text-align: center;
@@ -119,7 +118,6 @@
         white-space: nowrap;
         padding: 0 15px;
     }
-    /* ✨ END: NEW - Header Center for Filename */
     .header h3 {
       color: var(--green-accent);
       margin-bottom: 0;
@@ -129,7 +127,6 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      /* ✨ MODIFIED: Added padding for spacing */
       padding: 5px 0 80px 0;
       box-sizing: border-box;
     }
@@ -157,29 +154,27 @@
       height: 100% !important;
       font-size: 16px;
     }
-    /* ✨ START: NEW - Code Folding Gutter Style */
+    /* Style for matching tags */
+    .CodeMirror-matchingtag {
+        background-color: rgba(189, 147, 249, 0.25);
+    }
     .CodeMirror-foldgutter-open,
     .CodeMirror-foldgutter-folded {
       cursor: pointer;
       color: var(--purple-accent);
       padding-top: 3px;
     }
-    .CodeMirror-foldgutter-open:after {
-      content: "▾";
-    }
-    .CodeMirror-foldgutter-folded:after {
-      content: "▸";
-    }
-    /* ✨ END: NEW - Code Folding Gutter Style */
+    .CodeMirror-foldgutter-open:after { content: "▾"; }
+    .CodeMirror-foldgutter-folded:after { content: "▸"; }
+    
     #preview-frame {
       width: 100%;
       height: 100%;
       border: none;
       background-color: white;
     }
-    #file-uploader {
-      display: none;
-    }
+
+    #file-uploader { display: none; }
     .toolbar {
       position: fixed;
       bottom: 0;
@@ -198,245 +193,52 @@
       color: var(--purple-accent);
       bottom: 45px; /* Position above bottom-toolbar */
     }
-    #status-bar span {
-      cursor: default;
-    }
-    #status-bar #error-status:hover {
-      cursor: pointer;
-      color: var(--red-accent);
-    }
-    .cm-error-highlight {
-      background-color: rgba(255, 85, 85, 0.3);
-    }
-    /* ✨ START: NEW - Preview-to-Editor Highlight Style */
-    .editor-line-highlight {
-        background-color: rgba(189, 147, 249, 0.25);
-    }
-    /* ✨ END: NEW - Preview-to-Editor Highlight Style */
+    #status-bar span { cursor: default; }
+    #status-bar #error-status:hover { cursor: pointer; color: var(--red-accent); }
+    .cm-error-highlight { background-color: rgba(255, 85, 85, 0.3); }
+    .editor-line-highlight { background-color: rgba(189, 147, 249, 0.25); }
     #bottom-toolbar {
       padding: 5px;
       justify-content: center;
       gap: 15px;
       height: 45px;
     }
-    .toolbar button {
-      background: none;
-      border: none;
-      color: var(--text-color);
-      font-size: 20px;
-      cursor: pointer;
-      transition: color 0.2s;
-    }
-    .toolbar button:hover {
-      color: var(--green-accent);
-    }
-    /* New styling for the selection toolbar */
-    #selection-toolbar {
-      position: absolute;
-      background-color: var(--header-bg);
-      border-radius: 8px;
-      padding: 6px 10px;
-      display: none; /* Managed by JS */
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      gap: 12px;
-      border: 1px solid var(--gutter-bg);
-    }
-    #selection-toolbar button {
-      font-size: 20px;
-      padding: 2px;
-      line-height: 1;
-      color: #ccc;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    #selection-toolbar button:hover {
-      color: var(--blue-accent);
-    }
-    /* Search bar styling */
-    #search-bar {
-      position: fixed;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: var(--header-bg);
-      padding: 10px 15px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      display: none;
-      z-index: 1001;
-      gap: 10px;
-      align-items: center;
-    }
-    #search-input {
-      display: block;
-      background-color: var(--dark-bg);
-      border: 1px solid var(--gutter-bg);
-      color: var(--text-color);
-      padding: 5px 10px;
-      border-radius: 4px;
-      width: 250px;
-    }
-    #search-input:focus {
-      outline: none;
-      border-color: var(--blue-accent);
-    }
-    #search-close {
-      background: none;
-      border: none;
-      color: var(--text-color);
-      cursor: pointer;
-      font-size: 18px;
-    }
-    #search-close:hover {
-      color: var(--red-accent);
-    }
-    /* Header buttons styling */
-    .header-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    .header-buttons .btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    /* Advanced search panel - Updated Design */
-    #advanced-search-panel {
-      position: fixed;
-      bottom: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: var(--header-bg);
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      display: none; /* مخفي بشكل افتراضي */
-      z-index: 1002;
-      width: auto;
-      border: 1px solid var(--purple-accent);
-      align-items: center;
-      gap: 8px;
-      max-width: 90%;
-    }
-    #advanced-search-panel h6 {
-      display: none; /* إخفاء العنوان */
-    }
-    #advanced-search-input {
-      background-color: var(--dark-bg);
-      border: 1px solid var(--gutter-bg);
-      color: var(--text-color);
-      padding: 6px 10px;
-      border-radius: 4px;
-      width: 200px;
-      margin-bottom: 0;
-      font-size: 14px;
-      transition: border-color 0.3s;
-    }
-    #advanced-search-input:focus {
-      outline: none;
-      border-color: var(--blue-accent);
-    }
-    #advanced-search-panel .btn-group {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 0;
-    }
-    #advanced-search-panel button {
-      background-color: var(--purple-accent);
-      color: var(--dark-bg);
-      border: none;
-      padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      font-size: 14px;
-      width: auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #advanced-search-panel button:hover {
-      background-color: var(--blue-accent);
-    }
-    #advanced-search-panel .btn-primary {
-      background-color: var(--blue-accent);
-    }
-    #advanced-search-panel .btn-info {
-      background-color: var(--green-accent);
-    }
-    #advanced-search-panel .btn-warning {
-      background-color: var(--yellow-accent);
-      color: var(--dark-bg);
-    }
-    #advanced-search-panel .btn-danger {
-      background-color: var(--red-accent);
-    }
-    #advanced-search-panel .btn-secondary {
-      background-color: var(--gutter-bg);
-    }
-    /* Search results styling */
-    .search-result {
-      background-color: rgba(139, 233, 253, 0.2);
-      border: 1px solid var(--blue-accent);
-    }
-    /* Search results counter */
-    #search-results-counter {
-      position: fixed;
-      top: 100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: var(--header-bg);
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      display: none;
-      z-index: 1003;
-    }
-    @media (max-width: 768px) {
-      #bottom-toolbar {
-        gap: 10px;
-        padding: 5px 2px;
-        overflow-x: auto;
-        justify-content: flex-start;
-      }
-      #bottom-toolbar button { font-size: 18px; flex-shrink: 0; }
-      .header-buttons { gap: 5px; }
-      .header-buttons .btn { padding: 4px 8px; }
-      .header h3 { font-size: 1.1rem; }
-      .header-center { display: none; } /* Hide filename on smaller screens to save space */
-      #advanced-search-panel { bottom: 45px; padding: 6px 10px; gap: 6px; max-width: 95%; }
-      #advanced-search-input { width: 150px; padding: 5px 8px; font-size: 13px; }
-      #advanced-search-panel button { padding: 5px 6px; font-size: 13px; }
-      #advanced-search-panel .btn-group { gap: 4px; }
-    }
-    @media (max-width: 480px) {
-      #advanced-search-panel { flex-wrap: wrap; justify-content: center; bottom: 50px; }
-      #advanced-search-input { width: 100%; margin-bottom: 5px; }
-    }
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-      min-width: 300px;
-      padding: 12px 16px;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      animation: slideIn 0.3s ease-out;
-    }
+    .toolbar button { background: none; border: none; color: var(--text-color); font-size: 20px; cursor: pointer; transition: color 0.2s; }
+    .toolbar button:hover { color: var(--green-accent); }
+    #selection-toolbar { position: absolute; background-color: var(--header-bg); border-radius: 8px; padding: 6px 10px; display: none; /* Managed by JS */ z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.4); gap: 12px; border: 1px solid var(--gutter-bg); }
+    #selection-toolbar button { font-size: 20px; padding: 2px; line-height: 1; color: #ccc; background: none; border: none; cursor: pointer; }
+    #selection-toolbar button:hover { color: var(--blue-accent); }
+    #search-bar { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background-color: var(--header-bg); padding: 10px 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; z-index: 1001; gap: 10px; align-items: center; }
+    #search-input { display: block; background-color: var(--dark-bg); border: 1px solid var(--gutter-bg); color: var(--text-color); padding: 5px 10px; border-radius: 4px; width: 250px; }
+    #search-input:focus { outline: none; border-color: var(--blue-accent); }
+    #search-close { background: none; border: none; color: var(--text-color); cursor: pointer; font-size: 18px; }
+    #search-close:hover { color: var(--red-accent); }
+    .header-buttons { display: flex; gap: 10px; }
+    .header-buttons .btn { display: flex; align-items: center; gap: 5px; }
+    #advanced-search-panel { position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%); background-color: var(--header-bg); padding: 8px 12px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; /* مخفي بشكل افتراضي */ z-index: 1002; width: auto; border: 1px solid var(--purple-accent); align-items: center; gap: 8px; max-width: 90%; }
+    #advanced-search-panel h6 { display: none; /* إخفاء العنوان */ }
+    #advanced-search-input { background-color: var(--dark-bg); border: 1px solid var(--gutter-bg); color: var(--text-color); padding: 6px 10px; border-radius: 4px; width: 200px; margin-bottom: 0; font-size: 14px; transition: border-color 0.3s; }
+    #advanced-search-input:focus { outline: none; border-color: var(--blue-accent); }
+    #advanced-search-panel .btn-group { display: flex; gap: 5px; margin-bottom: 0; }
+    #advanced-search-panel button { background-color: var(--purple-accent); color: var(--dark-bg); border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; transition: background-color 0.3s; font-size: 14px; width: auto; display: flex; align-items: center; justify-content: center; }
+    #advanced-search-panel button:hover { background-color: var(--blue-accent); }
+    #advanced-search-panel .btn-primary { background-color: var(--blue-accent); }
+    #advanced-search-panel .btn-info { background-color: var(--green-accent); }
+    #advanced-search-panel .btn-warning { background-color: var(--yellow-accent); color: var(--dark-bg); }
+    #advanced-search-panel .btn-danger { background-color: var(--red-accent); }
+    #advanced-search-panel .btn-secondary { background-color: var(--gutter-bg); }
+    .search-result { background-color: rgba(139, 233, 253, 0.2); border: 1px solid var(--blue-accent); }
+    #search-results-counter { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); background-color: var(--header-bg); padding: 5px 10px; border-radius: 4px; font-size: 14px; display: none; z-index: 1003; }
+    @media (max-width: 768px) { #bottom-toolbar { gap: 10px; padding: 5px 2px; overflow-x: auto; justify-content: flex-start; } #bottom-toolbar button { font-size: 18px; flex-shrink: 0; } .header-buttons { gap: 5px; } .header-buttons .btn { padding: 4px 8px; } .header h3 { font-size: 1.1rem; } .header-center { display: none; /* Hide filename on smaller screens to save space */ } #advanced-search-panel { bottom: 45px; padding: 6px 10px; gap: 6px; max-width: 95%; } #advanced-search-input { width: 150px; padding: 5px 8px; font-size: 13px; } #advanced-search-panel button { padding: 5px 6px; font-size: 13px; } #advanced-search-panel .btn-group { gap: 4px; } }
+    @media (max-width: 480px) { #advanced-search-panel { flex-wrap: wrap; justify-content: center; bottom: 50px; } #advanced-search-input { width: 100%; margin-bottom: 5px; } }
+    .notification { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; padding: 12px 16px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); animation: slideIn 0.3s ease-out; }
     .notification-success { background-color: var(--green-accent); color: var(--dark-bg); }
     .notification-warning { background-color: var(--yellow-accent); color: var(--dark-bg); }
     .notification-error { background-color: var(--red-accent); color: white; }
-    @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
   </style>
 </head>
 <body>
-  <!-- ✨ MODIFIED: Header structure updated for filename -->
   <div class="header">
     <h3><i class="bi bi-code-slash"></i> Kodedeck</h3>
     <div class="header-center" title="اسم الملف الحالي">
@@ -446,6 +248,8 @@
       <button id="new-file-btn" class="btn btn-success btn-sm" title="ملف جديد"><i class="bi bi-plus-lg"></i></button>
       <button id="clear-editor-btn" class="btn btn-warning btn-sm" title="مسح المحرر"><i class="bi bi-eraser"></i></button>
       <button id="toggle-layout-btn" class="btn btn-info btn-sm" title="تبديل التخطيط"><i class="bi bi-distribute-vertical"></i></button>
+      <!-- ✨ MODIFIED: Button function changed to control the entire page view -->
+      <button id="desktop-view-btn" class="btn btn-secondary btn-sm" title="تبديل عرض سطح المكتب"><i class="bi bi-pc-display"></i></button>
       <label for="file-uploader" class="btn btn-primary btn-sm" title="رفع ملف"><i class="bi bi-upload"></i></label>
       <input type="file" id="file-uploader" accept=".html,.css,.js">
     </div>
@@ -454,7 +258,9 @@
   <div class="content-wrapper">
     <div id="main-container" class="split-container">
       <div id="editor-pane" class="pane"><textarea id="main-editor"></textarea></div>
-      <div id="preview-pane" class="pane"><iframe id="preview-frame" title="معاينة الكود"></iframe></div>
+      <div id="preview-pane" class="pane">
+          <iframe id="preview-frame" title="معاينة الكود"></iframe>
+      </div>
     </div>
   </div>
 
@@ -529,6 +335,12 @@
       let isAdvancedSearchOpen = false;
       let searchResultsCount = 0;
       let currentSearchResultIndex = 0;
+      
+      // ✨ START: NEW - State for Full Page Desktop View
+      let isFullDesktopView = false;
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      const originalViewportContent = viewportMeta.getAttribute('content');
+      // ✨ END: NEW - State for Full Page Desktop View
 
       const mainContainer = document.getElementById('main-container');
       const selectionToolbar = document.getElementById('selection-toolbar');
@@ -550,32 +362,24 @@
         autoCloseTags: true,
         autoCloseBrackets: true,
         styleActiveLine: true,
-        // ✨ MODIFIED: Added foldgutter for code folding and lint markers
+        matchTags: {bothTags: true},
         gutters: ["CodeMirror-lint-markers", "CodeMirror-foldgutter"],
         lint: true,
-        foldGutter: true, // ✨ NEW: Enable code folding feature
+        foldGutter: true, 
         lineWrapping: true,
           extraKeys: {
-          "Ctrl-F": function(cm) {
-            toggleAdvancedSearch();
-          },
-          "F3": function(cm) {
-            findNext();
-          },
-          "Shift-F3": function(cm) {
-            findPrev();
-          }
+          "Ctrl-F": function(cm) { toggleAdvancedSearch(); },
+          "F3": function(cm) { findNext(); },
+          "Shift-F3": function(cm) { findPrev(); }
         }
       });
       
-      // ✨ START: NEW - Function to update filename in the header
       const fileNameElement = document.getElementById('current-filename');
       function updateFileName(newName) {
           fileNameElement.textContent = newName;
           fileNameElement.title = newName;
       }
-      // ✨ END: NEW - Function to update filename in the header
-
+      
       // ## 2. وظائف الواجهة والتخطيط
       function setupSplitLayout() {
         if (splitInstance) splitInstance.destroy();
@@ -596,8 +400,30 @@
         icon.className = isVerticalLayout ? 'bi bi-distribute-horizontal' : 'bi bi-distribute-vertical';
       });
 
+      // ✨ START: NEW - Full Page Desktop View Toggle Logic
+      const desktopViewBtn = document.getElementById('desktop-view-btn');
+      
+      function toggleFullDesktopView() {
+        isFullDesktopView = !isFullDesktopView;
+        const icon = desktopViewBtn.querySelector('i');
+
+        if (isFullDesktopView) {
+            // Set to desktop mode: fixed wide viewport. The browser will scale it down.
+            viewportMeta.setAttribute('content', 'width=1280');
+            icon.className = 'bi bi-phone';
+            desktopViewBtn.title = 'تبديل عرض الهاتف';
+        } else {
+            // Set back to mobile/responsive mode using the original value
+            viewportMeta.setAttribute('content', originalViewportContent);
+            icon.className = 'bi bi-pc-display';
+            desktopViewBtn.title = 'تبديل عرض سطح المكتب';
+        }
+      }
+
+      desktopViewBtn.addEventListener('click', toggleFullDesktopView);
+      // ✨ END: NEW - Full Page Desktop View Toggle Logic
+
       // ## 3. وظائف شريط الحالة (Status Bar)
-      // ✨ MODIFIED: Error counting is now handled by the 'lintDone' event for accuracy.
       editor.on("lintDone", function(annotations) {
           lintAnnotations = annotations;
           const errorCount = lintAnnotations.length;
@@ -607,10 +433,8 @@
       function updateStatusBar() {
           const lineCount = editor.lineCount();
           const wordCount = editor.getValue().split(/\s+/).filter(Boolean).length;
-          
           document.getElementById('line-count-status').textContent = `Lines: ${lineCount}`;
           document.getElementById('word-count-status').textContent = `Words: ${wordCount}`;
-
           if (currentErrorMarker) {
               currentErrorMarker.clear();
               currentErrorMarker = null;
@@ -647,27 +471,10 @@
 <head> 
   <title>Kodedeck</title> 
   <style> 
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 40px; 
-      background-color: #f5f5f5; 
-      color: #333;
-    } 
-    .container { 
-      max-width: 800px; 
-      margin: 0 auto; 
-      background: white; 
-      padding: 20px; 
-      border-radius: 8px; 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-    } 
-    h1 { 
-      color: #2c3e50; 
-    } 
-    p { 
-      line-height: 1.6; 
-      color: #34495e; 
-    } 
+    body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; color: #333; } 
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); } 
+    h1 { color: #2c3e50; } 
+    p { line-height: 1.6; color: #34495e; } 
   </style> 
 </head> 
 <body> 
@@ -687,10 +494,7 @@
 
       function getFileExtension(mode) {
         switch(mode) {
-          case 'htmlmixed': return '.html';
-          case 'xml': return '.xml';
-          case 'css': return '.css';
-          case 'javascript': return '.js';
+          case 'htmlmixed': return '.html'; case 'xml': return '.xml'; case 'css': return '.css'; case 'javascript': return '.js';
           default: return '.txt';
         }
       }
@@ -705,10 +509,7 @@
 
       document.getElementById('confirm-save-btn').addEventListener('click', () => {
         const name = document.getElementById('snippet-name-input').value.trim();
-        if (!name) {
-          showNotification('الرجاء إدخال اسم للكود.', 'warning');
-          return;
-        }
+        if (!name) { showNotification('الرجاء إدخال اسم للكود.', 'warning'); return; }
         const code = editor.getValue();
         const mode = editor.getMode().name;
         const timestamp = new Date().toISOString();
@@ -718,7 +519,7 @@
         localStorage.setItem('kodedeck_snippets', JSON.stringify(snippets));
         saveModal.hide();
         document.getElementById('snippet-name-input').value = '';
-        updateFileName(name + extension); // ✨ NEW: Update filename on save
+        updateFileName(name + extension);
         showNotification('تم حفظ الكود بنجاح!');
       });
 
@@ -727,8 +528,7 @@
         const container = document.getElementById('snippets-list-container');
         const snippetNames = Object.keys(snippets);
         if (snippetNames.length === 0) {
-          container.innerHTML = '<p class="text-center">لا توجد أكواد محفوظة بعد.</p>';
-          return;
+          container.innerHTML = '<p class="text-center">لا توجد أكواد محفوظة بعد.</p>'; return;
         }
         container.innerHTML = `<ul class="list-group list-group-flush">${snippetNames.map(name => {
             const snippet = snippets[name];
@@ -751,7 +551,7 @@
           const snippet = snippets[name];
           const code = typeof snippet === 'object' ? snippet.code : snippet;
           editor.setValue(code);
-          updateFileName(name + snippet.extension); // ✨ NEW: Update filename on load
+          updateFileName(name + snippet.extension);
           loadModal.hide();
           showNotification(`تم تحميل ${name} بنجاح!`);
         }
@@ -775,30 +575,26 @@
         const extension = typeof snippet === 'object' ? snippet.extension : '.html';
         const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = name + extension;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const a = document.createElement('a'); a.href = url; a.download = name + extension;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         showNotification(`تم تنزيل ${name} بنجاح!`);
       }
 
       function downloadCode() {
+        const currentName = fileNameElement.textContent || 'kodedeck_code.html';
+        const baseName = currentName.substring(0, currentName.lastIndexOf('.')) || currentName;
+        const newName = prompt("أدخل اسم الملف للتنزيل:", baseName);
+        if (newName === null || newName.trim() === '') {
+          showNotification('تم إلغاء التنزيل.', 'warning'); return;
+        }
         const code = editor.getValue();
         const mode = editor.getMode().name;
         const extension = getFileExtension(mode);
-        const mimeType = 'text/plain';
-        const blob = new Blob([code], { type: mimeType + ';charset=utf-8' });
+        const finalName = newName.endsWith(extension) ? newName : newName + extension;
+        const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileNameElement.textContent || 'kodedeck_code' + extension;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const a = document.createElement('a'); a.href = url; a.download = finalName;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
         showNotification(`تم تنزيل الكود بنجاح!`);
       }
 
@@ -839,135 +635,95 @@
         editor.focus();
       }
 
-      // ✨ START: NEW - Highlight line from preview
       function highlightLineInEditor(line) {
-          if (highlightedLineMarker) {
-              highlightedLineMarker.clear();
-          }
-          const lineHandle = editor.getLineHandle(line);
-          if (!lineHandle) return;
-
+          if (highlightedLineMarker) { highlightedLineMarker.clear(); }
+          const lineHandle = editor.getLineHandle(line); if (!lineHandle) return;
           highlightedLineMarker = editor.markText(
-              { line: line, ch: 0 },
-              { line: line, ch: editor.getLine(line).length },
-              { className: 'editor-line-highlight' }
+              { line: line, ch: 0 }, { line: line, ch: editor.getLine(line).length }, { className: 'editor-line-highlight' }
           );
           editor.scrollIntoView({ line: line, ch: 0 }, 100);
-          setTimeout(() => {
-              if (highlightedLineMarker) {
-                  highlightedLineMarker.clear();
-                  highlightedLineMarker = null;
-              }
-          }, 2500);
+          setTimeout(() => { if (highlightedLineMarker) { highlightedLineMarker.clear(); highlightedLineMarker = null; } }, 2500);
       }
-      // ✨ END: NEW - Highlight line from preview
 
       function updatePreview() {
         const previewFrame = document.getElementById('preview-frame');
         const preview = previewFrame.contentWindow.document;
         preview.open();
         let code = editor.getValue();
-
-        // ✨ START: الإضافة الجديدة لمنع شريط التمرير في المعاينة
-        // هذا الكود سيتم حقنه داخل <head> الخاص بالمعاينة تلقائيًا
-        const antiScrollStyles = `
-          <style>
-            /* لمنع ظهور شريط التمرير الأفقي في المعاينة */
-            html, body {
-              overflow-x: hidden !important;
-              box-sizing: border-box !important;
-            }
-            /* لجعل الصور تتكيف مع عرض الشاشة افتراضيًا */
-            img {
-              max-width: 100%;
-              height: auto;
-            }
-          </style>
-        `;
-
-        // نقوم بحقن الـ CSS داخل وسم الـ head إن وجد
-        if (code.includes('</head>')) {
-          code = code.replace('</head>', antiScrollStyles + '</head>');
-        } else {
-          // إذا لم يجد وسم head، يتم إضافته قبل الكود بالكامل
-          code = antiScrollStyles + code;
-        }
-        // ✨ END: الإضافة الجديدة
-
-        // A simple sandbox for the script to avoid breaking the main app
+        const antiScrollStyles = `<style>html, body { overflow-x: hidden !important; box-sizing: border-box !important; } img { max-width: 100%; height: auto; }</style>`;
+        code = code.includes('</head>') ? code.replace('</head>', antiScrollStyles + '</head>') : antiScrollStyles + code;
         const safeCode = code.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (match, scriptContent) => {
           return `<script>(function(){try{${scriptContent}}catch(e){console.error(e)}})();<\/script>`;
         });
-        
         preview.write(safeCode);
         preview.close();
-
-        // Add dblclick listener to preview for highlighting
         preview.body.addEventListener('dblclick', (event) => {
-            const target = event.target;
-            if (!target || !target.outerHTML) return;
-
+            const target = event.target; if (!target || !target.outerHTML) return;
             const cursor = editor.getSearchCursor(target.outerHTML, {line: 0, ch: 0}, false);
-            if (cursor.findNext()) {
-                const line = cursor.from().line;
-                highlightLineInEditor(line);
-            }
+            if (cursor.findNext()) { highlightLineInEditor(cursor.from().line); }
         });
       }
 
-      editor.on('change', () => {
-        updatePreview();
-        updateStatusBar();
-        autoSave();
-      });
+      editor.on('change', () => { updatePreview(); updateStatusBar(); autoSave(); });
 
-      document.getElementById('undo-btn').onclick = () => editor.undo();
-      document.getElementById('redo-btn').onclick = () => editor.redo();
-      document.getElementById('cut-btn').onclick = () => handleClipboard('cut');
-      document.getElementById('copy-btn').onclick = () => handleClipboard('copy');
-      document.getElementById('paste-btn').onclick = () => handleClipboard('paste');
-      document.getElementById('select-all-btn').onclick = () => editor.execCommand('selectAll');
-      document.getElementById('download-btn').onclick = downloadCode;
+      document.getElementById('undo-btn').addEventListener('click', () => editor.undo());
+      document.getElementById('redo-btn').addEventListener('click', () => editor.redo());
+      document.getElementById('cut-btn').addEventListener('click', () => handleClipboard('cut'));
+      document.getElementById('copy-btn').addEventListener('click', () => handleClipboard('copy'));
+      document.getElementById('paste-btn').addEventListener('click', () => handleClipboard('paste'));
+      document.getElementById('select-all-btn').addEventListener('click', () => editor.execCommand('selectAll'));
+      document.getElementById('download-btn').addEventListener('click', downloadCode);
 
       const shareUrl = window.location.href;
       const shareTitle = document.title;
-      document.getElementById('share-facebook').onclick = (e) => { e.preventDefault(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank'); };
-      document.getElementById('share-whatsapp').onclick = (e) => { e.preventDefault(); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + ':\n' + shareUrl)}`, '_blank'); };
-      document.getElementById('share-telegram').onclick = (e) => { e.preventDefault(); window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank'); };
-      document.getElementById('native-share-btn').onclick = async () => {
-        if (navigator.share) {
-            try {
-                const code = editor.getValue();
-                await navigator.share({
-                    title: 'كود من Kodedeck',
-                    text: code.trim() ? code : 'تحقق من محرر الأكواد الرائع هذا!',
-                    url: shareUrl
-                });
-            } catch (err) { if (err.name !== 'AbortError') console.error('خطأ في المشاركة:', err); }
+      document.getElementById('share-facebook').addEventListener('click', (e) => { e.preventDefault(); window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank'); });
+      document.getElementById('share-whatsapp').addEventListener('click', (e) => { e.preventDefault(); window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareTitle + ':\n' + shareUrl)}`, '_blank'); });
+      document.getElementById('share-telegram').addEventListener('click', (e) => { e.preventDefault(); window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank'); });
+      
+      document.getElementById('native-share-btn').addEventListener('click', async () => {
+        if (navigator.share && navigator.canShare) {
+            const code = editor.getValue();
+            if (!code.trim()) {
+                await navigator.share({ title: shareTitle, text: 'تحقق من محرر الأكواد الرائع هذا!', url: shareUrl }); return;
+            }
+            const currentName = fileNameElement.textContent || 'shared_code.html';
+            const baseName = currentName.substring(0, currentName.lastIndexOf('.')) || currentName;
+            const newName = prompt("أدخل اسم الملف للمشاركة:", baseName);
+            if (newName === null || newName.trim() === '') {
+                showNotification('تم إلغاء المشاركة.', 'warning'); return;
+            }
+            const extension = getFileExtension(editor.getMode().name);
+            const finalName = newName.endsWith(extension) ? newName : newName + extension;
+            const fileToShare = new File([code], finalName, { type: 'text/plain' });
+            if (navigator.canShare({ files: [fileToShare] })) {
+                try {
+                    await navigator.share({ files: [fileToShare], title: `مشاركة ملف: ${finalName}`, text: `ملف كود من Kodedeck.` });
+                } catch (err) { if (err.name !== 'AbortError') console.error('خطأ في مشاركة الملف:', err); }
+            } else { await navigator.share({ title: `كود من Kodedeck: ${finalName}`, text: code, url: shareUrl }); }
         } else {
             showNotification('ميزة المشاركة الأصلية غير مدعومة في هذا المتصفح.', 'warning');
         }
-      };
-
-      document.getElementById('new-file-btn').onclick = () => {
+      });
+      
+      document.getElementById('new-file-btn').addEventListener('click', () => {
         if (editor.getValue() && !confirm('هل تريد فتح ملف جديد؟ سيتم فقدان التغييرات غير المحفوظة.')) return;
         editor.setValue(`<!DOCTYPE html>...`);
-        updateFileName('Untitled.html'); // ✨ NEW: Reset filename
-      };
+        updateFileName('Untitled.html');
+      });
 
-      document.getElementById('clear-editor-btn').onclick = () => {
+      document.getElementById('clear-editor-btn').addEventListener('click', () => {
         if (confirm('هل تريد مسح كل النص في المحرر؟')) editor.setValue('');
-      };
+      });
 
-      document.getElementById('popup-cut-btn').onclick = () => { handleClipboard('cut'); selectionToolbar.style.display = 'none'; };
-      document.getElementById('popup-copy-btn').onclick = () => { handleClipboard('copy'); selectionToolbar.style.display = 'none'; };
-      document.getElementById('popup-paste-btn').onclick = () => { handleClipboard('paste'); selectionToolbar.style.display = 'none'; };
-      document.getElementById('popup-select-all-btn').onclick = () => { editor.execCommand('selectAll'); selectionToolbar.style.display = 'none'; };
-      document.getElementById('popup-search-btn').onclick = () => {
+      document.getElementById('popup-cut-btn').addEventListener('click', () => { handleClipboard('cut'); selectionToolbar.style.display = 'none'; });
+      document.getElementById('popup-copy-btn').addEventListener('click', () => { handleClipboard('copy'); selectionToolbar.style.display = 'none'; });
+      document.getElementById('popup-paste-btn').addEventListener('click', () => { handleClipboard('paste'); selectionToolbar.style.display = 'none'; });
+      document.getElementById('popup-select-all-btn').addEventListener('click', () => { editor.execCommand('selectAll'); selectionToolbar.style.display = 'none'; });
+      document.getElementById('popup-search-btn').addEventListener('click', () => {
         const selectedText = editor.getSelection();
         if (selectedText) window.open('https://www.google.com/search?q=' + encodeURIComponent(selectedText), '_blank');
         selectionToolbar.style.display = 'none';
-      };
+      });
 
       editor.on('cursorActivity', function() {
         if (editor.somethingSelected()) {
@@ -983,60 +739,36 @@
       document.getElementById('search-btn').onclick = toggleAdvancedSearch;
       function toggleAdvancedSearch() {
         if (advancedSearchPanel.style.display === 'flex') {
-          advancedSearchPanel.style.display = 'none';
-          isAdvancedSearchOpen = false;
-          clearSearchMarkers();
+          advancedSearchPanel.style.display = 'none'; isAdvancedSearchOpen = false; clearSearchMarkers();
         } else {
-          advancedSearchPanel.style.display = 'flex';
-          isAdvancedSearchOpen = true;
-          advancedSearchInput.focus();
+          advancedSearchPanel.style.display = 'flex'; isAdvancedSearchOpen = true; advancedSearchInput.focus();
         }
       }
 
       document.getElementById('advanced-search-close').onclick = () => {
-        advancedSearchPanel.style.display = 'none';
-        isAdvancedSearchOpen = false;
-        clearSearchMarkers();
-        editor.focus();
+        advancedSearchPanel.style.display = 'none'; isAdvancedSearchOpen = false; clearSearchMarkers(); editor.focus();
       };
       
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && isAdvancedSearchOpen) toggleAdvancedSearch();
-      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isAdvancedSearchOpen) toggleAdvancedSearch(); });
       
-      document.getElementById('find-next-btn').onclick = findNext;
-      document.getElementById('find-prev-btn').onclick = findPrev;
-      document.getElementById('find-all-btn').onclick = findAll;
-      document.getElementById('replace-btn').onclick = replace;
-      document.getElementById('replace-all-btn').onclick = replaceAll;
+      document.getElementById('find-next-btn').onclick = findNext; document.getElementById('find-prev-btn').onclick = findPrev; document.getElementById('find-all-btn').onclick = findAll; document.getElementById('replace-btn').onclick = replace; document.getElementById('replace-all-btn').onclick = replaceAll;
       
-      function findNext() {}
-      function findPrev() {}
-      function findAll() {}
-      function replace() {}
-      function replaceAll() {}
+      function findNext() {} function findPrev() {} function findAll() {} function replace() {} function replaceAll() {}
       function clearSearchMarkers() { searchMarkers.forEach(marker => marker.clear()); searchMarkers = []; }
 
       const fileUploader = document.getElementById('file-uploader');
       fileUploader.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+        const file = event.target.files[0]; if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => { 
           editor.setValue(e.target.result); 
-          updateFileName(file.name); // ✨ NEW: Update filename on upload
+          updateFileName(file.name);
           showNotification(`تم تحميل الملف ${file.name} بنجاح`, 'success'); 
         };
-        reader.readAsText(file);
-        event.target.value = '';
+        reader.readAsText(file); event.target.value = '';
       });
 
-      setupSplitLayout();
-      loadSavedTheme();
-      loadAutoSavedCode();
-      updatePreview();
-      updateStatusBar();
-
+      setupSplitLayout(); loadSavedTheme(); loadAutoSavedCode(); updatePreview(); updateStatusBar();
       document.getElementById('loadModal').addEventListener('shown.bs.modal', populateSnippetsModal);
     });
   </script>

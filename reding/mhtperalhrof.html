@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مختبر الألوان السحري</title>
+    <title>مختبر الألوان السحري - النسخة المحترفة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bottle-width: 70px;
-            --bottle-height: 200px;
-            --liquid-unit-height: 40px;
+            --bottle-width: 80px;
+            --bottle-height: 220px;
+            --liquid-unit-height: 44px;
         }
-        
+
         body {
             font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
         }
 
         .gradient-bg {
@@ -24,10 +26,11 @@
         }
         
         .glass-effect {
-            backdrop-filter: blur(12px) saturate(150%);
-            -webkit-backdrop-filter: blur(12px) saturate(150%);
-            background: rgba(31, 41, 55, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
             transition: all 0.3s ease;
         }
         
@@ -35,38 +38,52 @@
             transition: all 0.3s ease;
         }
         .neon-glow:hover {
-            filter: drop-shadow(0 0 15px currentColor);
+            filter: drop-shadow(0 0 12px currentColor);
+            transform: translateY(-2px);
         }
         .neon-glow-permanent {
-            filter: drop-shadow(0 0 10px currentColor);
+            filter: drop-shadow(0 0 8px currentColor);
         }
         
         .bottle {
             width: var(--bottle-width);
             height: var(--bottle-height);
-            border: 4px solid rgba(255, 255, 255, 0.6);
-            border-top: none;
-            border-radius: 0 0 30px 30px;
             position: relative;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: bottom center;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
         }
-        .bottle::before {
-            content: '';
+        
+        .bottle-body {
             position: absolute;
-            top: -20px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: calc(100% - 25px);
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 100%);
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            border-top: none;
+            border-radius: 0 0 35px 35px;
+            overflow: hidden;
+        }
+        
+        .bottle-neck {
+            position: absolute;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 50%;
-            height: 20px;
-            border: 4px solid rgba(255, 255, 255, 0.6);
+            width: 45%;
+            height: 25px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.2) 100%);
+            border: 3px solid rgba(255, 255, 255, 0.7);
             border-bottom: none;
             border-radius: 15px 15px 0 0;
         }
+        
         .bottle.selected {
-            transform: translateY(-20px) scale(1.05);
-            box-shadow: 0 0 30px #3b82f6;
+            transform: translateY(-15px) scale(1.08);
+            filter: drop-shadow(0 0 20px #3b82f6);
         }
 
         .liquid-stack {
@@ -76,827 +93,1233 @@
             right: 0;
             display: flex;
             flex-direction: column-reverse;
-            border-radius: 0 0 26px 26px;
+            border-radius: 0 0 32px 32px;
             overflow: hidden;
         }
+        
         .liquid-unit {
             height: var(--liquid-unit-height);
             width: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: bold;
             color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            transition: background-color 0.5s;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .liquid-unit::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
         }
         
         .pour-animation {
-            animation: pour 0.8s ease-in-out;
+            animation: pour 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+        
         @keyframes pour {
-            0% { transform: translateY(-20px) rotate(0deg); }
-            40% { transform: translateY(-50px) rotate(80deg); }
-            60% { transform: translateY(-50px) rotate(80deg); }
-            100% { transform: translateY(-20px) rotate(0deg); }
+            0% { transform: translateY(0) rotate(0deg); }
+            30% { transform: translateY(-30px) rotate(45deg); }
+            60% { transform: translateY(-30px) rotate(45deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+        
+        .liquid-transfer {
+            position: absolute;
+            width: 60px;
+            height: 20px;
+            background: currentColor;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 10;
+            filter: drop-shadow(0 0 8px currentColor);
+            animation: transfer 1s ease-in-out forwards;
+        }
+        
+        @keyframes transfer {
+            0% { transform: scale(0.5); opacity: 0; }
+            20% { transform: scale(1); opacity: 0.8; }
+            80% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(0.5); opacity: 0; }
         }
 
         .success-sparkle {
-            animation: sparkle-burst 1s ease-out forwards;
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            filter: blur(1px);
+            animation: sparkle-burst 1.2s ease-out forwards;
         }
+        
         @keyframes sparkle-burst {
-            from { transform: scale(0); opacity: 1; }
-            to { transform: scale(2); opacity: 0; }
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1) rotate(180deg); opacity: 0.7; }
+            100% { transform: scale(2) rotate(360deg); opacity: 0; }
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .level-badge {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+            transition: width 0.3s ease;
         }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
             :root {
-                --bottle-width: 60px;
-                --bottle-height: 180px;
-                --liquid-unit-height: 36px;
+                --bottle-width: 70px;
+                --bottle-height: 190px;
+                --liquid-unit-height: 38px;
             }
         }
         @media (max-width: 480px) {
             :root {
-                --bottle-width: 45px;
-                --bottle-height: 150px;
-                --liquid-unit-height: 30px;
+                --bottle-width: 60px;
+                --bottle-height: 170px;
+                --liquid-unit-height: 34px;
             }
         }
     </style>
 </head>
-<body class="gradient-bg min-h-screen text-white overflow-x-hidden">
+<body class="min-h-screen text-white overflow-x-hidden">
     <div id="root" class="relative z-10 p-4 sm:p-6">
-        
+        <!-- Animated Background -->
+        <div class="fixed inset-0 -z-10 overflow-hidden">
+            <div class="absolute -inset-10 opacity-20">
+                <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+                <div class="absolute top-1/3 right-1/4 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style="animation-delay: 1s;"></div>
+                <div class="absolute bottom-1/4 left-1/2 w-64 h-64 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style="animation-delay: 2s;"></div>
+            </div>
+        </div>
+
         <!-- Header -->
-        <header class="flex justify-between items-center p-4 glass-effect rounded-2xl mb-6">
-            <h1 class="text-xl sm:text-3xl font-bold">🧪 مختبر الألوان السحري</h1>
-            <div class="flex items-center gap-2 sm:gap-4">
-                <div class="flex items-center gap-2 bg-blue-500/50 px-3 py-1.5 rounded-full neon-glow text-blue-300">
-                    💎 <span id="gems">0</span>
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-4">
+                <button id="backBtn" class="glass-effect rounded-2xl p-3 hover:bg-blue-600 transition-all neon-glow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </button>
+                <h1 class="text-2xl sm:text-3xl font-bold neon-glow-permanent text-blue-400">مختبر الألوان السحري</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="glass-effect rounded-2xl px-4 py-2 flex items-center gap-2">
+                    <span>💎</span>
+                    <span id="gems">0</span>
                 </div>
-                <div class="flex items-center gap-2 bg-yellow-500/50 px-3 py-1.5 rounded-full neon-glow text-yellow-300">
-                    ⭐ <span id="stars">0</span>
+                <div class="glass-effect rounded-2xl px-4 py-2 flex items-center gap-2">
+                    <span>⭐</span>
+                    <span id="stars">0</span>
                 </div>
-                <button id="soundToggle" class="bg-purple-500/50 p-2 rounded-full transition-all hover:scale-110 neon-glow text-purple-300">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path id="soundIconPath" d="M10 2a1 1 0 00-1 1v14a1 1 0 002 0V3a1 1 0 00-1-1zM5 6a1 1 0 00-1 1v6a1 1 0 002 0V7a1 1 0 00-1-1zm10 0a1 1 0 00-1 1v6a1 1 0 002 0V7a1 1 0 00-1-1z"/></svg>
+                <button id="soundToggle" class="glass-effect rounded-2xl p-3 hover:bg-blue-600 transition-all neon-glow">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path id="soundIconPath" fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
                 </button>
             </div>
         </header>
 
-        <!-- Game Container -->
-        <main id="gameContainer" class="container mx-auto">
-            <!-- Level Selection Screen -->
-            <div id="levelSelection">
-                <!-- Worlds will be generated here -->
-            </div>
+        <!-- Level Selection Screen -->
+        <section id="levelSelection" class="hidden">
+            <!-- Levels will be dynamically generated here -->
+        </section>
 
-            <!-- Game Screen -->
-            <div id="gameScreen" class="hidden">
-                <!-- Mission Info -->
-                <div class="glass-effect rounded-2xl p-4 sm:p-6 mb-6">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="text-center md:text-right">
-                            <h2 class="text-lg text-gray-300">المستوى <span id="currentLevel">1</span>: أكمل الكلمة</h2>
-                            <div class="flex items-center justify-center md:justify-start gap-3">
-                                <p id="targetWord" class="text-4xl sm:text-5xl font-extrabold tracking-widest"></p>
-                                <button id="speakBtn" class="text-blue-300 hover:text-blue-400 neon-glow">
-                                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" /></svg>
-                                </button>
+        <!-- Game Screen -->
+        <section id="gameScreen" class="hidden">
+            <div class="flex flex-col items-center mb-8">
+                <div class="glass-effect rounded-2xl p-6 mb-4 w-full max-w-2xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="currentLevelDisplay" class="text-xl font-bold"></h2>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <span>⏱️</span>
+                                <span id="timer" class="text-xl font-bold">60</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span>🎯</span>
+                                <span id="moves" class="text-xl font-bold">0</span>
                             </div>
                         </div>
-                        <div id="timerContainer" class="text-center bg-gray-900/50 rounded-2xl px-6 py-3 border-2 border-red-500 neon-glow-permanent text-red-400">
-                            <div class="text-4xl font-bold" id="timer">120</div>
-                            <div class="text-sm">ثانية متبقية</div>
-                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <h3 id="targetWord" class="text-2xl font-bold"></h3>
                         <div class="flex gap-2">
-                            <button id="resetBtn" class="bg-red-500/80 px-4 py-2 rounded-xl font-bold hover:bg-red-500 neon-glow text-red-100">🔄</button>
-                            <button id="hintBtn" class="bg-yellow-500/80 px-4 py-2 rounded-xl font-bold hover:bg-yellow-500 neon-glow text-yellow-100">💡</button>
-                            <button id="backBtn" class="bg-gray-500/80 px-4 py-2 rounded-xl font-bold hover:bg-gray-500 neon-glow text-gray-100">⬅️</button>
+                            <button id="speakBtn" class="glass-effect rounded-2xl p-2 hover:bg-blue-600 transition-all neon-glow">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span>التقدم</span>
+                            <span id="progressText">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Bottles Area -->
-                <div id="bottlesArea" class="flex flex-wrap justify-center items-end gap-x-4 gap-y-10 min-h-[300px]">
-                    <!-- Bottles will be generated here -->
+                <div class="flex gap-4">
+                    <button id="resetBtn" class="glass-effect rounded-2xl px-4 py-2 hover:bg-red-600 transition-all neon-glow">
+                        إعادة
+                    </button>
+                    <button id="hintBtn" class="glass-effect rounded-2xl px-4 py-2 hover:bg-yellow-600 transition-all neon-glow">
+                        تلميح (5 💎)
+                    </button>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <!-- Modals -->
-    <div id="modalContainer" class="fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 bg-black/70 opacity-0 pointer-events-none">
-        
-        <!-- Level Start Modal -->
-        <div id="levelStartModal" class="hidden glass-effect rounded-2xl p-8 text-center max-w-lg mx-4 transform scale-95 transition-transform duration-300">
-            <h2 class="text-2xl text-gray-300 mb-2">كلمة اليوم</h2>
-            <p id="startWord" class="text-6xl font-extrabold text-yellow-300 mb-4 neon-glow-permanent"></p>
-            <p id="startMeaning" class="text-xl mb-4"></p>
-            <p id="startSentence" class="text-lg bg-gray-900/50 p-4 rounded-xl mb-6"></p>
-            <button id="startLevelBtn" class="w-full bg-gradient-to-r from-green-500 to-blue-500 px-8 py-4 rounded-full font-bold text-xl hover:scale-105 transition-all neon-glow">ابدأ اللعب!</button>
-        </div>
-        
-        <!-- Success Modal -->
-        <div id="successModal" class="hidden glass-effect rounded-2xl p-8 text-center max-w-lg mx-4 transform scale-95 transition-transform duration-300">
-            <div class="relative">
-                <div class="absolute -inset-4 success-sparkle text-5xl">✨</div>
-                <h2 class="text-6xl font-extrabold text-green-400 mb-4">ممتاز!</h2>
+            <div id="bottlesArea" class="flex flex-wrap justify-center gap-6 mb-8">
+                <!-- Bottles will be dynamically generated here -->
             </div>
-            <p class="text-xl mb-6">لقد أكملت كلمة: <span id="completedWord" class="font-bold text-yellow-300"></span></p>
-            <div class="flex justify-center gap-4 mb-8">
-                <div class="bg-blue-500/30 px-6 py-3 rounded-xl">
-                    <div class="text-4xl">💎</div>
-                    <div id="gemsEarned" class="font-bold text-lg">+15</div>
+        </section>
+
+        <!-- Modal Container -->
+        <div id="modalContainer" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 opacity-0 pointer-events-none transition-opacity duration-300">
+            <!-- Level Start Modal -->
+            <div id="levelStartModal" class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-300 hidden">
+                <h2 class="text-3xl font-bold mb-4 text-center">ابدأ المستوى</h2>
+                <div class="mb-6">
+                    <p class="text-xl mb-2"><span class="font-bold">الكلمة:</span> <span id="startWord"></span></p>
+                    <p class="text-lg mb-2"><span class="font-bold">المعنى:</span> <span id="startMeaning"></span></p>
+                    <p class="text-lg"><span class="font-bold" id="startSentence"></span></p>
                 </div>
-                <div class="bg-yellow-500/30 px-6 py-3 rounded-xl">
-                    <div class="text-4xl">⭐</div>
-                    <div id="starsEarned" class="font-bold text-lg">+3</div>
+                <div class="flex justify-center gap-4">
+                    <button id="startLevelBtn" class="bg-blue-600 hover:bg-blue-700 rounded-2xl px-6 py-3 transition-all neon-glow font-bold">
+                        ابدأ
+                    </button>
                 </div>
             </div>
-            <button id="nextLevelBtn" class="w-full bg-gradient-to-r from-green-500 to-blue-500 px-8 py-4 rounded-full font-bold text-xl hover:scale-105 transition-all neon-glow">المستوى التالي ➡️</button>
-        </div>
 
-        <!-- Game Over Modal -->
-        <div id="gameOverModal" class="hidden glass-effect rounded-2xl p-8 text-center max-w-lg mx-4 transform scale-95 transition-transform duration-300">
-            <h2 class="text-6xl font-extrabold text-red-400 mb-4">انتهى الوقت!</h2>
-            <p class="text-xl mb-8">لا بأس، حاول مرة أخرى لتكوين الكلمة.</p>
-            <button id="retryBtn" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 px-8 py-4 rounded-full font-bold text-xl hover:scale-105 transition-all neon-glow">إعادة المحاولة 🔁</button>
-        </div>
+            <!-- Success Modal -->
+            <div id="successModal" class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-300 hidden">
+                <h2 class="text-3xl font-bold mb-4 text-center text-green-400">مبروك!</h2>
+                <div class="mb-6 text-center">
+                    <p class="text-xl mb-2">لقد أكملت الكلمة:</p>
+                    <p id="completedWord" class="text-3xl font-bold mb-4"></p>
+                    <div class="flex justify-center gap-6 mb-4">
+                        <div class="flex items-center gap-2">
+                            <span>💎</span>
+                            <span id="gemsEarned">+10</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>⭐</span>
+                            <span id="starsEarned">+3</span>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-300">
+                        <p>عدد الحركات: <span id="movesCount">0</span></p>
+                        <p>الوقت المتبقي: <span id="timeLeft">0</span> ثانية</p>
+                    </div>
+                </div>
+                <div class="flex justify-center gap-4">
+                    <button id="nextLevelBtn" class="bg-green-600 hover:bg-green-700 rounded-2xl px-6 py-3 transition-all neon-glow font-bold">
+                        المستوى التالي
+                    </button>
+                </div>
+            </div>
 
+            <!-- Game Over Modal -->
+            <div id="gameOverModal" class="glass-effect rounded-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-300 hidden">
+                <h2 class="text-3xl font-bold mb-4 text-center text-red-400">انتهى الوقت!</h2>
+                <div class="mb-6 text-center">
+                    <p class="text-xl mb-4">لم تتمكن من إكمال الكلمة في الوقت المحدد.</p>
+                </div>
+                <div class="flex justify-center gap-4">
+                    <button id="retryBtn" class="bg-red-600 hover:bg-red-700 rounded-2xl px-6 py-3 transition-all neon-glow font-bold">
+                        حاول مرة أخرى
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-    class ProfessionalColorSortGame {
-        constructor() {
-            this.DOM = {
-                root: document.getElementById('root'),
-                gems: document.getElementById('gems'),
-                stars: document.getElementById('stars'),
-                currentLevelDisplay: document.getElementById('currentLevel'),
-                levelSelection: document.getElementById('levelSelection'),
-                gameScreen: document.getElementById('gameScreen'),
-                targetWord: document.getElementById('targetWord'),
-                timer: document.getElementById('timer'),
-                bottlesArea: document.getElementById('bottlesArea'),
-                modalContainer: document.getElementById('modalContainer'),
-                levelStartModal: document.getElementById('levelStartModal'),
-                successModal: document.getElementById('successModal'),
-                gameOverModal: document.getElementById('gameOverModal'),
-                soundToggle: document.getElementById('soundToggle'),
-                soundIconPath: document.getElementById('soundIconPath'),
-                speakBtn: document.getElementById('speakBtn'),
-                resetBtn: document.getElementById('resetBtn'),
-                hintBtn: document.getElementById('hintBtn'),
-                backBtn: document.getElementById('backBtn'),
-                startLevelBtn: document.getElementById('startLevelBtn'),
-                nextLevelBtn: document.getElementById('nextLevelBtn'),
-                retryBtn: document.getElementById('retryBtn'),
-            };
+        class ProfessionalColorSortGame {
+            constructor() {
+                this.DOM = {
+                    root: document.getElementById('root'),
+                    levelSelection: document.getElementById('levelSelection'),
+                    gameScreen: document.getElementById('gameScreen'),
+                    bottlesArea: document.getElementById('bottlesArea'),
+                    gems: document.getElementById('gems'),
+                    stars: document.getElementById('stars'),
+                    timer: document.getElementById('timer'),
+                    targetWord: document.getElementById('targetWord'),
+                    currentLevelDisplay: document.getElementById('currentLevelDisplay'),
+                    backBtn: document.getElementById('backBtn'),
+                    soundToggle: document.getElementById('soundToggle'),
+                    soundIconPath: document.getElementById('soundIconPath'),
+                    speakBtn: document.getElementById('speakBtn'),
+                    resetBtn: document.getElementById('resetBtn'),
+                    hintBtn: document.getElementById('hintBtn'),
+                    modalContainer: document.getElementById('modalContainer'),
+                    levelStartModal: document.getElementById('levelStartModal'),
+                    successModal: document.getElementById('successModal'),
+                    gameOverModal: document.getElementById('gameOverModal'),
+                    startLevelBtn: document.getElementById('startLevelBtn'),
+                    nextLevelBtn: document.getElementById('nextLevelBtn'),
+                    retryBtn: document.getElementById('retryBtn'),
+                    moves: document.getElementById('moves'),
+                    progressFill: document.getElementById('progressFill'),
+                    progressText: document.getElementById('progressText'),
+                    movesCount: document.getElementById('movesCount'),
+                    timeLeft: document.getElementById('timeLeft')
+                };
 
-            this.gameState = {
-                currentLevel: null,
-                gems: 0,
-                stars: 0,
-                unlockedWorlds: ['حيوانات'],
-                completedLevels: [],
-                timeLeft: 50,
-                timer: null,
-                selectedBottleIndex: null,
-                bottleContents: [],
-                isPouring: false,
-            };
-            
-            this.config = {
-                bottleCapacity: 4,
-                baseLevelTime: 50,
-                hintCost: 25,
-            };
+                this.config = {
+                    bottleCapacity: 4,
+                    baseLevelTime: 90,
+                    hintCost: 5
+                };
 
-            this.colorMap = {
-                'أ': '#ef4444', 'ب': '#8b5cf6', 'ت': '#f97316', 'ث': '#a78bfa', 'ج': '#10b981', 
-                'ح': '#f43f5e', 'خ': '#16a34a', 'د': '#d946ef', 'ذ': '#fbbf24', 'ر': '#64748b', 
-                'ز': '#3b82f6', 'س': '#06b6d4', 'ش': '#0891b2', 'ص': '#f59e0b', 'ض': '#ca8a04', 
-                'ط': '#65a30d', 'ظ': '#84cc16', 'ع': '#6366f1', 'غ': '#4f46e5', 'ف': '#ec4899', 
-                'ق': '#8b5a2b', 'ك': '#eab308', 'ل': '#22c55e', 'م': '#a855f7', 'ن': '#6366f1', 
-                'ه': '#f472b6', 'و': '#ec4899', 'ي': '#14b8a6',
-            };
+                this.gameState = {
+                    gems: 100,
+                    stars: 20,
+                    unlockedWorlds: ['حيوانات', 'فواكه'],
+                    completedLevels: [],
+                    currentLevel: null,
+                    bottleContents: [],
+                    selectedBottleIndex: null,
+                    isPouring: false,
+                    timeLeft: 0,
+                    timer: null,
+                    moves: 0,
+                    maxMoves: 0
+                };
 
-            this.levels = {
-    'حيوانات': [
-        { word: 'أسد', meaning: 'ملك الغابة', sentence: 'الأسد حيوان قوي.' },
-        { word: 'بحر', meaning: 'مياه مالحة واسعة', sentence: 'نسبح في البحر صيفًا.' },
-        { word: 'قط', meaning: 'حيوان أليف لطيف', sentence: 'يحب القط اللعب بالكرة.'},
-        { word: 'فيل', meaning: 'حيوان ضخم بخرطوم طويل', sentence: 'يعيش الفيل في أفريقيا.'},
-        { word: 'نمر', meaning: 'حيوان مفترس ومخطط', sentence: 'النمر سريع جدًا.'}
-    ],
-    'طبيعة': [
-        { word: 'شمس', meaning: 'نجم يضيء النهار', sentence: 'تشرق الشمس كل صباح.' },
-        { word: 'قمر', meaning: 'يضيء السماء ليلاً', sentence: 'القمر جميل في ليلة صافية.' },
-        { word: 'نهر', meaning: 'مجرى ماء عذب', sentence: 'تجري السفن في النهر.' },
-        { word: 'زهر', meaning: 'جزء النبات الملون', sentence: 'رائحة الزهر عطرة.'},
-        { word: 'غيم', meaning: 'بخار ماء في السماء', sentence: 'السماء مليئة بالغيم اليوم.'}
-    ],
-    'أشياء': [
-        { word: 'باب', meaning: 'مدخل إلى غرفة أو مبنى', sentence: 'أغلق الباب من فضلك.' },
-        { word: 'كتاب', meaning: 'مجموعة أوراق للقراءة', sentence: 'أحب قراءة كل كتاب جديد.'},
-        { word: 'قلم', meaning: 'أداة للكتابة', sentence: 'أكتب الدرس بالقلم.'},
-        { word: 'بيت', meaning: 'مكان نعيش فيه', sentence: 'بيتنا دافئ وجميل.'},
-        { word: 'كرسي', meaning: 'نجلس عليه للراحة', sentence: 'هذا كرسي مريح جدًا.'}
-    ],
-    'طعام ومطبخ': [
-        { word: 'خبز', meaning: 'طعام أساسي من الطحين', sentence: 'أكلت قطعة خبز لذيذة.' },
-        { word: 'ماء', meaning: 'سائل شفاف ضروري للحياة', sentence: 'أشرب الماء عندما أشعر بالعطش.' },
-        { word: 'تفاح', meaning: 'فاكهة حمراء أو خضراء', sentence: 'التفاح فاكهة صحية جدًا.' },
-        { word: 'صحن', meaning: 'إناء مسطح نأكل فيه', sentence: 'ضع الأرز في الصحن من فضلك.' },
-        { word: 'ملعقة', meaning: 'أداة لأكل الحساء أو الأرز', sentence: 'أستخدم الملعقة لأكل الشوربة.' },
-        { word: 'برتقال', meaning: 'فاكهة شتوية غنية بالفيتامينات', sentence: 'عصير البرتقال منعش في الصباح.' }
-    ],
-    'أعضاء الجسم': [
-        { word: 'يد', meaning: 'جزء من الذراع به أصابع', sentence: 'أكتب بيدي اليمنى.' },
-        { word: 'عين', meaning: 'عضو الإبصار والرؤية', sentence: 'أرى العالم بعيني الاثنتين.' },
-        { word: 'رأس', meaning: 'أعلى جزء في الجسم', sentence: 'أضع القبعة على رأسي لتحميني من الشمس.' },
-        { word: 'قدم', meaning: 'نمشي عليها ونرتدي فيها الحذاء', sentence: 'أرتدي الحذاء في قدمي.' },
-        { word: 'لسان', meaning: 'عضو التذوق والكلام', sentence: 'أتذوق الطعام الحلو بلساني.' },
-        { word: 'أصابع', meaning: 'الأجزاء الصغيرة في نهاية اليد', sentence: 'لدي خمسة أصابع في كل يد.' }
-    ],
-    'مهن ووظائف': [
-        { word: 'طبيب', meaning: 'يعالج المرضى في المستشفى', sentence: 'ذهب المريض إلى الطبيب.' },
-        { word: 'معلم', meaning: 'يدرّس الطلاب في المدرسة', sentence: 'شرح المعلم الدرس بوضوح.' },
-        { word: 'شرطي', meaning: 'يحافظ على الأمن والنظام', sentence: 'ينظم الشرطي حركة المرور في الشارع.' },
-        { word: 'خباز', meaning: 'يصنع الخبز والكعك اللذيذ', sentence: 'رائحة الخبز من الخباز شهية.' },
-        { word: 'مهندس', meaning: 'يصمم ويبني المباني والجسور', sentence: 'صمم المهندس بيتاً جميلاً.' },
-        { word: 'فنان', meaning: 'شخص يبدع في الرسم أو النحت', sentence: 'رسم الفنان لوحة طبيعية رائعة.' }
-    ],
-    'أدوات مدرسية': [
-        { word: 'دفتر', meaning: 'مجموعة أوراق نكتب فيها الدروس', sentence: 'اشتريت دفتراً جديداً للرياضيات.' },
-        { word: 'مسطرة', meaning: 'نرسم بها خطوطاً مستقيمة', sentence: 'استخدم المسطرة لرسم جدول الحصص.' },
-        { word: 'حقيبة', meaning: 'نحمل فيها الكتب والأدوات', sentence: 'حقيبتي المدرسية ثقيلة اليوم.' },
-        { word: 'ممحاة', meaning: 'نمسح بها أخطاء القلم الرصاص', sentence: 'أعطني الممحاة لأصحح الخطأ.' },
-        { word: 'مقلمة', meaning: 'حافظة نضع فيها الأقلام', sentence: 'أقلامي ملونة ومرتبة في المقلمة.' },
-        { word: 'كتاب', meaning: 'مجموعة من الصفحات للقراءة', sentence: 'أحب قراءة كل كتاب جديد.' }
-    ],
-    'أفعال وحركة': [
-        { word: 'كتب', meaning: 'سطّر الحروف والكلمات', sentence: 'كتب الطالب واجبه المدرسي.' },
-        { word: 'قرأ', meaning: 'نظر في المكتوب وفهمه', sentence: 'قرأ أبي الجريدة في الصباح.' },
-        { word: 'يلعب', meaning: 'يمارس نشاطاً للتسلية', sentence: 'يلعب الطفل بالكرة في الحديقة.' },
-        { word: 'يرسم', meaning: 'يخطط شكلاً أو صورة بالقلم', sentence: 'يرسم أخي منظراً طبيعياً جميلاً.' },
-        { word: 'يسبح', meaning: 'يتحرك ويعوم في الماء', sentence: 'أحب أن أسبح في البحر صيفاً.' },
-        { word: 'قفز', meaning: 'وثب وارتفع عن الأرض', sentence: 'قفز الأرنب عالياً وهرب.' }
-    ]
-};
-            this.soundManager = this.createSoundManager();
-            this.init();
-        }
+                this.colorMap = {
+                    'أ': '#FF6B6B',
+                    'ب': '#4ECDC4',
+                    'ت': '#45B7D1',
+                    'ث': '#96CEB4',
+                    'ج': '#FFEAA7',
+                    'ح': '#DDA0DD',
+                    'خ': '#98D8C8',
+                    'د': '#F7DC6F',
+                    'ذ': '#BB8FCE',
+                    'ر': '#85C1E9',
+                    'ز': '#F8C471',
+                    'س': '#82E0AA',
+                    'ش': '#F1948A',
+                    'ص': '#AED6F1',
+                    'ض': '#F9E79F',
+                    'ط': '#D2B4DE',
+                    'ظ': '#A9DFBF',
+                    'ع': '#F5B7B1',
+                    'غ': '#AED6F1',
+                    'ف': '#ABEBC6',
+                    'ق': '#FAD7A0',
+                    'ك': '#D7BDE2',
+                    'ل': '#A3E4D7',
+                    'م': '#F5CBA7',
+                    'ن': '#D6EAF8',
+                    'ه': '#D5DBDB',
+                    'و': '#FADBD8',
+                    'ي': '#D1F2EB',
+                    'ة': '#FADBD8',
+                    'ى': '#D1F2EB',
+                    'ئ': '#F5B7B1',
+                    'ء': '#85C1E9',
+                    'ؤ': '#F8C471'
+                };
 
-        init() {
-            this.loadProgress();
-            this.updateHeaderUI();
-            this.showLevelSelection();
-            this.bindEvents();
-        }
+                this.levels = {
+                    'حيوانات': [
+                        { word: 'قط', meaning: 'حيوان أليف', sentence: 'القطة تلعب في الحديقة', difficulty: 1 },
+                        { word: 'أسد', meaning: 'ملك الغابة', sentence: 'الأسد يصطاد فريسته', difficulty: 1 },
+                        { word: 'نمر', meaning: 'حيوان مفترس مخطط', sentence: 'النمر يجري بسرعة', difficulty: 2 },
+                        { word: 'فيل', meaning: 'أكبر حيوان بري', sentence: 'الفيل يشرب الماء بخرطومه', difficulty: 2 },
+                        { word: 'غزال', meaning: 'حيوان رشيق', sentence: 'الغزال يقفز في البرية', difficulty: 3 },
+                        { word: 'زرافة', meaning: 'حيوان طويل الرقبة', sentence: 'الزرافة تأكل من الأشجار العالية', difficulty: 3 },
+                        { word: 'تمساح', meaning: 'زواحف مائية', sentence: 'التمساح يسبق في النهر', difficulty: 4 },
+                        { word: 'دلفين', meaning: 'حيوان بحري ذكي', sentence: 'الدلفين يقفز فوق الماء', difficulty: 4 }
+                    ],
+                    'فواكه': [
+                        { word: 'تفاح', meaning: 'فاكهة حمراء أو خضراء', sentence: 'التفاحة فاكهة لذيذة', difficulty: 1 },
+                        { word: 'موز', meaning: 'فاكهة صفراء طويلة', sentence: 'الموز غني بالبوتاسيوم', difficulty: 1 },
+                        { word: 'برتقال', meaning: 'فاكهة حمضية برتقالية', sentence: 'البرتقال مصدر لفيتامين سي', difficulty: 2 },
+                        { word: 'فراولة', meaning: 'فاكهة حمراء صغيرة', sentence: 'الفراولة حلوة المذاق', difficulty: 2 },
+                        { word: 'عنب', meaning: 'فاكهة تنمو في عناقيد', sentence: 'العنب يأتي بألوان مختلفة', difficulty: 3 },
+                        { word: 'أناناس', meaning: 'فاكهة استوائية', sentence: 'الأناناس حلو ولذيذ', difficulty: 3 },
+                        { word: 'رمان', meaning: 'فاكهة حمراء تحتوي على بذور', sentence: 'الرمان فاكهة مفيدة للصحة', difficulty: 4 },
+                        { word: 'مانجو', meaning: 'فاكهة استوائية حلوة', sentence: 'المانجو فاكهة الصيف المفضلة', difficulty: 4 }
+                    ],
+                    'ألوان': [
+                        { word: 'أحمر', meaning: 'لون النار والدم', sentence: 'الورد الأحمر جميل', difficulty: 1 },
+                        { word: 'أزرق', meaning: 'لون السماء والبحر', sentence: 'السماء زرقاء صافية', difficulty: 1 },
+                        { word: 'أخضر', meaning: 'لون الطبيعة والنباتات', sentence: 'العشب أخضر اللون', difficulty: 2 },
+                        { word: 'أصفر', meaning: 'لون الشمس والذهب', sentence: 'الليمون أصفر اللون', difficulty: 2 },
+                        { word: 'بنفسجي', meaning: 'لون مزيج من الأحمر والأزرق', sentence: 'الزنبق البنفسجي نادر', difficulty: 3 },
+                        { word: 'برتقالي', meaning: 'لون مزيج من الأحمر والأصفر', sentence: 'الجزر برتقالي اللون', difficulty: 3 },
+                        { word: 'زهري', meaning: 'لون فاتح من الأحمر', sentence: 'الورد الزهري جميل', difficulty: 4 },
+                        { word: 'ذهبي', meaning: 'لون المعدن الثمين', sentence: 'الخاتم الذهبي ثمين', difficulty: 4 }
+                    ],
+                    'أماكن': [
+                        { word: 'مدرسة', meaning: 'مكان للتعلم', sentence: 'الطلاب يدرسون في المدرسة', difficulty: 1 },
+                        { word: 'مستشفى', meaning: 'مكان للعلاج', sentence: 'الطبيب يعمل في المستشفى', difficulty: 1 },
+                        { word: 'مطعم', meaning: 'مكان لتناول الطعام', sentence: 'نحن نأكل في المطعم', difficulty: 2 },
+                        { word: 'حديقة', meaning: 'مكان للترفيه واللعب', sentence: 'الأطفال يلعبون في الحديقة', difficulty: 2 },
+                        { word: 'مكتبة', meaning: 'مكان للقراءة والاستعارة', sentence: 'الكتب موجودة في المكتبة', difficulty: 3 },
+                        { word: 'متجر', meaning: 'مكان لبيع البضائع', sentence: 'اشتريت هدية من المتجر', difficulty: 3 },
+                        { word: 'مطار', meaning: 'مكان للسفر والطائرات', sentence: 'المسافرون يذهبون إلى المطار', difficulty: 4 },
+                        { word: 'فندق', meaning: 'مكان للإقامة', sentence: 'نقيم في الفندق أثناء السفر', difficulty: 4 }
+                    ],
+                    'وظائف': [
+                        { word: 'طبيب', meaning: 'يعالج المرضى', sentence: 'الطبيب يعمل في المستشفى', difficulty: 2 },
+                        { word: 'مهندس', meaning: 'يصمم المباني والجسور', sentence: 'المهندس يصمم المنازل', difficulty: 2 },
+                        { word: 'معلم', meaning: 'يعلم الطلاب', sentence: 'المعلم يشرح الدرس', difficulty: 3 },
+                        { word: 'طيار', meaning: 'يقود الطائرة', sentence: 'الطيار يحلق في السماء', difficulty: 3 },
+                        { word: 'شرطي', meaning: 'يحافظ على الأمن', sentence: 'الشرطي ينظم حركة المرور', difficulty: 4 },
+                        { word: 'ممرض', meaning: 'يعتني بالمرضى', sentence: 'الممرض يساعد الطبيب', difficulty: 4 }
+                    ],
+                    'بلدان': [
+                        { word: 'مصر', meaning: 'بلد في شمال أفريقيا', sentence: 'مصر بلد الأهرامات', difficulty: 3 },
+                        { word: 'سعودية', meaning: 'بلد في شبه الجزيرة العربية', sentence: 'السعودية بلد الحرمين', difficulty: 3 },
+                        { word: 'أردن', meaning: 'بلد في الشرق الأوسط', sentence: 'الأردن بلد الآثار', difficulty: 4 },
+                        { word: 'عراق', meaning: 'بلد بين النهرين', sentence: 'العراق بلد الحضارات', difficulty: 4 },
+                        { word: 'يمن', meaning: 'بلد في جنوب الجزيرة العربية', sentence: 'اليمن بلد التاريخ', difficulty: 4 }
+                    ]
+                };
 
-        createSoundManager() {
-            // Use a try-catch block for environments where AudioContext might not be supported.
-            let audioContext;
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                console.error("Web Audio API is not supported in this browser.");
-                // Return a dummy object if AudioContext is not available
-                return { init: ()=>{}, play: ()=>{}, toggle: ()=>{} };
+                this.soundManager = this.createSoundManager();
+                this.init();
             }
 
-            const sounds = {
-                pour: 'data:audio/wav;base64,UklGRmYFAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YVQFAACAgICAgICAhISEhYWFh4eHiYmJioqKi4uLjIyMjY2Njo6Ojw8PEBEREhISExMTFBQUFRUVFhYWFxcXGBgZGRkZGRoaGhkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGRkZGR-..',
-                click: 'data:audio/wav;base64,UklGRlgBAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YVQBAACAgICAf39/f3+AgYCBgYGAgYCAgH9/f39/gICAgoKCg4ODhYWFh4eHiYmJioqKi4uLjIyMjY2Njo6Oj5CQkZGRkpKSk5OTlJSUlZWVlpaWl5eXmJiZmZmZmpqanJycnaCgoqOjpKSmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8=',
-                success: 'data:audio/wav;base64,UklGRlABAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YS8BAAD/AAAABgAADwAAABwAAAAwAAAAPwAAAEkAAABXAAAAZwAAAHUAAACBAAAAkQAAAJ8AAACzAAAAwAAAALIAAACtAAAAqQAAAKIAAACeAAAAkwAAAIYAAAB5AAAAcwAAAGAAAABOAAAARAAAAA8AAAAEAAAA/v//AAAAAwAAAAYAAAAJAAAADwAAABUAAAAcAAAAJAAAACwAAAAyAAAANwAAAD8AAABDQUJDQ0RFRkdISUpLTE1OT1BSUVNUVVZXWFlaW1xdXl9gYWJjZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8=',
-                fail: 'data:audio/wav;base64,UklGRmAAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YVQAAAAAw/z07u3w7/Lx7/Dt7e7s6+rq6Orp5+fm5eXl5eXj4uLh4eHf39/e3t7d3d3c3Nzb29va2trZ2dnY2NjX1t/a3d/e4OHj4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v//////+fb18/Hx7+3s6+jn5eLg3dva2NfV09LRz87My8rJx8bFwcC/vry7urm4t7S0srGxraysqaioqKenpqampaWlo6OjoaGhoKCfn5+enp6dnZ2cnJybm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5ubm5-..',
-                bgMusic: 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RJTUsAAAAPAAAAMDAwMC5KU09OQU5U//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAAwMDAwLmpzb25hbnT//uQxAAAAAAAAAAAAAAAAAAAAAAAVVVVVVVVVVVVVVVVVTEFNRTMuOTkuNVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-..',
-            };
-            const audioBuffers = {};
-            let soundEnabled = true;
-            let bgMusicNode = null;
-            let userInteracted = false;
+            init() {
+                this.loadProgress();
+                this.updateHeaderUI();
+                this.showLevelSelection();
+                this.bindEvents();
+                this.soundManager.init();
+            }
 
-            const loadSound = (key) => {
-                fetch(sounds[key])
-                    .then(response => response.arrayBuffer())
-                    .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-                         audioBuffers[key] = buffer;
-                         if(key === 'bgMusic') {
-                            initBgMusic();
-                         }
-                    }));
-            };
-
-            const initBgMusic = () => {
-                if (!audioBuffers.bgMusic) return;
-                if (bgMusicNode) bgMusicNode.stop();
-
-                bgMusicNode = audioContext.createBufferSource();
-                bgMusicNode.buffer = audioBuffers.bgMusic;
-                bgMusicNode.loop = true;
-
-                const gainNode = audioContext.createGain();
-                gainNode.gain.value = 0.3; // Lower volume for background music
-                bgMusicNode.connect(gainNode).connect(audioContext.destination);
-
-                if (soundEnabled && userInteracted) {
-                   try { bgMusicNode.start(0); } catch(e) {}
+            createSoundManager() {
+                let audioContext;
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.error("Web Audio API is not supported in this browser.");
+                    return { init: ()=>{}, play: ()=>{}, toggle: ()=>{} };
                 }
-            };
-            
-            Object.keys(sounds).forEach(loadSound);
 
-            return {
-                init: () => {
-                    if (!userInteracted) {
-                        const startInteraction = () => {
-                            userInteracted = true;
-                            if (audioContext.state === 'suspended') {
-                                audioContext.resume();
+                const sounds = {
+                    click: this.generateBubbleSound(),
+                    pour: this.generatePourSound(),
+                    success: this.generateSuccessSound(),
+                    fail: this.generateFailSound(),
+                    bgMusic: this.generateBackgroundMusic()
+                };
+
+                const audioBuffers = {};
+                let soundEnabled = true;
+                let bgMusicNode = null;
+                let userInteracted = false;
+
+                const loadSound = (key) => {
+                    try {
+                        const buffer = audioContext.createBuffer(1, sounds[key].length, audioContext.sampleRate);
+                        const channelData = buffer.getChannelData(0);
+                        for (let i = 0; i < sounds[key].length; i++) {
+                            channelData[i] = sounds[key][i];
+                        }
+                        audioBuffers[key] = buffer;
+                        if(key === 'bgMusic') {
+                            initBgMusic();
+                        }
+                    } catch (e) {
+                        console.error("Error loading sound:", e);
+                    }
+                };
+
+                const initBgMusic = () => {
+                    if (!audioBuffers.bgMusic) return;
+                    if (bgMusicNode) bgMusicNode.stop();
+
+                    bgMusicNode = audioContext.createBufferSource();
+                    bgMusicNode.buffer = audioBuffers.bgMusic;
+                    bgMusicNode.loop = true;
+
+                    const gainNode = audioContext.createGain();
+                    gainNode.gain.value = 0.2;
+                    bgMusicNode.connect(gainNode).connect(audioContext.destination);
+
+                    if (soundEnabled && userInteracted) {
+                        try { bgMusicNode.start(0); } catch(e) {}
+                    }
+                };
+                
+                Object.keys(sounds).forEach(loadSound);
+
+                return {
+                    init: () => {
+                        if (!userInteracted) {
+                            const startInteraction = () => {
+                                userInteracted = true;
+                                if (audioContext.state === 'suspended') {
+                                    audioContext.resume();
+                                }
+                                initBgMusic();
+                                window.removeEventListener('click', startInteraction);
+                                window.removeEventListener('touchstart', startInteraction);
                             }
+                            window.addEventListener('click', startInteraction);
+                            window.addEventListener('touchstart', startInteraction);
+                        }
+                    },
+                    play: (sound) => {
+                        if (!soundEnabled || !audioBuffers[sound]) return;
+                        const source = audioContext.createBufferSource();
+                        source.buffer = audioBuffers[sound];
+                        source.connect(audioContext.destination);
+                        source.start(0);
+                    },
+                    toggle: (enabled) => {
+                        soundEnabled = enabled;
+                        if (soundEnabled) {
+                            if (audioContext.state === 'suspended') audioContext.resume();
                             initBgMusic();
-                            window.removeEventListener('click', startInteraction);
-                            window.removeEventListener('touchstart', startInteraction);
+                        } else {
+                            if (bgMusicNode) {
+                                try { bgMusicNode.stop(); } catch(e) {}
+                                bgMusicNode = null;
+                            }
                         }
-                        window.addEventListener('click', startInteraction);
-                        window.addEventListener('touchstart', startInteraction);
-                    }
-                },
-                play: (sound) => {
-                    if (!soundEnabled || !audioBuffers[sound]) return;
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffers[sound];
-                    source.connect(audioContext.destination);
-                    source.start(0);
-                },
-                toggle: (enabled) => {
-                    soundEnabled = enabled;
-                    if (soundEnabled) {
-                        if (audioContext.state === 'suspended') audioContext.resume();
-                        initBgMusic();
-                    } else {
-                        if (bgMusicNode) {
-                            try { bgMusicNode.stop(); } catch(e) {}
-                            bgMusicNode = null;
-                        }
-                    }
-                },
-                get isEnabled() { return soundEnabled; }
-            };
-        }
-        
-        // --- Data Management ---
-        saveProgress() {
-            const progress = {
-                gems: this.gameState.gems,
-                stars: this.gameState.stars,
-                unlockedWorlds: this.gameState.unlockedWorlds,
-                completedLevels: this.gameState.completedLevels,
-            };
-            localStorage.setItem('colorSortGameProgress', JSON.stringify(progress));
-        }
-
-        loadProgress() {
-            const progress = JSON.parse(localStorage.getItem('colorSortGameProgress'));
-            if (progress) {
-                this.gameState.gems = progress.gems || 0;
-                this.gameState.stars = progress.stars || 0;
-                this.gameState.unlockedWorlds = progress.unlockedWorlds || ['حيوانات'];
-                this.gameState.completedLevels = progress.completedLevels || [];
+                    },
+                    get isEnabled() { return soundEnabled; }
+                };
             }
-        }
-        
-        // --- UI Update ---
-        updateHeaderUI() {
-            this.DOM.gems.textContent = this.gameState.gems;
-            this.DOM.stars.textContent = this.gameState.stars;
-        }
 
-        showModal(modalToShow) {
-            this.DOM.modalContainer.classList.remove('opacity-0', 'pointer-events-none');
-            [this.DOM.levelStartModal, this.DOM.successModal, this.DOM.gameOverModal].forEach(modal => {
-                modal.classList.add('hidden');
-            });
-            modalToShow.classList.remove('hidden');
-            setTimeout(() => {
-                modalToShow.classList.remove('scale-95');
-            }, 10);
-        }
-        
-        hideAllModals() {
-            this.DOM.modalContainer.classList.add('opacity-0', 'pointer-events-none');
-            [this.DOM.levelStartModal, this.DOM.successModal, this.DOM.gameOverModal].forEach(m => {
-                 m.classList.add('hidden', 'scale-95');
-            });
-        }
-
-        // --- Screen Management ---
-        showLevelSelection() {
-            this.DOM.gameScreen.classList.add('hidden');
-            this.DOM.levelSelection.innerHTML = '';
-            this.DOM.levelSelection.classList.remove('hidden');
-
-            Object.keys(this.levels).forEach(worldName => {
-                const isUnlocked = this.gameState.unlockedWorlds.includes(worldName);
-                const worldContainer = document.createElement('div');
-                worldContainer.className = `glass-effect rounded-2xl p-6 mb-8 ${isUnlocked ? 'hover:border-blue-400' : 'opacity-50'}`;
+            // Improved Sound generation functions
+            generateBubbleSound() {
+                const sampleRate = 44100;
+                const duration = 0.15;
+                const samples = new Float32Array(sampleRate * duration);
                 
-                let worldLevelsHTML = '';
-                this.levels[worldName].forEach((level, index) => {
-                    const levelId = `${worldName}-${index}`;
-                    const isCompleted = this.gameState.completedLevels.includes(levelId);
-                    worldLevelsHTML += `
-                        <button data-level-id="${levelId}" class="level-btn relative w-20 h-20 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center font-bold text-lg
-                            ${isUnlocked ? 'bg-gray-700 hover:bg-blue-600 transition-all neon-glow' : 'bg-gray-800 cursor-not-allowed'}
-                            ${isCompleted ? 'border-4 border-yellow-400' : 'border-4 border-gray-600'}" 
-                            ${!isUnlocked ? 'disabled' : ''}>
-                            <span class="text-2xl">${level.word}</span>
-                            ${isCompleted ? '<span class="absolute -top-2 -right-2 text-2xl">⭐</span>' : ''}
-                        </button>
+                for (let i = 0; i < samples.length; i++) {
+                    const t = i / sampleRate;
+                    // Create a soft bubble sound with multiple frequencies
+                    const freq1 = 150 + Math.sin(t * 8) * 30;
+                    const freq2 = 350 + Math.sin(t * 12) * 80;
+                    
+                    samples[i] = 0.4 * (
+                        Math.sin(2 * Math.PI * freq1 * t) * Math.exp(-6 * t) +
+                        Math.sin(2 * Math.PI * freq2 * t) * Math.exp(-10 * t)
+                    );
+                }
+                
+                return samples;
+            }
+
+            generatePourSound() {
+                const sampleRate = 44100;
+                const duration = 0.6;
+                const samples = new Float32Array(sampleRate * duration);
+                
+                for (let i = 0; i < samples.length; i++) {
+                    const t = i / sampleRate;
+                    // Create a realistic pouring sound with noise and varying frequency
+                    const noise = (Math.random() * 0.15) * Math.exp(-5 * t);
+                    const freq = 250 + Math.sin(t * 15) * 80;
+                    
+                    samples[i] = 0.4 * (
+                        Math.sin(2 * Math.PI * freq * t) * Math.exp(-2 * t) +
+                        noise * Math.exp(-4 * t)
+                    );
+                }
+                
+                return samples;
+            }
+
+            generateSuccessSound() {
+                const sampleRate = 44100;
+                const duration = 1.5;
+                const samples = new Float32Array(sampleRate * duration);
+                
+                // Create a magical success sound with ascending frequencies and harmonics
+                for (let i = 0; i < samples.length; i++) {
+                    const t = i / sampleRate;
+                    const baseFreq = 200 + t * 300; // Ascending base frequency
+                    
+                    samples[i] = 0.5 * (
+                        Math.sin(2 * Math.PI * baseFreq * t) * Math.exp(-1.5 * t) +
+                        0.6 * Math.sin(2 * Math.PI * baseFreq * 1.5 * t) * Math.exp(-2 * t) +
+                        0.4 * Math.sin(2 * Math.PI * baseFreq * 2 * t) * Math.exp(-2.5 * t) +
+                        0.2 * Math.sin(2 * Math.PI * baseFreq * 3 * t) * Math.exp(-3 * t)
+                    );
+                }
+                
+                return samples;
+            }
+
+            generateFailSound() {
+                const sampleRate = 44100;
+                const duration = 0.4;
+                const samples = new Float32Array(sampleRate * duration);
+                
+                // Create a soft "wrong" sound with descending frequency
+                for (let i = 0; i < samples.length; i++) {
+                    const t = i / sampleRate;
+                    const freq = 350 - t * 300; // Descending frequency
+                    
+                    samples[i] = 0.3 * Math.sin(2 * Math.PI * freq * t) * Math.exp(-6 * t);
+                }
+                
+                return samples;
+            }
+
+            generateBackgroundMusic() {
+                const sampleRate = 44100;
+                const duration = 15; // 15 seconds loop
+                const samples = new Float32Array(sampleRate * duration);
+                
+                // Create a calm, magical background melody
+                for (let i = 0; i < samples.length; i++) {
+                    const t = i / sampleRate;
+                    
+                    // Calming melody with multiple harmonics
+                    const melody = 
+                        0.12 * Math.sin(2 * Math.PI * 220 * t) + // A3
+                        0.1 * Math.sin(2 * Math.PI * 277 * t) +  // C#4
+                        0.08 * Math.sin(2 * Math.PI * 330 * t) + // E4
+                        0.06 * Math.sin(2 * Math.PI * 440 * t) + // A4
+                        0.04 * Math.sin(2 * Math.PI * 554 * t);  // C#5
+                    
+                    // Add a gentle, magical arpeggio
+                    const arpeggio = 
+                        0.05 * Math.sin(2 * Math.PI * 440 * t * Math.sin(t * 0.5)) +
+                        0.03 * Math.sin(2 * Math.PI * 523 * t * Math.sin(t * 0.7));
+                    
+                    samples[i] = (melody + arpeggio) * 0.25;
+                }
+                
+                return samples;
+            }
+
+            // --- Data Management ---
+            saveProgress() {
+                const progress = {
+                    gems: this.gameState.gems,
+                    stars: this.gameState.stars,
+                    unlockedWorlds: this.gameState.unlockedWorlds,
+                    completedLevels: this.gameState.completedLevels,
+                };
+                localStorage.setItem('colorSortGameProgress', JSON.stringify(progress));
+            }
+
+            loadProgress() {
+                const progress = JSON.parse(localStorage.getItem('colorSortGameProgress'));
+                if (progress) {
+                    this.gameState.gems = progress.gems || 0;
+                    this.gameState.stars = progress.stars || 0;
+                    this.gameState.unlockedWorlds = progress.unlockedWorlds || ['حيوانات', 'فواكه'];
+                    this.gameState.completedLevels = progress.completedLevels || [];
+                }
+            }
+            
+            // --- UI Update ---
+            updateHeaderUI() {
+                this.DOM.gems.textContent = this.gameState.gems;
+                this.DOM.stars.textContent = this.gameState.stars;
+            }
+
+            showModal(modalToShow) {
+                this.DOM.modalContainer.classList.remove('opacity-0', 'pointer-events-none');
+                [this.DOM.levelStartModal, this.DOM.successModal, this.DOM.gameOverModal].forEach(modal => {
+                    modal.classList.add('hidden');
+                });
+                modalToShow.classList.remove('hidden');
+                setTimeout(() => {
+                    modalToShow.classList.remove('scale-95');
+                }, 10);
+            }
+            
+            hideAllModals() {
+                this.DOM.modalContainer.classList.add('opacity-0', 'pointer-events-none');
+                [this.DOM.levelStartModal, this.DOM.successModal, this.DOM.gameOverModal].forEach(m => {
+                     m.classList.add('hidden', 'scale-95');
+                });
+            }
+
+            // --- Screen Management ---
+            showLevelSelection() {
+                this.DOM.gameScreen.classList.add('hidden');
+                this.DOM.levelSelection.innerHTML = '';
+                this.DOM.levelSelection.classList.remove('hidden');
+
+                Object.keys(this.levels).forEach(worldName => {
+                    const isUnlocked = this.gameState.unlockedWorlds.includes(worldName);
+                    const worldContainer = document.createElement('div');
+                    worldContainer.className = `glass-effect rounded-2xl p-6 mb-8 ${isUnlocked ? 'hover:border-blue-400 transition-all duration-300' : 'opacity-60'}`;
+                    
+                    let worldLevelsHTML = '';
+                    this.levels[worldName].forEach((level, index) => {
+                        const levelId = `${worldName}-${index}`;
+                        const isCompleted = this.gameState.completedLevels.includes(levelId);
+                        const difficultyStars = '★'.repeat(level.difficulty);
+                        
+                        worldLevelsHTML += `
+                            <button data-level-id="${levelId}" class="level-btn relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex flex-col items-center justify-center font-bold text-lg transition-all duration-300
+                                ${isUnlocked ? 'bg-gray-800 hover:bg-blue-600 hover:scale-105 neon-glow' : 'bg-gray-900 cursor-not-allowed'}
+                                ${isCompleted ? 'border-2 border-yellow-400' : 'border-2 border-gray-600'}" 
+                                ${!isUnlocked ? 'disabled' : ''}>
+                                <span class="text-2xl mb-1">${level.word}</span>
+                                <span class="text-xs text-yellow-300">${difficultyStars}</span>
+                                ${isCompleted ? '<span class="absolute -top-2 -right-2 text-2xl">⭐</span>' : ''}
+                            </button>
+                        `;
+                    });
+
+                    worldContainer.innerHTML = `
+                        <h2 class="text-3xl font-bold mb-4 flex items-center gap-3">
+                            ${!isUnlocked ? '🔒' : '🌍'} ${worldName}
+                            ${isUnlocked ? `<span class="text-sm font-normal bg-blue-600 px-3 py-1 rounded-full">${this.levels[worldName].length} مستويات</span>` : ''}
+                        </h2>
+                        <div class="flex flex-wrap justify-center gap-4">
+                            ${worldLevelsHTML}
+                        </div>
                     `;
+                    this.DOM.levelSelection.appendChild(worldContainer);
                 });
 
-                worldContainer.innerHTML = `
-                    <h2 class="text-3xl font-bold mb-4 flex items-center gap-3">
-                        ${!isUnlocked ? '🔒' : '🌍'} ${worldName}
-                    </h2>
-                    <div class="flex flex-wrap justify-center gap-4">
-                        ${worldLevelsHTML}
-                    </div>
-                `;
-                this.DOM.levelSelection.appendChild(worldContainer);
-            });
-
-            document.querySelectorAll('.level-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const [world, levelIndex] = btn.dataset.levelId.split('-');
-                    this.prepareLevel(world, parseInt(levelIndex));
+                document.querySelectorAll('.level-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const [world, levelIndex] = btn.dataset.levelId.split('-');
+                        this.prepareLevel(world, parseInt(levelIndex));
+                    });
                 });
-            });
-        }
-
-        prepareLevel(world, levelIndex) {
-            this.gameState.currentLevel = { world, levelIndex };
-            const level = this.levels[world][levelIndex];
-            
-            document.getElementById('startWord').textContent = level.word;
-            document.getElementById('startMeaning').textContent = level.meaning;
-            document.getElementById('startSentence').textContent = `مثال: "${level.sentence}"`;
-            this.soundManager.play('click');
-            this.showModal(this.DOM.levelStartModal);
-        }
-        
-        startLevel() {
-            this.hideAllModals();
-            this.DOM.levelSelection.classList.add('hidden');
-            this.DOM.gameScreen.classList.remove('hidden');
-
-            this.gameState.isPouring = false;
-            this.gameState.selectedBottleIndex = null;
-            this.gameState.timeLeft = this.config.baseLevelTime;
-
-            const { world, levelIndex } = this.gameState.currentLevel;
-            const level = this.levels[world][levelIndex];
-            
-            this.DOM.currentLevelDisplay.textContent = `${world} - ${levelIndex + 1}`;
-            this.DOM.targetWord.textContent = level.word;
-            this.setupBottles(level.word);
-            this.renderBottles();
-            this.startTimer();
-        }
-        
-        setupBottles(word) {
-            const targetLetters = [...new Set(word.split(''))];
-            const numTargetBottles = targetLetters.length;
-            const numExtraBottles = 2;
-            const totalFilledBottles = numTargetBottles + Math.min(2, Math.floor(word.length / 2)); // Add more bottles for longer words
-
-            let allColors = [];
-            word.split('').forEach(letter => {
-                for (let i = 0; i < this.config.bottleCapacity; i++) {
-                    allColors.push(letter);
-                }
-            });
-            
-            // Shuffle colors
-            for (let i = allColors.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [allColors[i], allColors[j]] = [allColors[j], allColors[i]];
             }
-            
-            this.gameState.bottleContents = [];
-            for (let i = 0; i < totalFilledBottles; i++) {
-                this.gameState.bottleContents.push([]);
-            }
-            
-            // Distribute colors into bottles
-            let colorIndex = 0;
-            for (let i = 0; i < allColors.length; i++) {
-                 this.gameState.bottleContents[i % totalFilledBottles].push(allColors[i]);
-            }
-            
-            // Add empty bottles
-            for (let i = 0; i < numExtraBottles; i++) {
-                this.gameState.bottleContents.push([]);
-            }
-        }
-        
-        renderBottles() {
-            this.DOM.bottlesArea.innerHTML = '';
-            this.gameState.bottleContents.forEach((content, index) => {
-                const bottleEl = document.createElement('div');
-                bottleEl.className = 'bottle';
-                bottleEl.dataset.index = index;
-                if(this.gameState.selectedBottleIndex === index) {
-                    bottleEl.classList.add('selected');
-                }
 
-                const liquidStack = document.createElement('div');
-                liquidStack.className = 'liquid-stack';
-
-                content.forEach(letter => {
-                    const liquidUnit = document.createElement('div');
-                    liquidUnit.className = 'liquid-unit';
-                    liquidUnit.style.backgroundColor = this.colorMap[letter] || '#333';
-                    liquidUnit.textContent = letter;
-                    liquidStack.appendChild(liquidUnit);
-                });
+            prepareLevel(world, levelIndex) {
+                this.gameState.currentLevel = { world, levelIndex };
+                const level = this.levels[world][levelIndex];
                 
-                bottleEl.appendChild(liquidStack);
-                this.DOM.bottlesArea.appendChild(bottleEl);
-                
-                bottleEl.addEventListener('click', () => this.handleBottleClick(index));
-            });
-        }
-
-        handleBottleClick(index) {
-            if (this.gameState.isPouring) return;
-            this.soundManager.play('click');
+                document.getElementById('startWord').textContent = level.word;
+                document.getElementById('startMeaning').textContent = level.meaning;
+                document.getElementById('startSentence').textContent = `مثال: "${level.sentence}"`;
+                this.soundManager.play('click');
+                this.showModal(this.DOM.levelStartModal);
+            }
             
-            if (this.gameState.selectedBottleIndex === null) {
-                if (this.gameState.bottleContents[index].length > 0) {
-                    this.gameState.selectedBottleIndex = index;
-                    document.querySelector(`[data-index='${index}']`).classList.add('selected');
-                }
-            } else {
-                if (this.gameState.selectedBottleIndex !== index) {
-                    this.pour(this.gameState.selectedBottleIndex, index);
-                }
-                const oldSelection = this.gameState.selectedBottleIndex;
+            startLevel() {
+                this.hideAllModals();
+                this.DOM.levelSelection.classList.add('hidden');
+                this.DOM.gameScreen.classList.remove('hidden');
+
+                this.gameState.isPouring = false;
                 this.gameState.selectedBottleIndex = null;
-                document.querySelector(`[data-index='${oldSelection}']`)?.classList.remove('selected');
-            }
-        }
-        
-        pour(fromIndex, toIndex) {
-            const fromBottle = this.gameState.bottleContents[fromIndex];
-            const toBottle = this.gameState.bottleContents[toIndex];
-            
-            if (fromBottle.length === 0) return;
-            
-            const colorToMove = fromBottle[fromBottle.length - 1];
-            
-            if (toBottle.length > 0 && toBottle[toBottle.length - 1] !== colorToMove) {
-                this.soundManager.play('fail');
-                return;
-            }
-            if (toBottle.length >= this.config.bottleCapacity) {
-                this.soundManager.play('fail');
-                return;
-            }
+                this.gameState.timeLeft = this.config.baseLevelTime;
+                this.gameState.moves = 0;
+                this.DOM.moves.textContent = '0';
 
-            this.gameState.isPouring = true;
-            document.querySelector(`[data-index='${fromIndex}']`).classList.add('pour-animation');
-            this.soundManager.play('pour');
+                const { world, levelIndex } = this.gameState.currentLevel;
+                const level = this.levels[world][levelIndex];
+                
+                // Calculate max moves based on difficulty
+                this.gameState.maxMoves = level.word.length * 2 + level.difficulty * 3;
+                
+                this.DOM.currentLevelDisplay.textContent = `${world} - ${levelIndex + 1}`;
+                this.DOM.targetWord.textContent = level.word;
+                this.setupBottles(level.word);
+                this.renderBottles();
+                this.updateProgress();
+                this.startTimer();
+            }
             
-            // Logic to move the color units
-            const unitsToMove = [];
-            for (let i = fromBottle.length - 1; i >= 0; i--) {
-                if (fromBottle[i] === colorToMove) {
-                    unitsToMove.unshift(fromBottle[i]);
-                } else {
-                    break;
+            setupBottles(word) {
+                const targetLetters = [...new Set(word.split(''))];
+                const numTargetBottles = targetLetters.length;
+                const numExtraBottles = 2 + Math.floor(word.length / 3);
+                const totalFilledBottles = numTargetBottles + Math.min(3, Math.floor(word.length / 2));
+
+                let allColors = [];
+                word.split('').forEach(letter => {
+                    for (let i = 0; i < this.config.bottleCapacity; i++) {
+                        allColors.push(letter);
+                    }
+                });
+                
+                // Shuffle colors
+                for (let i = allColors.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [allColors[i], allColors[j]] = [allColors[j], allColors[i]];
+                }
+                
+                this.gameState.bottleContents = [];
+                for (let i = 0; i < totalFilledBottles; i++) {
+                    this.gameState.bottleContents.push([]);
+                }
+                
+                // Distribute colors into bottles
+                let colorIndex = 0;
+                for (let i = 0; i < allColors.length; i++) {
+                     this.gameState.bottleContents[i % totalFilledBottles].push(allColors[i]);
+                }
+                
+                // Add empty bottles
+                for (let i = 0; i < numExtraBottles; i++) {
+                    this.gameState.bottleContents.push([]);
                 }
             }
+            
+            renderBottles() {
+                this.DOM.bottlesArea.innerHTML = '';
+                this.gameState.bottleContents.forEach((content, index) => {
+                    const bottleContainer = document.createElement('div');
+                    bottleContainer.className = 'flex flex-col items-center';
+                    
+                    const bottleEl = document.createElement('div');
+                    bottleEl.className = 'bottle';
+                    bottleEl.dataset.index = index;
+                    if(this.gameState.selectedBottleIndex === index) {
+                        bottleEl.classList.add('selected');
+                    }
 
-            // Check if there is space in the target bottle
-            if (toBottle.length + unitsToMove.length > this.config.bottleCapacity) {
-                this.gameState.isPouring = false;
-                 document.querySelector(`[data-index='${fromIndex}']`).classList.remove('pour-animation');
-                this.soundManager.play('fail');
-                return;
+                    const bottleBody = document.createElement('div');
+                    bottleBody.className = 'bottle-body';
+
+                    const bottleNeck = document.createElement('div');
+                    bottleNeck.className = 'bottle-neck';
+
+                    const liquidStack = document.createElement('div');
+                    liquidStack.className = 'liquid-stack';
+
+                    content.forEach(letter => {
+                        const liquidUnit = document.createElement('div');
+                        liquidUnit.className = 'liquid-unit';
+                        liquidUnit.style.backgroundColor = this.colorMap[letter] || '#333';
+                        liquidUnit.textContent = letter;
+                        liquidStack.appendChild(liquidUnit);
+                    });
+                    
+                    bottleBody.appendChild(liquidStack);
+                    bottleEl.appendChild(bottleBody);
+                    bottleEl.appendChild(bottleNeck);
+                    
+                    bottleContainer.appendChild(bottleEl);
+                    
+                    // Add bottle number
+                    const bottleNumber = document.createElement('div');
+                    bottleNumber.className = 'mt-2 text-sm text-gray-300';
+                    bottleNumber.textContent = `قارورة ${index + 1}`;
+                    bottleContainer.appendChild(bottleNumber);
+                    
+                    this.DOM.bottlesArea.appendChild(bottleContainer);
+                    
+                    bottleEl.addEventListener('click', () => this.handleBottleClick(index));
+                });
+            }
+
+            handleBottleClick(index) {
+                if (this.gameState.isPouring) return;
+                this.soundManager.play('click');
+                
+                if (this.gameState.selectedBottleIndex === null) {
+                    if (this.gameState.bottleContents[index].length > 0) {
+                        this.gameState.selectedBottleIndex = index;
+                        document.querySelector(`[data-index='${index}']`).classList.add('selected');
+                    }
+                } else {
+                    if (this.gameState.selectedBottleIndex !== index) {
+                        this.pour(this.gameState.selectedBottleIndex, index);
+                    }
+                    const oldSelection = this.gameState.selectedBottleIndex;
+                    this.gameState.selectedBottleIndex = null;
+                    document.querySelector(`[data-index='${oldSelection}']`)?.classList.remove('selected');
+                }
             }
             
-            setTimeout(() => {
-                fromBottle.splice(fromBottle.length - unitsToMove.length, unitsToMove.length);
-                toBottle.push(...unitsToMove);
+            pour(fromIndex, toIndex) {
+                const fromBottle = this.gameState.bottleContents[fromIndex];
+                const toBottle = this.gameState.bottleContents[toIndex];
                 
-                this.renderBottles();
-                this.gameState.isPouring = false;
-                this.checkWinCondition();
-            }, 400);
-        }
-        
-        // --- MODIFIED CODE START ---
-        checkWinCondition() {
-            const targetWord = this.DOM.targetWord.textContent;
-            
-            // الخطوة الأولى: التأكد من أن جميع القوارير إما مكتملة أو فارغة.
-            // أي قارورة ممتلئة جزئيًا تعني أن اللغز لم يتم حله بعد.
-            for (const bottle of this.gameState.bottleContents) {
-                const isComplete = bottle.length === this.config.bottleCapacity && new Set(bottle).size === 1;
-                const isEmpty = bottle.length === 0;
+                if (fromBottle.length === 0) return;
                 
-                if (!isEmpty && !isComplete) {
-                    // هذه القارورة في حالة وسيطة، لذلك لا يوجد فوز بعد.
+                const colorToMove = fromBottle[fromBottle.length - 1];
+                
+                if (toBottle.length > 0 && toBottle[toBottle.length - 1] !== colorToMove) {
+                    this.soundManager.play('fail');
+                    this.createParticles(fromIndex, 5, this.colorMap[colorToMove] || '#333');
                     return;
                 }
-            }
-
-            // الخطوة الثانية: بناء الكلمة من القوارير المكتملة.
-            // بسبب `dir="rtl"`، يتوافق ترتيب DOM مع الترتيب المرئي من اليمين إلى اليسار.
-            const sortedLetters = [];
-            for (const bottle of this.gameState.bottleContents) {
-                // إذا لم تكن القارورة فارغة، فيجب أن تكون مكتملة بناءً على الفحص الأول.
-                if (bottle.length > 0) {
-                    sortedLetters.push(bottle[0]);
+                if (toBottle.length >= this.config.bottleCapacity) {
+                    this.soundManager.play('fail');
+                    this.createParticles(fromIndex, 5, this.colorMap[colorToMove] || '#333');
+                    return;
                 }
-            }
-            
-            const formedWord = sortedLetters.join('');
-            
-            // التحقق مما إذا كانت الكلمة المكونة من القوارير (من اليمين إلى اليسار) تطابق الكلمة المستهدفة.
-            if (formedWord === targetWord) {
-                this.levelComplete();
-            }
-        }
-        // --- MODIFIED CODE END ---
-        
-        levelComplete() {
-            clearInterval(this.gameState.timer);
-            this.soundManager.play('success');
-            
-            const gemsEarned = 10 + Math.floor(this.gameState.timeLeft / 10);
-            const starsEarned = this.gameState.timeLeft > (this.config.baseLevelTime * 0.75) ? 3 : this.gameState.timeLeft > (this.config.baseLevelTime * 0.4) ? 2 : 1;
-            
-            this.gameState.gems += gemsEarned;
-            this.gameState.stars += starsEarned;
-            
-            const {world, levelIndex} = this.gameState.currentLevel;
-            const levelId = `${world}-${levelIndex}`;
-            if (!this.gameState.completedLevels.includes(levelId)) {
-                this.gameState.completedLevels.push(levelId);
-            }
 
-            const currentWorldLevels = this.levels[world];
-            if (levelIndex === currentWorldLevels.length - 1) {
-                const worldNames = Object.keys(this.levels);
-                const currentWorldIndex = worldNames.indexOf(world);
-                if(currentWorldIndex + 1 < worldNames.length) {
-                    const nextWorld = worldNames[currentWorldIndex + 1];
-                    if(!this.gameState.unlockedWorlds.includes(nextWorld)){
-                        this.gameState.unlockedWorlds.push(nextWorld);
+                this.gameState.isPouring = true;
+                this.gameState.moves++;
+                this.DOM.moves.textContent = this.gameState.moves;
+                
+                const fromBottleEl = document.querySelector(`[data-index='${fromIndex}']`);
+                const toBottleEl = document.querySelector(`[data-index='${toIndex}']`);
+                
+                fromBottleEl.classList.add('pour-animation');
+                this.soundManager.play('pour');
+                
+                // Create liquid transfer effect
+                this.createLiquidTransfer(fromBottleEl, toBottleEl, this.colorMap[colorToMove] || '#333');
+                
+                // Logic to move the color units
+                const unitsToMove = [];
+                for (let i = fromBottle.length - 1; i >= 0; i--) {
+                    if (fromBottle[i] === colorToMove) {
+                        unitsToMove.unshift(fromBottle[i]);
+                    } else {
+                        break;
                     }
                 }
+
+                // Check if there is space in the target bottle
+                if (toBottle.length + unitsToMove.length > this.config.bottleCapacity) {
+                    this.gameState.isPouring = false;
+                    fromBottleEl.classList.remove('pour-animation');
+                    this.soundManager.play('fail');
+                    return;
+                }
+                
+                setTimeout(() => {
+                    fromBottle.splice(fromBottle.length - unitsToMove.length, unitsToMove.length);
+                    toBottle.push(...unitsToMove);
+                    
+                    this.renderBottles();
+                    this.gameState.isPouring = false;
+                    this.updateProgress();
+                    this.checkWinCondition();
+                }, 600);
             }
             
-            this.saveProgress();
-            this.updateHeaderUI();
-            
-            document.getElementById('completedWord').textContent = this.levels[world][levelIndex].word;
-            document.getElementById('gemsEarned').textContent = `+${gemsEarned}`;
-            document.getElementById('starsEarned').textContent = `+${starsEarned}`;
-            
-            setTimeout(() => this.showModal(this.DOM.successModal), 500);
-        }
-        
-        startTimer() {
-            clearInterval(this.gameState.timer);
-            this.DOM.timer.textContent = this.gameState.timeLeft;
-            this.DOM.timer.parentElement.classList.remove('text-yellow-400', 'animate-ping');
-
-            this.gameState.timer = setInterval(() => {
-                this.gameState.timeLeft--;
-                this.DOM.timer.textContent = this.gameState.timeLeft;
-                if (this.gameState.timeLeft <= 10) {
-                     this.DOM.timer.parentElement.classList.add('text-yellow-400', 'animate-ping');
-                }
-                if (this.gameState.timeLeft <= 0) {
-                    this.gameOver();
-                }
-            }, 1000);
-        }
-
-        gameOver() {
-            clearInterval(this.gameState.timer);
-            this.soundManager.play('fail');
-            this.showModal(this.DOM.gameOverModal);
-        }
-
-        resetLevel() {
-            clearInterval(this.gameState.timer);
-            this.startLevel();
-        }
-        
-        provideHint() {
-            if (this.gameState.gems < this.config.hintCost) {
-                alert("ليس لديك جواهر كافية!");
-                return;
+            createLiquidTransfer(fromEl, toEl, color) {
+                const fromRect = fromEl.getBoundingClientRect();
+                const toRect = toEl.getBoundingClientRect();
+                
+                const transferEl = document.createElement('div');
+                transferEl.className = 'liquid-transfer';
+                transferEl.style.backgroundColor = color;
+                transferEl.style.left = `${fromRect.left + fromRect.width / 2 - 30}px`;
+                transferEl.style.top = `${fromRect.top + fromRect.height - 50}px`;
+                
+                document.body.appendChild(transferEl);
+                
+                // Animate transfer
+                setTimeout(() => {
+                    transferEl.style.left = `${toRect.left + toRect.width / 2 - 30}px`;
+                    transferEl.style.top = `${toRect.top + toRect.height - 30}px`;
+                }, 300);
+                
+                // Remove element after animation
+                setTimeout(() => {
+                    if (transferEl.parentNode) {
+                        transferEl.parentNode.removeChild(transferEl);
+                    }
+                }, 1000);
             }
-
-            this.gameState.gems -= this.config.hintCost;
-            this.updateHeaderUI();
-            this.saveProgress();
-
-            for(let i=0; i < this.gameState.bottleContents.length; i++){
-                const fromBottle = this.gameState.bottleContents[i];
-                if(fromBottle.length === 0 || (new Set(fromBottle).size === 1 && fromBottle.length === this.config.bottleCapacity)) continue;
-
-                const topColor = fromBottle[fromBottle.length-1];
-                let unitsToMoveCount = 0;
-                for(let k = fromBottle.length -1; k >= 0; k--){
-                    if(fromBottle[k] === topColor) unitsToMoveCount++; else break;
+            
+            createParticles(bottleIndex, count, color) {
+                const bottleEl = document.querySelector(`[data-index='${bottleIndex}']`);
+                const rect = bottleEl.getBoundingClientRect();
+                
+                for (let i = 0; i < count; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.backgroundColor = color;
+                    particle.style.left = `${rect.left + rect.width / 2}px`;
+                    particle.style.top = `${rect.top + rect.height - 20}px`;
+                    
+                    document.body.appendChild(particle);
+                    
+                    // Random direction and distance
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = 30 + Math.random() * 50;
+                    const duration = 0.5 + Math.random() * 0.5;
+                    
+                    // Animate particle
+                    particle.style.transition = `all ${duration}s ease-out`;
+                    setTimeout(() => {
+                        particle.style.left = `${rect.left + rect.width / 2 + Math.cos(angle) * distance}px`;
+                        particle.style.top = `${rect.top + rect.height - 20 + Math.sin(angle) * distance}px`;
+                        particle.style.opacity = '0';
+                    }, 10);
+                    
+                    // Remove particle after animation
+                    setTimeout(() => {
+                        if (particle.parentNode) {
+                            particle.parentNode.removeChild(particle);
+                        }
+                    }, duration * 1000 + 100);
                 }
-
-                for(let j=0; j < this.gameState.bottleContents.length; j++){
-                    if(i === j) continue;
-                    const toBottle = this.gameState.bottleContents[j];
-                    if(toBottle.length + unitsToMoveCount <= this.config.bottleCapacity && (toBottle.length === 0 || toBottle[toBottle.length-1] === topColor)){
-                        const bottles = document.querySelectorAll('.bottle');
-                        bottles[i].classList.add('selected');
-                        setTimeout(() => { bottles[j].classList.add('selected'); }, 500);
-                        setTimeout(() => {
-                           bottles[i]?.classList.remove('selected');
-                           bottles[j]?.classList.remove('selected');
-                        }, 1500);
+            }
+            
+            updateProgress() {
+                const targetWord = this.DOM.targetWord.textContent;
+                let correctBottles = 0;
+                
+                for (const bottle of this.gameState.bottleContents) {
+                    if (bottle.length === this.config.bottleCapacity && new Set(bottle).size === 1) {
+                        correctBottles++;
+                    }
+                }
+                
+                const progress = Math.min(100, (correctBottles / targetWord.length) * 100);
+                this.DOM.progressFill.style.width = `${progress}%`;
+                this.DOM.progressText.textContent = `${Math.round(progress)}%`;
+            }
+            
+            checkWinCondition() {
+                const targetWord = this.DOM.targetWord.textContent;
+                
+                // الخطوة الأولى: التأكد من أن جميع القوارير إما مكتملة أو فارغة.
+                for (const bottle of this.gameState.bottleContents) {
+                    const isComplete = bottle.length === this.config.bottleCapacity && new Set(bottle).size === 1;
+                    const isEmpty = bottle.length === 0;
+                    
+                    if (!isEmpty && !isComplete) {
                         return;
                     }
                 }
+
+                // الخطوة الثانية: بناء الكلمة من القوارير المكتملة.
+                const sortedLetters = [];
+                for (const bottle of this.gameState.bottleContents) {
+                    if (bottle.length > 0) {
+                        sortedLetters.push(bottle[0]);
+                    }
+                }
+                
+                const formedWord = sortedLetters.join('');
+                
+                if (formedWord === targetWord) {
+                    this.levelComplete();
+                }
+            }
+            
+            levelComplete() {
+                clearInterval(this.gameState.timer);
+                this.soundManager.play('success');
+                
+                // Create celebration particles
+                this.createCelebrationParticles();
+                
+                const gemsEarned = 15 + Math.floor(this.gameState.timeLeft / 10) + (this.gameState.moves <= this.gameState.maxMoves ? 10 : 0);
+                const starsEarned = this.gameState.timeLeft > (this.config.baseLevelTime * 0.8) ? 3 : 
+                                  this.gameState.timeLeft > (this.config.baseLevelTime * 0.5) ? 2 : 1;
+                
+                this.gameState.gems += gemsEarned;
+                this.gameState.stars += starsEarned;
+                
+                const {world, levelIndex} = this.gameState.currentLevel;
+                const levelId = `${world}-${levelIndex}`;
+                if (!this.gameState.completedLevels.includes(levelId)) {
+                    this.gameState.completedLevels.push(levelId);
+                }
+
+                const currentWorldLevels = this.levels[world];
+                if (levelIndex === currentWorldLevels.length - 1) {
+                    const worldNames = Object.keys(this.levels);
+                    const currentWorldIndex = worldNames.indexOf(world);
+                    if(currentWorldIndex + 1 < worldNames.length) {
+                        const nextWorld = worldNames[currentWorldIndex + 1];
+                        if(!this.gameState.unlockedWorlds.includes(nextWorld)){
+                            this.gameState.unlockedWorlds.push(nextWorld);
+                        }
+                    }
+                }
+                
+                this.saveProgress();
+                this.updateHeaderUI();
+                
+                document.getElementById('completedWord').textContent = this.levels[world][levelIndex].word;
+                document.getElementById('gemsEarned').textContent = `+${gemsEarned}`;
+                document.getElementById('starsEarned').textContent = `+${starsEarned}`;
+                document.getElementById('movesCount').textContent = this.gameState.moves;
+                document.getElementById('timeLeft').textContent = this.gameState.timeLeft;
+                
+                setTimeout(() => this.showModal(this.DOM.successModal), 1000);
+            }
+            
+            createCelebrationParticles() {
+                for (let i = 0; i < 30; i++) {
+                    setTimeout(() => {
+                        const sparkle = document.createElement('div');
+                        sparkle.className = 'success-sparkle';
+                        sparkle.style.left = `${Math.random() * window.innerWidth}px`;
+                        sparkle.style.top = `${Math.random() * window.innerHeight}px`;
+                        sparkle.style.animationDelay = `${Math.random() * 0.5}s`;
+                        
+                        document.body.appendChild(sparkle);
+                        
+                        // Remove sparkle after animation
+                        setTimeout(() => {
+                            if (sparkle.parentNode) {
+                                sparkle.parentNode.removeChild(sparkle);
+                            }
+                        }, 1200);
+                    }, i * 100);
+                }
+            }
+            
+            startTimer() {
+                clearInterval(this.gameState.timer);
+                this.DOM.timer.textContent = this.gameState.timeLeft;
+                this.DOM.timer.parentElement.classList.remove('text-yellow-400', 'text-red-400', 'animate-ping');
+
+                this.gameState.timer = setInterval(() => {
+                    this.gameState.timeLeft--;
+                    this.DOM.timer.textContent = this.gameState.timeLeft;
+                    if (this.gameState.timeLeft <= 10) {
+                         this.DOM.timer.parentElement.classList.add('text-yellow-400', 'animate-ping');
+                    }
+                    if (this.gameState.timeLeft <= 5) {
+                         this.DOM.timer.parentElement.classList.remove('text-yellow-400');
+                         this.DOM.timer.parentElement.classList.add('text-red-400');
+                    }
+                    if (this.gameState.timeLeft <= 0) {
+                        this.gameOver();
+                    }
+                }, 1000);
+            }
+
+            gameOver() {
+                clearInterval(this.gameState.timer);
+                this.soundManager.play('fail');
+                this.showModal(this.DOM.gameOverModal);
+            }
+
+            resetLevel() {
+                clearInterval(this.gameState.timer);
+                this.startLevel();
+            }
+            
+            provideHint() {
+                if (this.gameState.gems < this.config.hintCost) {
+                    alert("ليس لديك جواهر كافية!");
+                    return;
+                }
+
+                this.gameState.gems -= this.config.hintCost;
+                this.updateHeaderUI();
+                this.saveProgress();
+
+                for(let i=0; i < this.gameState.bottleContents.length; i++){
+                    const fromBottle = this.gameState.bottleContents[i];
+                    if(fromBottle.length === 0 || (new Set(fromBottle).size === 1 && fromBottle.length === this.config.bottleCapacity)) continue;
+
+                    const topColor = fromBottle[fromBottle.length-1];
+                    let unitsToMoveCount = 0;
+                    for(let k = fromBottle.length -1; k >= 0; k--){
+                        if(fromBottle[k] === topColor) unitsToMoveCount++; else break;
+                    }
+
+                    for(let j=0; j < this.gameState.bottleContents.length; j++){
+                        if(i === j) continue;
+                        const toBottle = this.gameState.bottleContents[j];
+                        if(toBottle.length + unitsToMoveCount <= this.config.bottleCapacity && (toBottle.length === 0 || toBottle[toBottle.length-1] === topColor)){
+                            const bottles = document.querySelectorAll('.bottle');
+                            bottles[i].classList.add('selected');
+                            setTimeout(() => { bottles[j].classList.add('selected'); }, 500);
+                            setTimeout(() => {
+                               bottles[i]?.classList.remove('selected');
+                               bottles[j]?.classList.remove('selected');
+                            }, 1500);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            bindEvents() {
+                this.DOM.startLevelBtn.addEventListener('click', () => this.startLevel());
+                this.DOM.backBtn.addEventListener('click', () => {
+                    clearInterval(this.gameState.timer);
+                    this.showLevelSelection();
+                });
+                this.DOM.resetBtn.addEventListener('click', () => this.resetLevel());
+                this.DOM.retryBtn.addEventListener('click', () => {
+                    this.hideAllModals();
+                    this.resetLevel();
+                });
+                this.DOM.nextLevelBtn.addEventListener('click', () => {
+                    this.hideAllModals();
+                    const {world, levelIndex} = this.gameState.currentLevel;
+                    const worldLevels = this.levels[world];
+                    
+                    if(levelIndex + 1 < worldLevels.length){
+                        this.prepareLevel(world, levelIndex + 1);
+                    } else {
+                         const worldNames = Object.keys(this.levels);
+                         const currentWorldIndex = worldNames.indexOf(world);
+                         if(currentWorldIndex + 1 < worldNames.length){
+                             this.prepareLevel(worldNames[currentWorldIndex+1], 0);
+                         } else {
+                             this.showLevelSelection();
+                             alert('تهانينا! لقد أكملت جميع المستويات!');
+                         }
+                    }
+                });
+                
+                this.DOM.soundToggle.addEventListener('click', () => {
+                    const willBeEnabled = !this.soundManager.isEnabled;
+                    this.soundManager.toggle(willBeEnabled);
+                    const iconPath = willBeEnabled
+                        ? "M10 2a1 1 0 00-1 1v14a1 1 0 002 0V3a1 1 0 00-1-1zM5 6a1 1 0 00-1 1v6a1 1 0 002 0V7a1 1 0 00-1-1zm10 0a1 1 0 00-1 1v6a1 1 0 002 0V7a1 1 0 00-1-1z" // volume up
+                        : "M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z"; // volume off
+                    this.DOM.soundIconPath.setAttribute('d', iconPath);
+                });
+                
+                this.DOM.speakBtn.addEventListener('click', () => {
+                    if ('speechSynthesis' in window) {
+                        const textToSpeak = this.DOM.targetWord.textContent;
+                        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                        utterance.lang = 'ar-SA';
+                        utterance.rate = 0.8;
+                        speechSynthesis.speak(utterance);
+                    } else {
+                        alert('عذرًا، متصفحك لا يدعم نطق الكلمات.');
+                    }
+                });
+                
+                this.DOM.hintBtn.addEventListener('click', () => this.provideHint());
             }
         }
 
-        bindEvents() {
-            this.DOM.startLevelBtn.addEventListener('click', () => this.startLevel());
-            this.DOM.backBtn.addEventListener('click', () => {
-                clearInterval(this.gameState.timer);
-                this.showLevelSelection();
-            });
-            this.DOM.resetBtn.addEventListener('click', () => this.resetLevel());
-            this.DOM.retryBtn.addEventListener('click', () => {
-                this.hideAllModals();
-                this.resetLevel();
-            });
-            this.DOM.nextLevelBtn.addEventListener('click', () => {
-                this.hideAllModals();
-                const {world, levelIndex} = this.gameState.currentLevel;
-                const worldLevels = this.levels[world];
-                
-                if(levelIndex + 1 < worldLevels.length){
-                    this.prepareLevel(world, levelIndex + 1);
-                } else {
-                     const worldNames = Object.keys(this.levels);
-                     const currentWorldIndex = worldNames.indexOf(world);
-                     if(currentWorldIndex + 1 < worldNames.length){
-                         this.prepareLevel(worldNames[currentWorldIndex+1], 0);
-                     } else {
-                         this.showLevelSelection();
-                         alert('تهانينا! لقد أكملت جميع المستويات!');
-                     }
-                }
-            });
-            
-            this.DOM.soundToggle.addEventListener('click', () => {
-                const willBeEnabled = !this.soundManager.isEnabled;
-                this.soundManager.toggle(willBeEnabled);
-                const iconPath = willBeEnabled
-                    ? "M10 2a1 1 0 00-1 1v14a1 1 0 002 0V3a1 1 0 00-1-1zM5 6a1 1 0 00-1 1v6a1 1 0 002 0V7a1 1 0 00-1-1zm10 0a1 1 0 00-1 1v6a1 1 0 002 0V7a1 1 0 00-1-1z" // volume up
-                    : "M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z"; // volume off
-                this.DOM.soundIconPath.setAttribute('d', iconPath);
-            });
-            
-            this.DOM.speakBtn.addEventListener('click', () => {
-                if ('speechSynthesis' in window) {
-                    const textToSpeak = this.DOM.targetWord.textContent;
-                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.lang = 'ar-SA';
-                    speechSynthesis.speak(utterance);
-                } else {
-                    alert('عذرًا، متصفحك لا يدعم نطق الكلمات.');
-                }
-            });
-            
-            this.DOM.hintBtn.addEventListener('click', () => this.provideHint());
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        window.game = new ProfessionalColorSortGame();
-    });
+        document.addEventListener('DOMContentLoaded', () => {
+            window.game = new ProfessionalColorSortGame();
+        });
     </script>
 </body>
 </html>

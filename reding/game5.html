@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أكاديمية المعرفة - منصة التعليم الاحترافية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Scheherazade+New:wght@700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+   :root {
+    --primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --danger: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+    --dark: #1a1a2e;
+    --darker: #0f0f1e;
+    --light: #edf2f7;
+    --lighter: #f7fafc;
+    --text-dark: #2d3748;
+    --text-light: #e2e8f0;
+    --gold: #ffd700;
+    --silver: #c0c0c0;
+    --bronze: #cd7f32;
+}
+
+.light-theme {
+    --bg-main: #f0f4f8;
+    --bg-card: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #4a5568;
+    --shadow: rgba(0,0,0,0.1);
+}
+
+.dark-theme {
+    --bg-main: var(--darker);
+    --bg-card: var(--dark);
+    --text-primary: var(--text-light);
+    --text-secondary: #a0aec0;
+    --shadow: rgba(0,0,0,0.4);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: all 0.3s ease;
+    overflow-x: hidden;
+}
+
+/* خلفية متحركة */
+.animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(102, 126, 234, 0.1);
+    animation: float 20s infinite ease-in-out;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-100px) rotate(180deg); }
+}
+
+/* شاشة البداية - اختيار المواد */
+.start-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-main);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.start-screen.hidden {
+    display: none;
+}
+
+.main-header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: slideDown 0.8s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-50px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.main-title {
+    font-family: 'Scheherazade New', serif;
+    font-size: clamp(32px, 6vw, 56px);
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+    font-weight: 900;
+}
+
+.main-subtitle {
+    font-size: clamp(16px, 3vw, 20px);
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* بطاقات المواد */
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeInUp 1s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.subject-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 30px var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.subject-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1));
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 50px var(--shadow);
+}
+
+.subject-card:hover::before {
+    opacity: 1;
+}
+
+.subject-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    display: inline-block;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+.subject-card:hover .subject-icon {
+    animation: spin 0.6s ease;
+}
+
+@keyframes spin {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+}
+
+.subject-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.subject-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}
+
+.subject-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid rgba(102,126,234,0.2);
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+/* مستويات الصعوبة */
+.difficulty-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-main);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.difficulty-screen.active {
+    display: flex;
+}
+
+.difficulty-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.difficulty-card {
+    background: var(--bg-card);
+    border-radius: 25px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    box-shadow: 0 15px 40px var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.difficulty-card::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(102,126,234,0.2), transparent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.difficulty-card:hover::after {
+    width: 400px;
+    height: 400px;
+}
+
+.difficulty-card:hover {
+    transform: scale(1.05);
+}
+
+.difficulty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+}
+
+.difficulty-name {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 15px;
+}
+
+.difficulty-info {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* شاشة اللعب */
+.game-screen {
+    display: none;
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.game-screen.active {
+    display: block;
+}
+
+/* شريط التقدم العلوي */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card);
+    padding: 20px 30px;
+    border-radius: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px var(--shadow);
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.user-details h3 {
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+.xp-bar {
+    width: 150px;
+    height: 8px;
+    background: rgba(102,126,234,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.xp-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.5s ease;
+}
+
+.currency-display {
+    display: flex;
+    gap: 20px;
+}
+
+.currency-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(102,126,234,0.1);
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+/* بطاقة السؤال */
+.question-card {
+    background: var(--bg-card);
+    border-radius: 25px;
+    padding: 40px;
+    box-shadow: 0 15px 50px var(--shadow);
+    margin-bottom: 30px;
+    animation: scaleIn 0.5s ease;
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.subject-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--primary);
+    color: white;
+    padding: 12px 25px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.timer-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(102,126,234,0.1);
+    padding: 12px 25px;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.timer-display.warning {
+    animation: pulse 1s infinite;
+    background: rgba(252,74,26,0.2);
+    color: #fc4a1a;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.question-number {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.question-text {
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+    line-height: 1.6;
+    margin: 25px 0;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+/* الأجوبة */
+.answers-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.answer-option {
+    background: var(--bg-card);
+    border: 3px solid rgba(102,126,234,0.3);
+    border-radius: 20px;
+    padding: 25px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    color: aliceblue;
+}
+
+.answer-option::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: var(--primary);
+    transition: left 0.4s ease;
+    z-index: 0;
+}
+
+.answer-option span {
+    position: relative;
+    z-index: 1;
+}
+
+.answer-option:hover {
+    transform: translateX(-5px);
+    border-color: #667eea;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.answer-option:hover::before {
+    left: 0;
+}
+
+.answer-option:hover span {
+    color: white;
+}
+
+.answer-option.correct {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border-color: #00f2fe;
+    color: white;
+    animation: correctPulse 0.6s ease;
+}
+
+@keyframes correctPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.answer-option.wrong {
+    background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+    border-color: #fc4a1a;
+    color: white;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-15px); }
+    75% { transform: translateX(15px); }
+}
+
+.answer-option:disabled {
+    cursor: not-allowed;
+}
+
+/* أدوات المساعدة */
+.power-ups {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 25px 0;
+    flex-wrap: wrap;
+}
+
+.power-up-btn {
+    background: var(--bg-card);
+    border: 2px solid rgba(102,126,234,0.3);
+    border-radius: 15px;
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Cairo', sans-serif;
+    color: var(--text-primary);
+}
+
+.power-up-btn:hover:not(:disabled) {
+    transform: translateY(-3px);
+    border-color: #667eea;
+    box-shadow: 0 8px 20px var(--shadow);
+}
+
+.power-up-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.power-up-cost {
+    background: var(--warning);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+/* زر التالي */
+.next-question-btn {
+    display: none;
+    margin: 30px auto;
+    padding: 18px 50px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(102,126,234,0.4);
+}
+
+.next-question-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(102,126,234,0.6);
+}
+
+/* الإحصائيات */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-box {
+    background: var(--bg-card);
+    padding: 25px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px var(--shadow);
+    transition: transform 0.3s ease;
+}
+
+.stat-box:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    font-size: 36px;
+    margin-bottom: 15px;
+}
+
+.stat-number {
+    font-size: 32px;
+    font-weight: 900;
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+}
+
+.stat-title {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* الإنجازات والشارات */
+.achievements-section {
+    background: var(--bg-card);
+    padding: 30px;
+    border-radius: 20px;
+    margin-top: 30px;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.section-title {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 25px;
+    text-align: center;
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 20px;
+}
+
+.badge-item {
+    background: rgba(102,126,234,0.1);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.badge-item.unlocked {
+    border-color: var(--gold);
+    animation: glow 2s infinite;
+}
+
+@keyframes glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(255,215,0,0.5); }
+    50% { box-shadow: 0 0 20px rgba(255,215,0,0.8); }
+}
+
+.badge-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    filter: grayscale(100%);
+    transition: filter 0.3s ease;
+}
+
+.badge-item.unlocked .badge-icon {
+    filter: grayscale(0%);
+    animation: bounce 1s ease;
+}
+
+.badge-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.badge-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+/* نوافذ منبثقة */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-overlay.show {
+    display: flex;
+}
+
+.modal-box {
+    background: var(--bg-card);
+    border-radius: 30px;
+    padding: 50px;
+    max-width: 600px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+    animation: modalSlide 0.5s ease;
+    position: relative;
+}
+
+@keyframes modalSlide {
+    from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-icon {
+    font-size: 100px;
+    margin-bottom: 25px;
+    animation: bounce 1s infinite;
+}
+
+.modal-title {
+    font-size: 42px;
+    font-weight: 900;
+    margin-bottom: 20px;
+    background: var(--primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modal-text {
+    font-size: 18px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-btn {
+    padding: 15px 40px;
+    border: none;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    transition: all 0.3s ease;
+}
+
+.modal-btn.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.modal-btn.secondary {
+    background: rgba(102,126,234,0.2);
+    color: var(--text-primary);
+}
+
+.modal-btn:hover {
+    transform: scale(1.05);
+}
+
+/* المتجر */
+.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.shop-item {
+    background: var(--bg-card);
+    border: 2px solid rgba(102,126,234,0.3);
+    border-radius: 20px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.shop-item:hover {
+    transform: translateY(-5px);
+    border-color: #667eea;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.shop-item-icon {
+    font-size: 56px;
+    margin-bottom: 15px;
+}
+
+.shop-item-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.shop-item-price {
+    background: var(--warning);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 12px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+/* أزرار التحكم */
+.control-buttons {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 100;
+}
+
+.control-btn {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px var(--shadow);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    transform: scale(1.1) rotate(15deg);
+}
+
+/* تأثيرات الجسيمات */
+.particle {
+    position: fixed;
+    pointer-events: none;
+    font-size: 32px;
+    animation: particleFloat 2.5s ease-out forwards;
+    z-index: 9999;
+}
+
+@keyframes particleFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-150px) rotate(360deg) scale(0.5);
+    }
+}
+
+/* شريط تقدم السؤال */
+.question-progress {
+    width: 100%;
+    height: 10px;
+    background: rgba(102,126,234,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 25px;
+}
+
+.question-progress-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.5s ease;
+}
+
+/* مؤشر السلسلة */
+.streak-indicator {
+    position: fixed;
+    top: 50%;
+    right: 30px;
+    transform: translateY(-50%);
+    background: var(--warning);
+    color: white;
+    padding: 25px;
+    border-radius: 20px;
+    font-size: 28px;
+    font-weight: 900;
+    box-shadow: 0 10px 40px rgba(250,112,154,0.6);
+    display: none;
+    animation: pulse 1s infinite;
+    z-index: 50;
+}
+
+.streak-indicator.visible {
+    display: block;
+}
+
+.back-btn {
+    background: rgba(102,126,234,0.2);
+    border: none;
+    padding: 12px 25px;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Cairo', sans-serif;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.back-btn:hover {
+    background: rgba(102,126,234,0.3);
+    transform: translateX(5px);
+}
+
+.hint-display {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    border-right: 5px solid #f59e0b;
+    padding: 20px;
+    border-radius: 15px;
+    margin: 20px 0;
+    color: #78350f;
+    font-weight: 700;
+    font-size: 16px;
+    display: none;
+    animation: slideInUp 0.5s ease;
+}
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hint-display.visible {
+    display: block;
+}
+
+
+/* === بداية التعديلات المطلوبة لتحسين عرض الهاتف === */
+
+/* === بداية التعديلات المطلوبة لتحسين عرض الهاتف === */
+
+@media (max-width: 768px) {
+    /* تعديل التنسيق العام للشاشة لتقليل المسافات */
+    .game-screen {
+        padding: 10px;
+    }
+    .subject-badge{
+        width: 100%;
+    }
+    #subjectName{
+        font-size: 14px;
+    }
+    
+    .top-bar {
+        padding: 15px;
+        margin-bottom: 15px; /* تقليل المسافة تحت شريط الطالب */
+    }
+
+    /* تحويل شبكة الإحصائيات إلى شريط أفقي مدمج */
+    .stats-grid {
+        display: flex; /* تغيير من grid إلى flex */
+        justify-content: space-around; /* توزيع العناصر بالتساوي */
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px; /* تقليل المسافة تحت شريط الإحصائيات */
+        background: var(--bg-card);
+        padding: 12px 10px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px var(--shadow);
+    }
+
+    /* تنسيق كل عنصر إحصائي ليناسب الشريط الأفقي */
+    .stat-box {
+        background: none; /* إزالة الخلفية الفردية */
+        box-shadow: none; /* إزالة الظل الفردي */
+        padding: 0;
+        display: flex; /* جعل الأيقونة والرقم بجانب بعضهما */
+        align-items: center;
+        gap: 8px;
+        transition: none;
+    }
+    
+    .stat-box:hover {
+        transform: none; /* إلغاء تأثير الرفع عند التحويم */
+    }
+
+    /* تصغير حجم أيقونة الإحصائيات */
+    .stat-icon {
+        font-size: 22px;
+        margin-bottom: 0;
+    }
+    
+    /* تصغير حجم رقم الإحصائيات */
+    .stat-number {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    /* إخفاء عنوان الإحصائيات (النقاط، المستوى..) لتوفير المساحة */
+    .stat-title {
+        display: none;
+    }
+
+    /* تقليل مسافات بطاقة السؤال */
+    .question-card {
+        padding: 20px;
+        
+    }
+
+    .question-header {
+        margin-bottom: 5px;
+        
+    }
+
+    .question-text {
+        font-size: clamp(18px, 5.5vw, 24px); /* تصغير حجم خط السؤال */
+        margin: 16px 0;
+    }
+    
+    .answers-container {
+        gap: 15px;
+        margin: 25px 0;
+       
+    }
+    
+    .answer-option {
+        padding: 20px;
+        font-size: 16px;
+         width: 80%;
+        color: aliceblue;
+    }
+
+    /* تصغير أزرار المساعدة ووضعها في سطر واحد */
+    .power-ups {
+        margin: 20px 0;
+        gap: 10px; /* تقليل المسافة بين الأزرار */
+    }
+
+    .power-up-btn {
+        padding: 8px 12px; /* تصغير الحشوة الداخلية */
+        font-size: 13px; /* تصغير حجم الخط */
+        border-radius: 12px;
+        gap: 6px;
+        flex-grow: 1; /* لجعل الأزرار تملأ المساحة المتاحة بالتساوي */
+        min-width: 80px; /* تحديد عرض أدنى للزر */
+        justify-content: center; /* توسيط المحتوى داخل الزر */
+    }
+    
+    /* إخفاء النص الرئيسي للزر (مثل "تلميح") في عرض الهاتف */
+    .power-up-btn > span:not(.power-up-cost) {
+        display: none;
+    }
+
+    /* تعديل حجم الأيقونة لتناسب التصميم الجديد */
+    .power-up-btn .fas {
+        font-size: 16px;
+    }
+    
+    .power-up-cost {
+        padding: 3px 8px; /* تصغير حشوة السعر */
+        font-size: 11px; /* تصغير خط السعر */
+        border-radius: 8px;
+    }
+
+    /* تعديلات إضافية لتناسب الشاشة الصغيرة */
+    .subjects-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+    .difficulty-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-box {
+        padding: 30px 20px;
+    }
+
+    .control-buttons {
+        top: 10px;
+        left: 10px;
+    }
+
+    .control-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+
+    .achievements-section {
+        padding: 20px;
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+    }
+}
+
+/* === نهاية التعديلات المطلوبة === */    
+    </style>
+</head>
+<body class="dark-theme">
+    <!-- خلفية متحركة -->
+    <div class="animated-bg" id="animatedBg"></div>
+
+    <!-- أزرار التحكم -->
+    <div class="control-buttons">
+        <button class="control-btn" id="themeToggle" onclick="toggleTheme()">🌙</button>
+        <button class="control-btn" id="soundToggle" onclick="toggleSound()">🔊</button>
+    </div>
+
+    <!-- شاشة البداية - اختيار المواد -->
+    <div class="start-screen" id="startScreen">
+        <div class="main-header">
+            <h1 class="main-title">🎓 أكاديمية المعرفة 🌟</h1>
+            <p class="main-subtitle">اختر مادتك المفضلة وابدأ رحلة التعلم الممتعة!</p>
+        </div>
+
+        <div class="subjects-grid" id="subjectsGrid"></div>
+    </div>
+
+    <!-- شاشة اختيار المستوى -->
+    <div class="difficulty-screen" id="difficultyScreen">
+        <button class="back-btn" onclick="backToSubjects()">← العودة للمواد</button>
+        <div class="main-header">
+            <h2 class="main-title">اختر مستوى الصعوبة</h2>
+            <p class="main-subtitle">حدد المستوى المناسب لك</p>
+        </div>
+        <div class="difficulty-grid" id="difficultyGrid"></div>
+    </div>
+
+    <!-- شاشة اللعب -->
+    <div class="game-screen" id="gameScreen">
+        <button class="back-btn" onclick="backToDifficulty()">← العودة للمستويات</button>
+
+        <!-- شريط التقدم العلوي -->
+        <div class="top-bar">
+            <div class="user-info">
+                <div class="avatar">👤</div>
+                <div class="user-details">
+                    <h3 id="playerName">الطالب</h3>
+                    <div class="xp-bar">
+                        <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="currency-display">
+                <div class="currency-item">
+                    <span>💰</span>
+                    <span id="coinsDisplay">0</span>
+                </div>
+                <div class="currency-item">
+                    <span>💎</span>
+                    <span id="gemsDisplay">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- الإحصائيات -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-number" id="scoreDisplay">0</div>
+                <div class="stat-title">النقاط</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-number" id="levelDisplay">1</div>
+                <div class="stat-title">المستوى</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-number" id="streakDisplay">0</div>
+                <div class="stat-title">السلسلة</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon">❤️</div>
+                <div class="stat-number" id="livesDisplay">5</div>
+                <div class="stat-title">الحياة</div>
+            </div>
+        </div>
+
+        <!-- بطاقة السؤال -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="subject-badge" id="subjectBadge">
+                    <span id="subjectIcon">📚</span>
+                    <span id="subjectName">المادة</span>
+                
+                <div class="timer-display" id="timerDisplay">
+                    <i class="fas fa-clock"></i>
+                    <span id="timerValue">45</span>
+                </div></div>
+            </div>
+
+            <div class="question-number" id="questionNumber">السؤال 1 من 10</div>
+            <div class="question-text" id="questionText">جارٍ تحميل السؤال...</div>
+
+            <!-- أدوات المساعدة -->
+            <div class="power-ups">
+                <button class="power-up-btn" id="hintBtn" onclick="useHint()">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>تلميح</span>
+                    <span class="power-up-cost">💰 50</span>
+                </button>
+                <button class="power-up-btn" id="fiftyFiftyBtn" onclick="useFiftyFifty()">
+                    <i class="fas fa-divide"></i>
+                    <span>حذف إجابتين</span>
+                    <span class="power-up-cost">💰 100</span>
+                </button>
+                <button class="power-up-btn" id="skipBtn" onclick="skipQuestion()">
+                    <i class="fas fa-forward"></i>
+                    <span>تجاوز</span>
+                    <span class="power-up-cost">💎 1</span>
+                </button>
+            </div>
+
+            <div class="hint-display" id="hintDisplay"></div>
+
+            <!-- الأجوبة -->
+            <div class="answers-container" id="answersContainer"></div>
+
+            <button class="next-question-btn" id="nextBtn" onclick="nextQuestion()">
+                السؤال التالي <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <div class="question-progress">
+                <div class="question-progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- الإنجازات -->
+        <div class="achievements-section">
+            <h2 class="section-title"><i class="fas fa-trophy"></i> الإنجازات والشارات</h2>
+            <div class="achievements-grid" id="achievementsGrid"></div>
+        </div>
+    </div>
+
+    <!-- مؤشر السلسلة -->
+    <div class="streak-indicator" id="streakIndicator">
+        🔥 <span id="streakText">0</span>
+    </div>
+
+    <!-- نافذة نهاية اللعبة -->
+    <div class="modal-overlay" id="gameOverModal">
+        <div class="modal-box">
+            <div class="modal-icon">🎮</div>
+            <h2 class="modal-title">انتهت الجولة!</h2>
+            <div class="modal-text">
+                <p><strong>النقاط النهائية:</strong> <span id="finalScore">0</span></p>
+                <p><strong>المستوى المحقق:</strong> <span id="finalLevel">1</span></p>
+                <p><strong>أعلى سلسلة:</strong> <span id="finalStreak">0</span></p>
+                <p><strong>العملات المكتسبة:</strong> 💰 <span id="earnedCoins">0</span></p>
+                <p><strong>الجواهر المكتسبة:</strong> 💎 <span id="earnedGems">0</span></p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="restartGame()"><i class="fas fa-redo"></i> لعب مرة أخرى</button>
+                <button class="modal-btn secondary" onclick="backToSubjects()"><i class="fas fa-home"></i> العودة للرئيسية</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة رفع المستوى -->
+    <div class="modal-overlay" id="levelUpModal">
+        <div class="modal-box">
+            <div class="modal-icon">🎉</div>
+            <h2 class="modal-title">مستوى جديد!</h2>
+            <div class="modal-text">
+                <p>تهانينا! لقد وصلت إلى المستوى <strong id="newLevelNumber">2</strong></p>
+                <p>مكافأة: 💰 <strong>200</strong> عملة ذهبية!</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="closeLevelUpModal()">✨ رائع!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الإنجاز -->
+    <div class="modal-overlay" id="achievementModal">
+        <div class="modal-box">
+            <div class="modal-icon" id="achievementIcon">🏆</div>
+            <h2 class="modal-title">إنجاز جديد!</h2>
+            <div class="modal-text">
+                <p><strong id="achievementName">اسم الإنجاز</strong></p>
+                <p id="achievementDesc">وصف الإنجاز</p>
+                <p>مكافأة: 💎 <strong id="achievementReward">5</strong> جوهرة!</p>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn primary" onclick="closeAchievementModal()">🎊 رائع!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة المتجر -->
+    <div class="modal-overlay" id="shopModal">
+        <div class="modal-box" style="max-width: 800px;">
+            <h2 class="modal-title"><i class="fas fa-store"></i> المتجر</h2>
+            <div class="shop-grid" id="shopGrid"></div>
+            <div class="modal-buttons" style="margin-top: 30px;">
+                <button class="modal-btn secondary" onclick="closeShop()">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // بيانات المواد الدراسية
+        const subjects = {
+            math: {
+                name: 'الرياضيات',
+                icon: '🔢',
+                color: '#667eea',
+                desc: 'أرقام ومعادلات ومسائل ممتعة',
+                questions: 0,
+                bestScore: 0
+            },
+            arabic: {
+                name: 'اللغة العربية',
+                icon: '📚',
+                color: '#f093fb',
+                desc: 'قواعد ونحو وبلاغة',
+                questions: 0,
+                bestScore: 0
+            },
+            english: {
+                name: 'اللغة الإنجليزية',
+                icon: '🌍',
+                color: '#4facfe',
+                desc: 'تعلم اللغة العالمية',
+                questions: 0,
+                bestScore: 0
+            },
+            biology: {
+                name: 'الأحياء',
+                icon: '🧬',
+                color: '#fa709a',
+                desc: 'عالم الكائنات الحية',
+                questions: 0,
+                bestScore: 0
+            },
+            physics: {
+                name: 'الفيزياء',
+                icon: '⚛️',
+                color: '#fee140',
+                desc: 'قوانين الطبيعة والكون',
+                questions: 0,
+                bestScore: 0
+            },
+            chemistry: {
+                name: 'الكيمياء',
+                icon: '🧪',
+                color: '#fc4a1a',
+                desc: 'تفاعلات وعناصر كيميائية',
+                questions: 0,
+                bestScore: 0
+            },
+            islamic: {
+                name: 'التربية الإسلامية',
+                icon: '📖',
+                color: '#00f2fe',
+                desc: 'قرآن وحديث وفقه',
+                questions: 0,
+                bestScore: 0
+            },
+            geography: {
+                name: 'الجغرافيا',
+                icon: '🗺️',
+                color: '#f7b733',
+                desc: 'دول وعواصم وقارات',
+                questions: 0,
+                bestScore: 0
+            },
+            history: {
+                name: 'التاريخ',
+                icon: '🏛️',
+                color: '#764ba2',
+                desc: 'أحداث وحضارات عبر الزمن',
+                questions: 0,
+                bestScore: 0
+            },
+            science: {
+                name: 'العلوم العام��',
+                icon: '🔬',
+                color: '#10b981',
+                desc: 'اكتشافات علمية متنوعة',
+                questions: 0,
+                bestScore: 0
+            }
+        };
+
+        // مستويات الصعوبة
+        const difficulties = {
+            easy: {
+                name: 'سهل',
+                icon: '😊',
+                color: '#4facfe',
+                timePerQuestion: 45,
+                questionsCount: 10,
+                pointsMultiplier: 1,
+                desc: 'مناسب للمبتدئين'
+            },
+            medium: {
+                name: 'متوسط',
+                icon: '🤔',
+                color: '#fa709a',
+                timePerQuestion: 35,
+                questionsCount: 15,
+                pointsMultiplier: 1.5,
+                desc: 'تحدٍ متوازن'
+            },
+            hard: {
+                name: 'صعب',
+                icon: '😰',
+                color: '#fc4a1a',
+                timePerQuestion: 25,
+                questionsCount: 20,
+                pointsMultiplier: 2,
+                desc: 'للخبراء فقط'
+            },
+            expert: {
+                name: 'خبير',
+                icon: '🔥',
+                color: '#764ba2',
+                timePerQuestion: 20,
+                questionsCount: 25,
+                pointsMultiplier: 3,
+                desc: 'الأصعب على الإطلاق'
+            }
+        };
+
+        // بنك الأسئلة الشامل
+        const questionsBank = {
+            math: {
+                easy: [
+                    { q: "ما ناتج 5 + 3؟", a: ["8", "7", "9", "6"], correct: 0, hint: "عد على أصابعك من 5" },
+                    { q: "ما ناتج 10 - 4؟", a: ["6", "5", "7", "8"], correct: 0, hint: "اطرح 4 من 10" },
+                    { q: "ما ناتج 3 × 2؟", a: ["6", "5", "7", "8"], correct: 0, hint: "3 + 3 = ?" },
+                    { q: "كم عدد أضلاع المربع؟", a: ["4", "3", "5", "6"], correct: 0, hint: "انظر إلى شكل المربع" },
+                    { q: "ما ناتج 8 ÷ 2؟", a: ["4", "3", "5", "6"], correct: 0, hint: "نصف الـ 8" },
+                    { q: "ما هو الرقم التالي: 2، 4، 6، ؟", a: ["8", "7", "9", "10"], correct: 0, hint: "أعداد زوجية متتالية" },
+                    { q: "ما ناتج 7 + 2؟", a: ["9", "8", "10", "7"], correct: 0, hint: "أضف 2 إلى 7" },
+                    { q: "كم عدد زوايا المثلث؟", a: ["3", "4", "2", "5"], correct: 0, hint: "مثلث = ثلاثة" },
+                    { q: "ما ناتج 12 - 5؟", a: ["7", "6", "8", "9"], correct: 0, hint: "اطرح 5 من 12" },
+                    { q: "ما ناتج 4 × 3؟", a: ["12", "11", "13", "14"], correct: 0, hint: "4 + 4 + 4" }
+                ],
+                medium: [
+                    { q: "ما ناتج 15 + 27؟", a: ["42", "41", "43", "40"], correct: 0, hint: "اجمع الآحاد ثم العشرات" },
+                    { q: "ما ناتج 8 × 7؟", a: ["56", "54", "58", "52"], correct: 0, hint: "من جدول الضرب" },
+                    { q: "ما ناتج 144 ÷ 12؟", a: ["12", "14", "10", "16"], correct: 0, hint: "كم 12 في 144؟" },
+                    { q: "ما هو الرقم التالي: 2، 4، 8، 16، ؟", a: ["32", "24", "20", "28"], correct: 0, hint: "كل رقم ضعف السابق" },
+                    { q: "ما ناتج 100 - 37؟", a: ["63", "64", "62", "65"], correct: 0, hint: "100 - 30 - 7" },
+                    { q: "كم محيط مربع طول ضلعه 5 سم؟", a: ["20 سم", "25 سم", "15 سم", "10 سم"], correct: 0, hint: "المحيط = 4 × طول الضلع" },
+                    { q: "ما ناتج 9²؟", a: ["81", "72", "90", "63"], correct: 0, hint: "9 × 9" },
+                    { q: "ما هو ربع 80؟", a: ["20", "25", "15", "30"], correct: 0, hint: "80 ÷ 4" }
+                ],
+                hard: [
+                    { q: "ما ناتج 125 × 8؟", a: ["1000", "1100", "900", "1200"], correct: 0, hint: "125 = 1000/8" },
+                    { q: "إذا كان س + 15 = 42، فما قيمة س؟", a: ["27", "26", "28", "25"], correct: 0, hint: "س = 42 - 15" },
+                    { q: "ما هو الجذر التربيعي لـ 169؟", a: ["13", "12", "14", "15"], correct: 0, hint: "ما العدد الذي مربعه 169؟" },
+                    { q: "ما ناتج 2³ + 3²؟", a: ["17", "16", "18", "15"], correct: 0, hint: "8 + 9" },
+                    { q: "إذا كان 3س = 45، فما قيمة س؟", a: ["15", "14", "16", "13"], correct: 0, hint: "س = 45 ÷ 3" }
+                ],
+                expert: [
+                    { q: "ما ناتج (7 + 3) × (12 - 4) ÷ 2؟", a: ["40", "45", "35", "50"], correct: 0, hint: "احسب الأقواس أولاً" },
+                    { q: "إذا كان س² - 4س + 3 = 0، ما قيمة س؟", a: ["1 أو 3", "2 أو 4", "1 أو 2", "3 أو 4"], correct: 0, hint: "(س-1)(س-3)=0" },
+                    { q: "ما ناتج ∑(n) من 1 إلى 10؟", a: ["55", "50", "60", "45"], correct: 0, hint: "1+2+3+...+10" }
+                ]
+            },
+            arabic: {
+                easy: [
+                    { q: "كم عدد حروف اللغة العربية؟", a: ["28", "26", "29", "27"], correct: 0, hint: "من الألف إلى الياء" },
+                    { q: "ما هو جمع كلمة 'كتاب'؟", a: ["كتب", "كتابات", "كتاب", "كتبان"], correct: 0, hint: "جمع التكسير" },
+                    { q: "ما عكس كلمة 'كبير'؟", a: ["صغير", "طويل", "عريض", "ضخم"], correct: 0, hint: "الحجم المعاكس" },
+                    { q: "كم عدد أيام الأسبوع؟", a: ["7", "6", "8", "5"], correct: 0, hint: "من السبت للجمعة" },
+                    { q: "ما هو مفرد كلمة 'أقلام'؟", a: ["قلم", "قليم", "مقلام", "قلمان"], correct: 0, hint: "أداة الكتابة" },
+                    { q: "أي من الكلمات التالية فعل؟", a: ["كتب", "قلم", "جميل", "بيت"], correct: 0, hint: "ما يدل على حدث" },
+                    { q: "ما جمع كلمة 'طالب'؟", a: ["طلاب", "طالبون", "طوالب", "طلبة"], correct: 0, hint: "جمع التكسير" },
+                    { q: "ما عكس كلمة 'سعيد'؟", a: ["حزين", "غاضب", "متعب", "مريض"], correct: 0, hint: "المشاعر المتضادة" }
+                ],
+                medium: [
+                    { q: "ما إعراب كلمة 'محمد' في: جاء محمد؟", a: ["فاعل", "مفعول به", "مبتدأ", "خبر"], correct: 0, hint: "من قام بالفعل؟" },
+                    { q: "ما هو المثنى من كلمة 'معلم'؟", a: ["معلمان", "معلمين", "معلمون", "معالم"], correct: 0, hint: "للعدد اثنين" },
+                    { q: "ما نوع الجملة: 'الجو جميل'؟", a: ["اسمية", "فعلية", "شرطية", "استفهامية"], correct: 0, hint: "بدأت باسم" },
+                    { q: "ما جذر كلمة 'مدرسة'؟", a: ["د ر س", "د ر ش", "م د ر", "س ر د"], correct: 0, hint: "الأحرف الأصلية" },
+                    { q: "ما نوع الهمزة في 'إبراهيم'؟", a: ["همزة قطع", "همزة وصل", "همزة متوسطة", "همزة متطرفة"], correct: 0, hint: "تُنطق في البدء" }
+                ],
+                hard: [
+                    { q: "ما إعراب 'كتاباً' في: قرأت كتاباً مفيداً؟", a: ["مفعول به منصوب", "فاعل مرفوع", "مبتدأ مرفوع", "خبر منصوب"], correct: 0, hint: "وقع عليه الفعل" },
+                    { q: "ما وزن كلمة 'استخراج'؟", a: ["استفعال", "افتعال", "تفاعل", "انفعال"], correct: 0, hint: "على وزن استفعال" },
+                    { q: "ما نوع 'أن' في: أريد أن أنجح؟", a: ["حرف نصب", "حرف جر", "اسم موصول", "حرف عطف"], correct: 0, hint: "تنصب الفعل المضارع" }
+                ],
+                expert: [
+                    { q: "ما البحر الشعري لـ: 'فَعُولُنْ مَفَاعِيلُنْ فَعُولُنْ مَفَاعِلُنْ'؟", a: ["الطويل", "البسيط", "الكامل", "الوافر"], correct: 0, hint: "أطول بحور الشعر" },
+                    { q: "ما المحسن البديعي في: 'إن مع العسر يسراً'؟", a: ["طباق", "جناس", "سجع", "تورية"], correct: 0, hint: "جمع بين متضادين" }
+                ]
+            },
+            english: [
+                { q: "What is the capital of England?", a: ["London", "Paris", "Berlin", "Rome"], correct: 0, hint: "City of Big Ben" },
+                { q: "How many letters in English alphabet?", a: ["26", "28", "24", "30"], correct: 0, hint: "A to Z" },
+                { q: "What is the opposite of 'hot'?", a: ["cold", "warm", "cool", "freezing"], correct: 0, hint: "Temperature opposite" },
+                { q: "What is the plural of 'child'?", a: ["children", "childs", "childes", "child"], correct: 0, hint: "Irregular plural" },
+                { q: "What color is the sky?", a: ["blue", "green", "red", "yellow"], correct: 0, hint: "Look up" },
+                { q: "How many days in a week?", a: ["7", "6", "8", "5"], correct: 0, hint: "Monday to Sunday" },
+                { q: "What is 'قلم' in English?", a: ["pen", "book", "desk", "chair"], correct: 0, hint: "Writing tool" },
+                { q: "What is the past tense of 'go'?", a: ["went", "goed", "gone", "going"], correct: 0, hint: "Irregular verb" }
+            ],
+            biology: [
+                { q: "كم عدد عظام جسم الإنسان البالغ؟", a: ["206", "195", "220", "180"], correct: 0, hint: "أكثر من 200" },
+                { q: "ما هو أكبر عضو في جسم الإنسان؟", a: ["الجلد", "الكبد", "القلب", "الرئة"], correct: 0, hint: "يغطي الجسم" },
+                { q: "كم قلباً للأخطبوط؟", a: ["3", "2", "1", "4"], correct: 0, hint: "أكثر من واحد" },
+                { q: "ما هي وحدة بناء الكائن الحي؟", a: ["الخلية", "النسيج", "العضو", "الجهاز"], correct: 0, hint: "أصغر وحدة حية" },
+                { q: "كم عدد كروموسومات الإنسان؟", a: ["46", "48", "44", "50"], correct: 0, hint: "23 زوجاً" },
+                { q: "ما اسم صبغة النبات الخضراء؟", a: ["الكلوروفيل", "الهيموغلوبين", "الميلانين", "الكاروتين"], correct: 0, hint: "مسؤولة عن التمثيل الضوئي" },
+                { q: "ما هو الحيوان الأسرع في العالم؟", a: ["الفهد", "الأسد", "الحصان", "النمر"], correct: 0, hint: "120 كم/ساعة" },
+                { q: "كم عدد أرجل العنكبوت؟", a: ["8", "6", "10", "12"], correct: 0, hint: "أكثر من الحشرات" }
+            ],
+            physics: [
+                { q: "ما ��ي وحدة قياس القوة؟", a: ["نيوتن", "جول", "واط", "باسكال"], correct: 0, hint: "نسبة لإسحاق نيوتن" },
+                { q: "ما سرعة الضوء تقريباً؟", a: ["300,000 كم/ث", "150,000 كم/ث", "450,000 كم/ث", "200,000 كم/ث"], correct: 0, hint: "3 × 10⁸ م/ث" },
+                { q: "ماذا يقيس الفولتميتر؟", a: ["الجهد الكهربائي", "التيار الكهربائي", "المقاومة", "القدرة"], correct: 0, hint: "بوحدة الفولت" },
+                { q: "ما هو قانون نيوتن الأول؟", a: ["قانون القصور الذاتي", "القوة = الكتلة × التسارع", "لكل فعل رد فعل", "قانون الجذب"], correct: 0, hint: "الجسم يبقى على حاله" },
+                { q: "ما وحدة قياس الطاقة؟", a: ["جول", "نيوتن", "واط", "أمبير"], correct: 0, hint: "J" },
+                { q: "ما هي درجة غليان الماء بالسيلسيوس؟", a: ["100°", "90°", "110°", "95°"], correct: 0, hint: "عند الضغط الجوي العادي" },
+                { q: "ما هي صيغة قانون أوم؟", a: ["V = I × R", "F = m × a", "E = m × c²", "P = F × d"], correct: 0, hint: "الجهد = التيار × المقاومة" },
+                { q: "كم عدد ألوان الطيف؟", a: ["7", "6", "8", "5"], correct: 0, hint: "ألوان قوس القزح" }
+            ],
+            chemistry: [
+                { q: "ما الرمز الكيميائي للماء؟", a: ["H₂O", "CO₂", "O₂", "H₂"], correct: 0, hint: "ذرتا هيدروجين وذرة أكسجين" },
+                { q: "ما العنصر الأكثر انتشاراً في الكون؟", a: ["الهيدروجين", "الأكسجين", "الكربون", "النيتروجين"], correct: 0, hint: "العنصر الأخف" },
+                { q: "كم عدد عناصر الجدول الدوري؟", a: ["118", "100", "120", "110"], correct: 0, hint: "أكثر من 110" },
+                { q: "ما رمز الذهب؟", a: ["Au", "Ag", "Fe", "Cu"], correct: 0, hint: "من اللاتينية Aurum" },
+                { q: "ما صيغة ملح الطعام؟", a: ["NaCl", "KCl", "CaCl₂", "MgCl₂"], correct: 0, hint: "صوديوم + كلور" },
+                { q: "ما هو الرقم الهيدروجيني للماء النقي؟", a: ["7", "5", "9", "6"], correct: 0, hint: "متعادل" },
+                { q: "ما الغاز المستخدم في إطفاء الحرائق؟", a: ["ثاني أكسيد الكربون", "الأكسجين", "النيتروجين", "الهيدروجين"], correct: 0, hint: "CO₂" },
+                { q: "كم عدد إلكترونات الكربون؟", a: ["6", "8", "12", "4"], correct: 0, hint: "نفس العدد الذري" }
+            ],
+            islamic: [
+                { q: "كم عدد سور القرآن الكريم؟", a: ["114", "110", "120", "100"], correct: 0, hint: "أكثر من 110" },
+                { q: "كم عدد أركان الإسلام؟", a: ["5", "6", "4", "7"], correct: 0, hint: "الشهادتان والصلاة..." },
+                { q: "ما أول سورة في القرآن؟", a: ["الفاتحة", "البقرة", "الإخلاص", "الناس"], correct: 0, hint: "فاتحة الكتاب" },
+                { q: "كم عدد الصلوات المفروضة؟", a: ["5", "3", "6", "7"], correct: 0, hint: "في اليوم والليلة" },
+                { q: "في أي شهر فرض الصيام؟", a: ["رمضان", "شعبان", "ذو الحجة", "محرم"], correct: 0, hint: "الشهر التاسع" },
+                { q: "كم عدد أركان الوضوء؟", a: ["6", "5", "7", "4"], correct: 0, hint: "الواجبات في الوضوء" },
+                { q: "ما اسم ناقة النبي صلى الله عليه وسلم؟", a: ["القصواء", "العضباء", "ذو الجناحين", "البراق"], correct: 0, hint: "ناقته في الهجرة" },
+                { q: "كم عدد آيات سورة الإخلاص؟", a: ["4", "3", "5", "6"], correct: 0, hint: "سورة قصيرة جداً" }
+            ],
+            geography: [
+                { q: "ما هي أكبر قارة في العالم؟", a: ["آسيا", "أفريقيا", "أوروبا", "أمريكا"], correct: 0, hint: "تحتوي على الصين والهند" },
+                { q: "كم عدد قارات العالم؟", a: ["7", "6", "8", "5"], correct: 0, hint: "بما فيها القارة القطبية" },
+                { q: "ما عاصمة مصر؟", a: ["القاهرة", "الإسكندرية", "الجيزة", "أسوان"], correct: 0, hint: "أكبر مدينة في مصر" },
+                { q: "ما أطول نهر في العالم؟", a: ["النيل", "الأمازون", "الميسيسيبي", "اليانغتسي"], correct: 0, hint: "يمر بمصر" },
+                { q: "ما أكبر محيط في العالم؟", a: ["الهادئ", "الأطلسي", "الهندي", "المتجمد الشمالي"], correct: 0, hint: "بين آسيا وأمريكا" },
+                { q: "كم عدد دول الخليج العربي؟", a: ["6", "7", "5", "8"], correct: 0, hint: "السعودية والإمارات والكويت..." },
+                { q: "ما عاصمة فرنسا؟", a: ["باريس", "لندن", "روما", "برلين"], correct: 0, hint: "مدينة الأنوار" },
+                { q: "في أي قارة تقع البرازيل؟", a: ["أمريكا الجنوبية", "أمريكا الشمالية", "أفريقيا", "آسيا"], correct: 0, hint: "غابات الأمازون" }
+            ],
+            history: [
+                { q: "في أي سنة كانت الهجرة النبوية؟", a: ["622 م", "610 م", "630 م", "600 م"], correct: 0, hint: "بداية التقويم الهجري" },
+                { q: "من بنى الأهرامات؟", a: ["الفراعنة", "الرومان", "الإغريق", "البابليون"], correct: 0, hint: "الحضارة المصرية القديمة" },
+                { q: "في أي سنة انتهت الحرب العالمية الثانية؟", a: ["1945", "1944", "1946", "1943"], correct: 0, hint: "منتصف الأربعينات" },
+                { q: "من اخترع المصباح الكهربائي؟", a: ["توماس إديسون", "نيكولا تسلا", "ألبرت أينشتاين", "بنجامين فرانكلين"], correct: 0, hint: "مخترع أمريكي شهير" },
+                { q: "ما اسم أول خليفة راشد؟", a: ["أبو بكر الصديق", "عمر بن الخطاب", "عثمان بن عفان", "علي بن أبي طالب"], correct: 0, hint: "صاحب الرسول ﷺ" },
+                { q: "في أي قرن عاش ابن سينا؟", a: ["القرن 11", "القرن 10", "القرن 12", "القرن 9"], correct: 0, hint: "عالم وطبيب مسلم" },
+                { q: "متى سقطت الأندلس؟", a: ["1492", "1400", "1500", "1450"], correct: 0, hint: "نهاية القرن 15" }
+            ],
+            science: [
+                { q: "كم عدد كواكب المجموعة الشمسية؟", a: ["8", "9", "7", "10"], correct: 0, hint: "بعد استبعاد بلوتو" },
+                { q: "ما اسم أقرب نجم للأرض؟", a: ["الشمس", "سيريوس", "الشعرى اليمانية", "النسر الواقع"], correct: 0, hint: "نراه كل يوم" },
+                { q: "ما الغاز الذي نتنفسه؟", a: ["الأكسجين", "النيتروجين", "ثاني أكسيد الكربون", "الهيدروجين"], correct: 0, hint: "O₂" },
+                { q: "كم تبلغ نسبة المياه في الأرض؟", a: ["71%", "50%", "80%", "60%"], correct: 0, hint: "أكثر من 70%" },
+                { q: "ما اسم أكبر كوكب في المجموعة الشمسية؟", a: ["المشتري", "زحل", "الأرض", "نبتون"], correct: 0, hint: "كوكب غازي عملاق" },
+                { q: "ما هو رمز الذهب الكيميائي؟", a: ["Au", "Ag", "Fe", "Cu"], correct: 0, hint: "من اللاتينية" },
+                { q: "كم عدد أيام السنة؟", a: ["365", "360", "366", "364"], correct: 0, hint: "في السنة العادية" }
+            ]
+        };
+
+        // الإنجازات والشارات
+        const badges = [
+            { id: 'firstWin', name: 'أول فوز', icon: '🏆', desc: 'أول إجابة صحيحة', unlocked: false, condition: () => gameState.correctAnswers >= 1, reward: 5 },
+            { id: 'streak5', name: 'سلسلة 5', icon: '🔥', desc: 'سلسلة 5 إجابات صحيحة', unlocked: false, condition: () => gameState.streak >= 5, reward: 10 },
+            { id: 'streak10', name: 'سلسلة 10', icon: '⚡', desc: 'سلسلة 10 إجابات صحيحة', unlocked: false, condition: () => gameState.streak >= 10, reward: 20 },
+            { id: 'level5', name: 'المستوى 5', icon: '⭐', desc: 'الوصول للمستوى 5', unlocked: false, condition: () => gameState.level >= 5, reward: 15 },
+            { id: 'level10', name: 'المستوى 10', icon: '🌟', desc: 'الوصول للمستوى 10', unlocked: false, condition: () => gameState.level >= 10, reward: 30 },
+            { id: 'score100', name: 'مئوية', icon: '💯', desc: 'تحقيق 100 نقطة', unlocked: false, condition: () => gameState.score >= 100, reward: 10 },
+            { id: 'score500', name: 'خمسمائة', icon: '💎', desc: 'تحقيق 500 نقطة', unlocked: false, condition: () => gameState.score >= 500, reward: 50 },
+            { id: 'noMistakes', name: 'الكمال', icon: '👑', desc: '10 أسئلة بدون أخطاء', unlocked: false, condition: () => gameState.perfectRun >= 10, reward: 25 },
+            { id: 'speedster', name: 'السرعة', icon: '⚡', desc: 'إجابة في أقل من 5 ثوان', unlocked: false, condition: () => gameState.fastAnswers >= 5, reward: 15 },
+            { id: 'scholar', name: 'العالم', icon: '🎓', desc: 'إتمام 50 سؤال', unlocked: false, condition: () => gameState.totalQuestions >= 50, reward: 20 },
+            { id: 'master', name: 'الخبير', icon: '🧠', desc: 'إتمام 100 سؤال', unlocked: false, condition: () => gameState.totalQuestions >= 100, reward: 40 },
+            { id: 'richPlayer', name: 'الثري', icon: '💰', desc: 'جمع 1000 عملة', unlocked: false, condition: () => gameState.coins >= 1000, reward: 10 }
+        ];
+
+        // حالة اللعبة
+        let gameState = {
+            currentSubject: null,
+            currentDifficulty: null,
+            currentQuestion: null,
+            questionIndex: 0,
+            score: 0,
+            level: 1,
+            xp: 0,
+            xpToNextLevel: 100,
+            streak: 0,
+            maxStreak: 0,
+            lives: 5,
+            coins: 100,
+            gems: 5,
+            timer: null,
+            timeLeft: 45,
+            correctAnswers: 0,
+            totalQuestions: 0,
+            perfectRun: 0,
+            fastAnswers: 0,
+            soundEnabled: true,
+            usedHints: [],
+            usedFiftyFifty: [],
+            questionsAsked: []
+        };
+
+        // الصوتيات
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(frequency, duration, type = 'sine') {
+            if (!gameState.soundEnabled) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+
+        // تبديل الثيم
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            document.body.classList.toggle('light-theme');
+            const btn = document.getElementById('themeToggle');
+            btn.textContent = document.body.classList.contains('dark-theme') ? '🌙' : '☀️';
+            playSound(400, 0.1);
+        }
+
+        // تبديل الصوت
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            btn.textContent = gameState.soundEnabled ? '🔊' : '🔇';
+            playSound(500, 0.1);
+        }
+
+        // إنشاء الخلفية المتحركة
+        function createAnimatedBackground() {
+            const bg = document.getElementById('animatedBg');
+            for (let i = 0; i < 15; i++) {
+                const circle = document.createElement('div');
+                circle.className = 'circle';
+                const size = Math.random() * 300 + 50;
+                circle.style.width = size + 'px';
+                circle.style.height = size + 'px';
+                circle.style.left = Math.random() * 100 + '%';
+                circle.style.top = Math.random() * 100 + '%';
+                circle.style.animationDelay = Math.random() * 20 + 's';
+                circle.style.animationDuration = (Math.random() * 20 + 15) + 's';
+                bg.appendChild(circle);
+            }
+        }
+
+        // عرض المواد
+        function renderSubjects() {
+            const grid = document.getElementById('subjectsGrid');
+            grid.innerHTML = Object.keys(subjects).map(key => {
+                const subject = subjects[key];
+                return `
+                    <div class="subject-card" onclick="selectSubject('${key}')">
+                        <div class="subject-icon">${subject.icon}</div>
+                        <h3 class="subject-name">${subject.name}</h3>
+                        <p class="subject-desc">${subject.desc}</p>
+                        <div class="subject-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${subject.questions}</div>
+                                <div class="stat-label">أسئلة</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${subject.bestScore}</div>
+                                <div class="stat-label">أفضل نتيجة</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // اختيار المادة
+        function selectSubject(subjectKey) {
+            gameState.currentSubject = subjectKey;
+            playSound(600, 0.2);
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('difficultyScreen').classList.add('active');
+            renderDifficulties();
+        }
+
+        // عرض مستويات الصعوبة
+        function renderDifficulties() {
+            const grid = document.getElementById('difficultyGrid');
+            grid.innerHTML = Object.keys(difficulties).map(key => {
+                const diff = difficulties[key];
+                return `
+                    <div class="difficulty-card" onclick="selectDifficulty('${key}')">
+                        <div class="difficulty-icon">${diff.icon}</div>
+                        <h3 class="difficulty-name">${diff.name}</h3>
+                        <div class="difficulty-info">
+                            <p>⏱️ ${diff.timePerQuestion} ثانية للسؤال</p>
+                            <p>❓ ${diff.questionsCount} سؤال</p>
+                            <p>⭐ ${diff.pointsMultiplier}x نقاط</p>
+                            <p>${diff.desc}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // اختيار المستوى
+        function selectDifficulty(difficultyKey) {
+            gameState.currentDifficulty = difficultyKey;
+            gameState.timeLeft = difficulties[difficultyKey].timePerQuestion;
+            playSound(700, 0.3);
+            document.getElementById('difficultyScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.add('active');
+            startGame();
+        }
+
+        // بدء اللعبة
+        function startGame() {
+            gameState.questionIndex = 0;
+            gameState.questionsAsked = [];
+            updateUI();
+            loadQuestion();
+        }
+
+        // تحميل سؤال
+        function loadQuestion() {
+            clearInterval(gameState.timer);
+
+            const subject = gameState.currentSubject;
+            const difficulty = gameState.currentDifficulty;
+            const questions = questionsBank[subject][difficulty] || questionsBank[subject].easy || questionsBank[subject];
+
+            if (!questions || questions.length === 0) {
+                // إذا لم توجد أسئلة، استخدم أسئلة المستوى السهل
+                gameState.currentQuestion = {
+                    q: "السؤال غير متوفر حالياً",
+                    a: ["خيار 1", "خيار 2", "خيار 3", "خيار 4"],
+                    correct: 0,
+                    hint: "لا يوجد تلميح"
+                };
+            } else {
+                // اختر سؤال عشوائي لم يُطرح بعد
+                let availableQuestions = questions.filter((q, index) => !gameState.questionsAsked.includes(index));
+                if (availableQuestions.length === 0) {
+                    availableQuestions = questions;
+                    gameState.questionsAsked = [];
+                }
+
+                const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+                const actualIndex = questions.indexOf(availableQuestions[randomIndex]);
+                gameState.questionsAsked.push(actualIndex);
+                gameState.currentQuestion = questions[actualIndex];
+            }
+
+            gameState.questionIndex++;
+            gameState.totalQuestions++;
+            gameState.timeLeft = difficulties[gameState.currentDifficulty].timePerQuestion;
+
+            // تحديث الواجهة
+            const subjectData = subjects[subject];
+            document.getElementById('subjectIcon').textContent = subjectData.icon;
+            document.getElementById('subjectName').textContent = subjectData.name;
+            document.getElementById('questionNumber').textContent = `السؤال ${gameState.questionIndex} من ${difficulties[gameState.currentDifficulty].questionsCount}`;
+            document.getElementById('questionText').textContent = gameState.currentQuestion.q;
+            document.getElementById('hintDisplay').classList.remove('visible');
+            document.getElementById('nextBtn').style.display = 'none';
+
+            // عرض الأجوبة
+            const answersContainer = document.getElementById('answersContainer');
+            answersContainer.innerHTML = gameState.currentQuestion.a.map((answer, index) => `
+                <button class="answer-option" onclick="checkAnswer(${index})">
+                    <span>${answer}</span>
+                </button>
+            `).join('');
+
+            startTimer();
+        }
+
+        // بدء المؤقت
+        function startTimer() {
+            const timerDisplay = document.getElementById('timerDisplay');
+            const timerValue = document.getElementById('timerValue');
+
+            gameState.timer = setInterval(() => {
+                gameState.timeLeft--;
+                timerValue.textContent = gameState.timeLeft;
+
+                if (gameState.timeLeft <= 10) {
+                    timerDisplay.classList.add('warning');
+                    if (gameState.timeLeft > 0) playSound(300, 0.05);
+                } else {
+                    timerDisplay.classList.remove('warning');
+                }
+
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timer);
+                    wrongAnswer(-1);
+                }
+            }, 1000);
+        }
+
+        // التحقق من الإجابة
+        function checkAnswer(answerIndex) {
+            clearInterval(gameState.timer);
+            const buttons = document.querySelectorAll('.answer-option');
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (answerIndex === gameState.currentQuestion.correct) {
+                buttons[answerIndex].classList.add('correct');
+                correctAnswer();
+            } else {
+                if (answerIndex >= 0) buttons[answerIndex].classList.add('wrong');
+                buttons[gameState.currentQuestion.correct].classList.add('correct');
+                wrongAnswer(answerIndex);
+            }
+
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        // إجابة صحيحة
+        function correctAnswer() {
+            playSound(600, 0.4);
+
+            const multiplier = difficulties[gameState.currentDifficulty].pointsMultiplier;
+            let points = Math.floor(10 * multiplier);
+
+            // نقاط إضافية للإجابة السريعة
+            const timeBonus = Math.floor(gameState.timeLeft / 5) * 2;
+            points += timeBonus;
+
+            // نقاط إضافية للسلسلة
+            if (gameState.streak >= 5) points += 10;
+
+            gameState.score += points;
+            gameState.streak++;
+            gameState.correctAnswers++;
+            gameState.perfectRun++;
+            gameState.maxStreak = Math.max(gameState.maxStreak, gameState.streak);
+
+            // عملات ذهبية
+            const coinsEarned = Math.floor(points / 2);
+            gameState.coins += coinsEarned;
+
+            // خبرة
+            gameState.xp += points;
+
+            // إجابة سريعة
+            if (gameState.timeLeft >= difficulties[gameState.currentDifficulty].timePerQuestion - 5) {
+                gameState.fastAnswers++;
+            }
+
+            if (gameState.streak >= 3) {
+                document.getElementById('streakIndicator').classList.add('visible');
+                document.getElementById('streakText').textContent = gameState.streak;
+            }
+
+            createParticles('⭐', 10);
+
+            // فحص رفع المستوى
+            if (gameState.xp >= gameState.xpToNextLevel) {
+                levelUp();
+            }
+
+            updateUI();
+            checkBadges();
+        }
+
+        // إجابة خاطئة
+        function wrongAnswer(answerIndex) {
+            playSound(200, 0.4);
+            gameState.streak = 0;
+            gameState.perfectRun = 0;
+            gameState.lives--;
+
+            document.getElementById('streakIndicator').classList.remove('visible');
+
+            if (gameState.lives <= 0) {
+                setTimeout(() => gameOver(), 1000);
+            }
+
+            updateUI();
+        }
+
+        // رفع المستوى
+        function levelUp() {
+            gameState.level++;
+            gameState.xp -= gameState.xpToNextLevel;
+            gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5);
+            gameState.coins += 200;
+            gameState.gems += 2;
+
+            playSound(800, 0.6);
+            document.getElementById('newLevelNumber').textContent = gameState.level;
+            document.getElementById('levelUpModal').classList.add('show');
+            createParticles('🎉', 20);
+        }
+
+        function closeLevelUpModal() {
+            document.getElementById('levelUpModal').classList.remove('show');
+        }
+
+        // السؤال التالي
+        function nextQuestion() {
+            if (gameState.questionIndex >= difficulties[gameState.currentDifficulty].questionsCount) {
+                gameOver();
+            } else {
+                loadQuestion();
+            }
+        }
+
+        // نهاية اللعبة
+        function gameOver() {
+            clearInterval(gameState.timer);
+            playSound(150, 0.8);
+
+            // حساب المكافآت
+            const earnedCoins = gameState.coins;
+            const earnedGems = gameState.gems;
+
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('finalLevel').textContent = gameState.level;
+            document.getElementById('finalStreak').textContent = gameState.maxStreak;
+            document.getElementById('earnedCoins').textContent = earnedCoins;
+            document.getElementById('earnedGems').textContent = earnedGems;
+            document.getElementById('gameOverModal').classList.add('show');
+
+            // تحديث أفضل نتيجة
+            const subjectKey = gameState.currentSubject;
+            if (gameState.score > subjects[subjectKey].bestScore) {
+                subjects[subjectKey].bestScore = gameState.score;
+            }
+            subjects[subjectKey].questions = gameState.totalQuestions;
+        }
+
+        // إعادة اللعبة
+        function restartGame() {
+            const currentCoins = gameState.coins;
+            const currentGems = gameState.gems;
+            const currentTotalQuestions = gameState.totalQuestions;
+
+            gameState = {
+                currentSubject: gameState.currentSubject,
+                currentDifficulty: gameState.currentDifficulty,
+                currentQuestion: null,
+                questionIndex: 0,
+                score: 0,
+                level: 1,
+                xp: 0,
+                xpToNextLevel: 100,
+                streak: 0,
+                maxStreak: 0,
+                lives: 5,
+                coins: currentCoins,
+                gems: currentGems,
+                timer: null,
+                timeLeft: 45,
+                correctAnswers: 0,
+                totalQuestions: currentTotalQuestions,
+                perfectRun: 0,
+                fastAnswers: 0,
+                soundEnabled: gameState.soundEnabled,
+                usedHints: [],
+                usedFiftyFifty: [],
+                questionsAsked: []
+            };
+
+            document.getElementById('gameOverModal').classList.remove('show');
+            document.getElementById('streakIndicator').classList.remove('visible');
+
+            updateUI();
+            startGame();
+            playSound(500, 0.3);
+        }
+
+        // العودة للمواد
+        function backToSubjects() {
+            clearInterval(gameState.timer);
+            document.getElementById('gameOverModal').classList.remove('show');
+            document.getElementById('difficultyScreen').classList.remove('active');
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('startScreen').classList.remove('hidden');
+            renderSubjects();
+        }
+
+        // العودة للمستويات
+        function backToDifficulty() {
+            clearInterval(gameState.timer);
+            document.getElementById('gameScreen').classList.remove('active');
+            document.getElementById('difficultyScreen').classList.add('active');
+        }
+
+        // استخدام تلميح
+        function useHint() {
+            if (gameState.coins >= 50 && !gameState.usedHints.includes(gameState.questionIndex)) {
+                gameState.coins -= 50;
+                gameState.usedHints.push(gameState.questionIndex);
+                document.getElementById('hintDisplay').textContent = '💡 ' + gameState.currentQuestion.hint;
+                document.getElementById('hintDisplay').classList.add('visible');
+                document.getElementById('hintBtn').disabled = true;
+                updateUI();
+                playSound(500, 0.3);
+            }
+        }
+
+        // حذف إجابتين
+        function useFiftyFifty() {
+            if (gameState.coins >= 100 && !gameState.usedFiftyFifty.includes(gameState.questionIndex)) {
+                gameState.coins -= 100;
+                gameState.usedFiftyFifty.push(gameState.questionIndex);
+
+                const buttons = document.querySelectorAll('.answer-option');
+                const correctIndex = gameState.currentQuestion.correct;
+                let removed = 0;
+
+                buttons.forEach((btn, index) => {
+                    if (index !== correctIndex && removed < 2) {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.3';
+                        removed++;
+                    }
+                });
+
+                document.getElementById('fiftyFiftyBtn').disabled = true;
+                updateUI();
+                playSound(500, 0.3);
+            }
+        }
+
+        // تجاوز السؤال
+        function skipQuestion() {
+            if (gameState.gems >= 1) {
+                gameState.gems -= 1;
+                updateUI();
+                nextQuestion();
+                playSound(600, 0.3);
+            }
+        }
+
+        // تحديث الواجهة
+        function updateUI() {
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('levelDisplay').textContent = gameState.level;
+            document.getElementById('streakDisplay').textContent = gameState.streak;
+            document.getElementById('livesDisplay').textContent = gameState.lives;
+            document.getElementById('coinsDisplay').textContent = gameState.coins;
+            document.getElementById('gemsDisplay').textContent = gameState.gems;
+
+            const xpPercentage = (gameState.xp / gameState.xpToNextLevel) * 100;
+            document.getElementById('xpFill').style.width = xpPercentage + '%';
+
+            const progressPercentage = (gameState.questionIndex / difficulties[gameState.currentDifficulty].questionsCount) * 100;
+            document.getElementById('progressFill').style.width = progressPercentage + '%';
+        }
+
+        // فحص الشارات
+        function checkBadges() {
+            badges.forEach(badge => {
+                if (!badge.unlocked && badge.condition()) {
+                    badge.unlocked = true;
+                    gameState.gems += badge.reward;
+                    showAchievement(badge);
+                    playSound(700, 0.5);
+                }
+            });
+            renderBadges();
+        }
+
+        // عرض إنجاز
+        function showAchievement(badge) {
+            document.getElementById('achievementIcon').textContent = badge.icon;
+            document.getElementById('achievementName').textContent = badge.name;
+            document.getElementById('achievementDesc').textContent = badge.desc;
+            document.getElementById('achievementReward').textContent = badge.reward;
+            document.getElementById('achievementModal').classList.add('show');
+            createParticles(badge.icon, 15);
+        }
+
+        function closeAchievementModal() {
+            document.getElementById('achievementModal').classList.remove('show');
+        }
+
+        // عرض الشارات
+        function renderBadges() {
+            const grid = document.getElementById('achievementsGrid');
+            grid.innerHTML = badges.map(badge => `
+                <div class="badge-item ${badge.unlocked ? 'unlocked' : ''}">
+                    <div class="badge-icon">${badge.icon}</div>
+                    <div class="badge-name">${badge.name}</div>
+                    <div class="badge-desc">${badge.desc}</div>
+                </div>
+            `).join('');
+        }
+
+        // إنشاء جزيئات
+        function createParticles(emoji, count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.textContent = emoji;
+                    particle.style.left = (Math.random() * window.innerWidth) + 'px';
+                    particle.style.top = (Math.random() * window.innerHeight) + 'px';
+                    document.body.appendChild(particle);
+
+                    setTimeout(() => particle.remove(), 2500);
+                }, i * 80);
+            }
+        }
+
+        // فتح المتجر
+        function openShop() {
+            document.getElementById('shopModal').classList.add('show');
+        }
+
+        function closeShop() {
+            document.getElementById('shopModal').classList.remove('show');
+        }
+
+        // دعم الوضع الليلي/النهاري تلقائياً
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.add('light-theme');
+            document.getElementById('themeToggle').textContent = '☀️';
+        }
+
+        // بدء التطبيق
+        window.onload = function() {
+            createAnimatedBackground();
+            renderSubjects();
+            renderBadges();
+        };
+    </script>
+</body>
+</html>

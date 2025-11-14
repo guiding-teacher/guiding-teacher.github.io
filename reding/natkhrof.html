@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0984e3">
+  <meta name="description" content="تطبيق تعليم الحروف العربية للأطفال بتجربة ثلاثية الأبعاد">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>حديقة الحروف العربية - 3D</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+    
+    :root {
+      --primary-color: #0984e3;
+      --secondary-color: #00cec9;
+      --accent-color: #fdcb6e;
+      --error-color: #ff7675;
+      --text-color: #2d3436;
+      --light-text: #636e72;
+      --bg-color: #f5f7fa;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Amiri', serif;
+      background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+      margin: 0;
+      padding: 0;
+      color: var(--text-color);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    
+    #game-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    
+    .ui-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    
+    .ui-overlay > * {
+      pointer-events: auto;
+    }
+    
+    .header {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      left: 20px;
+      text-align: center;
+      z-index: 11;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: white;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+      padding: 10px 20px;
+      background: rgba(9, 132, 227, 0.7);
+      border-radius: 15px;
+      display: inline-block;
+      backdrop-filter: blur(5px);
+    }
+    
+    .stars-container {
+      display: flex;
+      justify-content: center;
+      margin: 10px auto;
+      flex-wrap: wrap;
+      max-width: 800px;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .star {
+      font-size: 1.5rem;
+      color: #e0e0e0;
+      transition: all 0.3s ease;
+    }
+    
+    .star.active {
+      color: #ffd700;
+      text-shadow: 0 0 10px #ffd700;
+      transform: scale(1.2);
+    }
+    
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 11;
+    }
+    
+    .control-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+    
+    .control-btn:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+    
+    .instructions-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      z-index: 11;
+    }
+    
+    .instructions-btn:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+    
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .popup-content {
+      background: linear-gradient(145deg, #ffffff 0%, #f5f7fa 100%);
+      padding: 25px;
+      border-radius: 25px;
+      text-align: center;
+      width: 95%;
+      max-width: 500px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      transform: scale(0.9);
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    .popup h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+      position: relative;
+    }
+    
+    .letter-display {
+      font-size: 4rem;
+      margin: 1rem 0;
+      color: var(--primary-color);
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+    }
+    
+    .example {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin: 1.5rem 0;
+      min-height: 200px;
+      justify-content: center;
+    }
+    
+    .example-icon {
+      font-size: 5rem;
+      margin-bottom: 10px;
+      display: none;
+    }
+    
+    .example.active .example-icon {
+      display: block;
+      animation: fadeInImg 0.5s ease;
+    }
+    
+    @keyframes fadeInImg {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .example-name {
+      font-size: 1.5rem;
+      font-weight: bold;
+      display: none;
+    }
+    
+    .example.active .example-name {
+      display: block;
+    }
+    
+    .haraka-name {
+      font-size: 1.1rem;
+      color: var(--light-text);
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .example.active .haraka-name {
+      display: block;
+    }
+    
+    .popup .letter-options {
+      margin: 1.5rem 0;
+    }
+    
+    .popup .letter-options button {
+      font-size: 1.5rem;
+      padding: 10px 15px;
+      background: var(--primary-color);
+      color: white;
+      border-radius: 12px;
+      min-width: 50px;
+      border: none;
+      cursor: pointer;
+      margin: 0 5px;
+      transition: all 0.3s ease;
+    }
+    
+    .popup .letter-options button:hover {
+      background: #0a7bc8;
+      transform: translateY(-3px);
+    }
+    
+    .instruction {
+      font-size: 1rem;
+      color: var(--light-text);
+      margin-top: 1rem;
+      font-style: italic;
+    }
+    
+    .close-btn {
+      margin-top: 1.5rem;
+      background: linear-gradient(to right, #ff7675, #d63031);
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      box-shadow: 0 5px 15px rgba(214, 48, 49, 0.4);
+      transition: all 0.3s ease;
+      font-family: 'Amiri', serif;
+    }
+    
+    .close-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(214, 48, 49, 0.6);
+    }
+    
+    .instructions-popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(5px);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .instructions-content {
+      background: linear-gradient(145deg, #ffffff 0%, #f5f7fa 100%);
+      padding: 30px;
+      border-radius: 25px;
+      width: 95%;
+      max-width: 600px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      transform: scale(0.9);
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .instructions-content h2 {
+      text-align: center;
+      color: #d9480f;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+    
+    .instructions-content ul {
+      list-style-type: "⭐ ";
+      padding-right: 20px;
+      font-size: 1.1rem;
+      line-height: 2;
+    }
+    
+    .celebration {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0,0,0,0.7);
+      z-index: 2000;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .celebration-content {
+      text-align: center;
+      animation: bounce 1s ease infinite;
+    }
+    
+    .celebration-emoji {
+      font-size: 5rem;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px #ffd700;
+    }
+    
+    .celebration-stars {
+      position: absolute;
+      font-size: 2rem;
+      color: #ffd700;
+      animation: twinkle 2s ease infinite;
+    }
+    
+    .celebration-message {
+      font-size: 1.5rem;
+      color: white;
+      margin-top: 20px;
+      text-shadow: 0 0 10px #000;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      color: white;
+    }
+    
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 1.2rem;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      .popup-content {
+        width: 90%;
+        padding: 20px;
+      }
+      
+      .letter-display {
+        font-size: 3rem;
+      }
+      
+      .example-icon {
+        font-size: 4rem;
+      }
+      
+      .celebration-emoji {
+        font-size: 4rem;
+      }
+      
+      .celebration-message {
+        font-size: 1.2rem;
+      }
+      
+      .control-btn, .instructions-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+      
+      .popup .letter-options button {
+        font-size: 1.2rem;
+        padding: 8px 12px;
+      }
+      
+      .star {
+        font-size: 1.2rem;
+      }
+      
+      .celebration-emoji {
+        font-size: 3rem;
+      }
+      
+      .celebration-message {
+        font-size: 1rem;
+      }
+      
+      .control-btn, .instructions-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  
+  <div class="ui-overlay">
+    <div class="header">
+      <h1>حديقة الحروف العربية - 3D</h1>
+      <div class="stars-container" id="stars-container"></div>
+    </div>
+    
+    <div class="controls">
+      <button class="control-btn" id="zoom-in">+</button>
+      <button class="control-btn" id="zoom-out">-</button>
+      <button class="control-btn" id="reset-view">↺</button>
+    </div>
+    
+    <button class="instructions-btn" id="instructions-btn">❓</button>
+  </div>
+  
+  <div id="popup" class="popup">
+    <div class="popup-content">
+      <h2 id="popup-title">الحرف</h2>
+      <div class="letter-display" id="letter-display"></div>
+      
+      <div class="example" id="example">
+        <div class="example-icon" id="example-icon"></div>
+        <span id="example-name" class="example-name">اسم المثال</span>
+        <span id="haraka-name" class="haraka-name"></span>
+      </div>
+      
+      <div class="letter-options">
+        <button onclick="showExample(currentLetter, 'fatha')">َ <span>فتحة</span></button>
+        <button onclick="showExample(currentLetter, 'kasra')">ِ <span>كسرة</span></button>
+        <button onclick="showExample(currentLetter, 'damma')">ُ <span>ضمة</span></button>
+      </div>
+      
+      <div class="instruction">اضغط على الحركات لسماع نطق الحرف مع الحركات</div>
+      <button class="close-btn" onclick="hidePopup()">إغلاق</button>
+    </div>
+  </div>
+
+  <div id="instructions-popup" class="instructions-popup">
+    <div class="instructions-content">
+      <h2>طريقة اللعب</h2>
+      <ul>
+        <li>استخدم الماوس للتنقل في الحديقة ثلاثية الأبعاد.</li>
+        <li>انقر على أي حرف عائم لتعلمه.</li>
+        <li>استمع إلى نطق الحرف الصحيح بصوت واضح وممتع.</li>
+        <li>كرر الحرف بصوتك لتتدرب على النطق.</li>
+        <li>شاهد صورة وكلمة تبدأ بهذا الحرف لمساعدتك على الفهم.</li>
+        <li>استخدم أزرار التحكم للتقريب والتصغير وإعادة ضبط العرض.</li>
+        <li>اجمع النجوم وتقدم في المراحل لتصبح نجم الحروف!</li>
+      </ul>
+      <button class="close-btn" onclick="hideInstructions()">إغلاق</button>
+    </div>
+  </div>
+
+  <div class="loading-screen" id="loading-screen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري تحميل الحديقة ثلاثية الأبعاد...</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+  <script>
+    // بيانات التطبيق
+    const letters = [
+      {char: 'أ', name: 'الألف', icon: '🦁'},
+      {char: 'ب', name: 'الباء', icon: '🏠'},
+      {char: 'ت', name: 'التاء', icon: '🍎'},
+      {char: 'ث', name: 'الثاء', icon: '👕'},
+      {char: 'ج', name: 'الجيم', icon: '🐪'},
+      {char: 'ح', name: 'الحاء', icon: '🧱'},
+      {char: 'خ', name: 'الخاء', icon: '🥬'},
+      {char: 'د', name: 'الدال', icon: '🏡'},
+      {char: 'ذ', name: 'الذال', icon: '🐺'},
+      {char: 'ر', name: 'الراء', icon: '👨'},
+      {char: 'ز', name: 'الزاي', icon: '🌺'},
+      {char: 'س', name: 'السين', icon: '🐟'},
+      {char: 'ش', name: 'الشين', icon: '☀️'},
+      {char: 'ص', name: 'الصاد', icon: '🕋'},
+      {char: 'ض', name: 'الضاد', icon: '👊'},
+      {char: 'ط', name: 'الطاء', icon: '🦒'},
+      {char: 'ظ', name: 'الظاء', icon: '🌑'},
+      {char: 'ع', name: 'العين', icon: '🍯'},
+      {char: 'غ', name: 'الغين', icon: '😠'},
+      {char: 'ف', name: 'الفاء', icon: '🐴'},
+      {char: 'ق', name: 'القاف', icon: '✏️'},
+      {char: 'ك', name: 'الكاف', icon: '🐕'},
+      {char: 'ل', name: 'اللام', icon: '🍋'},
+      {char: 'م', name: 'الميم', icon: '🏙️'},
+      {char: 'ن', name: 'النون', icon: '🐯'},
+      {char: 'هـ', name: 'الهاء', icon: '🌳'},
+      {char: 'و', name: 'الواو', icon: '🌹'},
+      {char: 'ي', name: 'الياء', icon: '✋'}
+    ];
+    
+    const colors = ['#ff7675', '#74b9ff', '#55efc4', '#a29bfe', '#ffeaa7', '#fd79a8', '#81ecec', '#fab1a0', '#00b894', '#6c5ce7'];
+    
+    // أمثلة لكل الحروف مع الحركات باستخدام أيقونات
+    const examples = {
+      'أ': {
+        name: 'الألف',
+        fatha: {icon: '🦁', word: 'أَسَد', meaning: 'حيوان مفترس'},
+        kasra: {icon: '🪡', word: 'إِبْرَة', meaning: 'أداة للخياطة'},
+        damma: {icon: '🧪', word: 'أُنبوب', meaning: 'أنبوب صغير'}
+      },
+      'ب': {
+        name: 'الباء',
+        fatha: {icon: '🏠', word: 'بَيْت', meaning: 'مكان السكن'},
+        kasra: {icon: '👧', word: 'بِنْت', meaning: 'طفلة أنثى'},
+        damma: {icon: '🍊', word: 'بُرْتُقَال', meaning: 'فاكهة البرتقال'}
+      },
+      'ت': {
+        name: 'التاء',
+        fatha: {icon: '🍎', word: 'تُفَّاح', meaning: 'فاكهة التفاح'},
+        kasra: {icon: '🌳', word: 'تِين', meaning: 'فاكهة التين'},
+        damma: {icon: '🍎', word: 'تُفَّاح', meaning: 'فاكهة التفاح'}
+      },
+      'ث': {
+        name: 'الثاء',
+        fatha: {icon: '👕', word: 'ثَوْب', meaning: 'لباس'},
+        kasra: {icon: '🌱', word: 'ثِيل', meaning: 'نوع من النبات'},
+        damma: {icon: '✨', word: 'ثُرَيَّا', meaning: 'نجوم الثريا'}
+      },
+      'ج': {
+        name: 'الجيم',
+        fatha: {icon: '🐪', word: 'جَمَل', meaning: 'حيوان الجمل'},
+        kasra: {icon: '👨‍⚕️', word: 'جِرَاح', meaning: 'طبيب الجراح'},
+        damma: {icon: '🦗', word: 'جُنْدُب', meaning: 'حشرة الجندب'}
+      },
+      'ح': {
+        name: 'الحاء',
+        fatha: {icon: '🧱', word: 'حَجَر', meaning: 'قطعة صخر'},
+        kasra: {icon: '🐴', word: 'حِمَار', meaning: 'حيوان الحمار'},
+        damma: {icon: '🐋', word: 'حُوت', meaning: 'حيوان الحوت'}
+      },
+      'خ': {
+        name: 'الخاء',
+        fatha: {icon: '🥬', word: 'خَضْرَاء', meaning: 'لون أخضر'},
+        kasra: {icon: '🐷', word: 'خِنْزِير', meaning: 'حيوان الخنزير'},
+        damma: {icon: '🍞', word: 'خُبْز', meaning: 'رغيف الخبز'}
+      },
+      'د': {
+        name: 'الدال',
+        fatha: {icon: '🏡', word: 'دَار', meaning: 'منزل'},
+        kasra: {icon: '🐸', word: 'ضِفْدَع', meaning: 'حيوان الضفدع'},
+        damma: {icon: '💨', word: 'دُخَان', meaning: 'الدخان'}
+      },
+      'ذ': {
+        name: 'الذال',
+        fatha: {icon: '💰', word: 'ذَهَب', meaning: 'المعدن النفيس'},
+        kasra: {icon: '🐺', word: 'ذِئْب', meaning: 'حيوان الذئب'},
+        damma: {icon: '👨‍👩‍👧‍👦', word: 'ذُرِّيَّة', meaning: 'الأبناء'}
+      },
+      'ر': {
+        name: 'الراء',
+        fatha: {icon: '👨', word: 'رَجُل', meaning: 'رجل'},
+        kasra: {icon: '💨', word: 'رِيح', meaning: 'هواء'},
+        damma: {icon: '🍎', word: 'رُمَّان', meaning: 'فاكهة الرمان'}
+      },
+      'ز': {
+        name: 'الزاي',
+        fatha: {icon: '🌺', word: 'زَهْرَة', meaning: 'زهرة'},
+        kasra: {icon: '🦒', word: 'زِرَافَة', meaning: 'حيوان الزرافة'},
+        damma: {icon: '🪟', word: 'زُجَاج', meaning: 'الزجاج'}
+      },
+      'س': {
+        name: 'السين',
+        fatha: {icon: '🐟', word: 'سَمَك', meaning: 'حيوان السمك'},
+        kasra: {icon: '👖', word: 'سِرْوَال', meaning: 'لباس السروال'},
+        damma: {icon: '🧵', word: 'سُنْدُس', meaning: 'نوع من الحرير'}
+      },
+      'ش': {
+        name: 'الشين',
+        fatha: {icon: '☀️', word: 'شَمْس', meaning: 'الشمس'},
+        kasra: {icon: '🥤', word: 'شِرْب', meaning: 'شرب الماء'},
+        damma: {icon: '🦸', word: 'شُجَاع', meaning: 'شخص شجاع'}
+      },
+      'ص': {
+        name: 'الصاد',
+        fatha: {icon: '🕋', word: 'صَبْر', meaning: 'الصبر'},
+        kasra: {icon: '🛣️', word: 'صِرَاط', meaning: 'الطريق'},
+        damma: {icon: '📰', word: 'صُحُف', meaning: 'الصحف'}
+      },
+      'ض': {
+        name: 'الضاد',
+        fatha: {icon: '👊', word: 'ضَرْب', meaning: 'الضرب'},
+        kasra: {icon: '🐸', word: 'ضِفْدَع', meaning: 'حيوان الضفدع'},
+        damma: {icon: '🌅', word: 'ضُحًى', meaning: 'وقت الضحى'}
+      },
+      'ط': {
+        name: 'الطاء',
+        fatha: {icon: '🦒', word: 'طَوِيل', meaning: 'طويل القامة'},
+        kasra: {icon: '👶', word: 'طِفْل', meaning: 'طفل صغير'},
+        damma: {icon: '🛟', word: 'طُفَاح', meaning: 'مكان الطفو'}
+      },
+      'ظ': {
+        name: 'الظاء',
+        fatha: {icon: '🌑', word: 'ظَهْر', meaning: 'الظهر'},
+        kasra: {icon: '🌳', word: 'ظِلّ', meaning: 'الظل'},
+        damma: {icon: '🌌', word: 'ظُلُمَات', meaning: 'الظلمات'}
+      },
+      'ع': {
+        name: 'العين',
+        fatha: {icon: '🍯', word: 'عَسَل', meaning: 'العسل'},
+        kasra: {icon: '📚', word: 'عِلْم', meaning: 'العلم'},
+        damma: {icon: '👴', word: 'عُمْر', meaning: 'العمر'}
+      },
+      'غ': {
+        name: 'الغين',
+        fatha: {icon: '😠', word: 'غَضَب', meaning: 'الغضب'},
+        kasra: {icon: '🗡️', word: 'غِمَاد', meaning: 'الغماد'},
+        damma: {icon: '🏠', word: 'غُرْفَة', meaning: 'الغرفة'}
+      },
+      'ف': {
+        name: 'الفاء',
+        fatha: {icon: '🐴', word: 'فَرَس', meaning: 'حيوان الفرس'},
+        kasra: {icon: '🐘', word: 'فِيل', meaning: 'حيوان الفيل'},
+        damma: {icon: '🫘', word: 'فُول', meaning: 'نبات الفول'}
+      },
+      'ق': {
+        name: 'القاف',
+        fatha: {icon: '✏️', word: 'قَلَم', meaning: 'أداة الكتابة'},
+        kasra: {icon: '🐒', word: 'قِرْد', meaning: 'حيوان القرد'},
+        damma: {icon: '💍', word: 'قُرْط', meaning: 'الحلق (القرط)'}
+      },
+      'ك': {
+        name: 'الكاف',
+        fatha: {icon: '🐕', word: 'كَلْب', meaning: 'حيوان الكلب'},
+        kasra: {icon: '📖', word: 'كِتَاب', meaning: 'الكتاب'},
+        damma: {icon: '🪑', word: 'كُرْسِي', meaning: 'الكرسي'}
+      },
+      'ل': {
+        name: 'اللام',
+        fatha: {icon: '🍋', word: 'لَيْمُون', meaning: 'فاكهة الليمون'},
+        kasra: {icon: '👕', word: 'لِبَاس', meaning: 'اللباس'},
+        damma: {icon: '🗣️', word: 'لُغَة', meaning: 'اللغة'}
+      },
+      'م': {
+        name: 'الميم',
+        fatha: {icon: '🏙️', word: 'مَدِينَة', meaning: 'المدينة'},
+        kasra: {icon: '🔑', word: 'مِفْتَاح', meaning: 'المفتاح'},
+        damma: {icon: '🕯️', word: 'مُشْك', meaning: 'المشك'}
+      },
+      'ن': {
+        name: 'النون',
+        fatha: {icon: '🌊', word: 'نَهْر', meaning: 'النهر'},
+        kasra: {icon: '🐯', word: 'نِمْر', meaning: 'حيوان النمر'},
+        damma: {icon: '💡', word: 'نُور', meaning: 'النور'}
+      },
+      'هـ': {
+        name: 'الهاء',
+        fatha: {icon: '🌳', word: 'حَدِيقَة', meaning: 'الحديقة'},
+        kasra: {icon: '💪', word: 'هِمَم', meaning: 'الهمم'},
+        damma: {icon: '🚧', word: 'حُدُود', meaning: 'الحدود'}
+      },
+      'و': {
+        name: 'الواو',
+        fatha: {icon: '🌹', word: 'وَرْد', meaning: 'الورد'},
+        kasra: {icon: '🛏️', word: 'وِسَاد', meaning: 'الوسادة'},
+        damma: {icon: '🌍', word: 'وُجُود', meaning: 'الوجود'}
+      },
+      'ي': {
+        name: 'الياء',
+        fatha: {icon: '✋', word: 'يَد', meaning: 'اليد'},
+        kasra: {icon: '🌸', word: 'يَاسَمِين', meaning: 'زهرة الياسمين'},
+        damma: {icon: '😌', word: 'يُسْر', meaning: 'اليسر'}
+      }
+    };
+    
+    // متغيرات Three.js
+    let scene, camera, renderer, controls;
+    let letterObjects = [];
+    let completedLetters = [];
+    let viewedHarakat = {};
+    let currentLetter = '';
+    let currentLetterName = '';
+    let currentLetterIcon = '';
+    let currentLetterIndex = -1;
+    
+    // تهيئة التطبيق
+    document.addEventListener('DOMContentLoaded', function() {
+      renderStars();
+      init3DScene();
+      setupEventListeners();
+      loadProgress();
+    });
+    
+    // عرض النجوم في الأعلى
+    function renderStars() {
+      const container = document.getElementById('stars-container');
+      container.innerHTML = '';
+      
+      for (let i = 0; i < letters.length; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.id = `star-${i}`;
+        star.textContent = '★';
+        container.appendChild(star);
+      }
+    }
+    
+    // تهيئة المشهد ثلاثي الأبعاد
+    function init3DScene() {
+      // إنشاء المشهد
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x74b9ff);
+      
+      // إنشاء الكاميرا
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 5, 15);
+      
+      // إنشاء العارض
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      document.getElementById('game-container').appendChild(renderer.domElement);
+      
+      // إضافة التحكم بالمشهد
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.minDistance = 5;
+      controls.maxDistance = 50;
+      
+      // إضافة الإضاءة
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(10, 20, 15);
+      directionalLight.castShadow = true;
+      scene.add(directionalLight);
+      
+      // إنشاء أرضية
+      const groundGeometry = new THREE.CircleGeometry(30, 32);
+      const groundMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x00b894,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+      
+      // إنشاء الحروف العائمة
+      createFloatingLetters();
+      
+      // إضافة بعض الأشجار والنباتات للجو
+      createEnvironment();
+      
+      // بدء التقديم
+      animate();
+      
+      // إخفاء شاشة التحميل
+      setTimeout(() => {
+        document.getElementById('loading-screen').style.display = 'none';
+      }, 2000);
+    }
+    
+    // إنشاء الحروف العائمة
+    function createFloatingLetters() {
+      const radius = 12;
+      const angleStep = (2 * Math.PI) / letters.length;
+      
+      letters.forEach((letter, index) => {
+        const angle = index * angleStep;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const y = 2 + Math.random() * 3;
+        
+        // إناء نصي للحرف
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 256;
+        
+        // تعبئة الخلفية
+        context.fillStyle = colors[index % colors.length];
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // إضافة الحرف
+        context.font = 'Bold 150px Amiri';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = 'white';
+        context.fillText(letter.char, canvas.width / 2, canvas.height / 2);
+        
+        // إنشاء المادة
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.MeshBasicMaterial({ 
+          map: texture,
+          transparent: true
+        });
+        
+        // إنشاء الشكل
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const mesh = new THREE.Mesh(geometry, material);
+        
+        // وضع الحرف في المشهد
+        mesh.position.set(x, y, z);
+        mesh.lookAt(0, y, 0);
+        
+        // إضافة تفاصيل إضافية
+        mesh.userData = {
+          letter: letter.char,
+          name: letter.name,
+          icon: letter.icon,
+          index: index
+        };
+        
+        // جعل الحرف قابلاً للنقر
+        mesh.userData.isClickable = true;
+        
+        scene.add(mesh);
+        letterObjects.push(mesh);
+        
+        // إضافة تأثير طفو بسيط
+        animateLetterFloat(mesh, y);
+      });
+    }
+    
+    // تأثير الطفو للحروف
+    function animateLetterFloat(mesh, baseY) {
+      const startTime = Date.now();
+      
+      function float() {
+        const elapsed = (Date.now() - startTime) / 1000;
+        mesh.position.y = baseY + Math.sin(elapsed) * 0.5;
+        mesh.rotation.y = elapsed * 0.5;
+        
+        requestAnimationFrame(float);
+      }
+      
+      float();
+    }
+    
+    // إنشاء البيئة المحيطة
+    function createEnvironment() {
+      // إضافة بعض الأشجار
+      for (let i = 0; i < 15; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 15 + Math.random() * 10;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        
+        // جذع الشجرة
+        const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 2, 8);
+        const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+        trunk.position.set(x, 1, z);
+        scene.add(trunk);
+        
+        // تاج الشجرة
+        const crownGeometry = new THREE.SphereGeometry(1.5, 8, 6);
+        const crownMaterial = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
+        const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+        crown.position.set(x, 3, z);
+        scene.add(crown);
+      }
+      
+      // إضافة بعض الزهور
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 5 + Math.random() * 20;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        
+        const flowerGeometry = new THREE.SphereGeometry(0.3, 6, 6);
+        const flowerMaterial = new THREE.MeshStandardMaterial({ 
+          color: new THREE.Color().setHSL(Math.random(), 0.8, 0.7) 
+        });
+        const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+        flower.position.set(x, 0.3, z);
+        scene.add(flower);
+      }
+    }
+    
+    // إعداد مستمعي الأحداث
+    function setupEventListeners() {
+      // التحكم بالماوس للنقر على الحروف
+      renderer.domElement.addEventListener('click', onCanvasClick, false);
+      
+      // أزرار التحكم
+      document.getElementById('zoom-in').addEventListener('click', () => {
+        camera.position.multiplyScalar(0.9);
+      });
+      
+      document.getElementById('zoom-out').addEventListener('click', () => {
+        camera.position.multiplyScalar(1.1);
+      });
+      
+      document.getElementById('reset-view').addEventListener('click', () => {
+        camera.position.set(0, 5, 15);
+        controls.reset();
+      });
+      
+      document.getElementById('instructions-btn').addEventListener('click', showInstructions);
+      
+      // إعادة ضبط الحجم عند تغيير حجم النافذة
+      window.addEventListener('resize', onWindowResize, false);
+    }
+    
+    // التعامل مع النقر على المشهد
+    function onCanvasClick(event) {
+      event.preventDefault();
+      
+      // حساب موضع النقر في إحداثيات المشهد
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      
+      // إنشاء شعاع من الكاميرا
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+      
+      // التحقق من التقاطع مع الحروف
+      const intersects = raycaster.intersectObjects(letterObjects);
+      
+      if (intersects.length > 0) {
+        const object = intersects[0].object;
+        if (object.userData.isClickable) {
+          const letterData = object.userData;
+          showPopup(letterData.letter, letterData.name, letterData.icon, letterData.index);
+        }
+      }
+    }
+    
+    // إعادة ضبط الحجم عند تغيير حجم النافذة
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    // دورة التقديم
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    
+    // عرض النافذة المنبثقة
+    function showPopup(letter, name, icon, index) {
+      currentLetter = letter;
+      currentLetterName = name;
+      currentLetterIcon = icon;
+      currentLetterIndex = index;
+      
+      document.getElementById('popup-title').textContent = name;
+      document.getElementById('letter-display').textContent = letter;
+      document.getElementById('popup').style.display = 'flex';
+      
+      // إظهار أيقونة الحرف الأساسية عند فتح النافذة
+      const example = document.getElementById('example');
+      example.classList.add('active');
+      document.getElementById('example-icon').textContent = icon;
+      document.getElementById('example-name').textContent = name;
+      document.getElementById('haraka-name').textContent = 'الحرف الأساسي';
+      
+      // نطق الحرف الأساسي
+      speakLetter(letter);
+    }
+    
+    // إخفاء النافذة المنبثقة
+    function hidePopup() {
+      document.getElementById('popup').style.display = 'none';
+      checkLetterCompletion();
+    }
+    
+    // عرض تعليمات اللعبة
+    function showInstructions() {
+      document.getElementById('instructions-popup').style.display = 'flex';
+    }
+    
+    // إخفاء تعليمات اللعبة
+    function hideInstructions() {
+      document.getElementById('instructions-popup').style.display = 'none';
+    }
+    
+    // عرض المثال للحركة المحددة
+    function showExample(letter, haraka, index) {
+      const letterData = examples[letter];
+      if (!letterData) return;
+      
+      const harakaData = letterData[haraka];
+      if (!harakaData) {
+        document.getElementById('example-icon').textContent = '❓';
+        document.getElementById('example-name').textContent = 'مثال غير متوفر';
+        document.getElementById('haraka-name').textContent = '';
+        return;
+      }
+      
+      const example = document.getElementById('example');
+      example.classList.add('active');
+      
+      document.getElementById('example-icon').textContent = harakaData.icon;
+      document.getElementById('example-name').textContent = harakaData.word;
+      
+      let harakaText = '';
+      switch(haraka) {
+        case 'fatha': harakaText = 'مع الفتحة (' + harakaData.meaning + ')'; break;
+        case 'kasra': harakaText = 'مع الكسرة (' + harakaData.meaning + ')'; break;
+        case 'damma': harakaText = 'مع الضمة (' + harakaData.meaning + ')'; break;
+      }
+      document.getElementById('haraka-name').textContent = harakaText;
+      
+      // تسجيل أن المستخدم شاهد هذه الحركة
+      if (!viewedHarakat[letter]) {
+        viewedHarakat[letter] = [];
+      }
+      if (!viewedHarakat[letter].includes(haraka)) {
+        viewedHarakat[letter].push(haraka);
+      }
+      
+      speakLetter(letter + getHarakaSymbol(haraka), harakaData.word);
+    }
+    
+    // التحقق من اكتمال الحرف
+    function checkLetterCompletion() {
+      if (!currentLetter || !viewedHarakat[currentLetter] || viewedHarakat[currentLetter].length < 3) {
+        return;
+      }
+      
+      if (!completedLetters.includes(currentLetter)) {
+        completedLetters.push(currentLetter);
+        updateStars();
+        showCelebration();
+        saveProgress();
+      }
+    }
+    
+    // عرض احتفالية الإنجاز
+    function showCelebration() {
+      const celebration = document.createElement('div');
+      celebration.className = 'celebration';
+      
+      const content = document.createElement('div');
+      content.className = 'celebration-content';
+      
+      const emoji = document.createElement('div');
+      emoji.className = 'celebration-emoji';
+      emoji.textContent = '🤩';
+      
+      // إضافة نجوم متحركة حول السمايل
+      for (let i = 0; i < 5; i++) {
+        const star = document.createElement('div');
+        star.className = 'celebration-stars';
+        star.textContent = '🌟⭐';
+        star.style.left = `${Math.random() * 100 + 50}%`;
+        star.style.top = `${Math.random() * 50 + 30}%`;
+        star.style.animationDelay = `${i * 0.2}s`;
+        content.appendChild(star);
+      }
+      
+      const message = document.createElement('div');
+      message.className = 'celebration-message';
+      message.textContent = `مبروك! حصلت على نجمة ${currentLetterName}`;
+      
+      content.appendChild(emoji);
+      content.appendChild(message);
+      celebration.appendChild(content);
+      document.body.appendChild(celebration);
+      
+      // إخفاء الاحتفالية بعد 5 ثواني
+      setTimeout(() => {
+        celebration.style.animation = 'fadeIn 0.5s ease reverse';
+        setTimeout(() => {
+          document.body.removeChild(celebration);
+        }, 500);
+      }, 5000);
+    }
+    
+    // تحديث النجوم في الأعلى
+    function updateStars() {
+      completedLetters.forEach((letter, index) => {
+        const star = document.getElementById(`star-${index}`);
+        if (star) {
+          star.classList.add('active');
+        }
+      });
+    }
+    
+    // الحصول على رمز الحركة
+    function getHarakaSymbol(haraka) {
+      switch(haraka) {
+        case 'fatha': return '\u064e';
+        case 'kasra': return '\u0650';
+        case 'damma': return '\u064f';
+        default: return '';
+      }
+    }
+    
+    // نطق الحرف والكلمة
+    function speakLetter(text, word = '') {
+      // إلغاء أي نطق جاري
+      window.speechSynthesis.cancel();
+      
+      // نطق الحرف مع الحركة
+      const charMsg = new SpeechSynthesisUtterance();
+      charMsg.lang = "ar-SA";
+      charMsg.text = text;
+      charMsg.pitch = 1.5; // صوت أعلى وأكثر وضوحاً
+      charMsg.rate = 0.8; // سرعة أقل للفهم الأفضل
+      
+      // نطق الكلمة مثال
+      const wordMsg = new SpeechSynthesisUtterance();
+      wordMsg.lang = "ar-SA";
+      wordMsg.text = word;
+      wordMsg.pitch = 1.4;
+      wordMsg.rate = 0.7;
+      
+      // البحث عن أفضل صوت متاح
+      const voices = window.speechSynthesis.getVoices();
+      
+      // الأفضلية للأصوات الطفولية
+      const childVoice = voices.find(v => 
+        v.name.includes("Child") || 
+        v.name.includes("Girl") || 
+        v.name.includes("طفل") || 
+        v.name.includes("طفلة")
+      );
+      
+      // ثم الأصوات الأنثوية العربية
+      const arabicFemaleVoice = voices.find(v => 
+        v.lang.includes("ar") && 
+        v.name.includes("Female")
+      );
+      
+      // ثم أي صوت عربي
+      const arabicVoice = voices.find(v => v.lang.includes("ar"));
+      
+      // تحديد الصوت المستخدم
+      if (childVoice) {
+        charMsg.voice = childVoice;
+        wordMsg.voice = childVoice;
+      } else if (arabicFemaleVoice) {
+        charMsg.voice = arabicFemaleVoice;
+        wordMsg.voice = arabicFemaleVoice;
+      } else if (arabicVoice) {
+        charMsg.voice = arabicVoice;
+        wordMsg.voice = arabicVoice;
+      }
+      
+      // نطق الحرف ثم الكلمة مع تأخير بسيط
+      window.speechSynthesis.speak(charMsg);
+      
+      if (word) {
+        setTimeout(() => {
+          window.speechSynthesis.speak(wordMsg);
+        }, 500);
+      }
+    }
+    
+    // حفظ التقدم في localStorage
+    function saveProgress() {
+      const progress = {
+        completedLetters: completedLetters,
+        viewedHarakat: viewedHarakat
+      };
+      localStorage.setItem('arabicLettersProgress', JSON.stringify(progress));
+    }
+    
+    // تحميل التقدم من localStorage
+    function loadProgress() {
+      const savedProgress = localStorage.getItem('arabicLettersProgress');
+      if (savedProgress) {
+        const progress = JSON.parse(savedProgress);
+        completedLetters = progress.completedLetters || [];
+        viewedHarakat = progress.viewedHarakat || {};
+        updateStars();
+      }
+    }
+  </script>
+</body>
+</html>

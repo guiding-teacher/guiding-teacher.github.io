@@ -1,0 +1,1061 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أعجوبة اللغة العربية - مغامرة تعليمية تفاعلية</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@400;700;900&family=El+Messiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+    <style>
+        /* ========================
+           الإعدادات العامة والتصميم الأساسي
+           ======================== */
+        :root {
+            --primary: #8E44AD;
+            --secondary: #3498DB;
+            --success: #2ECC71;
+            --danger: #E74C3C;
+            --warning: #F1C40F;
+            --light: #ECF0F1;
+            --dark: #2C3E50;
+            --font-ui: 'Cairo', sans-serif;
+            --font-content: 'Amiri', serif;
+            --font-title: 'El Messiri', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-ui);
+            background: linear-gradient(135deg, #6DD5FA, #FF758C);
+            color: var(--dark);
+            overflow: hidden;
+            user-select: none;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* تأثيرات خلفية متحركة */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 15s infinite ease-in-out;
+        }
+        
+        .bubble:nth-child(1) { width: 80px; height: 80px; top: 20%; left: 10%; animation-delay: 0s; }
+        .bubble:nth-child(2) { width: 120px; height: 120px; top: 60%; left: 80%; animation-delay: 2s; }
+        .bubble:nth-child(3) { width: 60px; height: 60px; top: 80%; left: 20%; animation-delay: 4s; }
+        .bubble:nth-child(4) { width: 100px; height: 100px; top: 30%; left: 70%; animation-delay: 6s; }
+        .bubble:nth-child(5) { width: 90px; height: 90px; top: 70%; left: 40%; animation-delay: 8s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-20px) translateX(10px) rotate(5deg); }
+            50% { transform: translateY(10px) translateX(-15px) rotate(-5deg); }
+            75% { transform: translateY(-15px) translateX(5px) rotate(3deg); }
+        }
+
+        /* تصميم الشاشات والانتقالات */
+        .screen {
+            position: absolute; 
+            inset: 0;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            padding: 15px; 
+            text-align: center;
+            opacity: 0; 
+            visibility: hidden;
+            transform: scale(1.1);
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+            z-index: 1;
+            overflow-y: auto;
+            min-height: 100vh; /* <-- الإصلاح لمشكلة ملء الشاشة على الهاتف */
+        }
+
+        .screen.active {
+            opacity: 1; 
+            visibility: visible; 
+            transform: scale(1);
+        }
+
+        /* العناصر المشتركة */
+        h1 {
+            font-family: var(--font-title);
+            font-weight: 900;
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            color: white;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+            animation: fadeInDown 1s both;
+            margin-bottom: 15px;
+            line-height: 1.2;
+        }
+        
+        h2 {
+            font-family: var(--font-title);
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            margin-bottom: 15px;
+            color: var(--dark);
+            line-height: 1.3;
+        }
+
+        .main-button {
+            font-family: var(--font-ui); 
+            font-size: clamp(1.4rem, 4vw, 1.8rem); 
+            font-weight: 700;
+            padding: 15px 30px; 
+            border-radius: 50px; 
+            border: none;
+            cursor: pointer; 
+            background-color: var(--warning); 
+            color: white;
+            box-shadow: 0 6px var(--dark); 
+            transition: all 0.15s ease-out;
+            margin: 8px; 
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .main-button:disabled {
+            background-color: #bdc3c7;
+            box-shadow: 0 6px #7f8c8d;
+            cursor: not-allowed;
+        }
+        
+        .main-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+        
+        .main-button:not(:disabled):hover::before {
+            left: 100%;
+        }
+        
+        .main-button:not(:disabled):hover { 
+            filter: brightness(1.1); 
+            transform: translateY(-2px); 
+        }
+        
+        .main-button:not(:disabled):active { 
+            box-shadow: 0 3px var(--dark); 
+            transform: translateY(3px); 
+        }
+
+        /* شاشة البداية */
+        #start-screen {
+            background: linear-gradient(135deg, rgba(110, 213, 250, 0.9), rgba(255, 117, 140, 0.9));
+            backdrop-filter: blur(5px);
+        }
+        
+        .logo-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .logo {
+            width: 150px;
+            height: 150px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            margin: 0 auto;
+            animation: pulse 2s infinite;
+        }
+        
+        .logo i {
+            font-size: 4rem;
+            color: var(--primary);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: white;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            line-height: 1.4;
+        }
+        
+        /* شاشة اختيار الأقسام */
+        #level-selection-screen {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.9), rgba(142, 68, 173, 0.9));
+            backdrop-filter: blur(5px);
+            justify-content: flex-start;
+            padding-top: 4rem;
+        }
+        
+        #level-grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px; 
+            width: 100%; 
+            max-width: 1200px;
+            margin-top: 15px;
+        }
+
+        .level-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px; 
+            border-radius: 20px; 
+            border: 2px solid white;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            cursor: pointer; 
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            aspect-ratio: 1 / 1; 
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .level-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .level-card.locked {
+             background: rgba(0,0,0,0.2); 
+             backdrop-filter: blur(5px);
+             cursor: not-allowed; 
+             color: var(--light);
+        }
+        
+        .level-card:not(.locked):hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 12px 20px rgba(0,0,0,0.15);
+        }
+
+        .level-card i { 
+            font-size: 2.5rem; 
+            margin-bottom: 10px; 
+            color: var(--primary); 
+        }
+        
+        .level-card.locked i { color: #aaa; }
+        .level-card span { 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            margin-bottom: 5px;
+        }
+        
+        .level-card .level-description {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        
+        .level-card .stars-container { 
+            font-size: 1rem; 
+            color: var(--warning); 
+            margin-top: 8px; 
+            letter-spacing: 2px;
+        }
+        
+        .level-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .level-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--warning));
+            transition: width 0.5s ease;
+        }
+        
+        /* شاشة اللعب */
+        #game-screen {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.9), rgba(241, 196, 15, 0.9));
+            backdrop-filter: blur(5px);
+            justify-content: flex-start;
+            padding-top: 100px;
+            padding-bottom: 100px;
+        }
+        
+        #game-hud {
+            width: 90%; 
+            max-width: 1200px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(10px);
+            padding: 10px 15px; 
+            border-radius: 15px; 
+            border: 1px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: fixed; 
+            top: 15px; 
+            animation: fadeInDown 0.5s;
+            z-index: 10;
+            
+        }
+        
+        .hud-item { 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            color: var(--primary); 
+            display: flex;
+            align-items: center;
+            
+        }
+        
+        #progress-container { 
+            flex: 1;
+            height: 10px; 
+            background-color: rgba(0,0,0,0.1); 
+            border-radius: 10px; 
+            overflow: hidden; 
+            margin: 0 10px;
+        }
+        
+        #progress-bar { 
+            width: 0%; 
+            height: 100%; 
+            background: linear-gradient(90deg, var(--success), var(--warning)); 
+            transition: width 0.5s ease; 
+            
+        }
+
+        #question-area {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px; 
+            border-radius: 20px; 
+            border: 4px solid white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            width: 95%; 
+            max-width: 1000px; 
+            min-height: 120px;
+            font-family: var(--font-content); 
+            font-size: clamp(1.6rem, 5vw, 2.5rem); 
+            font-weight: 700;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center;
+            animation: zoomIn 0.5s;
+            margin-bottom: 10px;
+            position: relative;
+            text-align: center;
+            line-height: 1.4;
+            margin-top: 30px;
+            
+        }
+        
+        .question-image {
+            font-size: 3rem;
+            margin: 10px 0;
+        }
+
+        #options-area {
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center;
+            gap: 12px; 
+            width: 95%; 
+            max-width: 1200px; 
+            margin-top: 15px;
+        }
+
+        .option-btn {
+            font-family: var(--font-ui); 
+            font-size: clamp(1.3rem, 3.5vw, 1.6rem); 
+            font-weight: 700;
+            background-color: white; 
+            color: var(--secondary);
+            padding: 15px; 
+            border-radius: 15px; 
+            border: 2px solid var(--secondary);
+            cursor: pointer; 
+            transition: all 0.2s; 
+            flex: 1 1 calc(50% - 12px);
+            min-width: 140px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            animation: fadeInUp 0.5s both;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+        
+        .option-btn:hover { 
+            transform: scale(1.03); 
+            border-color: var(--primary); 
+            color: var(--primary); 
+        }
+        
+        .option-btn.selected { 
+            background-color: var(--secondary); 
+            color: white; 
+            transform: scale(1.02); 
+        }
+        
+        .option-btn .emoji { 
+            font-size: 2.5rem; 
+            margin-bottom: 8px;
+        }
+        
+        /* منطقة السحب والإفلات */
+        .drag-drop-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+            min-height: 80px;
+            padding: 15px;
+            border: 2px dashed var(--secondary);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .draggable-word {
+            padding: 12px 20px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid var(--primary);
+            cursor: grab;
+            font-size: 1.3rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .draggable-word:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .draggable-word.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+        
+        /* أزرار التحكم */
+        .game-controls {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 0 15px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        /* الشخصية التفاعلية */
+        #mascot {
+            width: 158px; 
+            height: 251px;
+            position: fixed; 
+            bottom: 131px; 
+            left: 15px;
+            background-image: url('pngwing.com.png');
+            background-size: contain; 
+            background-repeat: no-repeat;
+            transition: transform 0.3s ease, background-image 0.3s;
+            z-index: 5;
+        }
+        
+        .mascot-happy { 
+            background-image: url('pngwing.com%20(1).png') !important; 
+            animation: bounce 0.5s; 
+        }
+        
+        .mascot-sad { 
+            background-image: url('pngwing.com%20(2).png') !important; 
+            transform: rotate(-5deg); 
+        }
+        
+        /* شاشة النهاية */
+        #end-screen {
+            background: linear-gradient(135deg, rgba(142, 68, 173, 0.9), rgba(52, 152, 219, 0.9));
+            backdrop-filter: blur(5px);
+        }
+        
+        #end-screen .card {
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(10px);
+            padding: 30px; 
+            border-radius: 25px; 
+            border: 2px solid white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 95%;
+        }
+        
+        #final-stars { 
+            font-size: 3rem; 
+            color: var(--warning); 
+            margin: 15px 0; 
+            letter-spacing: 8px; 
+        }
+        
+        .achievement-badge {
+            width: 80px;
+            height: 80px;
+            background: var(--warning);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .achievement-badge i {
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        /* شاشة الإعدادات */
+        #settings-screen .card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 25px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 95%;
+        }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .setting-label {
+            font-size: 1.3rem;
+            color: var(--dark);
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* الرسوم المتحركة */
+        @keyframes fadeInDown { 
+            from { opacity: 0; transform: translate3d(0, -30px, 0); } 
+            to { opacity: 1; transform: none; } 
+        }
+        
+        @keyframes fadeInUp { 
+            from { opacity: 0; transform: translate3d(0, 30px, 0); } 
+            to { opacity: 1; transform: none; } 
+        }
+        
+        @keyframes zoomIn { 
+            from { opacity: 0; transform: scale(0.8); } 
+            to { opacity: 1; transform: scale(1); } 
+        }
+        
+        @keyframes bounce { 
+            0%, 100% { transform: translateY(0); } 
+            50% { transform: translateY(-15px); } 
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .correct { 
+            animation: correctAnswer 0.7s ease; 
+            background-color: var(--success) !important; 
+            border-color: var(--success) !important; 
+            color: white !important; 
+        }
+        
+        .wrong { 
+            animation: wrongAnswer 0.5s ease; 
+            background-color: var(--danger) !important; 
+            border-color: var(--danger) !important; 
+            color: white !important; 
+        }
+        
+        @keyframes correctAnswer { 
+            0%, 100% { transform: scale(1); } 
+            50% { transform: scale(1.05) rotate(2deg); } 
+        }
+        
+        @keyframes wrongAnswer { 
+            0%, 100% { transform: translateX(0); } 
+            20%, 60% { transform: translateX(-8px); } 
+            40%, 80% { transform: translateX(8px); } 
+        }
+        
+        /* تأثيرات إضافية */
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            background-color: var(--warning);
+            opacity: 0;
+            z-index: 100;
+        }
+        
+        .floating-text {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--warning);
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            opacity: 0;
+            z-index: 20;
+        }
+        
+        .trophy-animation {
+            animation: trophySpin 2s ease;
+        }
+        
+        @keyframes trophySpin {
+            0% { transform: scale(0) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+        
+        /* التجاوب مع الهاتف */
+        @media (max-width: 768px) {
+            #level-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            #game-screen {
+                padding-top: 130px; 
+            }
+            
+            .level-card {
+                padding: 12px;
+            }
+            
+            #game-hud {
+                flex-direction: row; /* 1. تغيير التخطيط من عمودي إلى أفقي */
+                gap: 10px;
+                padding: 10px;
+                top: 10px;
+            }
+
+            #game-screen {
+                padding-top: 90px; /* 2. تقليل المسافة العلوية لتناسب الشريط الأفقي */
+            }
+            
+            #progress-container {
+                width: 100%;
+                margin: 5px 0;
+            }
+            
+            .hud-item {
+                font-size: 1.3rem;
+            }
+            
+            .option-btn {
+                flex: 1 1 100%;
+            }
+            
+            #mascot {
+                width: 140px;
+                height: 150px;
+                bottom: 120px;
+                left: 10px;
+                top: 500px
+            }
+            
+            .game-controls {
+                bottom: 10px;
+            }
+            
+            .control-btn {
+                padding: 10px 13px;
+                font-size: 1.0rem;
+                margin: 2px 0px 0px 120px;
+                
+            }
+            
+            
+        }
+        
+        @media (max-width: 480px) {
+            #level-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .main-button {
+                font-size: 0.9rem;
+                padding: 20px 20px;
+                text-align: center;
+                line-height: 1px;
+            }
+            
+         .control-btn {
+                padding: 10px 13px;
+                font-size: 1.0rem;
+                float: right;
+             
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            h2 {
+                font-size: 1.6rem;
+            }
+            
+            .logo {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .logo i {
+                font-size: 3rem;
+            }
+            
+            
+            #question-area {
+                padding: 20px;
+                min-height: 100px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .screen {
+                padding: 10px;
+            }
+            
+            #level-grid {
+                gap: 8px;
+            }
+            
+            .level-card {
+                padding: 10px;
+            }
+            
+            .level-card i {
+                font-size: 2rem;
+            }
+            
+            .level-card span {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+
+    <div id="app">
+        <!-- شاشة البداية -->
+        <div id="start-screen" class="screen active">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-language"></i>
+                </div>
+            </div>
+            <h1>أعجوبة<br>اللغة العربية</h1>
+            <p class="subtitle">مغامرة تعليمية تفاعلية مليئة بالتحديات والإثارة</p>
+            
+            <p id="loading-message" style="color: white; font-weight: bold; margin-bottom: 10px;">جاري تحميل بيانات اللعبة...</p>
+            
+            <button id="new-game-btn" class="main-button" disabled>لعبة جديدة</button>
+            <button id="continue-game-btn" class="main-button" style="display: none;" disabled>متابعة اللعب</button>
+            <button id="settings-btn" class="main-button" style="background-color: var(--secondary);">الإعدادات</button>
+        </div>
+
+        <!-- شاشة اختيار المستويات -->
+        <div id="level-selection-screen" class="screen">
+            <h2>اختر مغامرتك القادمة!</h2>
+            <p style="color: white; margin-bottom: 15px; font-size: 1.1rem;">تقدم في المستويات واجمع النجوم</p>
+            <div id="level-grid"></div>
+            <button id="back-to-menu-btn" class="main-button" style="margin-top: 15px; background-color: var(--secondary);">العودة للقائمة</button>
+        </div>
+
+        <!-- شاشة اللعب -->
+        <div id="game-screen" class="screen">
+            <div id="game-hud">
+                <div id="lives" class="hud-item">
+                    <i class="fas fa-heart" style="color: var(--danger); margin-left: 5px;"></i>
+                    <span id="lives-count">3</span>
+                </div>
+                <div id="progress-container">
+                    <div id="progress-bar"></div>
+                </div>
+                <div id="score" class="hud-item">
+                    <i class="fas fa-star" style="color: var(--warning); margin-left: 5px;"></i>
+                    <span id="score-count">0</span>
+                </div>
+            </div>
+            
+            <div id="question-area"></div>
+            <div id="options-area"></div>
+            
+            <div class="game-controls">
+                <button id="hint-btn" class="control-btn" style="display:none; background-color: var(--secondary); color: white;">مساعدة</button>
+                <button id="check-answer-btn" class="control-btn" style="display:none; background-color: var(--primary); color: white;">تحقق من الإجابة</button>
+            </div>
+            
+            <div id="mascot"></div>
+        </div>
+        
+        <!-- شاشة النهاية -->
+        <div id="end-screen" class="screen">
+            <div class="card">
+                <div class="achievement-badge">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h2 id="end-title">أحسنت!</h2>
+                <div id="final-stars"></div>
+                <p style="font-size: 1.5rem; margin: 10px 0;">نقاطك: <span id="final-score"></span></p>
+                <p id="end-message" style="font-size: 1.1rem; margin: 10px 0;"></p>
+                <button id="next-level-btn" class="main-button">المرحلة التالية</button>
+                <button id="restart-level-btn" class="main-button">أعد المحاولة</button>
+                <button id="back-to-levels-btn" class="main-button" style="background-color: var(--secondary);">العودة للقائمة</button>
+            </div>
+        </div>
+        
+        <!-- شاشة الإعدادات -->
+        <div id="settings-screen" class="screen">
+            <div class="card">
+                <h2>الإعدادات</h2>
+                
+                <div class="setting-item">
+                    <span class="setting-label">الصوت</span>
+                    <label class="switch">
+                        <input type="checkbox" id="sound-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <span class="setting-label">الموسيقى</span>
+                    <label class="switch">
+                        <input type="checkbox" id="music-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <span class="setting-label">المرشد الصوتي</span>
+                    <label class="switch">
+                        <input type="checkbox" id="voice-guide-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <span class="setting-label">الرسوم المتحركة</span>
+                    <label class="switch">
+                        <input type="checkbox" id="animations-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <button id="reset-progress-btn" class="main-button" style="background-color: var(--danger); margin-top: 20px;">إعادة تعيين التقدم</button>
+                <button id="back-from-settings-btn" class="main-button" style="background-color: var(--secondary);">العودة</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- مكتبة Howler.js للمؤثرات الصوتية -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        let gameData = [];
+
+        // ... الكود الخاص بإدارة الصوت وحالة اللعبة وعناصر الواجهة ...
+        // ... (لا تغييرات هنا، الكود مضغوط لتسهيل القراءة)
+        const soundManager={sounds:{click:new Howl({src:['https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3']}),correct:new Howl({src:['https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3']}),wrong:new Howl({src:['https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3']}),win:new Howl({src:['https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3']}),lose:new Howl({src:['https://assets.mixkit.co/sfx/preview/mixkit-sad-game-over-trombone-471.mp3']}),levelUp:new Howl({src:['https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3']})},voiceMessages:{welcome:"مرحباً بك في لعبة أعجوبة اللغة العربية!",correct:"أحسنت! إجابة صحيحة",wrong:"حاول مرة أخرى",levelComplete:"ممتاز! لقد أكملت المستوى",gameOver:"لا بأس، حاول مرة أخرى",hint:"استخدم التلميحات لمساعدتك"},play(e){this.sounds[e]&&gameState.settings.sound&&this.sounds[e].play()},speak(e){"speechSynthesis"in window&&gameState.settings.voiceGuide&&(speechSynthesis.cancel(),(new SpeechSynthesisUtterance(e)).lang="ar-SA",(new SpeechSynthesisUtterance(e)).rate=.8,(new SpeechSynthesisUtterance(e)).pitch=1,speechSynthesis.speak(new SpeechSynthesisUtterance(e)))}};
+        let gameState={score:0,lives:3,currentLevelIndex:-1,currentQuestionIndex:0,progress:{unlockedLevels:1,stars:{},levelProgress:{}},settings:{sound:!0,music:!0,voiceGuide:!0,animations:!0}};
+        const screens={start:document.getElementById("start-screen"),levelSelection:document.getElementById("level-selection-screen"),game:document.getElementById("game-screen"),end:document.getElementById("end-screen"),settings:document.getElementById("settings-screen")},levelGrid=document.getElementById("level-grid"),livesCount=document.getElementById("lives-count"),scoreCount=document.getElementById("score-count"),progressBar=document.getElementById("progress-bar"),questionArea=document.getElementById("question-area"),optionsArea=document.getElementById("options-area"),checkAnswerBtn=document.getElementById("check-answer-btn"),hintBtn=document.getElementById("hint-btn"),mascotEl=document.getElementById("mascot"),showScreen=e=>{Object.values(screens).forEach(e=>e.classList.remove("active")),screens[e].classList.add("active")},shuffleArray=e=>{const t=[...e];for(let e=t.length-1;0<e;e--){const s=Math.floor(Math.random()*(e+1));[t[e],t[s]]=[t[s],t[e]]}return t},createConfetti=()=>{if(gameState.settings.animations){for(let e=0;e<50;e++){const t=document.createElement("div");t.className="confetti",t.style.backgroundColor=["#f94144","#f3722c","#f8961e","#f9c74f","#90be6d","#43aa8b","#577590"][Math.floor(7*Math.random())],t.style.left=100*Math.random()+"vw",t.style.top="-10px",t.style.transform=`rotate(${360*Math.random()}deg)`,document.body.appendChild(t),t.animate([{top:"-10px",opacity:1,transform:"rotate(0deg) translateX(0)"},{top:"100vh",opacity:0,transform:`rotate(720deg) translateX(${200*Math.random()-100}px)`}],{duration:2e3+3e3*Math.random(),easing:"cubic-bezier(0.1, 0.8, 0.2, 1)"}).onfinish=()=>t.remove()}}},showFloatingText=(e,t)=>{if(gameState.settings.animations){const s=document.createElement("div");s.className="floating-text",s.textContent=e,s.style.color=t,s.style.left="50%",s.style.top="50%",document.getElementById("game-screen").appendChild(s),s.animate([{opacity:1,transform:"translate(-50%, -50%) scale(1)"},{opacity:0,transform:"translate(-50%, -150%) scale(1.5)"}],{duration:1500,easing:"ease-out"}).onfinish=()=>s.remove()}};
+
+        async function loadGameData() {
+            try {
+                const response = await fetch('questions.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const jsonData = await response.json();
+                gameData = jsonData.levels;
+                console.log('Game data loaded successfully');
+            } catch (error) {
+                console.error("Could not load game data:", error);
+            }
+        }
+
+        async function initGame() {
+            await loadGameData();
+            const loadingMessageEl = document.getElementById('loading-message');
+            const newGameBtn = document.getElementById('new-game-btn');
+            const continueGameBtn = document.getElementById('continue-game-btn');
+            if (gameData && gameData.length > 0) {
+                loadingMessageEl.style.display = 'none';
+                newGameBtn.disabled = false;
+                loadProgress();
+                loadSettings();
+                if (localStorage.getItem('arabicWonderProgress')) {
+                    continueGameBtn.disabled = false;
+                }
+                renderLevelSelection();
+                setTimeout(() => {
+                    soundManager.speak(soundManager.voiceMessages.welcome);
+                }, 1000);
+            } else {
+                loadingMessageEl.textContent = 'فشل تحميل البيانات. تأكد من وجود ملف questions.json والمحاولة مرة أخرى.';
+                loadingMessageEl.style.color = 'var(--danger)';
+            }
+        }
+        
+        function renderLevelSelection() { levelGrid.innerHTML = ''; gameData.forEach((level, index) => { const isLocked = index >= gameState.progress.unlockedLevels; const stars = gameState.progress.stars[index] || 0; const progress = gameState.progress.levelProgress && gameState.progress.levelProgress[index] ? (gameState.progress.levelProgress[index] / level.questions.length) * 100 : 0; const card = document.createElement('div'); card.className = `level-card ${isLocked ? 'locked' : ''}`; card.innerHTML = `<i class="${level.icon}"></i><span>${level.title}</span><div class="level-description">${level.description}</div><div class="stars-container">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div><div class="level-progress"><div class="level-progress-fill" style="width: ${progress}%"></div></div>`; if (!isLocked) { card.onclick = () => { soundManager.play('click'); soundManager.speak(`مرحباً في مستوى ${level.title}`); startGame(index); }; } levelGrid.appendChild(card); }); }
+        function startGame(levelIndex) { gameState.currentLevelIndex = levelIndex; gameState.currentQuestionIndex = 0; gameState.lives = 3; gameState.score = 0; displayQuestion(); showScreen('game'); }
+        function displayQuestion() { updateMascot('idle'); const level = gameData[gameState.currentLevelIndex]; const question = level.questions[gameState.currentQuestionIndex]; questionArea.innerHTML = ''; optionsArea.innerHTML = ''; checkAnswerBtn.style.display = 'none'; hintBtn.style.display = 'block'; updateHUD(); switch(question.type) { case 'match-word-to-image': case 'match-sentence-to-image': questionArea.innerHTML = `<h2>${question.question}</h2>`; shuffleArray(question.options).forEach(opt => { optionsArea.innerHTML += `<button class="option-btn" data-answer="${opt}"><div class="emoji">${opt}</div></button>`; }); break; case 'fill-in-the-blank': case 'multiple-choice-text': questionArea.innerHTML = `<h2>${question.question}</h2>`; shuffleArray(question.options).forEach(opt => { optionsArea.innerHTML += `<button class="option-btn" data-answer="${opt}">${opt}</button>`; }); break; case 'count-and-select': questionArea.innerHTML = `<div class="question-image">${question.image}</div><h2>${question.question}</h2>`; shuffleArray(question.options).forEach(opt => { optionsArea.innerHTML += `<button class="option-btn" data-answer="${opt}">${opt}</button>`; }); break; case 'image-fill-in-the-blank': questionArea.innerHTML = `<div class="question-image">${question.image}</div><h2>${question.question}</h2>`; shuffleArray(question.options).forEach(opt => { optionsArea.innerHTML += `<button class="option-btn" data-answer="${opt}">${opt}</button>`; }); break; case 'order-words': questionArea.innerHTML = `<h2>${question.prompt}</h2><div id="sentence-area" class="drag-drop-area"></div>`; optionsArea.innerHTML = `<p style="width: 100%; text-align: center; font-size: 1.1rem; margin-bottom: 8px;">اسحب الكلمات إلى المكان الصحيح:</p><div id="word-bank" class="drag-drop-area"></div>`; const wordBank = document.getElementById('word-bank'); shuffleArray([...question.words]).forEach(word => { wordBank.innerHTML += `<div class="draggable-word" draggable="true">${word}</div>`; }); setupDragAndDrop(); checkAnswerBtn.style.display = 'block'; checkAnswerBtn.onclick = () => { soundManager.play('click'); const userWords = Array.from(document.getElementById('sentence-area').children).map(el => el.textContent); const isCorrect = JSON.stringify(userWords) === JSON.stringify(question.answer); handleAnswer(isCorrect, checkAnswerBtn); }; break; case 'multiple-select': questionArea.innerHTML = `<h2>${question.question}</h2>`; shuffleArray(question.options).forEach((opt, i) => { const emoji = opt.image ? `<div class="emoji">${opt.image}</div>` : ''; optionsArea.innerHTML += `<button class="option-btn" data-correct="${opt.isCorrect}" style="animation-delay:${i*100}ms">${emoji}<p>${opt.text || ''}</p></button>`; }); checkAnswerBtn.style.display = 'block'; checkAnswerBtn.onclick = () => { soundManager.play('click'); checkMultipleAnswers(); }; break; } hintBtn.onclick = () => showHint(question.hint); document.querySelectorAll('.option-btn:not([data-correct])').forEach((btn, i) => { btn.style.animationDelay = `${i * 100}ms`; btn.onclick = (e) => { const isCorrect = e.currentTarget.dataset.answer === question.answer; handleAnswer(isCorrect, e.currentTarget); }; }); document.querySelectorAll('.option-btn[data-correct]').forEach(btn => { btn.onclick = () => { soundManager.play('click'); btn.classList.toggle('selected'); }; }); }
+        function showHint(hintText) { if (!hintText) return; soundManager.play('click'); soundManager.speak("تلميح: " + hintText); const hintElement = document.createElement('div'); hintElement.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.85); color: white; padding: 20px; border-radius: 15px; z-index: 1000; max-width: 90%; text-align: center; font-size: 1.3rem; backdrop-filter: blur(10px);'; hintElement.innerHTML = `<i class="fas fa-lightbulb" style="color: var(--warning); font-size: 2rem; margin-bottom: 10px;"></i><p>${hintText}</p><button id="close-hint" style="margin-top: 15px; padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1rem;">حسناً</button>`; document.body.appendChild(hintElement); document.getElementById('close-hint').onclick = () => { document.body.removeChild(hintElement); soundManager.play('click'); }; }
+        function handleAnswer(isCorrect, element) { document.querySelectorAll('.option-btn, #hint-btn, .draggable-word, #check-answer-btn').forEach(el => el.style.pointerEvents = 'none'); if (isCorrect) { soundManager.play('correct'); soundManager.speak(soundManager.voiceMessages.correct); updateMascot('happy'); gameState.score += 10; element.classList.add('correct'); showFloatingText('+10', 'var(--success)'); } else { soundManager.play('wrong'); soundManager.speak(soundManager.voiceMessages.wrong); updateMascot('sad'); gameState.lives -= 1; element.classList.add('wrong'); showFloatingText('-1 حياة', 'var(--danger)'); const question = gameData[gameState.currentLevelIndex].questions[gameState.currentQuestionIndex]; if (question.type === 'multiple-select') { document.querySelectorAll('.option-btn[data-correct="true"]').forEach(btn => btn.classList.add('correct')); } else if (question.answer) { document.querySelectorAll('.option-btn').forEach(btn => { if (btn.dataset.answer === question.answer) btn.classList.add('correct'); }); } } updateHUD(); setTimeout(() => { if (gameState.lives <= 0) { endLevel(false); return; } gameState.currentQuestionIndex++; const level = gameData[gameState.currentLevelIndex]; if (!gameState.progress.levelProgress) gameState.progress.levelProgress = {}; gameState.progress.levelProgress[gameState.currentLevelIndex] = gameState.currentQuestionIndex; saveProgress(); if (gameState.currentQuestionIndex >= level.questions.length) { endLevel(true); } else { displayQuestion(); } }, 2000); }
+        function checkMultipleAnswers() { let allCorrect = true; document.querySelectorAll('.option-btn[data-correct]').forEach(btn => { const shouldBeSelected = btn.dataset.correct === 'true'; const isSelected = btn.classList.contains('selected'); if (shouldBeSelected !== isSelected) allCorrect = false; }); handleAnswer(allCorrect, checkAnswerBtn); }
+        function endLevel(isWin) { const stars = isWin ? Math.max(1, gameState.lives) : 0; if (isWin) { soundManager.play('win'); soundManager.speak(soundManager.voiceMessages.levelComplete); createConfetti(); document.getElementById('end-title').textContent = "رائع! إنجاز مذهل!"; document.getElementById('end-message').textContent = "لقد أتممت هذا المستوى بنجاح، استمر في التقدم!"; document.getElementById('next-level-btn').style.display = 'block'; document.getElementById('restart-level-btn').style.display = 'none'; if (gameState.currentLevelIndex + 1 === gameState.progress.unlockedLevels && gameState.progress.unlockedLevels < gameData.length) { gameState.progress.unlockedLevels++; soundManager.play('levelUp'); } if(gameState.currentLevelIndex + 1 >= gameData.length) { document.getElementById('next-level-btn').style.display = 'none'; document.getElementById('end-message').textContent = "مبروك! لقد أكملت جميع المستويات، أنت بطل اللغة العربية!"; } } else { soundManager.play('lose'); soundManager.speak(soundManager.voiceMessages.gameOver); document.getElementById('end-title').textContent = "لا بأس، حاول مجددًا!"; document.getElementById('end-message').textContent = "استخدم التلميحات وخذ وقتك في التفكير، ستنجح في المرة القادمة!"; document.getElementById('next-level-btn').style.display = 'none'; document.getElementById('restart-level-btn').style.display = 'block'; } const currentBestStars = gameState.progress.stars[gameState.currentLevelIndex] || 0; gameState.progress.stars[gameState.currentLevelIndex] = Math.max(stars, currentBestStars); document.querySelector('#end-screen .achievement-badge').classList.add('trophy-animation'); document.getElementById('final-stars').innerHTML = '★'.repeat(stars) + '☆'.repeat(3 - stars); document.getElementById('final-score').textContent = gameState.score; saveProgress(); showScreen('end'); }
+        function updateHUD() { scoreCount.textContent = gameState.score; livesCount.textContent = gameState.lives; if (gameData.length > 0 && gameState.currentLevelIndex !== -1) { const level = gameData[gameState.currentLevelIndex]; const progress = (gameState.currentQuestionIndex / level.questions.length) * 100; progressBar.style.width = `${progress}%`; } }
+        function updateMascot(state) { if (!gameState.settings.animations) return; mascotEl.className = ''; if (state === 'happy') mascotEl.classList.add('mascot-happy'); if (state === 'sad') mascotEl.classList.add('mascot-sad'); }
+        function setupDragAndDrop() { const draggables = document.querySelectorAll('.draggable-word'); const containers = [document.getElementById('word-bank'), document.getElementById('sentence-area')]; draggables.forEach(draggable => { draggable.addEventListener('dragstart', () => { draggable.classList.add('dragging'); soundManager.play('click'); }); draggable.addEventListener('dragend', () => { draggable.classList.remove('dragging'); }); }); containers.forEach(container => { container.addEventListener('dragover', e => { e.preventDefault(); const afterElement = getDragAfterElement(container, e.clientY); const draggable = document.querySelector('.dragging'); if (afterElement == null) { container.appendChild(draggable); } else { container.insertBefore(draggable, afterElement); } }); }); }
+        function getDragAfterElement(container, y) { const draggableElements = [...container.querySelectorAll('.draggable-word:not(.dragging)')]; return draggableElements.reduce((closest, child) => { const box = child.getBoundingClientRect(); const offset = y - box.top - box.height / 2; if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } else { return closest; } }, { offset: Number.NEGATIVE_INFINITY }).element; }
+        function saveProgress() { localStorage.setItem('arabicWonderProgress', JSON.stringify(gameState.progress)); }
+        function loadProgress() { const savedData = localStorage.getItem('arabicWonderProgress'); if (savedData) { gameState.progress = JSON.parse(savedData); document.getElementById('continue-game-btn').style.display = 'inline-block'; } }
+        function saveSettings() { localStorage.setItem('arabicWonderSettings', JSON.stringify(gameState.settings)); }
+        function loadSettings() { const savedSettings = localStorage.getItem('arabicWonderSettings'); if (savedSettings) { gameState.settings = JSON.parse(savedSettings); document.getElementById('sound-toggle').checked = gameState.settings.sound; document.getElementById('music-toggle').checked = gameState.settings.music; document.getElementById('voice-guide-toggle').checked = gameState.settings.voiceGuide; document.getElementById('animations-toggle').checked = gameState.settings.animations; } }
+        document.getElementById('new-game-btn').addEventListener('click', () => { soundManager.play('click'); gameState.progress = { unlockedLevels: 1, stars: {}, levelProgress: {} }; localStorage.removeItem('arabicWonderProgress'); renderLevelSelection(); showScreen('levelSelection'); });
+        document.getElementById('continue-game-btn').addEventListener('click', () => { soundManager.play('click'); showScreen('levelSelection'); });
+        document.getElementById('back-to-menu-btn').addEventListener('click', () => { soundManager.play('click'); showScreen('start'); });
+        document.getElementById('back-to-levels-btn').addEventListener('click', () => { soundManager.play('click'); renderLevelSelection(); showScreen('levelSelection'); });
+        document.getElementById('restart-level-btn').addEventListener('click', () => { soundManager.play('click'); startGame(gameState.currentLevelIndex); });
+        document.getElementById('next-level-btn').addEventListener('click', () => { soundManager.play('click'); startGame(gameState.currentLevelIndex + 1); });
+        document.getElementById('settings-btn').addEventListener('click', () => { soundManager.play('click'); showScreen('settings'); });
+        document.getElementById('back-from-settings-btn').addEventListener('click', () => { soundManager.play('click'); showScreen('start'); });
+        document.getElementById('reset-progress-btn').addEventListener('click', () => { soundManager.play('click'); if (confirm('هل أنت متأكد من أنك تريد إعادة تعيين كل تقدمك في اللعبة؟')) { gameState.progress = { unlockedLevels: 1, stars: {}, levelProgress: {} }; localStorage.removeItem('arabicWonderProgress'); renderLevelSelection(); showScreen('start'); } });
+        document.getElementById('sound-toggle').addEventListener('change', (e) => { gameState.settings.sound = e.target.checked; saveSettings(); soundManager.play('click'); });
+        document.getElementById('music-toggle').addEventListener('change', (e) => { gameState.settings.music = e.target.checked; saveSettings(); soundManager.play('click'); });
+        document.getElementById('voice-guide-toggle').addEventListener('change', (e) => { gameState.settings.voiceGuide = e.target.checked; saveSettings(); soundManager.play('click'); if (e.target.checked) { soundManager.speak("تم تفعيل المرشد الصوتي"); } });
+        document.getElementById('animations-toggle').addEventListener('change', (e) => { gameState.settings.animations = e.target.checked; saveSettings(); soundManager.play('click'); });
+        
+        initGame();
+        
+        
+
+        // --- أضف هذا الكود في النهاية ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+        // ---------------------
+    });
+    </script>
+</body>
+</html>

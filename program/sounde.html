@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- هذه الترويسات ضرورية لتفعيل SharedArrayBuffer عند تشغيل الصفحة على خادم -->
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+    <title>محول وقاطع الصوت الاحترافي (نسخة محلية)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4a6bff; --primary-dark: #3a5bef; --secondary-color: #f8fafc;
+            --text-color: #2d3748; --text-light: #718096; --border-color: #e2e8f0;
+            --success-color: #48bb78; --error-color: #f56565; --warning-color: #ed8936;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.08); --radius: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Cairo', sans-serif; background: #f0f2f5; color: var(--text-color);
+            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; line-height: 1.6;
+        }
+        .container {
+            background-color: white; padding: 30px; border-radius: var(--radius);
+            box-shadow: var(--shadow); width: 100%; max-width: 700px; text-align: center;
+        }
+        .header { margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        h1 { color: var(--primary-color); font-weight: 700; font-size: 28px; }
+        p { color: var(--text-light); margin-bottom: 0; }
+        .file-drop-area {
+            border: 2px dashed var(--border-color); border-radius: var(--radius); padding: 40px 20px;
+            cursor: pointer; transition: all 0.3s ease; background-color: var(--secondary-color); margin-bottom: 25px;
+        }
+        .file-drop-area.hover { border-color: var(--primary-color); background-color: rgba(74, 107, 255, 0.05); }
+        .file-drop-area.has-file { border-style: solid; border-color: var(--success-color); background-color: rgba(72, 187, 120, 0.05); }
+        .file-input-label { font-weight: 600; color: var(--primary-color); font-size: 18px; }
+        #file-name { margin-top: 15px; font-weight: 500; color: var(--text-color); }
+        input[type="file"] { display: none; }
+        .controls-grid { display: grid; gap: 20px; }
+        .control-group { background: var(--secondary-color); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border-color); }
+        .control-group h3 { color: var(--primary-color); margin-bottom: 15px; font-weight: 600; font-size: 18px; }
+        .main-controls, .trim-controls { display: flex; gap: 15px; justify-content: center; align-items: center; flex-wrap: wrap; }
+        .trim-controls input[type="text"] { width: 100px; padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); text-align: center; font-family: monospace; font-size: 15px; }
+        select, button { padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 16px; cursor: pointer; }
+        button { background-color: var(--primary-color); color: white; border: none; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; transition: all 0.3s; }
+        button:disabled { background-color: #a0aec0; cursor: not-allowed; }
+        button:not(:disabled):hover { background-color: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .spinner { display: none; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; margin-left: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #status { margin-top: 25px; }
+        .progress-container { width: 100%; background-color: #e2e8f0; border-radius: 5px; overflow: hidden; height: 12px; margin-top: 10px; }
+        .progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--primary-color), var(--success-color)); transition: width 0.1s linear; }
+        #log-output { background-color: #1a202c; color: #68d391; padding: 15px; border-radius: 5px; text-align: left; direction: ltr; font-family: 'Courier New', monospace; height: 150px; overflow-y: auto; display: none; margin-top: 20px; }
+        #result { margin-top: 25px; padding: 15px; border-radius: var(--radius); background-color: rgba(72, 187, 120, 0.1); display: none; }
+        #result a { display: inline-flex; align-items: center; background-color: var(--success-color); color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        #audio-preview { margin: 20px 0; display: none; }
+        .audio-player { width: 100%; }
+        .trim-container { position: relative; height: 60px; background: #edf2f7; border-radius: 8px; cursor: ew-resize; overflow: hidden; touch-action: none; }
+        #trim-range { position: absolute; top: 0; height: 100%; background: rgba(74, 107, 255, 0.3); border-left: 2px solid var(--primary-color); border-right: 2px solid var(--primary-color); }
+        .trim-handle { position: absolute; top: 50%; transform: translateY(-50%); width: 10px; height: 120%; background: var(--primary-dark); cursor: col-resize; border-radius: 3px; }
+        .trim-handle.start { left: -6px; }
+        .trim-handle.end { right: -6px; }
+        .time-display { display: flex; justify-content: space-between; margin-top: 10px; font-size: 14px; color: var(--text-light); font-family: monospace; }
+        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 15px 20px; border-radius: 8px; color: white; font-weight: 600; box-shadow: 0 5px 15px rgba(0,0,0,0.1); z-index: 1000; opacity: 0; transition: opacity 0.3s, top 0.3s; }
+        .notification.show { opacity: 1; top: 30px; }
+        .info-box { background-color: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius); padding: 15px; margin-top: 15px; text-align: right; }
+        .info-box.hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fa-solid fa-wand-magic-sparkles"></i> محول وقاطع الصوت الاحترافي</h1>
+            <p>حوّل وقصّ ملفاتك الصوتية مباشرة في متصفحك بسرعة وأمان.</p>
+        </div>
+        
+        <div class="info-box hidden" id="env-error-box">
+            <h4><i class="fa-solid fa-triangle-exclamation"></i> خطأ في بيئة التشغيل</h4>
+            <p>لا يمكن تشغيل المكتبة لأن المتصفح لا يدعم `SharedArrayBuffer`. هذه الأداة تعمل بشكل صحيح فقط عند تشغيلها من خلال **خادم ويب**. الرجاء اتباع التعليمات لتشغيلها.</p>
+        </div>
+
+        <div id="main-content">
+            <div id="file-drop-area" class="file-drop-area">
+                <label for="file-input" class="file-input-label">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> اسحب وأفلت ملف صوتي هنا، أو انقر للاختيار
+                </label>
+                <input type="file" id="file-input" accept="audio/*">
+                <div id="file-name"></div>
+            </div>
+            
+            <div class="audio-preview" id="audio-preview">
+                <audio controls class="audio-player" id="audio-player"></audio>
+                <div class="trim-container" id="trim-container">
+                    <div id="trim-range">
+                        <div class="trim-handle start"></div>
+                        <div class="trim-handle end"></div>
+                    </div>
+                </div>
+                <div class="time-display">
+                    <span id="start-time-display">00:00.00</span>
+                    <span id="end-time-display">00:00.00</span>
+                </div>
+            </div>
+            
+            <div class="controls-grid">
+                <div class="control-group">
+                    <h3><i class="fa-solid fa-gear"></i> إعدادات التحويل والقص</h3>
+                    <div class="main-controls">
+                        <label for="format-select"><strong>التحويل إلى:</strong></label>
+                        <select id="format-select">
+                            <option value="mp3">MP3</option><option value="wav">WAV</option><option value="ogg">OGG</option>
+                            <option value="flac">FLAC</option><option value="m4a">M4A (AAC)</option>
+                        </select>
+                    </div>
+                    <div class="trim-controls" style="margin-top: 15px;">
+                        <label for="trim-toggle"><input type="checkbox" id="trim-toggle" style="vertical-align: middle;"> <strong>قص الصوت:</strong></label>
+                        <input type="text" id="start-time" placeholder="00:00.00" disabled>
+                        <label>إلى</label>
+                        <input type="text" id="end-time" placeholder="00:00.00" disabled>
+                    </div>
+                </div>
+            </div>
+
+            <button id="convert-btn" disabled style="width: 100%; margin-top: 25px; padding: 15px;">
+                <i class="fa-solid fa-rotate"></i><span style="margin: 0 10px;">حوّل الآن</span><div class="spinner"></div>
+            </button>
+        </div>
+
+        <div id="status" style="margin-top:20px;">
+            <p id="status-message">جاري تحميل مكتبة التحويل...</p>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+        
+        <pre id="log-output"></pre>
+        <div id="result"></div>
+    </div>
+    <div id="notification" class="notification"></div>
+
+    <!-- 1. استدعاء المكتبة من المجلد المحلي -->
+    <script src="./ffmpeg-dist/ffmpeg.min.js"></script>
+    
+    <script>
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        let ffmpeg;
+
+        // UI Elements
+        const fileInput = document.getElementById('file-input');
+        const convertBtn = document.getElementById('convert-btn');
+        const statusMessage = document.getElementById('status-message');
+        const progressBar = document.getElementById('progress-bar');
+        const audioPreview = document.getElementById('audio-preview');
+        const audioPlayer = document.getElementById('audio-player');
+        const trimContainer = document.getElementById('trim-container');
+        const trimRange = document.getElementById('trim-range');
+        const trimToggle = document.getElementById('trim-toggle');
+        const startTimeInput = document.getElementById('start-time');
+        const endTimeInput = document.getElementById('end-time');
+        const startTimeDisplay = document.getElementById('start-time-display');
+        const endTimeDisplay = document.getElementById('end-time-display');
+        
+        let selectedFile = null;
+        let audioDuration = 0;
+        let isFFmpegLoaded = false;
+
+        // --- Core Functions ---
+        const loadFFmpeg = async () => {
+            if (typeof SharedArrayBuffer === 'undefined') {
+                document.getElementById('env-error-box').classList.remove('hidden');
+                document.getElementById('main-content').style.display = 'none';
+                statusMessage.textContent = 'خطأ: بيئة التشغيل غير مدعومة.';
+                return;
+            }
+            try {
+                // 2. تحديد مسار ملفات النواة (core) من المجلد المحلي
+                ffmpeg = createFFmpeg({
+                    log: true,
+                    corePath: './ffmpeg-dist/ffmpeg-core.js',
+                });
+                
+                ffmpeg.setLogger(({type, message}) => {
+                    if (type !== 'info') {
+                       document.getElementById('log-output').textContent += message + '\n';
+                    }
+                });
+                ffmpeg.setProgress(({ ratio }) => {
+                    const progress = ratio * 100;
+                    if (progress >= 0) { // يظهر التقدم فقط أثناء التحويل الفعلي
+                        statusMessage.textContent = `جاري التحويل... ${Math.round(progress)}%`;
+                        progressBar.style.width = `${progress}%`;
+                    }
+                });
+                statusMessage.textContent = 'جاري تحميل نواة FFmpeg...';
+                await ffmpeg.load();
+                isFFmpegLoaded = true;
+                statusMessage.textContent = 'المكتبة جاهزة. اختر ملف صوتي للبدء.';
+                showNotification('تم تحميل المكتبة بنجاح!', 'success');
+            } catch (error) {
+                console.error('FFmpeg loading error:', error);
+                statusMessage.textContent = 'فشل تحميل مكتبة التحويل.';
+                showNotification('فشل تحميل المكتبة!', 'error');
+            }
+        };
+
+        const handleFile = (file) => {
+            if (!file || !file.type.startsWith('audio/')) {
+                showNotification('الرجاء اختيار ملف صوتي صالح.', 'error');
+                return;
+            }
+            selectedFile = file;
+            document.getElementById('file-name').textContent = `الملف: ${file.name}`;
+            if (isFFmpegLoaded) convertBtn.disabled = false;
+            
+            const audioURL = URL.createObjectURL(file);
+            audioPlayer.src = audioURL;
+            audioPreview.style.display = 'block';
+            audioPlayer.onloadedmetadata = () => {
+                audioDuration = audioPlayer.duration;
+                resetTrimmer();
+            };
+            document.getElementById('file-drop-area').classList.add('has-file');
+            showNotification('تم اختيار الملف بنجاح.', 'success');
+        };
+
+        const convert = async () => {
+            if (!selectedFile || !isFFmpegLoaded) return;
+            
+            setLoadingState(true, 'جاري التحضير...');
+            document.getElementById('log-output').style.display = 'block';
+            document.getElementById('log-output').textContent = '';
+            
+            const { name } = selectedFile;
+            const outputFormat = document.getElementById('format-select').value;
+            const outputFileName = `${name.substring(0, name.lastIndexOf('.'))}_converted.${outputFormat}`;
+            
+            try {
+                ffmpeg.FS('writeFile', name, await fetchFile(selectedFile));
+                
+                const command = ['-i', name];
+                if (trimToggle.checked) {
+                    command.push('-ss', startTimeInput.value, '-to', endTimeInput.value);
+                }
+                command.push(outputFileName);
+
+                await ffmpeg.run(...command);
+                
+                const data = ffmpeg.FS('readFile', outputFileName);
+                const blob = new Blob([data.buffer], { type: `audio/${outputFormat}` });
+                const url = URL.createObjectURL(blob);
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `<a href="${url}" download="${outputFileName}"><i class="fa-solid fa-download"></i> حمّل الملف (${outputFormat.toUpperCase()})</a>`;
+                resultDiv.style.display = 'block';
+
+                statusMessage.textContent = 'اكتمل التحويل بنجاح!';
+                showNotification('تم التحويل بنجاح!', 'success');
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                statusMessage.textContent = 'حدث خطأ أثناء التحويل. تحقق من السجل.';
+                showNotification('فشل التحويل!', 'error');
+            } finally {
+                setLoadingState(false);
+                try {
+                    ffmpeg.FS('unlink', name);
+                    ffmpeg.FS('unlink', outputFileName);
+                } catch (e) {}
+            }
+        };
+        
+        function resetTrimmer() { /* ... الكود كما هو ... */ }
+        function setupTrimmerEvents() { /* ... الكود كما هو ... */ }
+        function updateRangeFromInputs() { /* ... الكود كما هو ... */ }
+        function updateTimeDisplays(start, end) { /* ... الكود كما هو ... */ }
+        const setLoadingState = (isLoading, message = '') => { /* ... الكود كما هو ... */ };
+        const showNotification = (message, type = 'success') => { /* ... الكود كما هو ... */ };
+        const formatTime = (time) => { /* ... الكود كما هو ... */ };
+        const timeToSeconds = (timeStr) => { /* ... الكود كما هو ... */ };
+        
+        // --- Trimmer Logic ---
+        function resetTrimmer() {
+            startTimeInput.value = formatTime(0);
+            endTimeInput.value = formatTime(audioDuration);
+            updateTimeDisplays(0, audioDuration);
+            updateRangeFromInputs();
+        }
+
+        function setupTrimmerEvents() {
+            let activeHandle = null;
+            const onPointerMove = (e) => {
+                if (!activeHandle) return;
+                e.preventDefault();
+                const rect = trimContainer.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left;
+                let percent = Math.max(0, Math.min(1, x / rect.width));
+                
+                const startPercent = parseFloat(trimRange.style.left) / 100;
+                const endPercent = 1 - (parseFloat(trimRange.style.right) / 100);
+
+                if (activeHandle.classList.contains('start')) {
+                    if (percent >= endPercent) percent = endPercent - 0.001;
+                    trimRange.style.left = `${percent * 100}%`;
+                    const newStartTime = percent * audioDuration;
+                    startTimeInput.value = formatTime(newStartTime);
+                    updateTimeDisplays(newStartTime, endPercent * audioDuration);
+                } else { // end handle
+                    if (percent <= startPercent) percent = startPercent + 0.001;
+                    trimRange.style.right = `${(1 - percent) * 100}%`;
+                    const newEndTime = percent * audioDuration;
+                    endTimeInput.value = formatTime(newEndTime);
+                    updateTimeDisplays(startPercent * audioDuration, newEndTime);
+                }
+            };
+            const onPointerUp = () => {
+                activeHandle = null;
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerUp);
+            };
+            trimContainer.addEventListener('pointerdown', (e) => {
+                if (!trimToggle.checked || !e.target.classList.contains('trim-handle')) return;
+                activeHandle = e.target;
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+            });
+
+            [startTimeInput, endTimeInput].forEach(input => input.addEventListener('change', updateRangeFromInputs));
+            trimToggle.addEventListener('change', () => {
+                const disabled = !trimToggle.checked;
+                startTimeInput.disabled = disabled;
+                endTimeInput.disabled = disabled;
+                trimContainer.style.cursor = disabled ? 'default' : 'ew-resize';
+                trimContainer.style.opacity = disabled ? 0.6 : 1;
+            });
+        }
+        
+        function updateRangeFromInputs() {
+            const start = Math.max(0, timeToSeconds(startTimeInput.value));
+            const end = Math.min(audioDuration, timeToSeconds(endTimeInput.value));
+            if (start >= end) return;
+            trimRange.style.left = `${(start / audioDuration) * 100}%`;
+            trimRange.style.right = `${100 - (end / audioDuration) * 100}%`;
+            updateTimeDisplays(start, end);
+        }
+        
+        function updateTimeDisplays(start, end) {
+            startTimeDisplay.textContent = formatTime(start);
+            endTimeDisplay.textContent = formatTime(end);
+        }
+
+        // --- Helper Functions ---
+        const setLoadingState = (isLoading, message = '') => {
+            convertBtn.disabled = isLoading;
+            convertBtn.querySelector('.spinner').style.display = isLoading ? 'inline-block' : 'none';
+            if (message) statusMessage.textContent = message;
+            if (!isLoading) {
+                 progressBar.style.width = '0%';
+                 setTimeout(() => { if (statusMessage.textContent.includes('اكتمل')) statusMessage.textContent = 'جاهز لعملية جديدة.'; }, 3000);
+            }
+        };
+
+        const showNotification = (message, type = 'success') => {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        };
+        
+        const formatTime = (time) => {
+            const minutes = Math.floor(time / 60);
+            const seconds = (time % 60);
+            return `${String(minutes).padStart(2, '0')}:${seconds.toFixed(2).padStart(5, '0')}`;
+        };
+        
+        const timeToSeconds = (timeStr) => {
+            const parts = timeStr.split(':').map(parseFloat);
+            return parts.length === 2 ? (parts[0] * 60) + parts[1] : (parts[0] || 0);
+        };
+
+        // --- Event Listeners ---
+        window.addEventListener('load', loadFFmpeg);
+        convertBtn.addEventListener('click', convert);
+        const fileDropArea = document.getElementById('file-drop-area');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => fileDropArea.addEventListener(e, (ev) => ev.preventDefault()));
+        ['dragenter', 'dragover'].forEach(e => fileDropArea.addEventListener(e, () => fileDropArea.classList.add('hover')));
+        ['dragleave', 'drop'].forEach(e => fileDropArea.addEventListener(e, () => fileDropArea.classList.remove('hover')));
+        fileDropArea.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]));
+        fileDropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        setupTrimmerEvents();
+
+    </script>
+</body>
+</html>

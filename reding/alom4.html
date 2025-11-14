@@ -1,0 +1,2724 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عالم العلوم - لعبة تعليمية تفاعلية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100%;
+            overflow-x: hidden;
+        }
+        
+        html, body {
+            height: 100%;
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .option-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .option-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .option-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .correct-answer {
+            animation: correctPulse 0.6s ease;
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+        }
+        
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .wrong-answer {
+            animation: shake 0.5s ease;
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .star {
+            display: inline-block;
+            font-size: 2rem;
+            color: #fbbf24;
+            animation: starPop 0.5s ease forwards;
+            opacity: 0;
+        }
+        
+        @keyframes starPop {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            50% { transform: scale(1.2) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        @keyframes confettiFall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 90%;
+            width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .achievement-badge {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .achievement-badge:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .level-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+        }
+        
+        .subject-physics {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        
+        .subject-chemistry {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        
+        .subject-biology {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .subject-astronomy {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .subject-experiments {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+        
+        .timer-warning {
+            animation: timerBlink 1s ease infinite;
+        }
+        
+        @keyframes timerBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .score-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            animation: popupAppear 0.5s ease forwards;
+        }
+        
+        @keyframes popupAppear {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        .hint-box {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .streak-badge {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: streakPulse 1s ease infinite;
+        }
+        
+        @keyframes streakPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        
+        .experiment-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .experiment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .difficulty-easy {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        
+        .difficulty-medium {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .difficulty-hard {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body>
+  <div id="app"><!-- شاشة البداية -->
+   <div id="start-screen" class="min-h-screen flex flex-col items-center justify-center p-6">
+    <div class="text-center mb-12 slide-in">
+     <div class="text-6xl mb-4 floating">
+      🔬
+     </div>
+     <h1 class="text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-lg">عالم العلوم</h1>
+     <p class="text-xl md:text-2xl text-white/90 mb-2">لعبة تعليمية تفاعلية شاملة</p>
+     <p class="text-lg text-white/80">اختبر معلوماتك وجرب التجارب العلمية المثيرة</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl w-full mb-8"><!-- بطاقة الفيزياء -->
+     <div class="card-hover subject-physics rounded-2xl p-6 text-white shadow-2xl cursor-pointer" data-subject="physics">
+      <div class="flex justify-between items-start mb-4">
+       <div>
+        <h2 class="text-3xl font-bold mb-2">الفيزياء</h2>
+        <p class="text-white/90 mb-2">قوانين الحركة والطاقة</p>
+        <div class="flex items-center gap-2"><span class="bg-white/20 px-3 py-1 rounded-full text-sm">50 سؤال</span>
+        </div>
+       </div>
+       <div class="text-5xl floating">
+        ⚡
+       </div>
+      </div>
+      <div class="mt-4">
+       <div class="flex justify-between text-sm mb-1"><span>التقدم</span> <span id="physics-progress">0%</span>
+       </div>
+       <div class="w-full bg-white/20 rounded-full h-2">
+        <div id="physics-bar" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+       </div>
+      </div>
+     </div><!-- بطاقة الكيمياء -->
+     <div class="card-hover subject-chemistry rounded-2xl p-6 text-white shadow-2xl cursor-pointer" data-subject="chemistry">
+      <div class="flex justify-between items-start mb-4">
+       <div>
+        <h2 class="text-3xl font-bold mb-2">الكيمياء</h2>
+        <p class="text-white/90 mb-2">العناصر والتفاعلات</p>
+        <div class="flex items-center gap-2"><span class="bg-white/20 px-3 py-1 rounded-full text-sm">50 سؤال</span>
+        </div>
+       </div>
+       <div class="text-5xl floating">
+        ⚗️
+       </div>
+      </div>
+      <div class="mt-4">
+       <div class="flex justify-between text-sm mb-1"><span>التقدم</span> <span id="chemistry-progress">0%</span>
+       </div>
+       <div class="w-full bg-white/20 rounded-full h-2">
+        <div id="chemistry-bar" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+       </div>
+      </div>
+     </div><!-- بطاقة الأحياء -->
+     <div class="card-hover subject-biology rounded-2xl p-6 text-white shadow-2xl cursor-pointer" data-subject="biology">
+      <div class="flex justify-between items-start mb-4">
+       <div>
+        <h2 class="text-3xl font-bold mb-2">الأحياء</h2>
+        <p class="text-white/90 mb-2">الخلايا والكائنات الحية</p>
+        <div class="flex items-center gap-2"><span class="bg-white/20 px-3 py-1 rounded-full text-sm">50 سؤال</span>
+        </div>
+       </div>
+       <div class="text-5xl floating">
+        🧬
+       </div>
+      </div>
+      <div class="mt-4">
+       <div class="flex justify-between text-sm mb-1"><span>التقدم</span> <span id="biology-progress">0%</span>
+       </div>
+       <div class="w-full bg-white/20 rounded-full h-2">
+        <div id="biology-bar" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+       </div>
+      </div>
+     </div><!-- بطاقة علم الفلك -->
+     <div class="card-hover subject-astronomy rounded-2xl p-6 text-white shadow-2xl cursor-pointer" data-subject="astronomy">
+      <div class="flex justify-between items-start mb-4">
+       <div>
+        <h2 class="text-3xl font-bold mb-2">علم الفلك</h2>
+        <p class="text-white/90 mb-2">الكواكب والنجوم</p>
+        <div class="flex items-center gap-2"><span class="bg-white/20 px-3 py-1 rounded-full text-sm">50 سؤال</span>
+        </div>
+       </div>
+       <div class="text-5xl floating">
+        🪐
+       </div>
+      </div>
+      <div class="mt-4">
+       <div class="flex justify-between text-sm mb-1"><span>التقدم</span> <span id="astronomy-progress">0%</span>
+       </div>
+       <div class="w-full bg-white/20 rounded-full h-2">
+        <div id="astronomy-bar" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+       </div>
+      </div>
+     </div><!-- بطاقة التجارب العلمية -->
+     <div class="card-hover subject-experiments rounded-2xl p-6 text-white shadow-2xl cursor-pointer" id="experiments-card">
+      <div class="flex justify-between items-start mb-4">
+       <div>
+        <h2 class="text-3xl font-bold mb-2">التجارب العلمية</h2>
+        <p class="text-white/90 mb-2">جرب بنفسك!</p>
+        <div class="flex items-center gap-2"><span class="bg-white/20 px-3 py-1 rounded-full text-sm">10 تجارب</span>
+        </div>
+       </div>
+       <div class="text-5xl floating">
+        🔬
+       </div>
+      </div>
+      <div class="mt-4">
+       <div class="flex justify-between text-sm mb-1"><span>التجارب المكتملة</span> <span id="experiments-progress">0/10</span>
+       </div>
+       <div class="w-full bg-white/20 rounded-full h-2">
+        <div id="experiments-bar" class="bg-white h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="flex gap-4"><button id="profile-btn" class="bg-white text-purple-700 px-8 py-4 rounded-xl font-bold text-lg hover:bg-purple-50 transition shadow-lg pulse"> <span class="flex items-center gap-2"> <span>👤</span> ملفي الشخصي </span> </button> <button id="leaderboard-btn" class="bg-yellow-400 text-purple-900 px-8 py-4 rounded-xl font-bold text-lg hover:bg-yellow-300 transition shadow-lg"> <span class="flex items-center gap-2"> <span>🏆</span> لوحة المتصدرين </span> </button>
+    </div>
+   </div><!-- شاشة اللعب -->
+   <div id="game-screen" class="hidden min-h-screen p-6">
+    <div class="max-w-4xl mx-auto"><!-- شريط التنقل العلوي -->
+     <div class="flex justify-between items-center mb-6"><button id="back-btn" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition flex items-center gap-2">
+       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+       </svg> رجوع </button>
+      <div class="flex items-center gap-4"><!-- المؤقت -->
+       <div class="bg-white rounded-full px-4 py-2 shadow-lg flex items-center gap-2"><span class="text-2xl">⏱️</span> <span id="timer" class="font-bold text-xl text-gray-800">30</span>
+       </div><!-- النقاط -->
+       <div class="bg-white rounded-full px-4 py-2 shadow-lg flex items-center gap-2"><span class="text-2xl">⭐</span> <span id="score" class="font-bold text-xl text-gray-800">0</span>
+       </div><!-- السلسلة -->
+       <div id="streak-badge" class="streak-badge hidden text-white rounded-full px-4 py-2 shadow-lg flex items-center gap-2"><span class="text-xl">🔥</span> <span id="streak" class="font-bold">0</span>
+       </div>
+      </div>
+     </div><!-- معلومات المستوى -->
+     <div class="bg-white rounded-2xl shadow-2xl p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+       <div>
+        <h2 id="level-title" class="text-2xl font-bold text-gray-800 mb-1">المستوى 1</h2>
+        <p id="level-subtitle" class="text-gray-600">قوانين نيوتن</p>
+       </div>
+       <div class="level-badge text-white px-4 py-2 rounded-full font-bold"><span id="question-number">1</span> / <span id="total-questions">15</span>
+       </div>
+      </div><!-- شريط التقدم -->
+      <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+       <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500" style="width: 6.67%"></div>
+      </div>
+     </div><!-- محتوى السؤال -->
+     <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+      <div class="mb-6">
+       <h3 id="question-text" class="text-2xl font-bold text-gray-800 mb-4">ما هو القانون الأول لنيوتن؟</h3>
+       <p id="question-hint" class="text-gray-600 mb-4">اختر الإجابة الصحيحة من الخيارات التالية</p>
+      </div>
+      <div id="options-container" class="grid grid-cols-1 gap-4"><!-- سيتم إضافة الخيارات هنا ديناميكياً -->
+      </div>
+     </div><!-- أزرار المساعدة -->
+     <div class="flex justify-between items-center"><button id="hint-btn" class="bg-yellow-400 hover:bg-yellow-500 text-gray-800 px-6 py-3 rounded-xl font-bold transition shadow-lg flex items-center gap-2"> <span class="text-xl">💡</span> تلميح <span id="hints-left" class="bg-white/50 px-2 py-1 rounded-full text-sm">(3)</span> </button> <button id="skip-btn" class="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg flex items-center gap-2"> <span class="text-xl">⏭️</span> تخطي <span id="skips-left" class="bg-white/30 px-2 py-1 rounded-full text-sm">(2)</span> </button>
+     </div>
+    </div>
+   </div><!-- شاشة الملف الشخصي -->
+   <div id="profile-screen" class="hidden min-h-screen p-6">
+    <div class="max-w-4xl mx-auto"><button id="back-from-profile" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 mb-6">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg> رجوع </button>
+     <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+      <div class="flex flex-col md:flex-row items-center gap-6 mb-8">
+       <div class="w-32 h-32 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-6xl shadow-lg">
+        👨‍🔬
+       </div>
+       <div class="flex-1 text-center md:text-right">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">عالم المستقبل</h2>
+        <div class="flex items-center justify-center md:justify-start gap-2 mb-3"><span class="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-1 rounded-full font-bold">المستوى <span id="user-level">1</span></span> <span class="bg-gradient-to-r from-blue-400 to-purple-400 text-white px-4 py-1 rounded-full font-bold"><span id="total-score">0</span> نقطة</span>
+        </div>
+        <div class="w-full max-w-md mx-auto md:mx-0">
+         <div class="flex justify-between text-sm text-gray-600 mb-1"><span>التقدم للمستوى التالي</span> <span><span id="current-xp">0</span> / <span id="next-level-xp">1000</span> XP</span>
+         </div>
+         <div class="w-full bg-gray-200 rounded-full h-3">
+          <div id="xp-bar" class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+         </div>
+        </div>
+       </div>
+      </div><!-- إحصائيات -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">
+         📚
+        </div>
+        <div class="text-2xl font-bold text-blue-700" id="total-answered">
+         0
+        </div>
+        <div class="text-sm text-gray-600">
+         سؤال مجاب
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">
+         ✅
+        </div>
+        <div class="text-2xl font-bold text-green-700" id="total-correct">
+         0
+        </div>
+        <div class="text-sm text-gray-600">
+         إجابة صحيحة
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">
+         🔥
+        </div>
+        <div class="text-2xl font-bold text-yellow-700" id="best-streak">
+         0
+        </div>
+        <div class="text-sm text-gray-600">
+         أفضل سلسلة
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">
+         🏆
+        </div>
+        <div class="text-2xl font-bold text-purple-700" id="achievements-count">
+         0
+        </div>
+        <div class="text-sm text-gray-600">
+         إنجاز
+        </div>
+       </div>
+      </div><!-- التقدم في المواد -->
+      <h3 class="text-2xl font-bold text-gray-800 mb-4">تقدمك في المواد</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+       <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-2">
+         <div class="flex items-center gap-2"><span class="text-2xl">⚡</span> <span class="font-bold text-gray-800">الفيزياء</span>
+         </div><span class="text-sm text-gray-600"><span id="physics-completed">0</span>/15</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+         <div id="physics-profile-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-2">
+         <div class="flex items-center gap-2"><span class="text-2xl">⚗️</span> <span class="font-bold text-gray-800">الكيمياء</span>
+         </div><span class="text-sm text-gray-600"><span id="chemistry-completed">0</span>/15</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+         <div id="chemistry-profile-bar" class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-2">
+         <div class="flex items-center gap-2"><span class="text-2xl">🧬</span> <span class="font-bold text-gray-800">الأحياء</span>
+         </div><span class="text-sm text-gray-600"><span id="biology-completed">0</span>/15</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+         <div id="biology-profile-bar" class="bg-green-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+       </div>
+       <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4">
+        <div class="flex justify-between items-center mb-2">
+         <div class="flex items-center gap-2"><span class="text-2xl">🪐</span> <span class="font-bold text-gray-800">علم الفلك</span>
+         </div><span class="text-sm text-gray-600"><span id="astronomy-completed">0</span>/15</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+         <div id="astronomy-profile-bar" class="bg-orange-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+       </div>
+      </div><!-- الإنجازات -->
+      <h3 class="text-2xl font-bold text-gray-800 mb-4">إنجازاتك</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="achievements-container"><!-- سيتم إضافة الإنجازات ديناميكياً -->
+      </div>
+     </div>
+    </div>
+   </div><!-- شاشة التجارب العلمية -->
+   <div id="experiments-screen" class="hidden min-h-screen p-6">
+    <div class="max-w-6xl mx-auto"><button id="back-from-experiments" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 mb-6">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg> رجوع </button>
+     <div class="text-center mb-8">
+      <div class="text-6xl mb-4">
+       🔬
+      </div>
+      <h2 class="text-4xl font-bold text-white mb-2">التجارب العلمية التفاعلية</h2>
+      <p class="text-xl text-white/90">جرب التجارب العلمية المثيرة بنفسك!</p>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="experiments-list"><!-- سيتم إضافة التجارب هنا ديناميكياً -->
+     </div>
+    </div>
+   </div><!-- شاشة تفاصيل التجربة -->
+   <div id="experiment-detail-screen" class="hidden min-h-screen p-6">
+    <div class="max-w-4xl mx-auto"><button id="back-from-experiment-detail" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 mb-6">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg> رجوع للتجارب </button>
+     <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6">
+      <div class="flex items-center gap-4 mb-6">
+       <div class="text-6xl" id="experiment-icon">
+        🔬
+       </div>
+       <div class="flex-1">
+        <h2 class="text-3xl font-bold text-gray-800 mb-2" id="experiment-title">عنوان التجربة</h2>
+        <div class="flex gap-2"><span class="difficulty-easy text-white px-3 py-1 rounded-full text-sm font-bold" id="experiment-difficulty">سهل</span> <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold" id="experiment-time">⏱️ 15 دقيقة</span>
+        </div>
+       </div>
+      </div>
+      <div class="mb-6">
+       <h3 class="text-xl font-bold text-gray-800 mb-3">📝 الوصف</h3>
+       <p class="text-gray-700 leading-relaxed" id="experiment-description"></p>
+      </div>
+      <div class="mb-6">
+       <h3 class="text-xl font-bold text-gray-800 mb-3">🧪 المواد المطلوبة</h3>
+       <ul class="grid grid-cols-1 md:grid-cols-2 gap-2" id="experiment-materials">
+       </ul>
+      </div>
+      <div class="mb-6">
+       <h3 class="text-xl font-bold text-gray-800 mb-3">📋 خطوات التجربة</h3>
+       <div class="space-y-4" id="experiment-steps">
+       </div>
+      </div>
+      <div class="warning-box rounded-xl p-4 mb-6">
+       <h3 class="text-lg font-bold text-red-700 mb-2">⚠️ تحذيرات السلامة</h3>
+       <ul class="space-y-1" id="experiment-safety">
+       </ul>
+      </div>
+      <div class="hint-box rounded-xl p-4 mb-6">
+       <h3 class="text-lg font-bold text-yellow-800 mb-2">💡 التفسير العلمي</h3>
+       <p class="text-gray-800 leading-relaxed" id="experiment-explanation"></p>
+      </div>
+      <div class="flex gap-4"><button id="mark-complete-btn" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-4 rounded-xl font-bold text-lg transition shadow-lg"> ✅ أكملت هذه التجربة </button> <button id="share-experiment-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-xl font-bold transition shadow-lg"> 📤 مشاركة </button>
+      </div>
+     </div>
+    </div>
+   </div><!-- شاشة لوحة المتصدرين -->
+   <div id="leaderboard-screen" class="hidden min-h-screen p-6">
+    <div class="max-w-4xl mx-auto"><button id="back-from-leaderboard" class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition flex items-center gap-2 mb-6">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg> رجوع </button>
+     <div class="bg-white rounded-2xl shadow-2xl p-8">
+      <div class="text-center mb-8">
+       <div class="text-6xl mb-4">
+        🏆
+       </div>
+       <h2 class="text-3xl font-bold text-gray-800 mb-2">لوحة المتصدرين</h2>
+       <p class="text-gray-600">أفضل اللاعبين في عالم العلوم</p>
+      </div><!-- المراكز الثلاثة الأولى -->
+      <div class="grid grid-cols-3 gap-4 mb-8">
+       <div class="text-center">
+        <div class="bg-gradient-to-br from-gray-300 to-gray-400 w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center text-3xl shadow-lg">
+         🥈
+        </div>
+        <div class="font-bold text-gray-800">
+         المركز الثاني
+        </div>
+        <div class="text-sm text-gray-600">
+         عالم الكيمياء
+        </div>
+        <div class="text-lg font-bold text-purple-600">
+         8,500 نقطة
+        </div>
+       </div>
+       <div class="text-center -mt-4">
+        <div class="bg-gradient-to-br from-yellow-300 to-yellow-500 w-24 h-24 rounded-full mx-auto mb-2 flex items-center justify-center text-4xl shadow-xl pulse">
+         👑
+        </div>
+        <div class="font-bold text-gray-800 text-lg">
+         المركز الأول
+        </div>
+        <div class="text-sm text-gray-600">
+         أنت
+        </div>
+        <div class="text-xl font-bold text-yellow-600">
+         10,000 نقطة
+        </div>
+       </div>
+       <div class="text-center">
+        <div class="bg-gradient-to-br from-orange-300 to-orange-500 w-20 h-20 rounded-full mx-auto mb-2 flex items-center justify-center text-3xl shadow-lg">
+         🥉
+        </div>
+        <div class="font-bold text-gray-800">
+         المركز الثالث
+        </div>
+        <div class="text-sm text-gray-600">
+         عالم الفيزياء
+        </div>
+        <div class="text-lg font-bold text-orange-600">
+         7,200 نقطة
+        </div>
+       </div>
+      </div><!-- باقي المراكز -->
+      <div class="space-y-3">
+       <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition">
+        <div class="flex items-center gap-4">
+         <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-700">
+          4
+         </div>
+         <div>
+          <div class="font-bold text-gray-800">
+           عالم الأحياء
+          </div>
+          <div class="text-sm text-gray-600">
+           المستوى 8
+          </div>
+         </div>
+        </div>
+        <div class="font-bold text-gray-700">
+         6,800 نقطة
+        </div>
+       </div>
+       <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition">
+        <div class="flex items-center gap-4">
+         <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-700">
+          5
+         </div>
+         <div>
+          <div class="font-bold text-gray-800">
+           مستكشف الفضاء
+          </div>
+          <div class="text-sm text-gray-600">
+           المستوى 7
+          </div>
+         </div>
+        </div>
+        <div class="font-bold text-gray-700">
+         5,900 نقطة
+        </div>
+       </div>
+       <div class="flex items-center justify-between bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition">
+        <div class="flex items-center gap-4">
+         <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-700">
+          6
+         </div>
+         <div>
+          <div class="font-bold text-gray-800">
+           عالم الذرة
+          </div>
+          <div class="text-sm text-gray-600">
+           المستوى 6
+          </div>
+         </div>
+        </div>
+        <div class="font-bold text-gray-700">
+         5,100 نقطة
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div><!-- نافذة التلميح -->
+  <div id="hint-modal" class="modal">
+   <div class="modal-content p-8">
+    <div class="flex justify-between items-center mb-6">
+     <h3 class="text-2xl font-bold text-gray-800">💡 تلميح</h3><button class="close-modal text-gray-500 hover:text-gray-700 text-3xl">×</button>
+    </div>
+    <div class="hint-box rounded-xl p-6 mb-6">
+     <p id="hint-text" class="text-gray-800 text-lg leading-relaxed"></p>
+    </div>
+    <div class="text-center text-sm text-gray-600">
+     <p>💡 استخدام التلميح سيقلل من النقاط المكتسبة بمقدار 10 نقاط</p>
+     <p class="mt-2">التلميحات المتبقية: <span id="hints-remaining" class="font-bold">3</span></p>
+    </div>
+   </div>
+  </div><!-- نافذة إكمال المستوى -->
+  <div id="level-complete-modal" class="modal">
+   <div class="modal-content p-8">
+    <div class="text-center">
+     <div class="text-7xl mb-4">
+      🎉
+     </div>
+     <h3 class="text-3xl font-bold text-gray-800 mb-4">أحسنت! أكملت المستوى</h3>
+     <div class="flex justify-center gap-2 mb-6"><span class="star" style="animation-delay: 0.1s">⭐</span> <span class="star" style="animation-delay: 0.2s">⭐</span> <span class="star" style="animation-delay: 0.3s">⭐</span>
+     </div>
+     <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4">
+       <div class="text-3xl mb-2">
+        ✅
+       </div>
+       <div class="text-2xl font-bold text-green-700" id="level-correct">
+        15
+       </div>
+       <div class="text-sm text-gray-600">
+        إجابة صحيحة
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4">
+       <div class="text-3xl mb-2">
+        ⭐
+       </div>
+       <div class="text-2xl font-bold text-yellow-700" id="level-points">
+        +450
+       </div>
+       <div class="text-sm text-gray-600">
+        نقطة مكتسبة
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4">
+       <div class="text-3xl mb-2">
+        ⏱️
+       </div>
+       <div class="text-2xl font-bold text-blue-700" id="level-time">
+        07:30
+       </div>
+       <div class="text-sm text-gray-600">
+        الوقت المستغرق
+       </div>
+      </div>
+      <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4">
+       <div class="text-3xl mb-2">
+        🔥
+       </div>
+       <div class="text-2xl font-bold text-purple-700" id="level-streak">
+        15
+       </div>
+       <div class="text-sm text-gray-600">
+        سلسلة إجابات
+       </div>
+      </div>
+     </div>
+     <div id="new-achievement-alert" class="hidden bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-400 rounded-xl p-4 mb-6">
+      <div class="text-3xl mb-2">
+       🏆
+      </div>
+      <div class="font-bold text-gray-800 mb-1">
+       إنجاز جديد!
+      </div>
+      <div id="achievement-name" class="text-gray-700"></div>
+     </div>
+     <div class="flex gap-4 justify-center"><button id="back-to-menu" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-xl font-bold transition"> القائمة الرئيسية </button> <button id="next-level" class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg"> المستوى التالي </button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+        // بيانات التجارب العلمية
+        const experimentsData = [
+            {
+                id: 1,
+                title: "البركان الكيميائي",
+                icon: "🌋",
+                difficulty: "easy",
+                time: "15 دقيقة",
+                description: "تجربة مثيرة لصنع بركان ثائر باستخدام مواد منزلية بسيطة! شاهد الحمم البركانية وهي تنفجر من فوهة البركان.",
+                materials: [
+                    "كوب من الخل الأبيض",
+                    "ملعقتان كبيرتان من صودا الخبز",
+                    "قطرات من ملون الطعام الأحمر",
+                    "قليل من سائل الصحون",
+                    "زجاجة بلاستيكية فارغة",
+                    "صينية كبيرة"
+                ],
+                steps: [
+                    "ضع الزجاجة في منتصف الصينية",
+                    "أضف صودا الخبز داخل الزجاجة",
+                    "أضف قطرات من ملون الطعام الأحمر",
+                    "أضف قليلاً من سائل الصحون",
+                    "اسكب الخل بسرعة داخل الزجاجة",
+                    "ابتعد وشاهد الثوران!"
+                ],
+                safety: [
+                    "قم بالتجربة في مكان جيد التهوية",
+                    "ارتدِ نظارات واقية",
+                    "لا تلمس المزيج بيديك مباشرة",
+                    "نظف المكان فوراً بعد الانتهاء"
+                ],
+                explanation: "عند خلط الخل (حمض) مع صودا الخبز (قاعدة)، يحدث تفاعل كيميائي ينتج عنه غاز ثاني أكسيد الكربون. هذا الغاز يدفع الرغوة للخارج محاكياً ثوران البركان الحقيقي!",
+                completed: false
+            },
+            {
+                id: 2,
+                title: "قوس قزح في كوب",
+                icon: "🌈",
+                difficulty: "easy",
+                time: "20 دقيقة",
+                description: "اصنع قوس قزح جميل من السوائل الملونة في كوب واحد! تجربة رائعة لفهم الكثافة.",
+                materials: [
+                    "5 أكواب شفافة صغيرة",
+                    "عسل",
+                    "سائل صحون",
+                    "ماء",
+                    "زيت نباتي",
+                    "كحول محمر",
+                    "ألوان طعام مختلفة"
+                ],
+                steps: [
+                    "صب العسل في قاع الكوب الكبير",
+                    "أضف سائل الصحون الملون بحذر",
+                    "أضف الماء الملون ببطء على جانب الكوب",
+                    "أضف الزيت النباتي بحذر",
+                    "أضف الكحول المحمر الملون في الأعلى",
+                    "شاهد الطبقات الملونة!"
+                ],
+                safety: [
+                    "لا تشرب أي من السوائل",
+                    "اغسل يديك بعد التجربة",
+                    "استخدم الكحول بحذر بعيداً عن النار",
+                    "اطلب مساعدة شخص بالغ"
+                ],
+                explanation: "السوائل المختلفة لها كثافات مختلفة. السوائل الأكثر كثافة (مثل العسل) تستقر في القاع، بينما السوائل الأقل كثافة (مثل الكحول) تطفو في الأعلى، مكونة طبقات ملونة جميلة!",
+                completed: false
+            },
+            {
+                id: 3,
+                title: "البيضة الطافية",
+                icon: "🥚",
+                difficulty: "easy",
+                time: "10 دقائق",
+                description: "اجعل البيضة تطفو على الماء بطريقة سحرية! تجربة بسيطة ومذهلة.",
+                materials: [
+                    "بيضة نيئة",
+                    "كوبان من الماء",
+                    "ملح طعام (كمية كبيرة)",
+                    "ملعقة للتحريك"
+                ],
+                steps: [
+                    "املأ الكوب الأول بالماء العادي",
+                    "ضع البيضة فيه وشاهدها تغرق",
+                    "املأ الكوب الثاني بالماء",
+                    "أضف الملح تدريجياً وحرك جيداً",
+                    "ضع البيضة في الماء المالح",
+                    "شاهد البيضة تطفو!"
+                ],
+                safety: [
+                    "تأكد من نظافة البيضة",
+                    "لا تأكل البيضة بعد التجربة",
+                    "نظف أي انسكابات فوراً"
+                ],
+                explanation: "الماء المالح أكثر كثافة من الماء العادي. عندما تكون كثافة السائل أكبر من كثافة البيضة، تطفو البيضة! هذا هو نفس السبب الذي يجعل السباحة في البحر أسهل من السباحة في حمام السباحة.",
+                completed: false
+            },
+            {
+                id: 4,
+                title: "المغناطيس الكهربائي",
+                icon: "🧲",
+                difficulty: "medium",
+                time: "25 دقيقة",
+                description: "اصنع مغناطيساً كهربائياً بنفسك واستخدمه لالتقاط الأشياء المعدنية!",
+                materials: [
+                    "مسمار حديدي كبير",
+                    "سلك نحاسي معزول (متر واحد)",
+                    "بطارية 9 فولت",
+                    "مشابك ورق معدنية",
+                    "شريط لاصق"
+                ],
+                steps: [
+                    "لف السلك حول المسمار 20-30 لفة",
+                    "اترك طرفي السلك حرين",
+                    "أزل العزل من طرفي السلك",
+                    "اربط أحد الطرفين بقطب البطارية الموجب",
+                    "اربط الطرف الآخر بالقطب السالب",
+                    "قرب المسمار من المشابك وشاهد المغناطيسية!"
+                ],
+                safety: [
+                    "لا تترك البطارية متصلة لفترة طويلة",
+                    "السلك قد يسخن، كن حذراً",
+                    "افصل البطارية عند عدم الاستخدام",
+                    "اطلب مساعدة شخص بالغ"
+                ],
+                explanation: "عندما يمر التيار الكهربائي عبر السلك الملفوف حول المسمار، يتولد مجال مغناطيسي يحول المسمار إلى مغناطيس! هذا هو المبدأ المستخدم في المحركات الكهربائية والأجراس الكهربائية.",
+                completed: false
+            },
+            {
+                id: 5,
+                title: "الحبر الخفي",
+                icon: "🕵️",
+                difficulty: "easy",
+                time: "15 دقيقة",
+                description: "اكتب رسائل سرية بحبر خفي لا يظهر إلا بالحرارة!",
+                materials: [
+                    "عصير ليمون طازج",
+                    "ورقة بيضاء",
+                    "عود قطني أو فرشاة رفيعة",
+                    "مصباح أو مكواة (بإشراف بالغ)"
+                ],
+                steps: [
+                    "اعصر الليمون في وعاء صغير",
+                    "اغمس العود القطني في عصير الليمون",
+                    "اكتب رسالتك السرية على الورقة",
+                    "اترك الورقة حتى تجف تماماً",
+                    "قرب الورقة من مصدر حرارة (بحذر)",
+                    "شاهد الرسالة تظهر باللون البني!"
+                ],
+                safety: [
+                    "لا تلمس مصدر الحرارة مباشرة",
+                    "اطلب مساعدة شخص بالغ عند التسخين",
+                    "لا تترك الورقة قريبة جداً من الحرارة",
+                    "احذر من الحروق"
+                ],
+                explanation: "عصير الليمون يحتوي على مركبات عضوية تتأكسد عند تعرضها للحرارة، مما يجعلها تتحول إلى اللون البني وتصبح مرئية. هذه الطريقة استخدمت تاريخياً في الرسائل السرية!",
+                completed: false
+            },
+            {
+                id: 6,
+                title: "فقاعات لا تنفجر",
+                icon: "🫧",
+                difficulty: "medium",
+                time: "20 دقيقة",
+                description: "اصنع فقاعات صابون قوية يمكنك لمسها دون أن تنفجر!",
+                materials: [
+                    "كوب من الماء المقطر",
+                    "ملعقتان من سائل الصحون",
+                    "ملعقة من الجلسرين أو شراب الذرة",
+                    "سلك لصنع عصا الفقاعات",
+                    "قفازات قطنية"
+                ],
+                steps: [
+                    "اخلط الماء مع سائل الصحون برفق",
+                    "أضف الجلسرين واخلط بلطف",
+                    "اترك المزيج يستقر لمدة ساعة",
+                    "ارتدِ القفازات القطنية",
+                    "اصنع فقاعات باستخدام العصا",
+                    "المس الفقاعات بالقفازات بحذر!"
+                ],
+                safety: [
+                    "لا تشرب محلول الفقاعات",
+                    "تجنب ملامسة العينين",
+                    "اغسل يديك بعد التجربة",
+                    "نظف الأرض من أي انسكابات"
+                ],
+                explanation: "الجلسرين يجعل جدار الفقاعة أكثر سمكاً ومرونة، مما يمنعها من الانفجار بسهولة. القفازات القطنية تمنع الزيوت من يديك من تفجير الفقاعة!",
+                completed: false
+            },
+            {
+                id: 7,
+                title: "الماء الذي يتحدى الجاذبية",
+                icon: "💧",
+                difficulty: "easy",
+                time: "10 دقائق",
+                description: "اقلب كوباً مملوءاً بالماء رأساً على عقب دون أن ينسكب!",
+                materials: [
+                    "كوب زجاجي",
+                    "ماء",
+                    "قطعة من الورق المقوى",
+                    "حوض أو صينية"
+                ],
+                steps: [
+                    "املأ الكوب بالماء حتى الحافة",
+                    "ضع الورقة المقوى على فوهة الكوب",
+                    "اضغط على الورقة بيدك",
+                    "اقلب الكوب بسرعة رأساً على عقب",
+                    "أزل يدك بحذر",
+                    "شاهد الماء يبقى في الكوب!"
+                ],
+                safety: [
+                    "قم بالتجربة فوق حوض أو صينية",
+                    "استخدم كوباً غير قابل للكسر",
+                    "جفف أي انسكابات فوراً",
+                    "تدرب عدة مرات"
+                ],
+                explanation: "الضغط الجوي يدفع الورقة لأعلى بقوة أكبر من قوة وزن الماء التي تدفعها لأسفل. هذا يخلق فراغاً جزئياً يحافظ على الماء داخل الكوب!",
+                completed: false
+            },
+            {
+                id: 8,
+                title: "كريستالات السكر",
+                icon: "💎",
+                difficulty: "hard",
+                time: "7 أيام",
+                description: "ازرع كريستالات سكر جميلة وملونة! تجربة تحتاج صبراً لكن النتيجة مذهلة.",
+                materials: [
+                    "3 أكواب من السكر",
+                    "كوب من الماء",
+                    "وعاء للغلي",
+                    "عود خشبي",
+                    "خيط",
+                    "مشبك ورق",
+                    "ألوان طعام"
+                ],
+                steps: [
+                    "اغلِ الماء في الوعاء",
+                    "أضف السكر تدريجياً مع التحريك",
+                    "استمر حتى لا يذوب المزيد من السكر",
+                    "أضف ألوان الطعام",
+                    "اربط الخيط بالعود وعلق المشبك في نهايته",
+                    "ضع المشبك في المحلول واترك العود على الحافة",
+                    "انتظر أسبوعاً وشاهد الكريستالات تنمو!"
+                ],
+                safety: [
+                    "احذر من الماء المغلي",
+                    "اطلب مساعدة شخص بالغ للغلي",
+                    "لا تلمس المحلول الساخن",
+                    "ضع الوعاء في مكان آمن بعيداً عن الحركة"
+                ],
+                explanation: "عندما يبرد المحلول المشبع بالسكر، تبدأ جزيئات السكر بالترتب في أنماط منتظمة مكونة كريستالات. هذه العملية تسمى التبلور وتحدث في الطبيعة لتكوين الأحجار الكريمة!",
+                completed: false
+            },
+            {
+                id: 9,
+                title: "الصاروخ البالوني",
+                icon: "🚀",
+                difficulty: "medium",
+                time: "15 دقيقة",
+                description: "اصنع صاروخاً من بالون يطير عبر الغرفة بسرعة مذهلة!",
+                materials: [
+                    "بالون طويل",
+                    "خيط طويل (5 أمتار)",
+                    "شريط لاصق",
+                    "ماصة بلاستيكية",
+                    "مقص"
+                ],
+                steps: [
+                    "اقطع الماصة إلى قطعة بطول 5 سم",
+                    "مرر الخيط عبر الماصة",
+                    "اربط طرفي الخيط بين نقطتين بعيدتين",
+                    "انفخ البالون ولا تربطه",
+                    "الصق البالون على الماصة بالشريط",
+                    "أطلق البالون وشاهده يطير!"
+                ],
+                safety: [
+                    "تأكد من أن المسار خالٍ من العوائق",
+                    "لا توجه البالون نحو وجه أحد",
+                    "استخدم بالونات جديدة غير تالفة",
+                    "احذر من الاصطدام بالأثاث"
+                ],
+                explanation: "عندما تطلق البالون، يندفع الهواء للخارج بقوة، وحسب قانون نيوتن الثالث (لكل فعل رد فعل مساوٍ)، يندفع البالون في الاتجاه المعاكس! هذا هو نفس مبدأ عمل الصواريخ الحقيقية.",
+                completed: false
+            },
+            {
+                id: 10,
+                title: "مصباح الحمم البركانية",
+                icon: "🪔",
+                difficulty: "medium",
+                time: "20 دقيقة",
+                description: "اصنع مصباح حمم بركانية ملون ومتحرك يشبه المصابيح الشهيرة!",
+                materials: [
+                    "زجاجة بلاستيكية شفافة",
+                    "ماء",
+                    "زيت نباتي",
+                    "ألوان طعام",
+                    "أقراص فوارة (مثل الأسبرين الفوار)",
+                    "مصباح يدوي (اختياري)"
+                ],
+                steps: [
+                    "املأ ربع الزجاجة بالماء",
+                    "أضف قطرات من ألوان الطعام",
+                    "املأ باقي الزجاجة بالزيت النباتي",
+                    "انتظر حتى ينفصل الزيت عن الماء",
+                    "كسر قرص فوار وضعه في الزجاجة",
+                    "شاهد الفقاعات الملونة ترتفع وتنخفض!",
+                    "ضع مصباحاً تحت الزجاجة للحصول على تأثير أجمل"
+                ],
+                safety: [
+                    "لا تشرب المحتويات",
+                    "أغلق الزجاجة بإحكام",
+                    "لا تستخدم مصباحاً ساخناً جداً",
+                    "نظف أي انسكابات زيتية فوراً"
+                ],
+                explanation: "الزيت والماء لا يختلطان بسبب اختلاف الكثافة. القرص الفوار ينتج غاز ثاني أكسيد الكربون الذي يحمل قطرات الماء الملون لأعلى. عندما يهرب الغاز، تعود القطرات للأسفل، مكونة حركة مستمرة!",
+                completed: false
+            }
+        ];
+        
+        // بيانات اللعبة
+        const gameData = {
+            physics: {
+                name: "الفيزياء",
+                icon: "⚡",
+                color: "blue",
+                questions: [
+                    {
+                        question: "ما هو القانون الأول لنيوتن؟",
+                        options: [
+                            "الجسم يبقى على حالته من السكون أو الحركة المنتظمة ما لم تؤثر عليه قوة خارجية",
+                            "القوة تساوي الكتلة مضروبة في التسارع",
+                            "لكل فعل رد فعل مساوٍ له في المقدار ومضاد له في الاتجاه",
+                            "الطاقة لا تفنى ولا تستحدث من العدم"
+                        ],
+                        correct: 0,
+                        hint: "يُعرف أيضاً بقانون القصور الذاتي"
+                    },
+                    {
+                        question: "ما هي وحدة قياس القوة في النظام الدولي؟",
+                        options: ["نيوتن", "جول", "واط", "باسكال"],
+                        correct: 0,
+                        hint: "سميت على اسم العالم الذي وضع قوانين الحركة"
+                    },
+                    {
+                        question: "ما هي السرعة التي ينتقل بها الضوء في الفراغ؟",
+                        options: ["300,000 كم/ثانية", "150,000 كم/ثانية", "500,000 كم/ثانية", "100,000 كم/ثانية"],
+                        correct: 0,
+                        hint: "هي أسرع سرعة في الكون"
+                    },
+                    {
+                        question: "ما هو قانون حفظ الطاقة؟",
+                        options: [
+                            "الطاقة لا تفنى ولا تستحدث من العدم، ولكن تتحول من شكل إلى آخر",
+                            "الطاقة تزداد مع الزمن",
+                            "الطاقة تتناقص مع الزمن",
+                            "الطاقة تساوي الكتلة مضروبة في السرعة"
+                        ],
+                        correct: 0,
+                        hint: "مبدأ أساسي في الفيزياء يتعلق بالحفاظ على كمية الطاقة"
+                    },
+                    {
+                        question: "ما هي الكهرباء الساكنة؟",
+                        options: [
+                            "تراكم الشحنات الكهربائية على سطح جسم ما",
+                            "تدفق الإلكترونات في موصل",
+                            "قوة التجاذب بين الأجسام",
+                            "طاقة حركية للإلكترونات"
+                        ],
+                        correct: 0,
+                        hint: "تحدث عند احتكاك جسمين ببعضهما"
+                    },
+                    {
+                        question: "ما هي معادلة أينشتاين الشهيرة للطاقة؟",
+                        options: ["E = mc²", "F = ma", "P = mv", "W = Fd"],
+                        correct: 0,
+                        hint: "تربط بين الطاقة والكتلة"
+                    },
+                    {
+                        question: "ما هو الفرق بين الكتلة والوزن؟",
+                        options: [
+                            "الكتلة ثابتة والوزن يتغير بتغير الجاذبية",
+                            "الكتلة تتغير والوزن ثابت",
+                            "لا يوجد فرق بينهما",
+                            "الكتلة تقاس بالنيوتن والوزن بالكيلوغرام"
+                        ],
+                        correct: 0,
+                        hint: "الوزن هو قوة جذب الأرض للجسم"
+                    },
+                    {
+                        question: "ما هي درجة الحرارة المطلقة صفر؟",
+                        options: ["-273.15 درجة مئوية", "0 درجة مئوية", "-100 درجة مئوية", "-200 درجة مئوية"],
+                        correct: 0,
+                        hint: "أقل درجة حرارة ممكنة في الكون"
+                    },
+                    {
+                        question: "ما هو قانون أوم في الكهرباء؟",
+                        options: ["V = IR", "P = IV", "E = mc²", "F = ma"],
+                        correct: 0,
+                        hint: "يربط بين الجهد والتيار والمقاومة"
+                    },
+                    {
+                        question: "ما هي وحدة قياس التردد؟",
+                        options: ["هيرتز", "واط", "جول", "أمبير"],
+                        correct: 0,
+                        hint: "تقاس بها عدد الذبذبات في الثانية"
+                    },
+                    {
+                        question: "ما هو مبدأ أرخميدس؟",
+                        options: [
+                            "الجسم المغمور في سائل يفقد من وزنه بقدر وزن السائل المزاح",
+                            "الأجسام تسقط بنفس السرعة في الفراغ",
+                            "الطاقة محفوظة في النظام المغلق",
+                            "لكل فعل رد فعل مساوٍ"
+                        ],
+                        correct: 0,
+                        hint: "يفسر طفو الأجسام على الماء"
+                    },
+                    {
+                        question: "ما هي الموجات الكهرومغناطيسية؟",
+                        options: [
+                            "موجات تنتقل بدون وسط مادي",
+                            "موجات تحتاج لوسط مادي",
+                            "موجات صوتية فقط",
+                            "موجات ميكانيكية"
+                        ],
+                        correct: 0,
+                        hint: "مثل الضوء والأشعة السينية"
+                    },
+                    {
+                        question: "ما هو التسارع الأرضي تقريباً؟",
+                        options: ["9.8 م/ث²", "10.5 م/ث²", "8.5 م/ث²", "11 م/ث²"],
+                        correct: 0,
+                        hint: "تسارع الأجسام الساقطة بفعل الجاذبية"
+                    },
+                    {
+                        question: "ما هي الطاقة الحركية؟",
+                        options: [
+                            "طاقة الجسم بسبب حركته",
+                            "طاقة الجسم بسبب موضعه",
+                            "طاقة الجسم بسبب حرارته",
+                            "طاقة الجسم بسبب كتلته"
+                        ],
+                        correct: 0,
+                        hint: "تعتمد على السرعة والكتلة"
+                    },
+                    {
+                        question: "ما هو الانعكاس الكلي للضوء؟",
+                        options: [
+                            "انعكاس الضوء بالكامل عند السطح الفاصل بين وسطين",
+                            "انكسار الضوء بزاوية 90 درجة",
+                            "امتصاص الضوء بالكامل",
+                            "تشتت الضوء في جميع الاتجاهات"
+                        ],
+                        correct: 0,
+                        hint: "يحدث في الألياف الضوئية"
+                    },
+                    {
+                        question: "ما هو القانون الثاني لنيوتن؟",
+                        options: ["F = ma", "E = mc²", "P = mv", "W = Fd"],
+                        correct: 0,
+                        hint: "يربط بين القوة والكتلة والتسارع"
+                    },
+                    {
+                        question: "ما هو القانون الثالث لنيوتن؟",
+                        options: [
+                            "لكل فعل رد فعل مساوٍ له في المقدار ومضاد له في الاتجاه",
+                            "الجسم يبقى على حالته",
+                            "القوة تساوي الكتلة مضروبة في التسارع",
+                            "الطاقة محفوظة"
+                        ],
+                        correct: 0,
+                        hint: "يفسر كيف تطير الصواريخ"
+                    },
+                    {
+                        question: "ما هي الطاقة الكامنة؟",
+                        options: [
+                            "طاقة الجسم بسبب موضعه",
+                            "طاقة الجسم بسبب حركته",
+                            "طاقة الجسم بسبب حرارته",
+                            "طاقة الجسم بسبب شكله"
+                        ],
+                        correct: 0,
+                        hint: "مثل الماء المخزن في السد"
+                    },
+                    {
+                        question: "ما هي وحدة قياس الطاقة؟",
+                        options: ["جول", "نيوتن", "واط", "أمبير"],
+                        correct: 0,
+                        hint: "سميت على اسم عالم إنجليزي"
+                    },
+                    {
+                        question: "ما هي وحدة قياس القدرة؟",
+                        options: ["واط", "جول", "نيوتن", "فولت"],
+                        correct: 0,
+                        hint: "سميت على اسم مخترع المحرك البخاري"
+                    },
+                    {
+                        question: "ما هو الضغط الجوي عند مستوى سطح البحر؟",
+                        options: ["101325 باسكال", "100000 باسكال", "90000 باسكال", "110000 باسكال"],
+                        correct: 0,
+                        hint: "يساوي تقريباً 1 ضغط جوي"
+                    },
+                    {
+                        question: "ما هي سرعة الصوت في الهواء تقريباً؟",
+                        options: ["343 م/ث", "300 م/ث", "400 م/ث", "500 م/ث"],
+                        correct: 0,
+                        hint: "حوالي 1235 كم/ساعة"
+                    },
+                    {
+                        question: "ما هو الطيف الكهرومغناطيسي؟",
+                        options: [
+                            "مجموعة جميع الموجات الكهرومغناطيسية",
+                            "ألوان قوس قزح فقط",
+                            "الضوء المرئي فقط",
+                            "الأشعة السينية فقط"
+                        ],
+                        correct: 0,
+                        hint: "يشمل الراديو والضوء والأشعة السينية"
+                    },
+                    {
+                        question: "ما هي الموصلات الكهربائية؟",
+                        options: [
+                            "مواد تسمح بمرور التيار الكهربائي",
+                            "مواد تمنع مرور التيار",
+                            "مواد تخزن الكهرباء",
+                            "مواد تولد الكهرباء"
+                        ],
+                        correct: 0,
+                        hint: "مثل النحاس والفضة"
+                    },
+                    {
+                        question: "ما هي العوازل الكهربائية؟",
+                        options: [
+                            "مواد تمنع مرور التيار الكهربائي",
+                            "مواد تسمح بمرور التيار",
+                            "مواد تولد الكهرباء",
+                            "مواد تخزن الكهرباء"
+                        ],
+                        correct: 0,
+                        hint: "مثل البلاستيك والمطاط"
+                    },
+                    {
+                        question: "ما هو المغناطيس؟",
+                        options: [
+                            "جسم يجذب المواد المغناطيسية",
+                            "جسم يولد الكهرباء",
+                            "جسم يمنع الكهرباء",
+                            "جسم يخزن الطاقة"
+                        ],
+                        correct: 0,
+                        hint: "له قطبان شمالي وجنوبي"
+                    },
+                    {
+                        question: "ما هو التيار الكهربائي؟",
+                        options: [
+                            "تدفق الشحنات الكهربائية",
+                            "تراكم الشحنات",
+                            "قوة التجاذب الكهربائي",
+                            "طاقة كهربائية ساكنة"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بالأمبير"
+                    },
+                    {
+                        question: "ما هو الجهد الكهربائي؟",
+                        options: [
+                            "فرق الطاقة الكهربائية بين نقطتين",
+                            "كمية الشحنات الكهربائية",
+                            "سرعة التيار الكهربائي",
+                            "قوة المجال الكهربائي"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بالفولت"
+                    },
+                    {
+                        question: "ما هي المقاومة الكهربائية؟",
+                        options: [
+                            "ممانعة المادة لمرور التيار الكهربائي",
+                            "قوة التيار الكهربائي",
+                            "سرعة الإلكترونات",
+                            "كمية الشحنات"
+                        ],
+                        correct: 0,
+                        hint: "تقاس بالأوم"
+                    },
+                    {
+                        question: "ما هو الانكسار الضوئي؟",
+                        options: [
+                            "انحراف الضوء عند انتقاله بين وسطين مختلفين",
+                            "ارتداد الضوء عن السطح",
+                            "امتصاص الضوء",
+                            "تشتت الضوء"
+                        ],
+                        correct: 0,
+                        hint: "يجعل القلم يبدو مكسوراً في الماء"
+                    },
+                    {
+                        question: "ما هو الانعكاس الضوئي؟",
+                        options: [
+                            "ارتداد الضوء عن السطح",
+                            "انحراف الضوء",
+                            "امتصاص الضوء",
+                            "نفاذ الضوء"
+                        ],
+                        correct: 0,
+                        hint: "يحدث في المرايا"
+                    },
+                    {
+                        question: "ما هي العدسة المحدبة؟",
+                        options: [
+                            "عدسة سميكة في الوسط ورقيقة في الأطراف",
+                            "عدسة رقيقة في الوسط وسميكة في الأطراف",
+                            "عدسة مسطحة",
+                            "عدسة منحنية بالكامل"
+                        ],
+                        correct: 0,
+                        hint: "تجمع الضوء وتستخدم في النظارات"
+                    },
+                    {
+                        question: "ما هي العدسة المقعرة؟",
+                        options: [
+                            "عدسة رقيقة في الوسط وسميكة في الأطراف",
+                            "عدسة سميكة في الوسط ورقيقة في الأطراف",
+                            "عدسة مسطحة",
+                            "عدسة دائرية"
+                        ],
+                        correct: 0,
+                        hint: "تفرق الضوء"
+                    },
+                    {
+                        question: "ما هو الاحتكاك؟",
+                        options: [
+                            "قوة تقاوم حركة الأجسام",
+                            "قوة تسرع الأجسام",
+                            "قوة تجذب الأجسام",
+                            "قوة تدفع الأجسام"
+                        ],
+                        correct: 0,
+                        hint: "يولد الحرارة عند حك اليدين"
+                    },
+                    {
+                        question: "ما هي الجاذبية؟",
+                        options: [
+                            "قوة تجاذب بين الأجسام ذات الكتلة",
+                            "قوة تنافر بين الأجسام",
+                            "قوة كهربائية",
+                            "قوة مغناطيسية"
+                        ],
+                        correct: 0,
+                        hint: "تجعل الأشياء تسقط على الأرض"
+                    },
+                    {
+                        question: "ما هو الزخم؟",
+                        options: [
+                            "حاصل ضرب الكتلة في السرعة",
+                            "حاصل ضرب القوة في الزمن",
+                            "حاصل ضرب الطاقة في الزمن",
+                            "حاصل ضرب التسارع في الكتلة"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بـ كجم.م/ث"
+                    },
+                    {
+                        question: "ما هو الشغل في الفيزياء؟",
+                        options: [
+                            "حاصل ضرب القوة في الإزاحة",
+                            "حاصل ضرب الكتلة في السرعة",
+                            "حاصل ضرب القوة في الزمن",
+                            "حاصل ضرب الطاقة في الزمن"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بالجول"
+                    },
+                    {
+                        question: "ما هي الحرارة النوعية؟",
+                        options: [
+                            "كمية الحرارة اللازمة لرفع درجة حرارة 1 كجم من المادة درجة واحدة",
+                            "درجة حرارة المادة",
+                            "كمية الحرارة في المادة",
+                            "سرعة انتقال الحرارة"
+                        ],
+                        correct: 0,
+                        hint: "تختلف من مادة لأخرى"
+                    },
+                    {
+                        question: "ما هو التوصيل الحراري؟",
+                        options: [
+                            "انتقال الحرارة عبر المادة دون انتقال المادة نفسها",
+                            "انتقال الحرارة بحركة المادة",
+                            "انتقال الحرارة بالإشعاع",
+                            "انتقال الحرارة بالكهرباء"
+                        ],
+                        correct: 0,
+                        hint: "يحدث في المعادن بسرعة"
+                    },
+                    {
+                        question: "ما هو الحمل الحراري؟",
+                        options: [
+                            "انتقال الحرارة بحركة المادة نفسها",
+                            "انتقال الحرارة عبر المادة الصلبة",
+                            "انتقال الحرارة بالإشعاع",
+                            "انتقال الحرارة بالكهرباء"
+                        ],
+                        correct: 0,
+                        hint: "يحدث في السوائل والغازات"
+                    },
+                    {
+                        question: "ما هو الإشعاع الحراري؟",
+                        options: [
+                            "انتقال الحرارة بموجات كهرومغناطيسية",
+                            "انتقال الحرارة بالتوصيل",
+                            "انتقال الحرارة بالحمل",
+                            "انتقال الحرارة بالاحتكاك"
+                        ],
+                        correct: 0,
+                        hint: "لا يحتاج لوسط مادي"
+                    },
+                    {
+                        question: "ما هي الكثافة؟",
+                        options: [
+                            "الكتلة لكل وحدة حجم",
+                            "الحجم لكل وحدة كتلة",
+                            "القوة لكل وحدة مساحة",
+                            "الطاقة لكل وحدة زمن"
+                        ],
+                        correct: 0,
+                        hint: "تقاس بـ كجم/م³"
+                    },
+                    {
+                        question: "ما هو الضغط؟",
+                        options: [
+                            "القوة لكل وحدة مساحة",
+                            "الكتلة لكل وحدة حجم",
+                            "الطاقة لكل وحدة زمن",
+                            "السرعة لكل وحدة زمن"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بالباسكال"
+                    },
+                    {
+                        question: "ما هو مبدأ باسكال؟",
+                        options: [
+                            "الضغط المؤثر على سائل محصور ينتقل بالتساوي في جميع الاتجاهات",
+                            "الأجسام تطفو على السوائل",
+                            "السوائل تتدفق من الأعلى للأسفل",
+                            "الضغط يزداد مع العمق"
+                        ],
+                        correct: 0,
+                        hint: "يستخدم في الرافعات الهيدروليكية"
+                    },
+                    {
+                        question: "ما هو التردد؟",
+                        options: [
+                            "عدد الذبذبات في الثانية الواحدة",
+                            "المسافة بين قمتين متتاليتين",
+                            "سرعة انتشار الموجة",
+                            "ارتفاع الموجة"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بالهيرتز"
+                    },
+                    {
+                        question: "ما هو الطول الموجي؟",
+                        options: [
+                            "المسافة بين قمتين متتاليتين",
+                            "عدد الذبذبات في الثانية",
+                            "سرعة الموجة",
+                            "ارتفاع الموجة"
+                        ],
+                        correct: 0,
+                        hint: "يقاس بالمتر"
+                    },
+                    {
+                        question: "ما هي السعة في الموجات؟",
+                        options: [
+                            "أقصى إزاحة للموجة عن موضع الاتزان",
+                            "عدد الذبذبات في الثانية",
+                            "المسافة بين قمتين",
+                            "سرعة الموجة"
+                        ],
+                        correct: 0,
+                        hint: "تحدد شدة الموجة"
+                    },
+                    {
+                        question: "ما هو الرنين؟",
+                        options: [
+                            "اهتزاز جسم بتأثير موجات لها نفس تردده الطبيعي",
+                            "انعكاس الموجات",
+                            "انكسار الموجات",
+                            "تداخل الموجات"
+                        ],
+                        correct: 0,
+                        hint: "يحدث في الآلات الموسيقية"
+                    },
+                    {
+                        question: "ما هو تأثير دوبلر؟",
+                        options: [
+                            "تغير التردد بسبب حركة المصدر أو المراقب",
+                            "انعكاس الموجات",
+                            "انكسار الموجات",
+                            "تداخل الموجات"
+                        ],
+                        correct: 0,
+                        hint: "يفسر تغير صوت سيارة الإسعاف"
+                    }
+                ]
+            },
+            chemistry: {
+                name: "الكيمياء",
+                icon: "⚗️",
+                color: "purple",
+                questions: [
+                    {
+                        question: "من هو العالم الذي وضع الجدول الدوري للعناصر؟",
+                        options: ["ديمتري مندليف", "نيلز بور", "ماري كوري", "أنطوان لافوازييه"],
+                        correct: 0,
+                        hint: "عالم روسي من القرن التاسع عشر"
+                    },
+                    {
+                        question: "ما هو العنصر الأكثر وفرة في القشرة الأرضية؟",
+                        options: ["الأكسجين", "الحديد", "السيليكون", "الألومنيوم"],
+                        correct: 0,
+                        hint: "ضروري للتنفس ويشكل 46% من القشرة الأرضية"
+                    },
+                    {
+                        question: "ما هو الرقم الهيدروجيني (pH) للماء النقي؟",
+                        options: ["7", "0", "14", "10"],
+                        correct: 0,
+                        hint: "يمثل التعادل بين الحمضية والقلوية"
+                    },
+                    {
+                        question: "ما هي الصيغة الكيميائية للماء؟",
+                        options: ["H₂O", "CO₂", "O₂", "H₂O₂"],
+                        correct: 0,
+                        hint: "يتكون من ذرتي هيدروجين وذرة أكسجين واحدة"
+                    },
+                    {
+                        question: "ما هو التفاعل الطارد للحرارة؟",
+                        options: [
+                            "تفاعل يطلق حرارة إلى المحيط",
+                            "تفاعل يمتص حرارة من المحيط",
+                            "تفاعل لا يصاحبه تغير في الحرارة",
+                            "تفاعل يحدث في درجات حرارة عالية فقط"
+                        ],
+                        correct: 0,
+                        hint: "مثل تفاعلات الاحتراق"
+                    },
+                    {
+                        question: "ما هو العدد الذري للكربون؟",
+                        options: ["6", "12", "8", "14"],
+                        correct: 0,
+                        hint: "يساوي عدد البروتونات في النواة"
+                    },
+                    {
+                        question: "ما هي الرابطة التساهمية؟",
+                        options: [
+                            "مشاركة الإلكترونات بين ذرتين",
+                            "انتقال الإلكترونات من ذرة لأخرى",
+                            "تجاذب بين أيونات موجبة وسالبة",
+                            "قوة تجاذب ضعيفة بين الجزيئات"
+                        ],
+                        correct: 0,
+                        hint: "توجد في جزيء الماء"
+                    },
+                    {
+                        question: "ما هو الحمض النووي DNA؟",
+                        options: [
+                            "حمض ديوكسي ريبونيوكليك",
+                            "حمض ريبونيوكليك",
+                            "حمض أميني",
+                            "حمض دهني"
+                        ],
+                        correct: 0,
+                        hint: "يحمل المعلومات الوراثية"
+                    },
+                    {
+                        question: "ما هي المادة المحفزة (العامل المساعد)؟",
+                        options: [
+                            "مادة تزيد سرعة التفاعل دون أن تستهلك",
+                            "مادة تبطئ التفاعل",
+                            "مادة تستهلك في التفاعل",
+                            "مادة تمنع التفاعل"
+                        ],
+                        correct: 0,
+                        hint: "تستخدم في الصناعة لتسريع التفاعلات"
+                    },
+                    {
+                        question: "ما هو الغاز النبيل؟",
+                        options: [
+                            "عنصر لا يتفاعل بسهولة مع العناصر الأخرى",
+                            "عنصر شديد التفاعل",
+                            "عنصر سائل في درجة حرارة الغرفة",
+                            "عنصر صلب في درجة حرارة الغرفة"
+                        ],
+                        correct: 0,
+                        hint: "مثل الهيليوم والنيون"
+                    },
+                    {
+                        question: "ما هي الصيغة الكيميائية لملح الطعام؟",
+                        options: ["NaCl", "KCl", "CaCl₂", "MgCl₂"],
+                        correct: 0,
+                        hint: "كلوريد الصوديوم"
+                    },
+                    {
+                        question: "ما هو التأكسد؟",
+                        options: [
+                            "فقدان الإلكترونات",
+                            "اكتساب الإلكترونات",
+                            "مشاركة الإلكترونات",
+                            "عدم تغير الإلكترونات"
+                        ],
+                        correct: 0,
+                        hint: "يحدث عند صدأ الحديد"
+                    },
+                    {
+                        question: "ما هي الكتلة المولية للماء؟",
+                        options: ["18 جم/مول", "16 جم/مول", "20 جم/مول", "22 جم/مول"],
+                        correct: 0,
+                        hint: "مجموع كتل الهيدروجين والأكسجين"
+                    },
+                    {
+                        question: "ما هو الأيزومر؟",
+                        options: [
+                            "مركبات لها نفس الصيغة الجزيئية لكن ترتيب مختلف",
+                            "مركبات لها نفس الخصائص",
+                            "مركبات لها نفس الكتلة",
+                            "مركبات لها نفس اللون"
+                        ],
+                        correct: 0,
+                        hint: "لها نفس عدد الذرات لكن ترتيب مختلف"
+                    },
+                    {
+                        question: "ما هي الكيمياء العضوية؟",
+                        options: [
+                            "دراسة مركبات الكربون",
+                            "دراسة المعادن",
+                            "دراسة الأحماض والقواعد",
+                            "دراسة الغازات"
+                        ],
+                        correct: 0,
+                        hint: "تشمل البترول والبلاستيك"
+                    }
+                ]
+            },
+            biology: {
+                name: "الأحياء",
+                icon: "🧬",
+                color: "green",
+                questions: [
+                    {
+                        question: "ما هي الوحدة الأساسية للحياة؟",
+                        options: ["الخلية", "الذرة", "الجزيء", "النسيج"],
+                        correct: 0,
+                        hint: "أصغر وحدة حية في الكائنات الحية"
+                    },
+                    {
+                        question: "ما هي عملية البناء الضوئي؟",
+                        options: [
+                            "تحويل الطاقة الضوئية إلى طاقة كيميائية",
+                            "تنفس الخلايا",
+                            "انقسام الخلايا",
+                            "امتصاص الماء من التربة"
+                        ],
+                        correct: 0,
+                        hint: "تحدث في البلاستيدات الخضراء"
+                    },
+                    {
+                        question: "ما هو الحمض النووي DNA؟",
+                        options: [
+                            "جزيء يحمل المعلومات الوراثية",
+                            "بروتين ينقل الأكسجين",
+                            "إنزيم يهضم الطعام",
+                            "هرمون ينظم السكر"
+                        ],
+                        correct: 0,
+                        hint: "له شكل حلزوني مزدوج"
+                    },
+                    {
+                        question: "كم عدد الكروموسومات في الخلية البشرية؟",
+                        options: ["46", "23", "48", "44"],
+                        correct: 0,
+                        hint: "23 زوجاً من الكروموسومات"
+                    },
+                    {
+                        question: "ما هو الفرق بين الخلية النباتية والحيوانية؟",
+                        options: [
+                            "النباتية تحتوي على جدار خلوي وبلاستيدات خضراء",
+                            "النباتية لا تحتوي على نواة",
+                            "النباتية أصغر حجماً",
+                            "النباتية لا تحتوي على ميتوكوندريا"
+                        ],
+                        correct: 0,
+                        hint: "يتعلق بتراكيب خاصة تمكن النباتات من صنع غذائها"
+                    },
+                    {
+                        question: "ما هي الميتوكوندريا؟",
+                        options: [
+                            "عضية تنتج الطاقة في الخلية",
+                            "عضية تخزن الماء",
+                            "عضية تصنع البروتينات",
+                            "عضية تحمل المعلومات الوراثية"
+                        ],
+                        correct: 0,
+                        hint: "تسمى بيت الطاقة في الخلية"
+                    },
+                    {
+                        question: "ما هو التنفس الخلوي؟",
+                        options: [
+                            "عملية تحويل الجلوكوز إلى طاقة",
+                            "عملية صنع الغذاء",
+                            "عملية انقسام الخلايا",
+                            "عملية نقل الأكسجين"
+                        ],
+                        correct: 0,
+                        hint: "يحدث في الميتوكوندريا"
+                    },
+                    {
+                        question: "ما هي الجينات؟",
+                        options: [
+                            "وحدات وراثية تحمل الصفات",
+                            "خلايا الدم الحمراء",
+                            "أنواع من البروتينات",
+                            "أنواع من الفيتامينات"
+                        ],
+                        correct: 0,
+                        hint: "موجودة على الكروموسومات"
+                    },
+                    {
+                        question: "ما هو الانقسام الميتوزي؟",
+                        options: [
+                            "انقسام ينتج خليتين متطابقتين",
+                            "انقسام ينتج أربع خلايا",
+                            "انقسام ينتج خلايا جنسية",
+                            "انقسام ينتج خلايا مختلفة"
+                        ],
+                        correct: 0,
+                        hint: "للنمو وتعويض الخلايا التالفة"
+                    },
+                    {
+                        question: "ما هي البلاستيدات الخضراء؟",
+                        options: [
+                            "عضيات تحتوي على الكلوروفيل",
+                            "عضيات تخزن الدهون",
+                            "عضيات تنتج البروتينات",
+                            "عضيات تحمل الجينات"
+                        ],
+                        correct: 0,
+                        hint: "مسؤولة عن اللون الأخضر في النباتات"
+                    },
+                    {
+                        question: "ما هو الجهاز الدوري؟",
+                        options: [
+                            "جهاز ينقل الدم والمواد الغذائية",
+                            "جهاز يهضم الطعام",
+                            "جهاز يتنفس الأكسجين",
+                            "جهاز يفرز الفضلات"
+                        ],
+                        correct: 0,
+                        hint: "يشمل القلب والأوعية الدموية"
+                    },
+                    {
+                        question: "ما هي الإنزيمات؟",
+                        options: [
+                            "بروتينات تسرع التفاعلات الكيميائية",
+                            "هرمونات تنظم النمو",
+                            "فيتامينات ضرورية للجسم",
+                            "معادن تقوي العظام"
+                        ],
+                        correct: 0,
+                        hint: "محفزات حيوية في الجسم"
+                    },
+                    {
+                        question: "ما هو الجهاز المناعي؟",
+                        options: [
+                            "جهاز يحمي الجسم من الأمراض",
+                            "جهاز يهضم الطعام",
+                            "جهاز ينقل الدم",
+                            "جهاز يتنفس الهواء"
+                        ],
+                        correct: 0,
+                        hint: "يحتوي على خلايا الدم البيضاء"
+                    },
+                    {
+                        question: "ما هي السلسلة الغذائية؟",
+                        options: [
+                            "تسلسل انتقال الطاقة من كائن لآخر",
+                            "قائمة بأنواع الطعام",
+                            "طريقة طهي الطعام",
+                            "نظام غذائي صحي"
+                        ],
+                        correct: 0,
+                        hint: "تبدأ بالمنتجات وتنتهي بالمحللات"
+                    },
+                    {
+                        question: "ما هو التطور؟",
+                        options: [
+                            "تغير الكائنات الحية عبر الأجيال",
+                            "نمو الكائن الحي",
+                            "تكاثر الكائنات",
+                            "انقراض الأنواع"
+                        ],
+                        correct: 0,
+                        hint: "نظرية داروين"
+                    }
+                ]
+            },
+            astronomy: {
+                name: "علم الفلك",
+                icon: "🪐",
+                color: "orange",
+                questions: [
+                    {
+                        question: "ما هو أقرب كوكب إلى الشمس؟",
+                        options: ["عطارد", "الزهرة", "الأرض", "المريخ"],
+                        correct: 0,
+                        hint: "أصغر كوكب في المجموعة الشمسية"
+                    },
+                    {
+                        question: "كم عدد كواكب المجموعة الشمسية؟",
+                        options: ["8", "9", "7", "10"],
+                        correct: 0,
+                        hint: "بلوتو لم يعد يُعتبر كوكباً"
+                    },
+                    {
+                        question: "ما هو أكبر كوكب في المجموعة الشمسية؟",
+                        options: ["المشتري", "زحل", "نبتون", "أورانوس"],
+                        correct: 0,
+                        hint: "كوكب غازي عملاق له بقعة حمراء كبيرة"
+                    },
+                    {
+                        question: "ما هي المجرة التي تنتمي إليها الأرض؟",
+                        options: ["درب التبانة", "أندروميدا", "المرأة المسلسلة", "السديم"],
+                        correct: 0,
+                        hint: "تظهر كشريط أبيض في السماء الليلية"
+                    },
+                    {
+                        question: "ما هو القمر الصناعي الطبيعي للأرض؟",
+                        options: ["القمر", "فوبوس", "ديموس", "تيتان"],
+                        correct: 0,
+                        hint: "يمكن رؤيته بوضوح من الأرض ليلاً"
+                    },
+                    {
+                        question: "ما هو الكوكب الأحمر؟",
+                        options: ["المريخ", "الزهرة", "المشتري", "زحل"],
+                        correct: 0,
+                        hint: "لونه أحمر بسبب أكسيد الحديد"
+                    },
+                    {
+                        question: "ما هي الشمس؟",
+                        options: ["نجم", "كوكب", "قمر", "مذنب"],
+                        correct: 0,
+                        hint: "مصدر الضوء والحرارة للأرض"
+                    },
+                    {
+                        question: "كم يستغرق دوران الأرض حول الشمس؟",
+                        options: ["365 يوم", "24 ساعة", "30 يوم", "12 شهر"],
+                        correct: 0,
+                        hint: "مدة السنة"
+                    },
+                    {
+                        question: "ما هو الكوكب الذي له حلقات مميزة؟",
+                        options: ["زحل", "المشتري", "أورانوس", "نبتون"],
+                        correct: 0,
+                        hint: "حلقاته مكونة من جليد وصخور"
+                    },
+                    {
+                        question: "ما هو الثقب الأسود؟",
+                        options: [
+                            "منطقة في الفضاء بجاذبية شديدة جداً",
+                            "كوكب مظلم",
+                            "نجم صغير",
+                            "مجرة بعيدة"
+                        ],
+                        correct: 0,
+                        hint: "لا يمكن للضوء الهروب منه"
+                    },
+                    {
+                        question: "ما هي المذنبات؟",
+                        options: [
+                            "أجسام جليدية تدور حول الشمس",
+                            "نجوم صغيرة",
+                            "كواكب قزمة",
+                            "أقمار صناعية"
+                        ],
+                        correct: 0,
+                        hint: "لها ذيل مضيء عند اقترابها من الشمس"
+                    },
+                    {
+                        question: "ما هو الكسوف الشمسي؟",
+                        options: [
+                            "حجب القمر لضوء الشمس عن الأرض",
+                            "حجب الأرض لضوء الشمس عن القمر",
+                            "اختفاء الشمس",
+                            "انفجار الشمس"
+                        ],
+                        correct: 0,
+                        hint: "يحدث عندما يكون القمر بين الأرض والشمس"
+                    },
+                    {
+                        question: "ما هو الخسوف القمري؟",
+                        options: [
+                            "حجب الأرض لضوء الشمس عن القمر",
+                            "حجب القمر لضوء الشمس عن الأرض",
+                            "اختفاء القمر",
+                            "انفجار القمر"
+                        ],
+                        correct: 0,
+                        hint: "يحدث عندما تكون الأرض بين الشمس والقمر"
+                    },
+                    {
+                        question: "ما هي السنة الضوئية؟",
+                        options: [
+                            "المسافة التي يقطعها الضوء في سنة",
+                            "عمر الضوء",
+                            "سرعة الضوء",
+                            "وزن الضوء"
+                        ],
+                        correct: 0,
+                        hint: "وحدة قياس المسافات الفلكية"
+                    },
+                    {
+                        question: "ما هو أقرب نجم إلى الأرض؟",
+                        options: ["الشمس", "الشعرى اليمانية", "النسر الواقع", "القطب الشمالي"],
+                        correct: 0,
+                        hint: "نراه كل يوم"
+                    }
+                ]
+            }
+        };
+        
+        // حالة اللعبة
+        let gameState = {
+            currentSubject: null,
+            currentQuestion: 0,
+            score: 0,
+            streak: 0,
+            bestStreak: 0,
+            hintsLeft: 3,
+            skipsLeft: 2,
+            timer: 30,
+            timerInterval: null,
+            correctAnswers: 0,
+            totalAnswered: 0,
+            xp: 0,
+            level: 1,
+            achievements: [],
+            subjectProgress: {
+                physics: 0,
+                chemistry: 0,
+                biology: 0,
+                astronomy: 0
+            }
+        };
+        
+        // الإنجازات
+        const achievements = [
+            { id: 'first_correct', name: 'البداية الصحيحة', desc: 'أجب على أول سؤال بشكل صحيح', icon: '🎯', unlocked: false },
+            { id: 'streak_5', name: 'سلسلة ذهبية', desc: 'أجب على 5 أسئلة صحيحة متتالية', icon: '🔥', unlocked: false },
+            { id: 'perfect_level', name: 'الكمال', desc: 'أكمل مستوى بدون أخطاء', icon: '💯', unlocked: false },
+            { id: 'speed_demon', name: 'سريع البديهة', desc: 'أجب على سؤال في أقل من 5 ثواني', icon: '⚡', unlocked: false },
+            { id: 'scholar', name: 'عالم متعدد المواهب', desc: 'أكمل مستوى في كل مادة', icon: '🎓', unlocked: false },
+            { id: 'persistent', name: 'المثابر', desc: 'أجب على 50 سؤال', icon: '💪', unlocked: false },
+            { id: 'master', name: 'الخبير', desc: 'احصل على 1000 نقطة', icon: '🏆', unlocked: false },
+            { id: 'no_hints', name: 'الواثق', desc: 'أكمل مستوى بدون استخدام تلميحات', icon: '🧠', unlocked: false },
+            { id: 'first_experiment', name: 'عالم تجريبي', desc: 'أكمل أول تجربة علمية', icon: '🔬', unlocked: false },
+            { id: 'experiment_master', name: 'خبير التجارب', desc: 'أكمل 5 تجارب علمية', icon: '🧪', unlocked: false },
+            { id: 'all_experiments', name: 'عالم شامل', desc: 'أكمل جميع التجارب العلمية', icon: '🏅', unlocked: false },
+            { id: 'safety_first', name: 'السلامة أولاً', desc: 'اقرأ تحذيرات السلامة في 10 تجارب', icon: '⚠️', unlocked: false }
+        ];
+        
+        // عناصر DOM
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const profileScreen = document.getElementById('profile-screen');
+        const leaderboardScreen = document.getElementById('leaderboard-screen');
+        const experimentsScreen = document.getElementById('experiments-screen');
+        const experimentDetailScreen = document.getElementById('experiment-detail-screen');
+        
+        // الأزرار
+        const subjectCards = document.querySelectorAll('[data-subject]');
+        const profileBtn = document.getElementById('profile-btn');
+        const leaderboardBtn = document.getElementById('leaderboard-btn');
+        const backBtn = document.getElementById('back-btn');
+        const backFromProfile = document.getElementById('back-from-profile');
+        const backFromLeaderboard = document.getElementById('back-from-leaderboard');
+        const hintBtn = document.getElementById('hint-btn');
+        const skipBtn = document.getElementById('skip-btn');
+        
+        // بدء اللعبة
+        subjectCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const subject = this.dataset.subject;
+                startGame(subject);
+            });
+        });
+        
+        // فتح شاشة التجارب
+        document.getElementById('experiments-card').addEventListener('click', () => {
+            showScreen('experiments');
+            loadExperiments();
+        });
+        
+        // التنقل
+        profileBtn.addEventListener('click', () => showScreen('profile'));
+        leaderboardBtn.addEventListener('click', () => showScreen('leaderboard'));
+        backBtn.addEventListener('click', () => showScreen('start'));
+        backFromProfile.addEventListener('click', () => showScreen('start'));
+        backFromLeaderboard.addEventListener('click', () => showScreen('start'));
+        document.getElementById('back-from-experiments').addEventListener('click', () => showScreen('start'));
+        document.getElementById('back-from-experiment-detail').addEventListener('click', () => {
+            showScreen('experiments');
+            loadExperiments();
+        });
+        
+        // التلميحات والتخطي
+        hintBtn.addEventListener('click', showHint);
+        skipBtn.addEventListener('click', skipQuestion);
+        
+        // إغلاق النوافذ المنبثقة
+        document.querySelectorAll('.close-modal').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('.modal').classList.remove('active');
+            });
+        });
+        
+        // أزرار إكمال المستوى
+        document.getElementById('back-to-menu').addEventListener('click', () => {
+            showScreen('start');
+            document.getElementById('level-complete-modal').classList.remove('active');
+        });
+        
+        document.getElementById('next-level').addEventListener('click', () => {
+            document.getElementById('level-complete-modal').classList.remove('active');
+            startGame(gameState.currentSubject);
+        });
+        
+        // وظائف اللعبة
+        function showScreen(screen) {
+            startScreen.classList.add('hidden');
+            gameScreen.classList.add('hidden');
+            profileScreen.classList.add('hidden');
+            leaderboardScreen.classList.add('hidden');
+            experimentsScreen.classList.add('hidden');
+            experimentDetailScreen.classList.add('hidden');
+            
+            switch(screen) {
+                case 'start':
+                    startScreen.classList.remove('hidden');
+                    updateProgressBars();
+                    updateExperimentsProgress();
+                    break;
+                case 'game':
+                    gameScreen.classList.remove('hidden');
+                    break;
+                case 'profile':
+                    profileScreen.classList.remove('hidden');
+                    updateProfile();
+                    break;
+                case 'leaderboard':
+                    leaderboardScreen.classList.remove('hidden');
+                    break;
+                case 'experiments':
+                    experimentsScreen.classList.remove('hidden');
+                    break;
+                case 'experiment-detail':
+                    experimentDetailScreen.classList.remove('hidden');
+                    break;
+            }
+        }
+        
+        function startGame(subject) {
+            gameState.currentSubject = subject;
+            gameState.currentQuestion = 0;
+            gameState.score = 0;
+            gameState.streak = 0;
+            gameState.correctAnswers = 0;
+            gameState.hintsLeft = 3;
+            gameState.skipsLeft = 2;
+            
+            // خلط الأسئلة عشوائياً
+            shuffleArray(gameData[subject].questions);
+            
+            showScreen('game');
+            loadQuestion();
+            startTimer();
+        }
+        
+        // دالة لخلط عناصر المصفوفة عشوائياً
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        function loadQuestion() {
+            const questions = gameData[gameState.currentSubject].questions;
+            const question = questions[gameState.currentQuestion];
+            
+            document.getElementById('level-title').textContent = `المستوى ${gameState.currentQuestion + 1}`;
+            document.getElementById('level-subtitle').textContent = gameData[gameState.currentSubject].name;
+            document.getElementById('question-number').textContent = gameState.currentQuestion + 1;
+            document.getElementById('total-questions').textContent = questions.length;
+            document.getElementById('question-text').textContent = question.question;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('hints-left').textContent = `(${gameState.hintsLeft})`;
+            document.getElementById('skips-left').textContent = `(${gameState.skipsLeft})`;
+            
+            // تحديث شريط التقدم
+            const progress = ((gameState.currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+            
+            // تحديث السلسلة
+            if (gameState.streak >= 3) {
+                document.getElementById('streak-badge').classList.remove('hidden');
+                document.getElementById('streak').textContent = gameState.streak;
+            } else {
+                document.getElementById('streak-badge').classList.add('hidden');
+            }
+            
+            // خلط الخيارات عشوائياً
+            const shuffledOptions = question.options.map((option, index) => ({
+                text: option,
+                originalIndex: index
+            }));
+            shuffleArray(shuffledOptions);
+            
+            // حفظ الترتيب الجديد للإجابة الصحيحة
+            const correctAnswerIndex = shuffledOptions.findIndex(opt => opt.originalIndex === question.correct);
+            gameState.currentCorrectIndex = correctAnswerIndex;
+            
+            // عرض الخيارات
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            shuffledOptions.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'option-btn bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-4 rounded-xl font-bold text-lg transition shadow-lg text-right';
+                button.textContent = option.text;
+                button.addEventListener('click', () => checkAnswer(index));
+                optionsContainer.appendChild(button);
+            });
+            
+            // إعادة تعيين المؤقت
+            gameState.timer = 30;
+            document.getElementById('timer').textContent = gameState.timer;
+            document.getElementById('timer').classList.remove('timer-warning');
+        }
+        
+        function startTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            gameState.timerInterval = setInterval(() => {
+                gameState.timer--;
+                document.getElementById('timer').textContent = gameState.timer;
+                
+                if (gameState.timer <= 10) {
+                    document.getElementById('timer').classList.add('timer-warning');
+                }
+                
+                if (gameState.timer <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    checkAnswer(-1); // وقت انتهى
+                }
+            }, 1000);
+        }
+        
+        function checkAnswer(selectedIndex) {
+            clearInterval(gameState.timerInterval);
+            
+            const questions = gameData[gameState.currentSubject].questions;
+            const question = questions[gameState.currentQuestion];
+            const buttons = document.querySelectorAll('.option-btn');
+            
+            buttons.forEach(btn => btn.disabled = true);
+            
+            if (selectedIndex === gameState.currentCorrectIndex) {
+                // إجابة صحيحة
+                buttons[selectedIndex].classList.add('correct-answer');
+                
+                const points = Math.max(10, gameState.timer * 2);
+                gameState.score += points;
+                gameState.correctAnswers++;
+                gameState.streak++;
+                gameState.xp += points;
+                
+                if (gameState.streak > gameState.bestStreak) {
+                    gameState.bestStreak = gameState.streak;
+                }
+                
+                // تأثيرات بصرية
+                createConfetti();
+                showScorePopup('+' + points);
+                
+                // التحقق من الإنجازات
+                checkAchievements();
+                
+            } else {
+                // إجابة خاطئة
+                if (selectedIndex >= 0) {
+                    buttons[selectedIndex].classList.add('wrong-answer');
+                }
+                buttons[gameState.currentCorrectIndex].classList.add('correct-answer');
+                gameState.streak = 0;
+            }
+            
+            gameState.totalAnswered++;
+            
+            setTimeout(() => {
+                gameState.currentQuestion++;
+                
+                if (gameState.currentQuestion >= questions.length) {
+                    endLevel();
+                } else {
+                    loadQuestion();
+                    startTimer();
+                }
+            }, 2000);
+        }
+        
+        function showHint() {
+            if (gameState.hintsLeft <= 0) {
+                showMessage('❌ لا توجد تلميحات متبقية!');
+                return;
+            }
+            
+            const questions = gameData[gameState.currentSubject].questions;
+            const question = questions[gameState.currentQuestion];
+            
+            document.getElementById('hint-text').textContent = question.hint;
+            document.getElementById('hints-remaining').textContent = gameState.hintsLeft - 1;
+            document.getElementById('hint-modal').classList.add('active');
+            
+            gameState.hintsLeft--;
+            gameState.score = Math.max(0, gameState.score - 10);
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('hints-left').textContent = `(${gameState.hintsLeft})`;
+        }
+        
+        function skipQuestion() {
+            if (gameState.skipsLeft <= 0) {
+                showMessage('❌ لا توجد تخطيات متبقية!');
+                return;
+            }
+            
+            gameState.skipsLeft--;
+            gameState.streak = 0;
+            document.getElementById('skips-left').textContent = `(${gameState.skipsLeft})`;
+            
+            clearInterval(gameState.timerInterval);
+            
+            gameState.currentQuestion++;
+            
+            if (gameState.currentQuestion >= gameData[gameState.currentSubject].questions.length) {
+                endLevel();
+            } else {
+                loadQuestion();
+                startTimer();
+            }
+        }
+        
+        function endLevel() {
+            clearInterval(gameState.timerInterval);
+            
+            // تحديث التقدم
+            gameState.subjectProgress[gameState.currentSubject] = gameState.currentQuestion;
+            
+            // عرض نافذة إكمال المستوى
+            document.getElementById('level-correct').textContent = gameState.correctAnswers;
+            document.getElementById('level-points').textContent = '+' + gameState.score;
+            document.getElementById('level-streak').textContent = gameState.bestStreak;
+            
+            document.getElementById('level-complete-modal').classList.add('active');
+            
+            // تأثيرات
+            createConfetti();
+        }
+        
+        function updateProgressBars() {
+            Object.keys(gameState.subjectProgress).forEach(subject => {
+                const progress = gameState.subjectProgress[subject];
+                const total = gameData[subject].questions.length;
+                const percentage = (progress / total) * 100;
+                
+                document.getElementById(`${subject}-bar`).style.width = percentage + '%';
+                document.getElementById(`${subject}-progress`).textContent = Math.round(percentage) + '%';
+            });
+        }
+        
+        function updateProfile() {
+            document.getElementById('user-level').textContent = gameState.level;
+            document.getElementById('total-score').textContent = gameState.score;
+            document.getElementById('current-xp').textContent = gameState.xp;
+            document.getElementById('next-level-xp').textContent = gameState.level * 1000;
+            document.getElementById('total-answered').textContent = gameState.totalAnswered;
+            document.getElementById('total-correct').textContent = gameState.correctAnswers;
+            document.getElementById('best-streak').textContent = gameState.bestStreak;
+            document.getElementById('achievements-count').textContent = achievements.filter(a => a.unlocked).length;
+            
+            const xpProgress = (gameState.xp / (gameState.level * 1000)) * 100;
+            document.getElementById('xp-bar').style.width = xpProgress + '%';
+            
+            // تحديث التقدم في المواد
+            Object.keys(gameState.subjectProgress).forEach(subject => {
+                const progress = gameState.subjectProgress[subject];
+                const total = gameData[subject].questions.length;
+                const percentage = (progress / total) * 100;
+                
+                document.getElementById(`${subject}-completed`).textContent = progress;
+                document.getElementById(`${subject}-profile-bar`).style.width = percentage + '%';
+            });
+            
+            // عرض الإنجازات
+            const achievementsContainer = document.getElementById('achievements-container');
+            achievementsContainer.innerHTML = '';
+            
+            achievements.forEach(achievement => {
+                const div = document.createElement('div');
+                div.className = `achievement-badge ${achievement.unlocked ? 'bg-gradient-to-br from-yellow-100 to-yellow-200' : 'bg-gray-200'} rounded-xl p-4 text-center`;
+                div.innerHTML = `
+                    <div class="text-4xl mb-2 ${achievement.unlocked ? '' : 'grayscale opacity-50'}">${achievement.icon}</div>
+                    <div class="font-bold text-sm text-gray-800">${achievement.name}</div>
+                    <div class="text-xs text-gray-600 mt-1">${achievement.desc}</div>
+                `;
+                achievementsContainer.appendChild(div);
+            });
+        }
+        
+        function checkAchievements() {
+            // البداية الصحيحة
+            if (gameState.correctAnswers === 1 && !achievements[0].unlocked) {
+                unlockAchievement(0);
+            }
+            
+            // سلسلة ذهبية
+            if (gameState.streak === 5 && !achievements[1].unlocked) {
+                unlockAchievement(1);
+            }
+            
+            // المثابر
+            if (gameState.totalAnswered >= 50 && !achievements[5].unlocked) {
+                unlockAchievement(5);
+            }
+            
+            // الخبير
+            if (gameState.score >= 1000 && !achievements[6].unlocked) {
+                unlockAchievement(6);
+            }
+        }
+        
+        function unlockAchievement(index) {
+            achievements[index].unlocked = true;
+            showMessage(`🏆 إنجاز جديد: ${achievements[index].name}!`);
+        }
+        
+        function createConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animation = `confettiFall ${2 + Math.random() * 2}s linear forwards`;
+                confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+        
+        function showScorePopup(text) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.innerHTML = `
+                <div class="text-5xl mb-2">⭐</div>
+                <div class="text-3xl font-bold text-green-600">${text}</div>
+            `;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 2000);
+        }
+        
+        function showMessage(text) {
+            const message = document.createElement('div');
+            message.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg z-50 font-bold';
+            message.textContent = text;
+            document.body.appendChild(message);
+            
+            setTimeout(() => message.remove(), 2000);
+        }
+        
+        // وظائف التجارب العلمية
+        function loadExperiments() {
+            const experimentsList = document.getElementById('experiments-list');
+            experimentsList.innerHTML = '';
+            
+            experimentsData.forEach(experiment => {
+                const card = document.createElement('div');
+                card.className = 'experiment-card bg-white rounded-2xl shadow-lg p-6';
+                
+                let difficultyClass = 'difficulty-easy';
+                let difficultyText = 'سهل';
+                if (experiment.difficulty === 'medium') {
+                    difficultyClass = 'difficulty-medium';
+                    difficultyText = 'متوسط';
+                } else if (experiment.difficulty === 'hard') {
+                    difficultyClass = 'difficulty-hard';
+                    difficultyText = 'صعب';
+                }
+                
+                card.innerHTML = `
+                    <div class="flex items-start gap-4 mb-4">
+                        <div class="text-5xl">${experiment.icon}</div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">${experiment.title}</h3>
+                            <div class="flex gap-2 mb-2">
+                                <span class="${difficultyClass} text-white px-3 py-1 rounded-full text-sm font-bold">${difficultyText}</span>
+                                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-bold">⏱️ ${experiment.time}</span>
+                            </div>
+                        </div>
+                        ${experiment.completed ? '<div class="text-3xl">✅</div>' : ''}
+                    </div>
+                    <p class="text-gray-600 mb-4">${experiment.description}</p>
+                    <button class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-3 rounded-xl font-bold transition shadow-lg">
+                        ${experiment.completed ? 'مراجعة التجربة' : 'ابدأ التجربة'} 🔬
+                    </button>
+                `;
+                
+                card.querySelector('button').addEventListener('click', () => {
+                    showExperimentDetail(experiment.id);
+                });
+                
+                experimentsList.appendChild(card);
+            });
+        }
+        
+        function showExperimentDetail(experimentId) {
+            const experiment = experimentsData.find(e => e.id === experimentId);
+            if (!experiment) return;
+            
+            document.getElementById('experiment-icon').textContent = experiment.icon;
+            document.getElementById('experiment-title').textContent = experiment.title;
+            document.getElementById('experiment-time').textContent = `⏱️ ${experiment.time}`;
+            document.getElementById('experiment-description').textContent = experiment.description;
+            
+            let difficultyClass = 'difficulty-easy';
+            let difficultyText = 'سهل';
+            if (experiment.difficulty === 'medium') {
+                difficultyClass = 'difficulty-medium';
+                difficultyText = 'متوسط';
+            } else if (experiment.difficulty === 'hard') {
+                difficultyClass = 'difficulty-hard';
+                difficultyText = 'صعب';
+            }
+            
+            const difficultyBadge = document.getElementById('experiment-difficulty');
+            difficultyBadge.className = `${difficultyClass} text-white px-3 py-1 rounded-full text-sm font-bold`;
+            difficultyBadge.textContent = difficultyText;
+            
+            // المواد
+            const materialsList = document.getElementById('experiment-materials');
+            materialsList.innerHTML = '';
+            experiment.materials.forEach(material => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center gap-2 text-gray-700';
+                li.innerHTML = `<span class="text-green-500">✓</span> ${material}`;
+                materialsList.appendChild(li);
+            });
+            
+            // الخطوات
+            const stepsList = document.getElementById('experiment-steps');
+            stepsList.innerHTML = '';
+            experiment.steps.forEach((step, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex gap-4 items-start';
+                div.innerHTML = `
+                    <div class="step-number">${index + 1}</div>
+                    <p class="text-gray-700 flex-1 pt-2">${step}</p>
+                `;
+                stepsList.appendChild(div);
+            });
+            
+            // السلامة
+            const safetyList = document.getElementById('experiment-safety');
+            safetyList.innerHTML = '';
+            experiment.safety.forEach(safety => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start gap-2 text-red-700';
+                li.innerHTML = `<span class="text-red-500 font-bold">•</span> ${safety}`;
+                safetyList.appendChild(li);
+            });
+            
+            // التفسير
+            document.getElementById('experiment-explanation').textContent = experiment.explanation;
+            
+            // زر الإكمال
+            const completeBtn = document.getElementById('mark-complete-btn');
+            if (experiment.completed) {
+                completeBtn.textContent = '✅ تم إكمال هذه التجربة';
+                completeBtn.disabled = true;
+                completeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                completeBtn.textContent = '✅ أكملت هذه التجربة';
+                completeBtn.disabled = false;
+                completeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                completeBtn.onclick = () => markExperimentComplete(experimentId);
+            }
+            
+            // زر المشاركة
+            document.getElementById('share-experiment-btn').onclick = () => {
+                showMessage('🎉 تم نسخ رابط التجربة!');
+            };
+            
+            showScreen('experiment-detail');
+        }
+        
+        function markExperimentComplete(experimentId) {
+            const experiment = experimentsData.find(e => e.id === experimentId);
+            if (!experiment || experiment.completed) return;
+            
+            experiment.completed = true;
+            
+            // تحديث الإنجازات
+            const completedCount = experimentsData.filter(e => e.completed).length;
+            
+            if (completedCount === 1 && !achievements[8].unlocked) {
+                unlockAchievement(8); // عالم تجريبي
+            }
+            
+            if (completedCount === 5 && !achievements[9].unlocked) {
+                unlockAchievement(9); // خبير التجارب
+            }
+            
+            if (completedCount === 10 && !achievements[10].unlocked) {
+                unlockAchievement(10); // عالم شامل
+            }
+            
+            createConfetti();
+            showMessage('🎉 رائع! أكملت التجربة بنجاح!');
+            
+            // تحديث الزر
+            const completeBtn = document.getElementById('mark-complete-btn');
+            completeBtn.textContent = '✅ تم إكمال هذه التجربة';
+            completeBtn.disabled = true;
+            completeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            saveGameData();
+        }
+        
+        function updateExperimentsProgress() {
+            const completed = experimentsData.filter(e => e.completed).length;
+            const total = experimentsData.length;
+            const percentage = (completed / total) * 100;
+            
+            document.getElementById('experiments-progress').textContent = `${completed}/${total}`;
+            document.getElementById('experiments-bar').style.width = percentage + '%';
+        }
+        
+        // تحميل البيانات المحفوظة
+        function loadGameData() {
+            const saved = localStorage.getItem('scienceGameData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                Object.assign(gameState, data);
+            }
+            
+            const savedExperiments = localStorage.getItem('experimentsData');
+            if (savedExperiments) {
+                const expData = JSON.parse(savedExperiments);
+                expData.forEach((exp, index) => {
+                    if (experimentsData[index]) {
+                        experimentsData[index].completed = exp.completed;
+                    }
+                });
+            }
+        }
+        
+        // حفظ البيانات
+        function saveGameData() {
+            localStorage.setItem('scienceGameData', JSON.stringify(gameState));
+            localStorage.setItem('experimentsData', JSON.stringify(experimentsData.map(e => ({ id: e.id, completed: e.completed }))));
+        }
+        
+        // حفظ البيانات تلقائياً كل 30 ثانية
+        setInterval(saveGameData, 30000);
+        
+        // حفظ عند إغلاق الصفحة
+        window.addEventListener('beforeunload', saveGameData);
+        
+        // تحميل البيانات عند بدء التشغيل
+        loadGameData();
+        updateProgressBars();
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99d64b76c59d9778',t:'MTc2Mjk1MzI5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
