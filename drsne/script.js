@@ -622,7 +622,32 @@ async function showLessonsCircles(grade) {
     }
 }
 
+// دالة لتشغيل المايكروفون
+function startMicrophone() {
+    if (typeof Android !== 'undefined') {
+        // إذا كان الموقع مفتوحاً داخل التطبيق، استدعِ ميكروفون الأندرويد
+        Android.startListening();
+    } else {
+        // إذا كان مفتوحاً في متصفح عادي (كروم)، استخدم الكود القديم
+        // (ضع كود webkitSpeechRecognition القديم هنا)
+        console.log("Using standard browser speech api");
+    }
+}
 
+// دالة يستقبل بها الموقع النص من التطبيق
+function sendTextToWeb(text) {
+    // هنا يصل النص الذي قاله المستخدم
+    // قم بوضعه في مربع النص أو التعامل معه
+    
+    // مثال: وضع النص في حقل الإدخال (غيّر id حسب الموجود في موقعك)
+    var inputField = document.getElementById("search_input"); // ضع الـ ID الصحيح هنا
+    if(inputField) {
+        inputField.value = text;
+        // يمكنك تشغيل دالة البحث تلقائياً هنا إذا أردت
+    }
+    
+    alert("تم التعرف على: " + text); // للتجربة فقط
+}
 // =============================================================
 // تهيئة التطبيق عند تحميل الصفحة
 // =============================================================

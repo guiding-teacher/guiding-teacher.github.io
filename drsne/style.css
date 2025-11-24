@@ -126,7 +126,7 @@ body {
 /* تعديل قائمة الدروس لتمرير المحتوى وإخفاء المؤشر */
 .lessons-list {
     /* تحديد ارتفاع يكفي لظهور حوالي 15 درس (الدرس الواحد حوالي 45px) */
-    max-height: 60vh; /* نستخدم vh ليتناسب مع طول الشاشة */
+    max-height: 70vh; /* نستخدم vh ليتناسب مع طول الشاشة */
     overflow-y: auto; /* السماح بالتمرير العمودي */
     padding-right: 10px; /* مسافة بسيطة */
     margin-top: 10px;
@@ -746,8 +746,19 @@ body {
 @media (max-width: 600px) {
     .nav-header {
         flex-direction: column;
-        gap: 15px;
+        gap: 23px;
     }
+    .lessons-list {
+    /* تحديد ارتفاع يكفي لظهور حوالي 15 درس (الدرس الواحد حوالي 45px) */
+    max-height: 70vh; /* نستخدم vh ليتناسب مع طول الشاشة */
+    overflow-y: auto; /* السماح بالتمرير العمودي */
+    padding-right: 10px; /* مسافة بسيطة */
+    margin-top: 10px;
+    
+    /* إخفاء شريط التمرير للمتصفحات المختلفة */
+    scrollbar-width: none; /* لمتصفح Firefox */
+    -ms-overflow-style: none; /* لمتصفح IE و Edge */
+}
     .nav-buttons-group {
         width: 100%;
         justify-content: space-between;
