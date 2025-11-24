@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>لعبة الرسام الصغير</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --background-color: #ecf0f1;
+            --board-color: #ffffff;
+            --font-family: 'Cairo', sans-serif;
+            --line-color: #3498db;
+            --line-width: 9px;
+            --dotted-line-color: #7f8c8d;
+            --start-node-color: #2ecc71;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--board-color);
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: clamp(10px, 3vw, 20px);
+            text-align: center;
+            position: relative;
+        }
+
+        .game-header { margin-bottom: 15px; }
+        .prompt-bar {
+            font-size: clamp(1.2rem, 4vw, 1.6rem);
+            font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 12px 20px; border-radius: 15px;
+            margin-bottom: 15px; line-height: 1.4;
+        }
+        .progress-bar { width: 100%; height: 10px; background-color: #e0e0e0; border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); border-radius: 5px; transition: width 0.4s ease; }
+
+        .tracing-area {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            max-height: 75vh; /* **الإصلاح الرئيسي لمشكلة العرض** */
+            aspect-ratio: 0.707; /* A4 paper aspect ratio */
+            margin: 0 auto;
+            border-radius: 15px;
+            overflow: hidden;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            background-color: #f0f0f0;
+            touch-action: none;
+        }
+        
+        #tracing-canvas, #svg-container, #completion-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #tracing-canvas { z-index: 10; cursor: pointer; }
+        #svg-container { z-index: 5; }
+
+        #start-node-indicator {
+            position: absolute;
+            background-color: var(--start-node-color);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 20;
+            animation: pulse 1.5s infinite;
+            display: none;
+        }
+        @keyframes pulse { 
+            0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+            100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        /* **ميزة جديدة: شاشة الإنجاز** */
+        #completion-overlay {
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+            pointer-events: none;
+        }
+        #completion-overlay.visible { opacity: 1; visibility: visible; }
+        .completion-content {
+            text-align: center;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .completion-icon {
+            font-size: clamp(6rem, 20vw, 10rem);
+            color: var(--primary-color);
+            animation: bounceIn 0.8s ease-out;
+            margin-bottom: 20px;
+        }
+        .completion-text {
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 900;
+            color: var(--secondary-color);
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounceIn { 0%, 20%, 40%, 60%, 80%, 100% { transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000); } 0% { opacity: 0; transform: scale3d(.3, .3, .3); } 20% { transform: scale3d(1.1, 1.1, 1.1); } 40% { transform: scale3d(.9, .9, .9); } 60% { opacity: 1; transform: scale3d(1.03, 1.03, 1.03); } 80% { transform: scale3d(.97, .97, .97); } 100% { opacity: 1; transform: scale3d(1, 1, 1); } }
+
+
+        /* Popups and Controls */
+        .game-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(5px); }
+        .game-overlay.visible { opacity: 1; visibility: visible; }
+        .popup { background: white; padding: 30px 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); transform: scale(0.8); transition: transform 0.3s ease; max-width: 90%; width: 400px; }
+        .game-overlay.visible .popup { transform: scale(1); }
+        .popup-icon { font-size: 4rem; margin-bottom: 15px; }
+        .popup-title { font-size: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: 20px; color: #333; line-height: 1.4; }
+        .popup-button { font-family: var(--font-family); padding: 15px 40px; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: white; border: none; border-radius: 50px; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+        .controls { display: flex; justify-content: center; margin-top: 15px; gap: 15px; }
+        .control-button { flex: 1; max-width: 200px; padding: 12px; background: #fff; color: var(--primary-color); border: 2px solid var(--primary-color); border-radius: 10px; font-family: var(--font-family); font-size: 1.1rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        @keyframes shake { from, to { transform: translateX(0); } 10%, 50%, 90% { transform: translateX(-5px); } 30%, 70% { transform: translateX(5px); } }
+        .shake-animation { animation: shake 0.4s ease-in-out; }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="game-container">
+    <div class="game-header">
+        <div class="prompt-bar" id="prompt-bar">لعبة الرسام الصغير</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="tracing-area" id="tracing-area">
+        <svg id="svg-container"></svg>
+        <div id="start-node-indicator"></div>
+        <!-- **ميزة جديدة: شاشة الإنجاز** -->
+        <div id="completion-overlay">
+            <div class="completion-content">
+                <i id="completion-icon" class="completion-icon"></i>
+                <h2 id="completion-text" class="completion-text"></h2>
+            </div>
+        </div>
+        <canvas id="tracing-canvas"></canvas>
+    </div>
+    <div class="controls">
+        <button class="control-button" id="reset-button"><i class="fas fa-undo"></i> إعادة التمرين</button>
+    </div>
+</div>
+
+<!-- Popups -->
+<div class="game-overlay visible" id="start-overlay">
+    <div class="popup"><i class="fas fa-pencil-ruler popup-icon"></i><h2 class="popup-title">هل أنت مستعد للرسم؟</h2><button id="start-button" class="popup-button"><span>ابدأ اللعب</span><i class="fas fa-play"></i></button></div>
+</div>
+    <div class="game-overlay" id="level-win-overlay">
+    <div class="popup"><i class="fas fa-check-circle popup-icon" style="color: var(--correct-color);"></i><h2 class="popup-title">أحسنت!</h2><button id="next-level-button" class="popup-button"><span>التمرين التالي</span><i class="fas fa-arrow-left"></i></button></div>
+</div>
+<div class="game-overlay" id="final-win-overlay">
+    <div class="popup"><i class="fas fa-trophy popup-icon" style="color: #ffc107;"></i><h2 class="popup-title">عمل رائع! أكملت كل التمارين</h2><button id="restart-button" class="popup-button"><span>العب مرة أخرى</span><i class="fas fa-redo"></i></button></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Game Data with updated coordinates and completion info
+    const gameLevels = [
+        {
+            prompt: 'تتبع الخطوط لرسم سارية العلم!',
+            completionIcon: 'fas fa-flag',
+            completionText: 'علم العراق',
+            paths: [
+                [{x: 18.8, y: 15.8}, {x: 18.8, y: 25.3}],
+                [{x: 42.9, y: 15.8}, {x: 42.9, y: 25.3}]
+            ]
+        },
+        {
+            prompt: 'صل النقاط لرسم خيط الطائرة الورقية!',
+            completionIcon: 'fa-solid fa-staff-aesculapius', // Using a kite-like symbol
+            completionText: 'طائرة ورقية',
+            paths: [
+                [{x: 39., y: 44.0}, {x: 43.2, y: 51.5}, {x: 49.5, y: 56.4}, {x: 56.5, y: 56.4}, {x: 62.0, y: 53.6}],
+                [{x: 82.2, y: 44.7}, {x: 77.7, y: 52.0}, {x: 71.2, y: 56.4}, {x: 64.2, y: 56.4}, {x: 58.8, y: 54.0}]
+            ]
+        },
+        {
+            prompt: 'تتبع المقص لقص الخطوط!',
+            completionIcon: 'fas fa-scissors',
+            completionText: 'مقص',
+            paths: [
+                [{x: 24.8, y: 78.4}, {x: 19.8, y: 73.4}],
+                [{x: 24.8, y: 78.4}, {x: 19.8, y: 83.4}],
+                [{x: 53.8, y: 78.4}, {x: 58.8, y: 73.4}],
+                [{x: 53.8, y: 78.4}, {x: 58.8, y: 83.4}]
+            ]
+        }
+    ];
+
+    // 2. DOM Elements
+    const gameContainer = document.getElementById('game-container');
+    const promptBar = document.getElementById('prompt-bar');
+    const progressBarFill = document.getElementById('progress-fill');
+    const tracingArea = document.getElementById('tracing-area');
+    const canvas = document.getElementById('tracing-canvas');
+    const ctx = canvas.getContext('2d');
+    const svgContainer = document.getElementById('svg-container');
+    const startNodeIndicator = document.getElementById('start-node-indicator');
+    const completionOverlay = document.getElementById('completion-overlay');
+    const completionIcon = document.getElementById('completion-icon');
+    const completionText = document.getElementById('completion-text');
+    const startOverlay = document.getElementById('start-overlay'), levelWinOverlay = document.getElementById('level-win-overlay'), finalWinOverlay = document.getElementById('final-win-overlay');
+    const startButton = document.getElementById('start-button'), nextLevelButton = document.getElementById('next-level-button'), restartButton = document.getElementById('restart-button'), resetButton = document.getElementById('reset-button');
+    
+    // 3. Sound Effects
+    const sounds = { /* ... as before ... */ }; // Assuming sound files are set up
+
+    // 4. Game State
+    let currentLevelIndex = 0, currentPathIndex = 0, currentNodeIndex = 0;
+    let isDrawing = false, isGameActive = false;
+    let drawingColors = {}, lineWidth = 9;
+    const TOUCH_THRESHOLD = 30;
+
+    // **ميزة جديدة: التوجيه الصوتي**
+    function speak(text, interrupt = false) {
+        if (!('speechSynthesis' in window)) {
+            console.log("Speech synthesis not supported.");
+            return;
+        }
+        if (interrupt) {
+            window.speechSynthesis.cancel();
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ar-SA';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // 5. Initialization
+    function init() {
+        const styles = getComputedStyle(document.documentElement);
+        drawingColors.line = styles.getPropertyValue('--line-color').trim();
+        drawingColors.dottedLine = styles.getPropertyValue('--dotted-line-color').trim();
+        lineWidth = parseInt(styles.getPropertyValue('--line-width').trim(), 10);
+        setupEventListeners();
+        tracingArea.style.backgroundImage = `url('../images/game7.jpg')`;
+        resizeCanvas();
+    }
+
+    function resizeCanvas() {
+        const containerRect = tracingArea.getBoundingClientRect();
+        canvas.width = containerRect.width;
+        canvas.height = containerRect.height;
+        startNodeIndicator.style.width = `${TOUCH_THRESHOLD}px`;
+        startNodeIndicator.style.height = `${TOUCH_THRESHOLD}px`;
+        drawLevel();
+    }
+
+    function createSVGLine(from, to, isDotted = false) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+        line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
+        line.setAttribute('stroke-width', lineWidth);
+        line.setAttribute('stroke-linecap', 'round');
+        if (isDotted) {
+            line.setAttribute('stroke', drawingColors.dottedLine);
+            line.setAttribute('stroke-dasharray', `${lineWidth * 1.5} ${lineWidth * 1.5}`);
+        } else {
+            line.setAttribute('stroke', drawingColors.line);
+        }
+        return line;
+    }
+    
+    function drawLevel() {
+        if (!isGameActive) return;
+        svgContainer.innerHTML = '';
+        const level = gameLevels[currentLevelIndex];
+        level.paths.forEach((path, pIndex) => {
+            for (let i = 0; i < path.length - 1; i++) {
+                const isSegmentDone = pIndex < currentPathIndex || (pIndex === currentPathIndex && i < currentNodeIndex);
+                const line = createSVGLine(getCanvasCoords(path[i]), getCanvasCoords(path[i + 1]), !isSegmentDone);
+                svgContainer.appendChild(line);
+            }
+        });
+        updateStartNodeIndicator();
+    }
+
+    function updateStartNodeIndicator() {
+        const level = gameLevels[currentLevelIndex];
+        if (currentPathIndex >= level.paths.length) {
+            startNodeIndicator.style.display = 'none';
+            return;
+        }
+        const currentPath = level.paths[currentPathIndex];
+        const startNodeCoords = getCanvasCoords(currentPath[currentNodeIndex]);
+        startNodeIndicator.style.left = `${startNodeCoords.x}px`;
+        startNodeIndicator.style.top = `${startNodeCoords.y}px`;
+        startNodeIndicator.style.display = 'block';
+    }
+
+    function loadLevel(index) {
+        currentLevelIndex = index;
+        currentPathIndex = 0;
+        currentNodeIndex = 0;
+        const level = gameLevels[index];
+        promptBar.textContent = level.prompt;
+        updateProgressBar();
+        drawLevel();
+        speak(level.prompt, true);
+    }
+    
+    function advanceProgress() {
+        currentNodeIndex++;
+        const currentPath = gameLevels[currentLevelIndex].paths[currentPathIndex];
+        if (currentNodeIndex >= currentPath.length - 1) {
+            currentPathIndex++;
+            currentNodeIndex = 0;
+        }
+
+        // Check for level completion
+        if (currentPathIndex >= gameLevels[currentLevelIndex].paths.length) {
+            isGameActive = false;
+            showCompletionAnimation(); // **ميزة جديدة**
+        } else {
+            drawLevel();
+        }
+    }
+    
+    // **ميزة جديدة: إظهار شاشة الإنجاز**
+    function showCompletionAnimation() {
+        startNodeIndicator.style.display = 'none';
+        const level = gameLevels[currentLevelIndex];
+        completionIcon.className = `completion-icon ${level.completionIcon}`;
+        completionText.textContent = level.completionText;
+        completionOverlay.classList.add('visible');
+        speak(`عمل رائع! لقد رسمت ${level.completionText}`);
+
+        setTimeout(() => {
+            completionOverlay.classList.remove('visible');
+            if (currentLevelIndex >= gameLevels.length - 1) {
+                finalWinOverlay.classList.add('visible');
+            } else {
+                levelWinOverlay.classList.add('visible');
+            }
+        }, 3500); // Display for 3.5 seconds
+    }
+
+    function getCanvasCoords(point) {
+        return { x: (point.x / 100) * canvas.width, y: (point.y / 100) * canvas.height };
+    }
+
+    function getPointFromEvent(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+    
+    function handleStart(e) {
+        if (!isGameActive) return;
+        e.preventDefault();
+        const level = gameLevels[currentLevelIndex];
+        if (currentPathIndex >= level.paths.length) return;
+        
+        const currentPath = level.paths[currentPathIndex];
+        const startPoint = getCanvasCoords(currentPath[currentNodeIndex]);
+        const touchPoint = getPointFromEvent(e);
+        if (Math.hypot(touchPoint.x - startPoint.x, touchPoint.y - startPoint.y) < TOUCH_THRESHOLD) {
+            isDrawing = true;
+        }
+    }
+    
+    function handleMove(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const touchPoint = getPointFromEvent(e);
+        const startPoint = getCanvasCoords(gameLevels[currentLevelIndex].paths[currentPathIndex][currentNodeIndex]);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(touchPoint.x, touchPoint.y);
+        ctx.strokeStyle = drawingColors.line;
+        ctx.lineWidth = lineWidth + 2;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+    }
+    
+    function handleEnd(e) {
+        if (!isDrawing) return;
+        isDrawing = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const endPoint = getCanvasCoords(gameLevels[currentLevelIndex].paths[currentPathIndex][currentNodeIndex + 1]);
+        const touchPoint = getPointFromEvent(e.changedTouches ? e.changedTouches[0] : e);
+
+        if (Math.hypot(touchPoint.x - endPoint.x, touchPoint.y - endPoint.y) < TOUCH_THRESHOLD * 1.5) {
+            speak("أحسنت");
+            advanceProgress();
+        } else {
+            speak("حاول مرة أخرى");
+            gameContainer.classList.add('shake-animation');
+            setTimeout(() => gameContainer.classList.remove('shake-animation'), 400);
+        }
+    }
+    
+    function startGame() {
+        startOverlay.classList.remove('visible');
+        isGameActive = true;
+        speak("هيا بنا نبدأ", true);
+        loadLevel(0);
+    }
+    
+    function updateProgressBar() {
+        const progress = (currentLevelIndex / gameLevels.length) * 100;
+        progressBarFill.style.width = `${progress}%`;
+    }
+
+    function setupEventListeners() {
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMove, { passive: false });
+        canvas.addEventListener('touchend', handleEnd);
+        startButton.addEventListener('click', startGame);
+        nextLevelButton.addEventListener('click', () => { levelWinOverlay.classList.remove('visible'); isGameActive = true; loadLevel(currentLevelIndex + 1); });
+        restartButton.addEventListener('click', () => { finalWinOverlay.classList.remove('visible'); isGameActive = true; loadLevel(0); });
+        resetButton.addEventListener('click', () => { if (isGameActive) loadLevel(currentLevelIndex); });
+    }
+
+    init();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة تركيب الحيوانات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+
+        :root {
+            --primary-color: #1abc9c;
+            --secondary-color: #16a085;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --background-color: #f9f7fe;
+            --board-color: #ffffff;
+            --font-family: 'Cairo', sans-serif;
+            --color1: #FF9E6D;
+            --color2: #FF6B9D;
+            --color3: #8B77FF;
+            --color4: #5BC0EB;
+        }   
+        
+        /* الحل الفوري */
+        * { max-width: 100vw; overflow-x: hidden; }
+        
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            user-select: none; 
+        }
+/* إخفاء أشرطة التمرير في جميع المتصفحات */
+::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: var(--board-color);
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            overflow-x: hidden;
+        }
+
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(90deg, var(--color1), var(--color2), var(--color3), var(--color4));
+            z-index: 1;
+        }
+
+        .game-header {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .game-title { 
+            font-size: 2.8rem; 
+            color: #2c3e50; 
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, var(--color1), var(--color2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .progress-indicator { 
+            font-size: 1.5rem; 
+            color: #7f8c8d;
+            background-color: #f0f7ff;
+            padding: 8px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .puzzle-area {
+            display: flex;
+            flex-direction: row;
+            gap: 25px;
+            min-height: 450px;
+            margin-bottom: 20px;
+        }
+
+        .pieces-container {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 15px;
+            background: linear-gradient(145deg, #f0f7ff, #e1eeff);
+            border-radius: 20px;
+            padding: 20px;
+            border: 3px dashed #c3d9ff;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .board-container {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(145deg, #eaf2f8, #d9e9ff);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border: 3px solid #d0e2ff;
+            min-height: 400px;
+        }
+
+        .puzzle-piece {
+            cursor: grab;
+            transition: all 0.3s ease;
+            max-width: 150px;
+            height: auto;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 3px solid white;
+        }
+        
+        .puzzle-piece:hover { 
+            transform: scale(1.08) rotate(2deg); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2); 
+        }
+        
+        .puzzle-piece.dragging { 
+            opacity: 0.7; 
+            cursor: grabbing; 
+            transform: scale(1.05);
+        }
+
+        .drop-zone {
+            position: absolute;
+            border: 3px dashed #bdc3c7;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .drop-zone.over { 
+            background-color: rgba(46, 204, 113, 0.3); 
+            border-color: var(--correct-color); 
+            transform: scale(1.02);
+        }
+        
+        .drop-zone.filled { 
+            border-style: solid; 
+            border-color: var(--correct-color); 
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+        }
+        
+        .drop-zone img { 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 8px;
+        }
+
+        .game-overlay {
+            position: fixed; 
+            inset: 0; 
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            z-index: 100; 
+            opacity: 0; 
+            visibility: hidden; 
+            transition: all 0.3s ease;
+        }
+        
+        .game-overlay.visible { 
+            opacity: 1; 
+            visibility: visible; 
+        }
+        
+        .popup {
+            background: white; 
+            padding: 40px; 
+            border-radius: 25px; 
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+            transform: scale(0.8); 
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            width: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .popup::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(90deg, var(--color1), var(--color2), var(--color3), var(--color4));
+        }
+        
+        .game-overlay.visible .popup { 
+            transform: scale(1); 
+        }
+        
+        .popup-title { 
+            font-size: 2.8rem; 
+            margin-bottom: 15px; 
+            color: var(--primary-color); 
+        }
+        
+        .popup-image { 
+            max-width: 250px; 
+            margin: 15px 0; 
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .popup-animal-name { 
+            font-size: 3rem; 
+            font-weight: 900; 
+            color: #2c3e50; 
+            margin: 10px 0;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+        
+        .animal-fact {
+            font-size: 1.2rem;
+            color: #555;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+        
+        .next-button, .restart-button {
+            font-family: var(--font-family); 
+            padding: 15px 40px; 
+            margin-top: 20px;
+            background: linear-gradient(45deg, var(--color1), var(--color2));
+            color: white; 
+            border: none; 
+            border-radius: 50px; 
+            font-size: 1.5rem;
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(255, 105, 157, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .next-button::after, .restart-button::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: translateX(-100%);
+        }
+        
+        .next-button:hover::after, .restart-button:hover::after {
+            transform: translateX(100%);
+            transition: transform 0.6s;
+        }
+        
+        .next-button:hover, .restart-button:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 20px rgba(255, 105, 157, 0.6);
+        }
+
+        /* فقاعة الشرح */
+        .hint-bubble {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--color4);
+            color: white;
+            border-radius: 25px;
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(91, 192, 235, 0.4);
+            transition: all 0.3s ease;
+            z-index: 10;
+            max-width: 300px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .hint-bubble:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(91, 192, 235, 0.6);
+        }
+        
+        .hint-bubble i {
+            font-size: 1.5rem;
+        }
+
+        @keyframes shake { 
+            10%, 90% { transform: translate3d(-1px, 0, 0); } 
+            20%, 80% { transform: translate3d(2px, 0, 0); } 
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 
+            40%, 60% { transform: translate3d(4px, 0, 0); } 
+        }
+        
+        .shake-animation { animation: shake 0.8s cubic-bezier(.36,.07,.19,.97); }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+        }
+        
+        .bounce-animation { animation: bounce 1s; }
+
+        @keyframes confetti {
+            0% { transform: translateY(0) rotate(0); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: var(--color1);
+            opacity: 0;
+            z-index: 1000;
+        }
+
+        /* تخطيط متجاوب */
+        @media (max-width: 992px) {
+            .puzzle-area {
+                flex-direction: row;
+                gap: 15px;
+            }
+            
+            .pieces-container, .board-container {
+                flex: 1;
+            }
+            
+            .puzzle-piece {
+                max-width: 120px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .puzzle-area {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .pieces-container {
+                min-height: 150px;
+                max-height: 200px;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                justify-content: flex-start;
+            }
+            
+            .board-container {
+                min-height: 350px;
+            }
+            
+            .game-title { 
+                font-size: 2.2rem; 
+            }
+            
+            .popup-title { 
+                font-size: 2.2rem; 
+            }
+            
+            .popup-animal-name { 
+                font-size: 2.5rem; 
+            }
+            
+            .hint-bubble {
+                bottom: 10px;
+                left: 10px;
+                padding: 12px 20px;
+                font-size: 1rem;
+                max-width: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 15px;
+            }
+            
+            .puzzle-piece {
+                max-width: 100px;
+            }
+            
+            .hint-bubble {
+                max-width: 200px;
+                font-size: 0.9rem;
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="game-container">
+    <div class="game-header">
+        <h1 class="game-title">لعبة تركيب الحيوانات</h1>
+        <p class="progress-indicator" id="progress-indicator">اللغز 1 من 4</p>
+    </div>
+    <div class="puzzle-area">
+        <div class="pieces-container" id="pieces-container"></div>
+        <div class="board-container" id="board-container"></div>
+    </div>
+    <div class="hint-bubble" id="hint-bubble">
+        <i class="fas fa-lightbulb"></i>
+        <span id="hint-text">إضغط هنا للحصول على تلميح</span>
+    </div>
+</div>
+
+<div class="game-overlay" id="win-overlay">
+    <div class="popup">
+        <h2 class="popup-title">أحسنت! 🌟</h2>
+        <img id="win-image" src="" alt="حيوان مكتمل" class="popup-image">
+        <h3 id="win-animal-name" class="popup-animal-name"></h3>
+        <p id="animal-fact" class="animal-fact"></p>
+        <button id="next-button" class="next-button">اللغز التالي <i class="fas fa-arrow-left"></i></button>
+    </div>
+</div>
+
+<div class="game-overlay" id="final-win-overlay">
+    <div class="popup">
+        <h2 class="popup-title">🎉 عمل رائع 🎉</h2>
+        <p style="font-size: 1.3rem; margin: 15px 0;">لقد أكملت جميع الألغاز بنجاح!</p>
+        <p style="font-size: 1.1rem; color: #666;">أنت خبير حيوانات مذهل!</p>
+        <button id="restart-button" class="restart-button">العب مرة أخرى <i class="fas fa-redo"></i></button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Puzzle Data - باستخدام المسارات الصحيحة بناءً على هيكل مجلداتك
+    const puzzleData = [
+        {
+            id: 'elephant', 
+            name: 'فيل', 
+            fullImage: '../images/fff.jpg',
+            fact: 'الفيل هو أكبر حيوان بري في العالم!وله خرطوم طويل يتنفس من خلاله',
+            pieces: [
+                { 
+                    id: 'p1', 
+                    src: '../images/fff2.jpg', 
+                    pos: { top: '5%', left: '48%', width: '50%', height: '90%' } 
+                },
+                { 
+                    id: 'p2', 
+                    src: '../images/fff1.jpg', 
+                    pos: { top: '5%', left: '2%', width: '50%', height: '90%' } 
+                }
+            ]
+        },
+        {
+            id: 'camel', 
+            name: 'جمل', 
+            fullImage: '../images/jjj.jpg',
+            fact: 'الجمل يمكنه شرب 200 لتر من الماء ويعيش في الصحراء ويتحمل الحرارة والعطش!',
+            pieces: [
+                { 
+                    id: 'p1', 
+                    src: '../images/jjj1.jpg', 
+                    pos: { top: '5%', left: '2%', width: '35%', height: '90%' } 
+                },
+                { 
+                    id: 'p2', 
+                    src: '../images/jjj2.jpg', 
+                    pos: { top: '5%', left: '33%', width: '35%', height: '90%' } 
+                },
+                { 
+                    id: 'p3', 
+                    src: '../images/jjj3.jpg', 
+                    pos: { top: '5%', left: '64%', width: '35%', height: '90%' } 
+                }
+            ]
+        },
+        {
+            id: 'stork', 
+            name: 'لقلق', 
+            fullImage: '../images/lll.jpg',
+            fact: 'اللقلق يبني أعشاشه الكبيرة على قمم الأشجار والمباني!',
+            pieces: [
+                { 
+                    id: 'p1', 
+                    src: '../images/lll2.jpg', 
+                    pos: { top: '5%', left: '52%', width: '45%', height: '90%' } 
+                },
+                { 
+                    id: 'p2', 
+                    src: '../images/lll1.jpg', 
+                    pos: { top: '5%', left: '3%', width: '45%', height: '90%' } 
+                }
+            ]
+        },
+        {
+            id: 'gazelle', 
+            name: 'غزال', 
+            fullImage: '../images/ggg.jpg',
+            fact: 'الغزال حيوان جميل يمكنه القفز لمسافة تصل إلى 10 أمتار!',
+            pieces: [
+                { 
+                    id: 'p1', 
+                    src: '../images/ggg2.jpg', 
+                    pos: { top: '5%', left: '2%', width: '35%', height: '90%' } 
+                },
+                { 
+                    id: 'p2', 
+                    src: '../images/ggg12.jpg', 
+                    pos: { top: '5%', left: '33%', width: '35%', height: '90%' } 
+                },
+                { 
+                    id: 'p3', 
+                    src: '../images/ggg1.jpg', 
+                    pos: { top: '5%', left: '64%', width: '35%', height: '90%' } 
+                }
+            ]
+        }
+    ];
+
+    // 2. DOM Elements & Game State
+    const gameContainer = document.getElementById('game-container');
+    const piecesContainer = document.getElementById('pieces-container');
+    const boardContainer = document.getElementById('board-container');
+    const progressIndicator = document.getElementById('progress-indicator');
+    const winOverlay = document.getElementById('win-overlay');
+    const finalWinOverlay = document.getElementById('final-win-overlay');
+    const nextButton = document.getElementById('next-button');
+    const restartButton = document.getElementById('restart-button');
+    const hintBubble = document.getElementById('hint-bubble');
+    const hintText = document.getElementById('hint-text');
+    let currentPuzzleIndex = 0;
+    let placedPieces = 0;
+    let hintUsed = false;
+    
+    // إنشاء أصوات افتراضية باستخدام Web Audio API
+    function createSound(frequency, duration) {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        } catch (e) {
+            console.log('Web Audio API not supported');
+        }
+    }
+    
+    const sounds = {
+        drop: () => createSound(523, 0.3), // C5
+        wrong: () => createSound(220, 0.5), // A3
+        win: () => {
+            createSound(523, 0.2); // C5
+            setTimeout(() => createSound(659, 0.2), 200); // E5
+            setTimeout(() => createSound(784, 0.4), 400); // G5
+        },
+        finalWin: () => {
+            createSound(523, 0.15); // C5
+            setTimeout(() => createSound(659, 0.15), 150); // E5
+            setTimeout(() => createSound(784, 0.15), 300); // G5
+            setTimeout(() => createSound(1047, 0.5), 450); // C6
+        }
+    };
+
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ar-SA';
+            utterance.rate = 0.8;
+            utterance.pitch = 1.2;
+            speechSynthesis.speak(utterance);
+        }
+    }
+    
+    // 3. Game Logic Functions
+    function loadPuzzle(index) {
+        placedPieces = 0;
+        hintUsed = false;
+        const puzzle = puzzleData[index];
+        progressIndicator.textContent = `اللغز ${index + 1} من ${puzzleData.length}`;
+        hintText.textContent = 'إضغط هنا للحصول على تلميح';
+        
+        // Clear previous puzzle
+        piecesContainer.innerHTML = '';
+        boardContainer.innerHTML = '';
+        
+        // Create shuffled pieces
+        const shuffledPieces = [...puzzle.pieces].sort(() => Math.random() - 0.5);
+        shuffledPieces.forEach(pieceInfo => {
+            const pieceEl = document.createElement('img');
+            pieceEl.src = pieceInfo.src;
+            pieceEl.className = 'puzzle-piece';
+            pieceEl.draggable = true;
+            pieceEl.dataset.id = pieceInfo.id;
+            pieceEl.alt = `قطعة لغز ${puzzle.name}`;
+            pieceEl.addEventListener('dragstart', handleDragStart);
+            pieceEl.addEventListener('dragend', handleDragEnd);
+            piecesContainer.appendChild(pieceEl);
+        });
+
+        // Create drop zones
+        puzzle.pieces.forEach(pieceInfo => {
+            const dropZoneEl = document.createElement('div');
+            dropZoneEl.className = 'drop-zone';
+            dropZoneEl.dataset.id = pieceInfo.id;
+            Object.assign(dropZoneEl.style, pieceInfo.pos);
+            dropZoneEl.style.backgroundImage = `url(${pieceInfo.src})`;
+            dropZoneEl.style.opacity = '0.3';
+            
+            dropZoneEl.addEventListener('dragover', handleDragOver);
+            dropZoneEl.addEventListener('dragleave', handleDragLeave);
+            dropZoneEl.addEventListener('drop', handleDrop);
+            boardContainer.appendChild(dropZoneEl);
+        });
+    }
+
+    // 4. Drag and Drop Handlers
+    function handleDragStart(e) {
+        e.dataTransfer.setData('text/plain', e.target.dataset.id);
+        e.target.classList.add('dragging');
+    }
+
+    function handleDragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        if(!e.target.classList.contains('filled')) {
+            e.target.classList.add('over');
+        }
+    }
+
+    function handleDragLeave(e) {
+        e.target.classList.remove('over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.target.classList.remove('over');
+        
+        const draggedPieceId = e.dataTransfer.getData('text/plain');
+        const dropZoneId = e.target.dataset.id;
+        
+        if (draggedPieceId === dropZoneId && !e.target.classList.contains('filled')) {
+            sounds.drop();
+            const pieceEl = document.querySelector(`.puzzle-piece[data-id="${draggedPieceId}"]`);
+            e.target.appendChild(pieceEl);
+            e.target.classList.add('filled');
+            e.target.style.opacity = '1';
+            e.target.style.backgroundImage = 'none';
+            pieceEl.draggable = false;
+            pieceEl.classList.remove('dragging');
+            pieceEl.classList.add('bounce-animation');
+            
+            placedPieces++;
+            checkWinCondition();
+        } else {
+            sounds.wrong();
+            gameContainer.classList.add('shake-animation');
+            setTimeout(() => gameContainer.classList.remove('shake-animation'), 800);
+            const pieceEl = document.querySelector('.puzzle-piece.dragging');
+            if(pieceEl) pieceEl.classList.remove('dragging');
+        }
+    }
+
+    // 5. Win Condition and Navigation
+    function checkWinCondition() {
+        const currentPuzzle = puzzleData[currentPuzzleIndex];
+        if (placedPieces === currentPuzzle.pieces.length) {
+            setTimeout(() => {
+                sounds.win();
+                document.getElementById('win-image').src = currentPuzzle.fullImage;
+                document.getElementById('win-animal-name').textContent = currentPuzzle.name;
+                document.getElementById('animal-fact').textContent = currentPuzzle.fact;
+                speak(`أحسنت! هذا ${currentPuzzle.name}. ${currentPuzzle.fact}`);
+                createConfetti();
+                winOverlay.classList.add('visible');
+            }, 500);
+        }
+    }
+
+    function handleNextPuzzle() {
+        winOverlay.classList.remove('visible');
+        currentPuzzleIndex++;
+        if (currentPuzzleIndex < puzzleData.length) {
+            loadPuzzle(currentPuzzleIndex);
+        } else {
+            sounds.finalWin();
+            createConfetti();
+            finalWinOverlay.classList.add('visible');
+        }
+    }
+
+    function restartGame() {
+        finalWinOverlay.classList.remove('visible');
+        currentPuzzleIndex = 0;
+        loadPuzzle(currentPuzzleIndex);
+    }
+    
+    function showHint() {
+        if (hintUsed) return;
+        
+        hintUsed = true;
+        const currentPuzzle = puzzleData[currentPuzzleIndex];
+        const dropZones = document.querySelectorAll('.drop-zone:not(.filled)');
+        
+        dropZones.forEach(zone => {
+            zone.classList.add('bounce-animation');
+            setTimeout(() => zone.classList.remove('bounce-animation'), 1000);
+        });
+        
+        hintText.textContent = `حاول تركيب ${currentPuzzle.name}`;
+        speak(`حاول تركيب ${currentPuzzle.name}`);
+        
+        // إعادة تعيين النص بعد 3 ثواني
+        setTimeout(() => {
+            hintText.textContent = 'إضغط هنا للحصول على تلميح';
+        }, 3000);
+    }
+    
+    function createConfetti() {
+        const colors = ['#FF9E6D', '#FF6B9D', '#8B77FF', '#5BC0EB', '#FFD166'];
+        for (let i = 0; i < 100; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.width = Math.random() * 10 + 5 + 'px';
+            confetti.style.height = Math.random() * 10 + 5 + 'px';
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            document.body.appendChild(confetti);
+            
+            const animation = confetti.animate([
+                { transform: `translateY(0) rotate(0)`, opacity: 1 },
+                { transform: `translateY(100vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+            ], {
+                duration: Math.random() * 3000 + 2000,
+                easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
+            });
+            
+            animation.onfinish = () => confetti.remove();
+        }
+    }
+    
+    // إخفاء شريط التمرير الأفقي
+document.body.style.overflowX = 'hidden';
+
+// أو للعنصر المحدد
+document.getElementById('game-container').style.overflowX = 'hidden';
+    
+    // 6. Initial Setup
+    nextButton.addEventListener('click', handleNextPuzzle);
+    restartButton.addEventListener('click', restartGame);
+    hintBubble.addEventListener('click', showHint);
+    loadPuzzle(currentPuzzleIndex);
+});
+</script>
+
+</body>
+</html>

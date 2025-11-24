@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>لعبة الرسم التفاعلية النهائية</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        :root {
+            --primary-color: #3d5a80;
+            --secondary-color: #98c1d9;
+            --success-color: #2ecc71;
+            --bg-color: #e0e5ec;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100vh; overflow: hidden;
+            font-family: 'Cairo', sans-serif; background-color: var(--bg-color);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            touch-action: none;
+        }
+
+        #ui-header {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 90%; max-width: 800px; padding: 5px 15px; margin-bottom: 10px;
+            background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        #ui-header h1 { font-size: clamp(1rem, 3vw, 1.5rem); color: var(--primary-color); }
+        #progress-counter { font-size: clamp(1rem, 3vw, 1.5rem); font-weight: bold; color: var(--primary-color); }
+
+        #game-container {
+            position: relative; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border: 5px solid white; border-radius: 15px;
+            width: 90vw; height: 75vh;
+            max-width: calc(75vh * (700 / 990)); max-height: calc(90vw * (990 / 700));
+        }
+
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #drawing-canvas { cursor: crosshair; z-index: 10; }
+        #zones-canvas { z-index: 5; }
+        #solution-canvas { z-index: 4; }
+        #background-canvas { z-index: 1; }
+        #fx-canvas { z-index: 100; pointer-events: none; }
+
+        .toolbar {
+            display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+            padding: 10px; background-color: #ffffff; border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); margin-top: 15px; gap: 10px 15px;
+        }
+        .tool-group { display: flex; align-items: center; gap: 8px; }
+        .tool-group label { font-weight: bold; color: #333; }
+        .color-box {
+            width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; transition: transform 0.2s, border-color 0.2s;
+        }
+        .color-box:hover { transform: scale(1.1); }
+        .color-box.active { border-color: var(--primary-color); transform: scale(1.2); }
+        input[type="range"] { cursor: pointer; }
+
+        /* --- تعديلات جديدة --- */
+        .tool-btn {
+            width: 40px; height: 40px; font-size: 20px;
+            border: 2px solid transparent; border-radius: 10px;
+            cursor: pointer; background-color: #f0f0f0;
+            transition: all 0.2s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn:hover { background-color: #ddd; transform: scale(1.1); }
+        .tool-btn.active { border-color: var(--primary-color); background-color: var(--secondary-color); }
+        /* --- نهاية التعديلات --- */
+        
+        #celebration-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center;
+            background-color: rgba(0, 0, 0, 0.5); z-index: 150;
+        }
+        #celebration-icon {
+            font-size: clamp(100px, 30vw, 250px);
+            text-shadow: 0 0 30px white;
+            transform: scale(0);
+            opacity: 0;
+        }
+        #celebration-icon.celebrate {
+            animation: popIn 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #win-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); z-index: 200;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center;
+        }
+        #win-screen h2 { font-size: clamp(2rem, 8vw, 4rem); text-shadow: 2px 2px 5px #000; }
+        #win-screen p { font-size: clamp(1rem, 4vw, 1.5rem); margin-bottom: 30px; }
+        #win-screen button {
+            font-family: 'Cairo', sans-serif; font-size: clamp(1rem, 4vw, 1.5rem);
+            padding: 15px 30px; border: none; border-radius: 50px;
+            background-color: var(--success-color); color: white; cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #win-screen button:hover { transform: scale(1.05); }
+    </style>
+</head>
+<body>
+    <div id="ui-header">
+        <h1>ارسم داخل الإطارات!</h1>
+        <div id="progress-counter">الصفوف المكتملة: 0 / 7</div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="background-canvas"></canvas>
+        <canvas id="solution-canvas"></canvas>
+        <canvas id="zones-canvas"></canvas>
+        <canvas id="drawing-canvas"></canvas>
+        <canvas id="fx-canvas"></canvas>
+    </div>
+    
+    <div id="celebration-overlay">
+        <span id="celebration-icon"></span>
+    </div>
+
+    <div class="toolbar">
+        <!-- --- أدوات جديدة --- -->
+        <div class="tool-group">
+            <label>الأدوات:</label>
+            <button id="pen-tool" class="tool-btn active" title="قلم">🖌️</button>
+            <button id="eraser-tool" class="tool-btn" title="ممحاة">🧼</button>
+            <button id="undo-btn" class="tool-btn" title="تراجع">↩️</button>
+            <button id="clear-all-btn" class="tool-btn" title="مسح الكل">🗑️</button>
+        </div>
+        <!-- --- نهاية الأدوات الجديدة --- -->
+        <div class="tool-group">
+            <label>اللون:</label>
+            <div class="color-box active" style="background-color: #e74c3c;" data-color="#e74c3c"></div>
+            <div class="color-box" style="background-color: #3498db;" data-color="#3498db"></div>
+            <div class="color-box" style="background-color: #2ecc71;" data-color="#2ecc71"></div>
+            <div class="color-box" style="background-color: #f1c40f;" data-color="#f1c40f"></div>
+            <div class="color-box" style="background-color: #34495e;" data-color="#34495e"></div>
+        </div>
+        <div class="tool-group">
+            <label for="pen-size">الحجم:</label>
+            <input type="range" id="pen-size" min="2" max="50" value="5">
+        </div>
+    </div>
+    
+    <div id="win-screen">
+        <h2>🎉 أحسنت صنعًا! 🎉</h2>
+        <p>لقد أكملت كل الرسومات ببراعة!</p>
+        <button onclick="location.reload()">العب مرة أخرى</button>
+    </div>
+
+    <audio id="success-sound" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-design/ui_sound_effect_short_generic_whoosh_positive.mp3" preload="auto"></audio>
+    <audio id="zone-complete-sound" src="https://www.zapsplat.com/wp-content/uploads/2015/sound-design/cartoon_pop_bubble_002.mp3" preload="auto"></audio>
+
+    <script>
+    const BASE_WIDTH = 700, BASE_HEIGHT = 990, COMPLETION_THRESHOLD = 15, TOTAL_ROWS = 7;
+
+    const container = document.getElementById('game-container');
+    const progressCounter = document.getElementById('progress-counter');
+    const winScreen = document.getElementById('win-screen');
+    const celebrationOverlay = document.getElementById('celebration-overlay');
+    const celebrationIcon = document.getElementById('celebration-icon');
+    const successSound = document.getElementById('success-sound');
+    const zoneCompleteSound = document.getElementById('zone-complete-sound');
+
+    const canvases = ['background', 'solution', 'zones', 'drawing', 'fx'].reduce((acc, id) => {
+        acc[id] = { canvas: document.getElementById(`${id}-canvas`) };
+        acc[id].ctx = acc[id].canvas.getContext('2d');
+        return acc;
+    }, {});
+
+    let isDrawing = false, [lastX, lastY] = [0, 0], penColor = '#e74c3c', penSize = 5;
+    const drawnOnZones = new Set(), completedRows = new Set();
+    let currentDrawingZone = null;
+
+    // --- متغيرات جديدة ---
+    let currentTool = 'pen'; // الأدوات المتاحة: 'pen', 'eraser'
+    let undoStack = [];
+    const MAX_UNDO_STATES = 20;
+    // --- نهاية المتغيرات الجديدة ---
+
+    const rowCommentary = {
+        0: { text: 'ممتاز! لقد أكملت رسم المقص', icon: '✂️' },
+        1: { text: 'مبدع! لقد أكملت رسم الهلال', icon: '🌙' },
+        2: { text: 'فنان! لقد أكملت رسم المزهرية', icon: '🏺' },
+        3: { text: 'أحسنت! لقد أكملت رسم القوس', icon: '🌈' },
+        4: { text: 'رائع! لقد أكملت رسم المفتاح', icon: '🔑' },
+        5: { 'text': 'مذهل! لقد أكملت رسم المظلة', 'icon': '☂️' },
+        6: { 'text': 'عمل رائع! لقد أكملت رسم البطة', 'icon': '🦆' }
+    };
+
+    const shapesData = [
+        { id: 0, row: 0, zone: { x: 100, y: 130, w: 120, h: 90 } }, { id: 1, row: 0, zone: { x: 230, y: 130, w: 120, h: 90 } }, { id: 2, row: 0, zone: { x: 370, y: 130, w: 120, h: 90 } }, { id: 3, row: 0, zone: { x: 500, y: 130, w: 120, h: 90 } },
+        
+        { id: 4, row: 1, zone: { x: 105, y: 235, w: 95, h: 90 } }, { id: 5, row: 1, zone: { x: 240, y: 235, w: 95, h: 90 } }, { id: 6, row: 1, zone: { x: 375, y: 235, w: 95, h: 90 } }, { id: 7, row: 1, zone: { x: 505, y: 235, w: 95, h: 90 } },
+        
+        { id: 8, row: 2, zone: { x: 110, y: 340, w: 85, h: 100 } }, { id: 9, row: 2, zone: { x: 250, y: 340, w: 85, h: 100 } }, { id: 10, row: 2, zone: { x: 380, y: 340, w: 85, h: 100  } }, { id: 11, row: 2, zone: { x: 515, y: 340, w: 85, h: 100  } },
+        
+        { id: 12, row: 3, zone: { x: 110, y: 460, w: 90, h: 70 } }, { id: 13, row: 3, zone: { x: 245, y: 460, w: 90, h: 70 } }, { id: 14, row: 3, zone: { x: 380, y: 460, w: 90, h: 70 } }, { id: 15, row: 3, zone: { x: 515, y: 460, w: 90, h: 70} },
+        
+        { id: 16, row: 4, zone: { x: 70, y: 540, w: 140, h: 70 } }, { id: 17, row: 4, zone: { x: 215, y: 540, w: 140, h: 70} }, { id: 18, row: 4, zone: { x: 360, y: 540, w: 140, h: 70 } }, { id: 19, row: 4, zone: { x: 500, y: 540, w: 140, h: 70 } },
+        
+        { id: 20, row: 5, zone: { x: 95, y: 625, w: 110, h: 115 } }, { id: 21, row: 5, zone: { x: 230, y: 625, w: 110, h: 115 } }, { id: 22, row: 5, zone: { x: 365, y: 625, w: 110, h: 115 } }, { id: 23, row: 5, zone: { x: 495, y: 625, w: 110, h: 115 } },
+        
+        { id: 24, row: 6, zone: { x: 90, y: 748, w: 110, h: 95 } }, { id: 25, row: 6, zone: { x: 225, y: 748, w: 110, h: 95 } }, { id: 26, row: 6, zone: { x: 360, y: 748, w: 110, h: 95 } }, { id: 27, row: 6, zone: { x: 490, y: 748, w: 110, h: 95 } },
+    ];
+
+    const drawSolutions = {
+        _drawShape: (ctx, x, y, drawFn, scale = 1) => { ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale); drawFn(ctx); ctx.restore(); },
+        scissors: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { c.strokeStyle = '#34495e'; c.fillStyle = '#bdc3c7'; c.lineWidth = 4; c.beginPath(); c.arc(15, -15, 10, 0, 2 * Math.PI); c.arc(15, -15, 6, 0, 2 * Math.PI, true); c.fill(); c.stroke(); c.beginPath(); c.arc(15, 15, 10, 0, 2 * Math.PI); c.arc(15, 15, 6, 0, 2 * Math.PI, true); c.fill(); c.stroke(); c.beginPath(); c.moveTo(5,0); c.lineTo(-30, -20); c.moveTo(5,0); c.lineTo(-30, 20); c.stroke(); }, scale),
+        moon: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { const grad = c.createRadialGradient(0, 0, 5, 0, 0, 30); grad.addColorStop(0, '#f9e79f'); grad.addColorStop(1, '#f1c40f'); c.fillStyle = grad; c.strokeStyle = '#f39c12'; c.lineWidth = 3; c.beginPath(); c.arc(0, 0, 25, Math.PI * 0.6, Math.PI * 1.4, true); c.quadraticCurveTo(15, 0, 0, -25); c.closePath(); c.fill(); c.stroke(); }, scale),
+        vase: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { c.strokeStyle = '#8e44ad'; c.fillStyle = '#d7bde2'; c.lineWidth = 4; c.beginPath(); c.moveTo(-20, 30); c.bezierCurveTo(-25, -20, 25, -20, 20, 30); c.closePath(); c.fill(); c.stroke(); c.beginPath(); c.moveTo(-10, -25); c.quadraticCurveTo(0, -15, 10, -25); c.stroke(); }, scale),
+        arc: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { c.strokeStyle = '#16a085'; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.arc(0, 15, 30, Math.PI * 1.1, Math.PI * 1.9); c.stroke(); }, scale),
+        key: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { c.strokeStyle = '#d35400'; c.fillStyle = '#f5b041'; c.lineWidth = 4; c.beginPath(); c.arc(40, 0, 15, 0, 2 * Math.PI); c.closePath(); c.fill(); c.stroke(); c.beginPath(); c.moveTo(25, 0); c.lineTo(-40, 0); c.moveTo(-40,0);c.lineTo(-40,-10); c.moveTo(-35,0); c.lineTo(-35,-10); c.stroke(); }, scale),
+        umbrella: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { c.strokeStyle = '#2980b9'; c.fillStyle = '#aed6f1'; c.lineWidth = 4; c.beginPath(); c.moveTo(-40, 0); c.bezierCurveTo(-40, -40, 40, -40, 40, 0); c.closePath(); c.fill(); c.stroke(); c.beginPath(); c.moveTo(0,-30);c.lineTo(0,25); c.bezierCurveTo(0, 40, -20, 40, -20, 25); c.stroke(); }, scale),
+        duck: (ctx, x, y, scale) => drawSolutions._drawShape(ctx, x, y, c => { c.strokeStyle = '#e67e22'; c.fillStyle = '#f8c471'; c.lineWidth = 3; c.beginPath(); c.moveTo(-25, 10); c.bezierCurveTo(-40, 30, 0, 30, 10, 15); c.bezierCurveTo(35, 20, 30, -10, 20, -5); c.quadraticCurveTo(25,-20, 10, -15); c.quadraticCurveTo(0,-25, -5, -10); c.bezierCurveTo(-15, 10, -25, 10, -25, 10); c.closePath(); c.fill(); c.stroke(); c.fillStyle = '#e67e22'; c.beginPath(); c.moveTo(20,-5); c.lineTo(30,-8); c.lineTo(22,-1); c.closePath(); c.fill(); c.fillStyle = '#000'; c.beginPath(); c.arc(12, -10, 2, 0, 2*Math.PI); c.fill(); }, scale)
+    };
+    
+    function init() {
+        Object.values(canvases).forEach(({ canvas }) => {
+            canvas.width = BASE_WIDTH; canvas.height = BASE_HEIGHT;
+        });
+        const img = new Image(); img.src = '../images/ga10.jpg';
+        img.onload = () => { canvases.background.ctx.drawImage(img, 0, 0, BASE_WIDTH, BASE_HEIGHT); };
+        drawDetectionZones();
+        setupEventListeners();
+    }
+
+    function drawDetectionZones() {
+        const { ctx, canvas } = canvases.zones; ctx.clearRect(0, 0, canvas.width, canvas.height);
+        shapesData.forEach(shape => {
+            if (completedRows.has(shape.row)) return;
+            const z = shape.zone;
+            if (drawnOnZones.has(shape.id)) {
+                ctx.fillStyle = 'rgba(46, 204, 113, 0.4)'; ctx.strokeStyle = 'rgba(39, 174, 96, 1.0)'; ctx.setLineDash([]);
+            } else {
+                ctx.fillStyle = 'rgba(152, 193, 217, 0.3)'; ctx.strokeStyle = 'rgba(61, 90, 128, 0.5)'; ctx.setLineDash([5, 5]);
+            }
+            ctx.lineWidth = 2; ctx.fillRect(z.x, z.y, z.w, z.h); ctx.strokeRect(z.x, z.y, z.w, z.h);
+        });
+    }
+
+    function speak(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'ar-SA'; utterance.rate = 0.9; window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function showCelebration(row) {
+        return new Promise(resolve => {
+            const { text, icon } = rowCommentary[row];
+            celebrationIcon.textContent = icon; celebrationOverlay.style.display = 'flex'; celebrationIcon.classList.add('celebrate');
+            speak(text); successSound.play();
+            const { ctx, canvas } = canvases.fx;
+            let opacity = 0.8;
+            function flash() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (opacity > 0) { ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`; ctx.fillRect(0, 0, canvas.width, canvas.height); opacity -= 0.05; requestAnimationFrame(flash); }
+            }
+            flash();
+            setTimeout(() => { celebrationIcon.classList.remove('celebrate'); celebrationOverlay.style.display = 'none'; resolve(); }, 3000);
+        });
+    }
+    
+    async function checkRowCompletion(row) {
+        if (completedRows.has(row)) return;
+        const shapesInRow = shapesData.filter(s => s.row === row);
+        if (shapesInRow.every(s => drawnOnZones.has(s.id))) {
+            completedRows.add(row);
+            await showCelebration(row);
+            canvases.drawing.ctx.clearRect(0,0,BASE_WIDTH, BASE_HEIGHT);
+            progressCounter.textContent = `الصفوف المكتملة: ${completedRows.size} / ${TOTAL_ROWS}`;
+            const solutionMap = { 0: 'scissors', 1: 'moon', 2: 'vase', 3: 'arc', 4: 'key', 5: 'umbrella', 6: 'duck' };
+            const drawFn = drawSolutions[solutionMap[row]];
+            if (drawFn) { shapesInRow.forEach(s => { const z = s.zone; drawFn(canvases.solution.ctx, z.x + z.w / 2, z.y + z.h / 2, 1.1); }); }
+            drawDetectionZones();
+            if(completedRows.size === TOTAL_ROWS) { setTimeout(() => winScreen.style.display = 'flex', 500); }
+        }
+    }
+    
+    function isZoneSufficientlyDrawn(zone) {
+        const { ctx } = canvases.drawing;
+        const imageData = ctx.getImageData(zone.x, zone.y, zone.w, zone.h);
+        let drawnPixels = 0;
+        for (let i = 3; i < imageData.data.length; i += 4) { if (imageData.data[i] > 128) drawnPixels++; }
+        return (drawnPixels / (zone.w * zone.h)) * 100 >= COMPLETION_THRESHOLD;
+    }
+
+    function getEventPos(e) {
+        const rect = canvases.drawing.canvas.getBoundingClientRect();
+        const clientX = e.clientX ?? e.touches[0].clientX;
+        const clientY = e.clientY ?? e.touches[0].clientY;
+        const scaleX = canvases.drawing.canvas.width / rect.width;
+        const scaleY = canvases.drawing.canvas.height / rect.height;
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+
+    // --- دوال ووظائف جديدة ---
+    function saveState() {
+        if (undoStack.length >= MAX_UNDO_STATES) { undoStack.shift(); } // إزالة أقدم حالة
+        undoStack.push(canvases.drawing.canvas.toDataURL());
+    }
+
+    function undoLastAction() {
+        if (undoStack.length < 1) return;
+        const lastStateUrl = undoStack.pop();
+        const img = new Image();
+        img.onload = () => {
+            const { ctx, canvas } = canvases.drawing;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            shapesData.forEach(shape => { // إعادة تقييم المناطق بعد التراجع
+                if (!completedRows.has(shape.row)) {
+                    if (isZoneSufficientlyDrawn(shape.zone)) { drawnOnZones.add(shape.id); } 
+                    else { drawnOnZones.delete(shape.id); }
+                }
+            });
+            drawDetectionZones();
+        };
+        img.src = lastStateUrl;
+    }
+
+    function clearAllDrawings() {
+        canvases.drawing.ctx.clearRect(0, 0, BASE_WIDTH, BASE_HEIGHT);
+        shapesData.forEach(shape => { // إعادة تعيين المناطق غير المكتملة فقط
+            if (!completedRows.has(shape.row)) { drawnOnZones.delete(shape.id); }
+        });
+        drawDetectionZones();
+        undoStack = []; // مسح سجل التراجع
+    }
+
+    function switchTool(tool) {
+        currentTool = tool;
+        const penBtn = document.getElementById('pen-tool');
+        const eraserBtn = document.getElementById('eraser-tool');
+        const drawingCanvas = canvases.drawing.canvas;
+        if (tool === 'pen') {
+            penBtn.classList.add('active');
+            eraserBtn.classList.remove('active');
+            drawingCanvas.style.cursor = 'crosshair';
+        } else if (tool === 'eraser') {
+            eraserBtn.classList.add('active');
+            penBtn.classList.remove('active');
+            drawingCanvas.style.cursor = 'cell'; // شكل مميز للممحاة
+        }
+    }
+    // --- نهاية الدوال الجديدة ---
+
+    function startDrawing(e) {
+        e.preventDefault();
+        saveState(); // حفظ الحالة قبل البدء بالرسم للتراجع
+        const { x, y } = getEventPos(e);
+        currentDrawingZone = shapesData.find(s => {
+            const z = s.zone;
+            return !completedRows.has(s.row) && x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h;
+        });
+        
+        if (currentDrawingZone) {
+            isDrawing = true; [lastX, lastY] = [x, y];
+            const { ctx } = canvases.drawing;
+            ctx.save(); ctx.beginPath();
+            ctx.rect(currentDrawingZone.zone.x, currentDrawingZone.zone.y, currentDrawingZone.zone.w, currentDrawingZone.zone.h);
+            ctx.clip();
+        }
+    }
+
+    function draw(e) {
+        if (!isDrawing || !currentDrawingZone) return;
+        e.preventDefault();
+        const { x, y } = getEventPos(e);
+        const { ctx } = canvases.drawing;
+
+        // --- تعديل منطق الرسم ---
+        if (currentTool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out'; // وضع المحو
+        } else {
+            ctx.globalCompositeOperation = 'source-over'; // وضع الرسم العادي
+            ctx.strokeStyle = penColor;
+        }
+        // --- نهاية التعديل ---
+        
+        ctx.lineWidth = penSize;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+        [lastX, lastY] = [x, y];
+    }
+
+    function stopDrawing() {
+        if (!isDrawing || !currentDrawingZone) return;
+        canvases.drawing.ctx.restore(); // استعادة حالة السياق وإزالة القص
+
+        // --- تعديل منطق التحقق من الاكتمال ---
+        if (isZoneSufficientlyDrawn(currentDrawingZone.zone)) {
+            if (!drawnOnZones.has(currentDrawingZone.id)) {
+                drawnOnZones.add(currentDrawingZone.id);
+                zoneCompleteSound.play();
+            }
+        } else {
+            // إذا أصبح الرسم غير مكتمل بعد المحو، قم بإزالته من القائمة
+            drawnOnZones.delete(currentDrawingZone.id);
+        }
+        // --- نهاية التعديل ---
+
+        drawDetectionZones(); // تحديث فوري لشكل المناطق
+        checkRowCompletion(currentDrawingZone.row);
+        
+        isDrawing = false; currentDrawingZone = null;
+    }
+    
+    function setupEventListeners() {
+        document.querySelectorAll('.color-box').forEach(b => b.addEventListener('click', () => {
+            document.querySelector('.color-box.active').classList.remove('active');
+            b.classList.add('active'); penColor = b.dataset.color;
+            switchTool('pen'); // العودة إلى وضع القلم عند اختيار لون
+        }));
+        document.getElementById('pen-size').addEventListener('input', e => { penSize = e.target.value; });
+
+        // --- مستمعو الأحداث الجدد ---
+        document.getElementById('pen-tool').addEventListener('click', () => switchTool('pen'));
+        document.getElementById('eraser-tool').addEventListener('click', () => switchTool('eraser'));
+        document.getElementById('undo-btn').addEventListener('click', undoLastAction);
+        document.getElementById('clear-all-btn').addEventListener('click', clearAllDrawings);
+        // --- نهاية المستمعين الجدد ---
+
+        const { canvas } = canvases.drawing;
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        document.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        document.addEventListener('touchend', stopDrawing);
+    }
+    
+    window.onload = init;
+    </script>
+</body> 
+</html>

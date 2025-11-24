@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>لعبة توصيل المتشابهات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-color: #8e44ad;
+            --secondary-color: #9b59b6;
+            --correct-color: #2ecc71;
+            --background-color: #ecf0f1;
+            --board-color: #ffffff;
+            --font-family: 'Cairo', sans-serif;
+            --line-color: #f1c40f;
+            --hotspot-color: #8e44ad;
+            --hotspot-glow: rgba(142, 68, 173, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            font-family: var(--font-family); background-color: var(--background-color);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 15px; overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-container {
+            width: 100%; max-width: 800px; background-color: var(--board-color);
+            border-radius: 25px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: clamp(10px, 3vw, 20px); text-align: center;
+        }
+
+        .game-header { margin-bottom: 10px; }
+        .prompt-bar {
+            font-size: clamp(1.2rem, 4vw, 1.6rem); font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 12px 20px; border-radius: 15px;
+        }
+        
+        .progress-bar { width: 100%; height: 8px; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { width: 0%; height: 100%; background: var(--correct-color); border-radius: 4px; transition: width 0.5s ease; }
+        
+        .matching-area {
+            position: relative; width: 100%; max-height: 78vh;
+            aspect-ratio: 0.707; margin: 0 auto; border-radius: 15px;
+            overflow: hidden; background-size: contain; background-position: center;
+            background-repeat: no-repeat; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            touch-action: none;
+        }
+        
+        .matching-area canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #background-canvas { z-index: 1; pointer-events: none; }
+        #drawing-canvas { z-index: 2; cursor: pointer; }
+
+        .game-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(5px); }
+        .game-overlay.visible { opacity: 1; visibility: visible; }
+        
+        .popup { background: white; padding: 30px 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); transform: scale(0.8); transition: transform 0.3s ease; max-width: 90%; width: 400px; }
+        .game-overlay.visible .popup { transform: scale(1); }
+        .popup-title { font-size: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: 20px; color: #333; line-height: 1.4; }
+        .popup-button { font-family: var(--font-family); padding: 15px 40px; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: white; border: none; border-radius: 50px; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        
+        #info-popup .popup-content { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .popup-image {
+            max-width: 150px;
+            max-height: 150px;
+            height: auto;
+            border-radius: 10px;
+        }
+        #info-popup .popup-title { margin-bottom: 10px; font-size: 2.2rem; }
+        #info-popup .close-button { background: var(--correct-color); }
+
+        @keyframes shake { from, to { transform: translateX(0); } 10%, 50%, 90% { transform: translateX(-8px); } 30%, 70% { transform: translateX(8px); } }
+        .shake { animation: shake 0.4s ease-in-out; }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="game-container">
+    <div class="game-header">
+        <div class="prompt-bar" id="prompt-bar">صل بين الأشياء المتشابهة</div>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+    </div>
+    <div class="matching-area" id="matching-area">
+        <canvas id="background-canvas"></canvas>
+        <canvas id="drawing-canvas"></canvas>
+    </div>
+</div>
+
+<div class="game-overlay visible" id="start-overlay"><div class="popup"><i class="fas fa-link popup-icon"></i><h2 class="popup-title">هل أنت مستعد للتوصيل؟</h2><button id="start-button" class="popup-button">ابدأ اللعب</button></div></div>
+<div class="game-overlay" id="final-win-overlay"><div class="popup"><i class="fas fa-trophy popup-icon" style="color: #ffc107;"></i><h2 class="popup-title">عمل رائع! لقد وصلت كل الأشكال!</h2><button id="restart-button" class="popup-button">العب مرة أخرى</button></div></div>
+
+<div class="game-overlay" id="info-popup">
+    <div class="popup">
+        <div class="popup-content">
+            <img id="info-image" class="popup-image" src="" alt="وصف الصورة">
+            <h2 id="info-title" class="popup-title"></h2>
+            <button id="info-close-button" class="popup-button close-button">متابعة</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- تعريف العناصر الأساسية (بدون تغيير) ---
+    const gameContainer=document.getElementById('game-container'),matchingArea=document.getElementById('matching-area'),progressFill=document.getElementById('progress-fill'),canvases={bg:document.getElementById('background-canvas'),draw:document.getElementById('drawing-canvas')},ctx={bg:canvases.bg.getContext('2d'),draw:canvases.draw.getContext('2d')},startOverlay=document.getElementById('start-overlay'),finalWinOverlay=document.getElementById('final-win-overlay'),startButton=document.getElementById('start-button'),restartButton=document.getElementById('restart-button'),infoPopup=document.getElementById('info-popup'),infoImage=document.getElementById('info-image'),infoTitle=document.getElementById('info-title'),infoCloseButton=document.getElementById('info-close-button');
+    const HOTSPOT_RADIUS=30;
+
+    /****************************************************************************************
+     * 
+     *  -- بيانات اللعبة (لم يتم المساس بها كما طلبت) --
+     * 
+     ****************************************************************************************/
+    const gamePairs=[
+        {id:'flower',itemA_pos:{x:25.5,y:12},itemB_pos:{x:26.5,y:30},imageSrc:'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExcm82YzZrcWZjMm5pNjZ0eDRjd2lsY2pvM3h2NjM3ZjlyOTlscjR6ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yDpFRI246xNLzNoaCm/giphy.gif',description:'زهرة التوليب',isMatched:false},
+        {id:'teacup',itemA_pos:{x:57,y:14.5},itemB_pos:{x:66.5,y:30},imageSrc:'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGp2eWNhajh3enlsbjR2YzYzNm4zbGZhNTFqanlsZGk5ZnJ5eHF4aiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/SteB4dSAcvz4Q/giphy.gif',description:'فنجان شاي',isMatched:false},
+        {id:'table',itemA_pos:{x:30,y:38},itemB_pos:{x:30,y:55},imageSrc:'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExcjljMnltOGt5ajVzbmo5ZWo2ajNrZnM5YTBqdnB0aWg5dm9tcjExaCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9IgjnrmEsKNUmEKc/giphy.gif',description:'طاولة',isMatched:false},
+        {id:'vase',itemA_pos:{x:85,y:35},itemB_pos:{x:70,y:55},imageSrc:'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWl0MHV0OXlzM3ZtNXl2N3VlNzVvdHl3emZ1NHZyMWQ2dTI3aWQ1MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/le5OhP9YOxnBZt5vgz/giphy.gif',description:'مزهرية',isMatched:false},
+        {id:'flag',itemA_pos:{x:18,y:65},itemB_pos:{x:30,y:80},imageSrc:'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExMDQ3ejdobjQ0Nndoemw4M2EwZDB5Zjk5cjl2Mjd2MmQ0MXB0cG45cyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/5qGClwRT54rcvzrs7x/giphy.gif',description:'علم العراق',isMatched:false},
+        {id:'apple',itemA_pos:{x:55,y:65},itemB_pos:{x:70,y:80},imageSrc:'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXp5enIzMHNyZ2tnYmV1bXp6d2c0b2tjMjIwMDRsemh0MzVhNDFtdyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Jr1LxCGe5emwDXwHki/giphy.gif',description:'تفاحة حمراء',isMatched:false}
+    ];
+    
+    
+    // --- [إضافة جديدة] : دالة لتحميل الصور المتحركة مسبقاً ---
+    function preloadGameImages() {
+        console.log("بدء التحميل المسبق للصور المتحركة...");
+        gamePairs.forEach(pair => {
+            const img = new Image();
+            img.src = pair.imageSrc;
+        });
+    }
+
+    let isGameActive=false,isDrawing=false,selectedItem=null,scale=1,matchedCount=0;
+
+    const backgroundImage = new Image();
+    const imagePath = ' ../images/ga9.jpg';
+    let imageRenderInfo = { x: 0, y: 0, width: 0, height: 0 }; 
+
+    function calculateImageRenderSize() {
+        const canvasWidth = canvases.bg.width;
+        const canvasHeight = canvases.bg.height;
+        const imageAspectRatio = backgroundImage.naturalWidth / backgroundImage.naturalHeight;
+        const canvasAspectRatio = canvasWidth / canvasHeight;
+        let renderWidth, renderHeight, x, y;
+        if (canvasAspectRatio > imageAspectRatio) {
+            renderHeight = canvasHeight;
+            renderWidth = canvasHeight * imageAspectRatio;
+            x = (canvasWidth - renderWidth) / 2;
+            y = 0;
+        } else {
+            renderWidth = canvasWidth;
+            renderHeight = canvasWidth / imageAspectRatio;
+            x = 0;
+            y = (canvasHeight - renderHeight) / 2;
+        }
+        imageRenderInfo = { x, y, width: renderWidth, height: renderHeight };
+    }
+
+    function speak(text){if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=0.9;window.speechSynthesis.speak(u);}}
+    
+    function init(){
+        preloadGameImages(); // <<-- تم استدعاء الدالة الجديدة هنا
+
+        backgroundImage.onload = () => {
+            matchingArea.style.backgroundImage = `url('${imagePath}')`;
+            setupEventListeners();
+            window.addEventListener('resize', resizeAndDrawAll);
+            resizeAndDrawAll(); 
+        };
+        backgroundImage.src = imagePath;
+    }
+    
+    function startGame(){startOverlay.classList.remove('visible');isGameActive=true;gamePairs.forEach(p=>p.isMatched=false);matchedCount=0;updateProgressBar();resizeAndDrawAll();}
+    
+    function resizeAndDrawAll(){
+        const rect=matchingArea.getBoundingClientRect();
+        Object.values(canvases).forEach(c=>{c.width=rect.width;c.height=rect.height;});
+        calculateImageRenderSize();
+        scale = imageRenderInfo.width / 800;
+        drawScene();
+    }
+
+    function drawScene() {
+        ctx.bg.clearRect(0, 0, canvases.bg.width, canvases.bg.height);
+        gamePairs.forEach(pair => {
+            if (pair.isMatched) {
+                drawPermanentLine(pair.itemA_pos, pair.itemB_pos);
+            } else {
+                drawHotspot(pair.itemA_pos);
+                drawHotspot(pair.itemB_pos);
+            }
+        });
+    }
+
+    function drawPermanentLine(pos1, pos2) {
+        const p1 = percentToPixel(pos1); const p2 = percentToPixel(pos2);
+        ctx.bg.beginPath(); ctx.bg.moveTo(p1.x, p1.y); ctx.bg.lineTo(p2.x, p2.y);
+        ctx.bg.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--correct-color');
+        ctx.bg.lineWidth = 8 * scale; ctx.bg.lineCap = 'round';
+        ctx.bg.shadowColor = 'rgba(46, 204, 113, 0.5)'; ctx.bg.shadowBlur = 10;
+        ctx.bg.stroke(); ctx.bg.shadowColor = 'transparent';
+    }
+
+    function drawHotspot(pos) {
+        const p = percentToPixel(pos);
+        const baseRadius = 15 * scale;
+        const pulse = Math.sin(Date.now() / 400) * 5 * scale;
+        ctx.bg.beginPath();
+        ctx.bg.arc(p.x, p.y, baseRadius + pulse, 0, Math.PI * 2);
+        ctx.bg.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--hotspot-glow');
+        ctx.bg.fill();
+        ctx.bg.beginPath();
+        ctx.bg.arc(p.x, p.y, baseRadius * 0.7, 0, Math.PI * 2);
+        ctx.bg.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--hotspot-color');
+        ctx.bg.fill();
+    }
+    
+    function handleStart(e){if(!isGameActive||isDrawing)return;e.preventDefault();const pos=getCanvasCoords(e);const clickedItem=findClickedItem(pos);if(clickedItem&&!clickedItem.pair.isMatched){isDrawing=true;selectedItem=clickedItem;}}
+    function handleMove(e){if(!isDrawing)return;e.preventDefault();const pos=getCanvasCoords(e);drawTemporaryLine(pos);}
+    function handleEnd(e){if(!isDrawing)return;isDrawing=false;ctx.draw.clearRect(0,0,canvases.draw.width,canvases.draw.height);const pos=getCanvasCoords(e);const targetItem=findClickedItem(pos);if(selectedItem&&targetItem&&selectedItem.itemKey!==targetItem.itemKey&&selectedItem.pair.id===targetItem.pair.id){handleCorrectMatch(selectedItem.pair);}else{handleIncorrectMatch();}selectedItem=null;}
+    
+    function handleCorrectMatch(pair){pair.isMatched=true;matchedCount++;updateProgressBar();resizeAndDrawAll();showInfoPopup(pair);if(matchedCount===gamePairs.length){isGameActive=false;setTimeout(()=>finalWinOverlay.classList.add('visible'),1500);}}
+    function handleIncorrectMatch(){gameContainer.classList.add('shake');setTimeout(()=>gameContainer.classList.remove('shake'),400);}
+    
+    function findClickedItem(pos){for(const pair of gamePairs){const p1=percentToPixel(pair.itemA_pos);if(distance(pos,p1)<HOTSPOT_RADIUS*scale)return{pair:pair,itemKey:'itemA_pos',pos:p1};const p2=percentToPixel(pair.itemB_pos);if(distance(pos,p2)<HOTSPOT_RADIUS*scale)return{pair:pair,itemKey:'itemB_pos',pos:p2};}return null;}
+    
+    function drawTemporaryLine(endPos){ctx.draw.clearRect(0,0,canvases.draw.width,canvases.draw.height);const startPos=selectedItem.pos;ctx.draw.beginPath();ctx.draw.moveTo(startPos.x,startPos.y);ctx.draw.lineTo(endPos.x,endPos.y);ctx.draw.strokeStyle=getComputedStyle(document.documentElement).getPropertyValue('--line-color');ctx.draw.lineWidth=10*scale;ctx.draw.lineCap='round';ctx.draw.setLineDash([15*scale,10*scale]);ctx.draw.stroke();}
+    
+    function updateProgressBar(){progressFill.style.width=`${(matchedCount/gamePairs.length)*100}%`;}
+    
+    function showInfoPopup(pair){isGameActive=false;infoImage.src=pair.imageSrc;infoTitle.textContent=pair.description;infoPopup.classList.add('visible');speak(pair.description);}
+    function hideInfoPopup(){isGameActive=true;infoPopup.classList.remove('visible');}
+    
+    function percentToPixel(p){
+        const x = imageRenderInfo.x + (p.x / 100) * imageRenderInfo.width;
+        const y = imageRenderInfo.y + (p.y / 100) * imageRenderInfo.height;
+        return { x, y };
+    }
+
+    function getCanvasCoords(e){const r=canvases.draw.getBoundingClientRect(),cX=e.type.includes('touch')?e.touches[0].clientX:e.clientX,cY=e.type.includes('touch')?e.touches[0].clientY:e.clientY;return{x:cX-r.left,y:cY-r.top};}
+    function distance(p1,p2){return Math.hypot(p1.x-p2.x,p1.y-p2.y);}
+    
+    function setupEventListeners(){canvases.draw.addEventListener('mousedown',handleStart);canvases.draw.addEventListener('mousemove',handleMove);document.addEventListener('mouseup',handleEnd);canvases.draw.addEventListener('touchstart',handleStart,{passive:false});canvases.draw.addEventListener('touchmove',handleMove,{passive:false});canvases.draw.addEventListener('touchend',handleEnd);startButton.addEventListener('click',startGame);restartButton.addEventListener('click',()=>{finalWinOverlay.classList.remove('visible');startGame();});infoCloseButton.addEventListener('click',hideInfoPopup);}
+
+    init();
+    
+    function animate() {
+        if (isGameActive && !isDrawing) {
+            drawScene();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+});
+</script>
+</body>
+</html>

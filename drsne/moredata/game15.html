@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدينة المرور التفاعلية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3498db;
+            --warning: #f1c40f;
+            --danger: #e74c3c;
+            --info: #1abc9c;
+            --dark: #2c3e50;
+            --bg: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--dark);
+            padding-bottom: 60px; /* مسافة لمؤشر الصوت */
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #2980b9);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.9; }
+
+        /* --- قسم الصورة التفاعلية --- */
+        .interactive-container {
+            position: relative;
+            max-width: 600px;
+            width: 95%;
+            margin: 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background: #fff;
+            border: 3px solid #fff;
+        }
+
+        .interactive-container img {
+            width: 100%;
+            display: block;
+            object-fit: cover;
+        }
+
+        /* النقاط الساخنة */
+        .hotspot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: var(--warning);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .hs-1 { top: 15%; left: 45%; } /* الشرطي */
+        .hs-2 { top: 65%; left: 35%; } /* الطلاب */
+        .hs-3 { top: 42%; left: 25%; } /* الممر */
+        .hs-4 { top: 55%; right: 15%; } /* المدرسة */
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+        }
+
+        /* نافذة المعلومات فوق الصورة (Overlay) */
+        .info-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 2%;
+            width: 96%;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            display: none; /* مخفي افتراضياً */
+            z-index: 20;
+            animation: slideUp 0.3s ease-out;
+            border-right: 4px solid var(--primary);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .overlay-title { margin: 0; font-size: 1rem; color: var(--primary); font-weight: bold; }
+        .close-btn { cursor: pointer; background: #eee; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+        .overlay-text { margin: 0; font-size: 0.85rem; color: #444; line-height: 1.5; }
+
+        /* --- قسم الإشارات --- */
+        .signs-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .t-warn { color: #d35400; border-color: #d35400; }
+        .t-stop { color: var(--danger); border-color: var(--danger); }
+        .t-info { color: var(--info); border-color: var(--info); }
+
+        /* الشبكة المتجاوبة (3 أعمدة في الجوال) */
+        .signs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* للكمبيوتر */
+            gap: 8px;
+        }
+
+        /* تخصيص للجوال لضمان 3 أعمدة */
+        @media (max-width: 768px) {
+            .signs-grid {
+                grid-template-columns: repeat(3, 1fr); /* 3 أعمدة ثابتة */
+            }
+        }
+
+        .sign-card {
+            background: white;
+            border-radius: 8px;
+            padding: 8px 4px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 90px; /* ارتفاع ثابت وصغير */
+        }
+
+        .sign-card:active { transform: scale(0.95); background: #f9f9f9; }
+
+        .sign-icon { font-size: 2rem; line-height: 1; margin-bottom: 5px; }
+        .sign-name { font-size: 0.7rem; font-weight: bold; color: #333; line-height: 1.2; overflow: hidden; }
+
+        /* مؤشر الصوت */
+        .audio-status {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2c3e50;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🚦 مدرستي الآمنة</h1>
+        <p>اضغط على الصورة والإشارات للتعلم</p>
+    </header>
+
+    <!-- الصورة التفاعلية -->
+    <div class="interactive-container">
+        <!-- ضع اسم صورتك هنا -->
+        <img src="/drsne/images/ga15.jpg" alt="صورة تعليمية" onerror="this.src='https://via.placeholder.com/600x450?text=صورة+الدرس'">
+        
+        <!-- النقاط -->
+        <div class="hotspot hs-1" onclick="showOverlay('police')">👮‍♂️</div>
+        <div class="hotspot hs-2" onclick="showOverlay('kids')">🎒</div>
+        <div class="hotspot hs-3" onclick="showOverlay('crosswalk')">🦓</div>
+        <div class="hotspot hs-4" onclick="showOverlay('school')">🏫</div>
+
+        <!-- النافذة العائمة فوق الصورة -->
+        <div class="info-overlay" id="imageOverlay">
+            <div class="overlay-header">
+                <h3 class="overlay-title" id="ovTitle">العنوان</h3>
+                <span class="close-btn" onclick="closeOverlay()">✕</span>
+            </div>
+            <p class="overlay-text" id="ovText">النص هنا...</p>
+        </div>
+    </div>
+
+    <!-- الإشارات -->
+    <div class="signs-wrapper">
+        
+        <div class="section-title t-warn">⚠️ إشارات تحذيرية</div>
+        <div class="signs-grid" id="gridWarn"></div>
+
+        <div class="section-title t-stop">⛔ إشارات المنع</div>
+        <div class="signs-grid" id="gridStop"></div>
+
+        <div class="section-title t-info">ℹ️ إشارات إرشادية</div>
+        <div class="signs-grid" id="gridInfo"></div>
+
+    </div>
+
+    <div class="audio-status" id="audioStatus">🔊 جارٍ القراءة...</div>
+
+    <script>
+        /* --- البيانات --- */
+        const scenarios = {
+            police: { title: "الشرطي صديقنا", text: "يقف الشرطي ليوقف السيارات حتى نعبر بأمان. يجب أن نطيعه دائماً." },
+            kids: { title: "النظام", text: "نسير في صف واحد، لا نركض، وننظر يميناً ويساراً قبل العبور." },
+            crosswalk: { title: "ممر المشاة", text: "الخطوط البيضاء هي المكان الوحيد المسموح لنا بعبور الشارع منه." },
+            school: { title: "المدرسة", text: "وصلنا! الالتزام بالقواعد يوصلنا للمدرسة ونحن سالمون وبصحة جيدة." }
+        };
+
+        const signs = [
+            // تحذيرية
+            { t: 'w', i: '🚸', n: 'منطقة مدارس', d: 'خفف السرعة، طلاب مدارس.' },
+            { t: 'w', i: '🚦', n: 'إشارة ضوئية', d: 'إشارة مرور أمامك.' },
+            { t: 'w', i: '🚧', n: 'أشغال', d: 'عمال يعملون بالطريق.' },
+            { t: 'w', i: '⚽', n: 'أطفال', d: 'احذر خروج أطفال.' },
+            { t: 'w', i: '🐪', n: 'مطب', d: 'مطب صناعي، هدئ السرعة.' },
+            { t: 'w', i: '📉', n: 'منحدر', d: 'الطريق ينزل لأسفل.' },
+            
+            // منع
+            { t: 's', i: '🛑', n: 'قف', d: 'توقف تام قبل العبور.' },
+            { t: 's', i: '⛔', n: 'ممنوع الدخول', d: 'طريق عكسي.' },
+            { t: 's', i: '🚫', n: 'ممنوع الوقوف', d: 'لا تركن السيارة هنا.' },
+            { t: 's', i: '📵', n: 'ممنوع الجوال', d: 'ركز في الطريق.' },
+            { t: 's', i: '🔞', n: 'سرعة 30', d: 'السرعة القصوى 30.' },
+            { t: 's', i: '↪️', n: 'ممنوع الدوران', d: 'لا ترجع للخلف.' },
+
+            // إرشادية
+            { t: 'i', i: '🚶', n: 'ممر مشاة', d: 'اعبر من هنا.' },
+            { t: 'i', i: '🅿️', n: 'موقف', d: 'موقف سيارات.' },
+            { t: 'i', i: '🏥', n: 'مستشفى', d: 'مستشفى قريب.' },
+            { t: 'i', i: '♿', n: 'ذوي الهمم', d: 'موقف خاص.' },
+            { t: 'i', i: '🚲', n: 'دراجات', d: 'مسار دراجات.' },
+            { t: 'i', i: '⛽', n: 'محطة', d: 'محطة وقود.' },
+        ];
+
+        /* --- المنطق البرمجي --- */
+        
+        // 1. توليد الإشارات
+        function renderSigns() {
+            const grids = {
+                w: document.getElementById('gridWarn'),
+                s: document.getElementById('gridStop'),
+                i: document.getElementById('gridInfo')
+            };
+
+            signs.forEach(s => {
+                const el = document.createElement('div');
+                el.className = 'sign-card';
+                el.innerHTML = `<div class="sign-icon">${s.i}</div><div class="sign-name">${s.n}</div>`;
+                el.onclick = () => speak(s.n + ". " + s.d);
+                if(grids[s.t]) grids[s.t].appendChild(el);
+            });
+        }
+
+        // 2. التحكم بالنافذة فوق الصورة
+        const overlay = document.getElementById('imageOverlay');
+        const ovTitle = document.getElementById('ovTitle');
+        const ovText = document.getElementById('ovText');
+
+        function showOverlay(key) {
+            const data = scenarios[key];
+            ovTitle.innerText = data.title;
+            ovText.innerText = data.text;
+            overlay.style.display = 'block';
+            speak(data.text);
+        }
+
+        function closeOverlay() {
+            overlay.style.display = 'none';
+            stopSpeech();
+        }
+
+        // 3. الصوت
+        function speak(txt) {
+            stopSpeech();
+            const utt = new SpeechSynthesisUtterance(txt);
+            utt.lang = 'ar-SA';
+            utt.rate = 0.9;
+            
+            const status = document.getElementById('audioStatus');
+            status.style.display = 'block';
+            
+            utt.onend = () => status.style.display = 'none';
+            window.speechSynthesis.speak(utt);
+        }
+
+        function stopSpeech() {
+            window.speechSynthesis.cancel();
+            document.getElementById('audioStatus').style.display = 'none';
+        }
+
+        // تشغيل عند البدء
+        renderSigns();
+
+    </script>
+</body>
+</html>

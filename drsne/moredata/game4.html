@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة تخمين الأصوات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        :root {
+            --primary-color: #3498db;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --listening-color: #f1c40f;
+            --background-color: #ecf0f1;
+            --font-family: 'Cairo', sans-serif;
+            --hotspot-color: rgba(52, 152, 219, 0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(17, 12, 123, 0.1);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .game-title {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .game-description {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-text {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 10px;
+            background-color: #dfe6e9;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--correct-color);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .background-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .hotspot {
+            position: absolute;
+            cursor: pointer;
+            border: 3px dashed rgba(255, 255, 255, 0.74);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            background-color: var(--hotspot-color);
+        }
+        
+        .hotspot:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .hotspot.found {
+            background-color: rgba(46, 204, 113, 0.3);
+            border: 3px solid var(--correct-color);
+            pointer-events: none;
+        }
+
+        /* أماكن المناطق القابلة للنقر */
+        #hotspot-duck { top: 9%; left: 8%; width: 26%; height: 23%; }
+        #hotspot-clock { top: 2%; left: 39%; width: 22%; height: 32%; }
+        #hotspot-rooster { top: 3%; left: 66%; width: 26%; height: 30%; }
+        #hotspot-sheep { top: 36%; left: 8%; width: 33%; height: 29%; }
+        #hotspot-harmonica { top: 35%; left: 63%; width: 23%; height: 23%; }
+        #hotspot-car { top: 67%; left: 8%; width: 45%; height: 18%; }
+        #hotspot-train { top: 62%; left: 57%; width: 38%; height: 23%; }
+        
+        .popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.8); display: none; justify-content: center;
+            align-items: center; z-index: 1000; padding: 20px;
+        }
+        
+        .popup-overlay.visible { display: flex; animation: fadeIn 0.3s ease; }
+
+        .popup-content {
+            background-color: white; padding: 30px 40px; border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); max-width: 500px;
+            width: 100%; text-align: center;
+            animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #popup-icon {
+            font-size: 5rem; margin-bottom: 20px; color: var(--primary-color);
+            transition: color 0.3s ease;
+        }
+        #popup-icon.listening {
+            color: var(--listening-color); animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        #popup-status { font-size: 1.5rem; color: #34495e; min-height: 50px; }
+        #spoken-result { font-size: 1.8rem; font-weight: 700; color: #2c3e50; min-height: 50px; margin-top: 10px; }
+        .feedback-correct { color: var(--correct-color); }
+        .feedback-incorrect { color: var(--incorrect-color); }
+        
+        #close-popup-button {
+            position: absolute; top: 15px; right: 15px; font-size: 1.5rem;
+            background: none; border: none; cursor: pointer; color: #7f8c8d;
+            transition: color 0.3s ease;
+        }
+        #close-popup-button:hover { color: var(--incorrect-color); }
+        
+        .popup-controls { margin-top: 20px; display: flex; justify-content: center; gap: 10px; }
+        .popup-button {
+            padding: 10px 20px; border: none; border-radius: 10px;
+            font-family: var(--font-family); font-size: 1rem;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        #replay-button { background-color: var(--primary-color); color: white; }
+        #replay-button:hover { background-color: #2980b9; }
+        #skip-button { background-color: #95a5a6; color: white; }
+        #skip-button:hover { background-color: #7f8c8d; }
+        
+        .completion-message {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(255, 255, 255, 0.9); border-radius: 25px;
+            justify-content: center; align-items: center; flex-direction: column; z-index: 10;
+        }
+        .completion-message.visible { display: flex; animation: fadeIn 0.5s ease; }
+        .completion-icon { font-size: 5rem; color: var(--correct-color); margin-bottom: 20px; }
+        .completion-text { font-size: 2rem; color: #2c3e50; margin-bottom: 20px; }
+        
+        #restart-button {
+            padding: 12px 30px; background-color: var(--primary-color); color: white;
+            border: none; border-radius: 10px; font-family: var(--font-family);
+            font-size: 1.2rem; cursor: pointer; transition: background-color 0.3s ease;
+        }
+        #restart-button:hover { background-color: #2980b9; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1 class="game-title">خمن الاصوات</h1>
+    <p class="game-description">اضغط على أي جزء في الصورة، استمع جيداً للصوت، ثم قل اسم الشيء الذي سمعته!</p>
+    
+    <div class="progress-container">
+        <span class="progress-text">التقدم:</span>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <span class="progress-text" id="progress-text">0/7</span>
+    </div>
+    
+    <div class="image-wrapper">
+        <img src="/drsne/images/ddfg.jpg" alt="محاكاة أصوات الآلات والحيوانات" class="background-image" id="game-image">
+    </div>
+    
+    <div class="completion-message" id="completion-message">
+        <i class="fas fa-trophy completion-icon"></i>
+        <h2 class="completion-text">مبروك! لقد أكملت اللعبة</h2>
+        <button id="restart-button">العب مرة أخرى</button>
+    </div>
+</div>
+
+<div id="popup" class="popup-overlay">
+    <div class="popup-content">
+        <button id="close-popup-button"><i class="fas fa-times"></i></button>
+        <i id="popup-icon" class="fas fa-volume-up"></i>
+        <h2 id="popup-status">استعد للاستماع...</h2>
+        <p id="spoken-result"></p>
+        
+        <div class="popup-controls">
+            <button id="replay-button" class="popup-button"> <i class="fas fa-redo"></i> إعادة التشغيل </button>
+            <button id="skip-button" class="popup-button"> <i class="fas fa-forward"></i> تخطي </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const gameData = {
+            duck: { soundSrc: 'ddsd.m4a', validAnswers: ['بطة', 'بط','البطة'] },
+            clock: { soundSrc: 'dsdd.m4a', validAnswers: [ 'الوقت','ساعة', 'الساعة'] },
+            rooster: { soundSrc: 'rooster.wav', validAnswers: ['ديك', 'الديك'] },
+            sheep: { soundSrc: 'gds.wav', validAnswers: ['خروف','خراف', 'الخروف'] },
+            harmonica: { soundSrc: 'miusic.m4a', validAnswers: ['موسيقى', 'يعزف', 'هارمونيكا', 'مزمار'] },
+            car: { soundSrc: 'ffd.mp3', validAnswers: ['سيارة','مركبة', 'السيارة'] },
+            train: { soundSrc: 'ffdfs.m4a', validAnswers: ['قطار','سكك', 'القطار'] }
+        };
+
+        const imageWrapper = document.querySelector('.image-wrapper'), gameImage = document.getElementById('game-image');
+        const popup = document.getElementById('popup'), popupIcon = document.getElementById('popup-icon'), popupStatus = document.getElementById('popup-status'), spokenResult = document.getElementById('spoken-result'), closePopupButton = document.getElementById('close-popup-button');
+        const replayButton = document.getElementById('replay-button'), skipButton = document.getElementById('skip-button');
+        const progressFill = document.getElementById('progress-fill'), progressText = document.getElementById('progress-text');
+        const completionMessage = document.getElementById('completion-message'), restartButton = document.getElementById('restart-button');
+        
+        let currentItemKey = null, foundItems = 0, currentAudio = null;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        
+        let feedbackAudio = new Audio();
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            // ✨ تم التعديل هنا: تغيير اللغة إلى العربية (العراق)
+            recognition.lang = 'ar-IQ';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.onresult = handleVoiceResult;
+            recognition.onend = () => popupIcon.classList.remove('listening');
+            recognition.onerror = (event) => {
+                if(event.error !== 'no-speech') {
+                    popupStatus.textContent = "لم أستطع سماعك، حاول مرة أخرى.";
+                    console.error('Speech recognition error', event.error);
+                }
+            };
+        } else {
+            document.body.innerHTML = "<h1>عذراً، متصفحك لا يدعم ميزة التعرف على الصوت. يرجى استخدام جوجل كروم.</h1>";
+            return;
+        }
+
+        gameImage.onerror = () => { imageWrapper.innerHTML = `<p style="color: red; padding: 50px;">فشل تحميل الصورة.</p>`; };
+        
+        function playFeedbackSound(src) {
+            feedbackAudio.src = src;
+            feedbackAudio.play();
+        }
+
+        function normalizeArabic(text) {
+            if (!text) return '';
+            return text.replace(/[أإآ]/g, 'ا')
+                       .replace(/ة/g, 'ه')
+                       .replace(/[^\u0621-\u064A\s]/g, '')
+                       .trim();
+        }
+        
+        function playSound(src, callback) {
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            currentAudio = new Audio(src);
+            currentAudio.onended = callback;
+            currentAudio.onerror = () => {
+                console.error(`خطأ: لم يتم العثور على ملف الصوت: ${src}.`);
+                popupStatus.textContent = "خطأ في تشغيل الصوت!";
+            };
+            currentAudio.play().catch(err => {
+                 popupStatus.textContent = "خطأ في تشغيل الصوت!";
+            });
+        }
+
+        function speak(text, callback) {
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ar-SA'; u.rate = 0.9; u.pitch = 1.2;
+            u.onend = callback;
+            speechSynthesis.speak(u);
+        }
+
+        function startRecognition() {
+            popupStatus.textContent = "تحدث الآن...";
+            popupIcon.className = 'fas fa-microphone';
+            popupIcon.classList.add('listening');
+            try { recognition.start(); } catch(e) {}
+        }
+
+        function showPopup(itemKey) {
+            currentItemKey = itemKey;
+            popup.classList.add('visible');
+            resetPopupUI();
+            speak("استمع جيداً ثم خمن اسم الصوت.", () => {
+                playSound(gameData[currentItemKey].soundSrc, startRecognition);
+            });
+        }
+
+        function handleVoiceResult(event) {
+            const spokenText = event.results[0][0].transcript.trim();
+            spokenResult.textContent = `قلت: "${spokenText}"`;
+            
+            const normalizedSpokenText = normalizeArabic(spokenText);
+            const item = gameData[currentItemKey];
+            const isCorrect = item.validAnswers.some(answer => normalizedSpokenText.includes(normalizeArabic(answer)));
+
+            if (isCorrect) {
+                playFeedbackSound('sounds/clapping.mp3'); 
+                popupStatus.textContent = "أحسنت!";
+                spokenResult.classList.add('feedback-correct');
+                spokenResult.textContent += " - إجابة صحيحة!";
+                document.querySelector(`.hotspot[data-item='${currentItemKey}']`).classList.add('found');
+                foundItems++;
+                updateProgress();
+                
+                setTimeout(closePopup, 3000); 
+
+                if (foundItems === Object.keys(gameData).length) {
+                    setTimeout(() => {
+                        completionMessage.classList.add('visible');
+                    }, 3000);
+                }
+            } else {
+                spokenResult.classList.add('feedback-incorrect');
+                spokenResult.textContent += " - إجابة خاطئة!";
+                popupStatus.textContent = "حاول مجدداً أو اضغط (إعادة التشغيل)";
+            }
+        }
+
+        function resetPopupUI() {
+            popupIcon.className = 'fas fa-volume-up';
+            popupIcon.classList.remove('listening');
+            popupStatus.textContent = "استعد للاستماع...";
+            spokenResult.textContent = '';
+            spokenResult.className = '';
+        }
+
+        function closePopup() {
+            if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; }
+            if (recognition) { recognition.stop(); }
+            speechSynthesis.cancel();
+            popup.classList.remove('visible');
+        }
+        
+        function createHotspots() {
+            document.querySelectorAll('.hotspot').forEach(hp => hp.remove());
+            for (const key in gameData) {
+                const hotspot = document.createElement('div');
+                hotspot.className = 'hotspot';
+                hotspot.id = `hotspot-${key}`;
+                hotspot.dataset.item = key;
+                hotspot.onclick = () => showPopup(key);
+                imageWrapper.appendChild(hotspot);
+            }
+        }
+        
+        function updateProgress() {
+            const totalItems = Object.keys(gameData).length;
+            const progressPercentage = (foundItems / totalItems) * 100;
+            progressFill.style.width = `${progressPercentage}%`;
+            progressText.textContent = `${foundItems}/${totalItems}`;
+        }
+        
+        function restartGame() {
+            foundItems = 0;
+            updateProgress();
+            completionMessage.classList.remove('visible');
+            document.querySelectorAll('.hotspot').forEach(hotspot => {
+                hotspot.classList.remove('found');
+            });
+        }
+        
+        closePopupButton.addEventListener('click', closePopup);
+        
+        replayButton.addEventListener('click', () => {
+            if (currentItemKey) {
+                resetPopupUI();
+                popupStatus.textContent = "استعد للاستماع...";
+                playSound(gameData[currentItemKey].soundSrc, startRecognition);
+            }
+        });
+        
+        skipButton.addEventListener('click', closePopup);
+        restartButton.addEventListener('click', restartGame);
+        
+        createHotspots();
+        updateProgress();
+    });
+</script>
+</body>
+</html>

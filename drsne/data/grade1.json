@@ -1,0 +1,869 @@
+[
+    {
+        "id": 1,
+        "title": "دادا",
+        "image": "/drsne/images/imagdata/دادا.jpg",
+        "words": [
+            {"text": "دَادَا", "harakaPos": [0, 3]},
+            {"text": "دَادَا", "harakaPos": [0, 3]},
+            {"text": "دَا", "harakaPos": [0]},
+             {"text": "دَادَا", "harakaPos": [0, 3]},
+             {"text": "دَادَا", "harakaPos": [0, 3]},
+             {"text": "دَادَا", "harakaPos": [0, 3]}
+        ]
+    },
+    {
+        "id": 2,
+        "title": "دار دادا",
+        "image": "/drsne/images/imagdata/دار.jpg",
+        "words": [
+            {"text": "دَارُ", "harakaPos": [3]},
+            {"text": "دَارُ", "harakaPos": [3]},
+            {"text": "دَارُ", "harakaPos": [3]},
+
+            {"text": "دَادَا", "harakaPos": []},
+            {"text": "دَارُ", "harakaPos": [3]},
+
+            {"text": "دَادَا", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 3,
+        "title": "دادا دور",
+        "image": "/drsne/images/imagdata/دور.jpg",
+        "words": [
+            {"text": "دَادَا", "harakaPos": [0]},
+            {"text": "دُورُ", "harakaPos": [2]},
+            {"text": "دَادَا", "harakaPos": [0]},
+            {"text": "دَادَا", "harakaPos": [0]},
+             {"text": "دُورُ", "harakaPos": [2]},
+             {"text": "دُورُ", "harakaPos": [2]},
+            {"text": "دَادَا", "harakaPos": [0]},
+            {"text": "دَادَا", "harakaPos": [0]},
+            {"text": "دَارُ", "harakaPos": []},
+            {"text": "دُورُ", "harakaPos": [2]},
+ {"text": "دَارُ", "harakaPos": []},
+            {"text": "دُورُ", "harakaPos": [2]}
+            
+            
+            
+        ]
+    },
+    {
+        "id": 4,
+        "title": "بابا",
+        "image": "/drsne/images/imagdata/بابا.jpg",
+        "words": [
+            {"text": "بَابَا", "harakaPos": [0, 3]},
+             {"text": "بَابَا", "harakaPos": [0, 3]},
+             {"text": "بَابَا", "harakaPos": [0, 3]},
+             {"text": "بَابَا", "harakaPos": [0, 3]},
+            {"text": "بَابُ", "harakaPos": [0, 3]},
+              {"text": "بَابُ", "harakaPos": [0, 3]},
+            {"text": "دَارُ", "harakaPos": []},
+             {"text": "بَابَا", "harakaPos": [0, 3]},
+            {"text": "بَابُ", "harakaPos": [0, 3]},
+            {"text": "دَارُ", "harakaPos": []},
+            {"text": "دَادَا", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 5,
+        "title": "دادا بان",
+        "image": "/drsne/images/imagdata/بان.jpg",
+        "words": [
+            {"text": "دَادَا", "harakaPos": []},
+            {"text": "بَانُ", "harakaPos": [3]},
+             {"text": "بَابَا", "harakaPos": []},
+            {"text": "بَابَا", "harakaPos": []},
+            {"text": "دَادَا", "harakaPos": []},
+            {"text": "بَانُ", "harakaPos": [3]},
+            {"text": "بَابُ", "harakaPos": []},
+            {"text": "دَارُ", "harakaPos": []},
+            {"text": "بَانُ", "harakaPos": [3]},
+ {"text": "بَابَا", "harakaPos": []},
+            {"text": "بَابَا", "harakaPos": []},
+                        {"text": "دَادَا", "harakaPos": []},
+            {"text": "نُورُ", "harakaPos": [3]},
+            {"text": "بَابُ", "harakaPos": []},
+            {"text": "دَارُ", "harakaPos": []},
+                {"text": "نُورُ", "harakaPos": [3]}
+
+        ]
+    },
+    {
+        "id": 6,
+        "title": "ماما",
+        "image": "/drsne/images/imagdata/ماما.jpg",
+        "words": [
+            {"text": "مَامَا", "harakaPos": [0, 3]},
+             {"text": "مَامَا", "harakaPos": [0, 3]},
+            {"text": "دَادَا", "harakaPos": []},
+            {"text": "نَامَ", "harakaPos": [3]},
+            {"text": "نُورُ", "harakaPos": []},
+            {"text": "نُورُ", "harakaPos": []},
+             {"text": "دَادَا", "harakaPos": []},
+            {"text": "نَامَ", "harakaPos": [3]},
+            {"text": "بَانُ", "harakaPos": []},
+             {"text": "بَانُ", "harakaPos": []},
+            {"text": "بَابَا", "harakaPos": []},
+            {"text": "مَا نَامَ", "harakaPos": [0, 4]}
+        ]
+    },
+    {
+        "id": 7,
+        "title": "دعاء",
+        "image": "/drsne/images/imagdata/دعاء.jpg",
+        "words": [
+            {"text": "أَدْعُوكَ يَا إِلٰهِي", "harakaPos": []},
+            {"text": "يَا رَافِعَ السَّمَاءِ", "harakaPos": []},
+            {"text": "يَسِّرْ عَلَيَّ دَرْسِي", "harakaPos": []},
+            {"text": "بِالْجِدِّ وَالذَّكَاءِ", "harakaPos": []},
+            {"text": "وَاحْفَظْ أَبِي وَأُمِّي", "harakaPos": []},
+            {"text": "وَكُلَّ أَصْدِقَائِي", "harakaPos": []},
+            {"text": "يَا وَاسِعَ الْعَطَاءِ", "harakaPos": []},
+            {"text": "رَبِّ اسْتَجِبْ دُعَائِي", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 8,
+        "title": "دار نوري",
+        "image": "/drsne/images/imagdata/دارنوري.jpg",
+        "words": [
+            {"text": "دَارُ", "harakaPos": [3]},
+            {"text": "نُورِي", "harakaPos": [3, 5]},
+            {"text": "بَابَا", "harakaPos": []},
+            {"text": "بَابُ", "harakaPos": []},
+            {"text": "مَامَا", "harakaPos": []},
+            {"text": "رِيمِ", "harakaPos": [0, 3]},
+            {"text": "دِينَا", "harakaPos": [2]}
+        ]
+    },
+    {
+        "id": 9,
+        "title": "دادا رباب",
+        "image": "/drsne/images/imagdata/رباب.jpg",
+        "words": [
+            {"text": "دَادَا", "harakaPos": []},
+            {"text": "رَبَابُ", "harakaPos": [2, 5]},
+            {"text": "نَمِيرُ", "harakaPos": [0]},
+            {"text": "نَامَ", "harakaPos": []},
+            {"text": "بَدْرِي", "harakaPos": [0]},
+            {"text": "مَا نَامَ", "harakaPos": []},
+            {"text": "نُورُ", "harakaPos": []},
+            {"text": "رِيمُ", "harakaPos": []},
+            {"text": "نَبْنِي", "harakaPos": [1, 3]},
+            {"text": "دَارَ", "harakaPos": []},
+            {"text": "بَانُ", "harakaPos": [0, 3]}
+        ]
+    },
+    {
+        "id": 10,
+        "title": "بوق نديم",
+        "image": "/drsne/images/imagdata/بوق.jpg",
+        "words": [
+            {"text": "بُوقُ", "harakaPos": [3]},
+            {"text": "نَدِيمٍ", "harakaPos": []},
+            {"text": "قَدِيمٌ", "harakaPos": [0]},
+            {"text": "نَدِيمٌ يَقُودُ", "harakaPos": [8]},
+            {"text": "بَقَرَ بَدْرَانَ", "harakaPos": [1]},
+            {"text": "بَقَرُ بَدْرَانَ قَرِيبٌ", "harakaPos": [1, 15]}
+        ]
+    },
+    {
+        "id": 11,
+        "title": "وز",
+        "image": "/drsne/images/imagdata/وز.jpg",
+        "words": [
+            {"text": "وَزٌّ", "harakaPos": [2]},
+            {"text": "دَادَا زَيْنَبُ", "harakaPos": [6]},
+            {"text": "زَيْدٌ زَيْدٌ", "harakaPos": [0, 6]},
+            {"text": "زَوْرَقُ زَيْدُونَ قَرِيبٌ", "harakaPos": [0, 8]},
+            {"text": "نَزُورُ دَارَ زَيْدُونَ", "harakaPos": [1, 11]}
+        ]
+    },
+    {
+        "id": 12,
+        "title": "مدرستي",
+        "image": "/drsne/images/imagdata/مدرستي.jpg",
+        "words": [
+            {"text": "يَا مَدْرَسَتِي", "harakaPos": [3,4,5,6,7,8]},
+            {"text": "فِيكِ أَقْضِي كُلَّ الْوَقْتِ", "harakaPos": []},
+            {"text": "مَعَ إِخْوَانِي مَعَ أَصْحَابِي", "harakaPos": []},
+            {"text": "بَيْنَ الدَّرْسِ وَالْأَلْعَابِ", "harakaPos": []},
+            {"text": "هذَا صَفِّي هذِي كُتُبِي", "harakaPos": []},
+            {"text": "أَقْرَأُ فِيهَا بَعْدَ اللعب", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 13,
+        "title": "مزمار مازن",
+        "image": "/drsne/images/imagdata/مزمار.jpg",
+        "words": [
+            {"text": "مِزْمَارُ", "harakaPos": [0, 2]},
+            {"text": "مَازِنٍ", "harakaPos": [0, 2]},
+            {"text": "مِزْمَارُ مَازِنٍ قَدِيمٌ", "harakaPos": [0, 2, 7]},
+            {"text": "قِرْدُ مَازِنٍ يَدُورُ", "harakaPos": [6, 8]},
+            {"text": "يَا وِدَادُ", "harakaPos": []},
+            {"text": "قِرْدِي يَدُورُ", "harakaPos": [2, 7]},
+            {"text": "مِزْمَارِي قَدِيمٌ", "harakaPos": [0, 2, 10]}
+        ]
+    },
+    {
+        "id": 14,
+        "title": "ميزان قدوري",
+        "image": "/drsne/images/imagdata/ميزان.jpg",
+        "words": [
+            {"text": "مِيزَانُ قَدُّورِي", "harakaPos": [8]},
+            {"text": "قَدُّورِي وَزَّانٌ", "harakaPos": [2]},
+            {"text": "وَزَنَ زَبِيبَ مَازِنٍ", "harakaPos": []},
+            {"text": "نَادِرٌ بَزَّازٌ", "harakaPos": [3]},
+            {"text": "نَادِرٌ مَرَّ مِنْ دَرْبِنَا", "harakaPos": [3, 6, 15]},
+            {"text": "مَازِنٌ دَقَّ بَابَنَا", "harakaPos": [5]}
+        ]
+    },
+    {
+        "id": 15,
+        "title": "دب منير",
+        "image": "/drsne/images/imagdata/دب.jpg",
+        "words": [
+            {"text": "دُبُّ", "harakaPos": [0]},
+            {"text": "مُنِيرٍ", "harakaPos": [0]},
+            {"text": "دُبُّ مُنِيرٍ مِنْ وَرَقٍ", "harakaPos": [0, 4, 8]},
+            {"text": "دُبُّ مَرْيَمَ مِنْ وَرَقٍ", "harakaPos": [0, 4, 8]},
+            {"text": "قُمْ يَا مُنِيرُ", "harakaPos": [5]},
+            {"text": "نَزُورُ زَيْدَانَ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 16,
+        "title": "نبيل بقال",
+        "image": "/drsne/images/imagdata/نبيل.jpg",
+        "words": [
+            {"text": "نَبِيلٌ", "harakaPos": [3]},
+            {"text": "بَقَّالٌ", "harakaPos": []},
+            {"text": "نَبِيلٌ يَقُولُ", "harakaPos": [3]},
+            {"text": "لَدَيْنَا لَبَنٌ", "harakaPos": [6, 8]},
+            {"text": "لَدَيْنَا رُمَّانٌ", "harakaPos": []},
+            {"text": "قُلْنَا يَا نَبِيلُ", "harakaPos": [8]},
+            {"text": "رُمَّانٌ وَ لَبَنٌ قَلِيلٌ", "harakaPos": [11, 13, 15]}
+        ]
+    },
+    {
+        "id": 17,
+        "title": "ريف مناف",
+        "image": "/drsne/images/imagdata/ريف.jpg",
+        "words": [
+            {"text": "رِيفُ", "harakaPos": [2]},
+            {"text": "مَنَافٍ", "harakaPos": [3]},
+            {"text": "فَارُوقُ يَقُولُ", "harakaPos": [0]},
+            {"text": "يَا مُفِيدُ", "harakaPos": [3]},
+            {"text": "نَزُورُ رِيفَ مَنَافٍ", "harakaPos": [7, 12]},
+            {"text": "فِي رِيفِ مَنَافٍ بَقَرٌ", "harakaPos": [1, 6, 11]},
+            {"text": "فِي رِيفِ مَنَافٍ وَزٌّ", "harakaPos": [1, 6, 11]}
+        ]
+    },
+    {
+        "id": 18,
+        "title": "أمين بناء",
+        "image": "/drsne/images/imagdata/امين.jpg",
+        "words": [
+            {"text": "أَمِينٌ", "harakaPos": [0]},
+            {"text": "بَنَّاءٌ", "harakaPos": [3]},
+            {"text": "أَمِينٌ أَبُو مَأْمُونٍ بَنَّاءٌ", "harakaPos": [0, 6, 9, 17]},
+            {"text": "مَأْمُونٌ يَقُولُ", "harakaPos": [1]},
+            {"text": "نَبْنِي دَارَنَا", "harakaPos": []},
+            {"text": "وَ نَبْنِي دَارَ أَدِيبٍ", "harakaPos": [11]}
+        ]
+    },
+    {
+        "id": 19,
+        "title": "أصحابي",
+        "image": "/drsne/images/imagdata/اصحابي.jpg",
+        "words": [
+            {"text": "يَا أَهْلاً أَهْلاً", "harakaPos": []},
+            {"text": "بِالْأَحْبَابِ", "harakaPos": []},
+            {"text": "كُلُّ صَدِيقٍ", "harakaPos": []},
+            {"text": "لِي أَرْعَاهُ", "harakaPos": []},
+            {"text": "أَبَداً أَبَداً", "harakaPos": []},
+            {"text": "لَا أَنْسَاهُ", "harakaPos": []},
+            {"text": "نَحْنُ جَمِيعاً", "harakaPos": []},
+            {"text": "جُنْدُ الْوَطَنِ", "harakaPos": []},
+            {"text": "عِشْتَ بِلَادِي", "harakaPos": []},
+            {"text": "طُولَ الزَّمَنِ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 20,
+        "title": "أم أيمن",
+        "image": "/drsne/images/imagdata/ام.jpg",
+        "words": [
+            {"text": "أُمُّ", "harakaPos": [0]},
+            {"text": "أَيْمَنَ", "harakaPos": [0]},
+            {"text": "وَ إِقْبَالُ", "harakaPos": [2]},
+            {"text": "قَالَ أَيْمَنُ", "harakaPos": [6]},
+            {"text": "أُمِّي أُمِّي", "harakaPos": [0, 4]},
+            {"text": "أَنَا وَ إِقْبَالُ بَدَأْنَا نَقْرَأُ", "harakaPos": [6]},
+            {"text": "أَيْمَنُ قَرَأَ", "harakaPos": [0]},
+            {"text": "فِي إِنَاءِ إِيمَانَ مَاءٌ", "harakaPos": [3, 8]}
+        ]
+    },
+    {
+        "id": 21,
+        "title": "بط وطيور",
+        "image": "/drsne/images/imagdata/بط.jpg",
+        "words": [
+            {"text": "بَطٌّ", "harakaPos": [2]},
+            {"text": "وَ طُيُورٌ", "harakaPos": [2]},
+            {"text": "طَارِقٌ يَقُولُ", "harakaPos": [0]},
+            {"text": "فِي دَارِنَا بَطٌّ", "harakaPos": [11]},
+            {"text": "فِي دَارِ لُطْفِي وَزٌّ", "harakaPos": [8]},
+            {"text": "فِي دَارِ طَالِبٍ بُلْبُلٌ", "harakaPos": [8]},
+            {"text": "بُلْبُلُ طَالِبٍ طَارَ", "harakaPos": [7, 12]}
+        ]
+    },
+    {
+        "id": 22,
+        "title": "أنشودة البط",
+        "image": "/drsne/images/imagdata/انشودة.jpg",
+        "words": [
+            {"text": "يَا بَطُّ يَا بَطُّ", "harakaPos": []},
+            {"text": "اسْبَحْ بِالشَّطِّ", "harakaPos": []},
+            {"text": "قُلْ لِلسَّمَكَةِ", "harakaPos": []},
+            {"text": "أَنْتِ الشَّبَكَةْ", "harakaPos": []},
+            {"text": "مِيلِي عَنْهَا", "harakaPos": []},
+            {"text": "تَنْجِي مِنْهَا", "harakaPos": []},
+            {"text": "وَعَلَى الْجُرْفِ", "harakaPos": []},
+            {"text": "خُفِّي خُفِّي", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 23,
+        "title": "رأينا ورداً",
+        "image": "/drsne/images/imagdata/راينا.jpg",
+        "words": [
+            {"text": "رَأَيْنَا وَرْداً", "harakaPos": [1, 7]},
+            {"text": "مَازِنٌ يَقُولُ", "harakaPos": []},
+            {"text": "رَأَيْنَا وَرْداً وَ قِطَاراً وَ زَوْرَقاً", "harakaPos": [1, 7, 14, 23]},
+            {"text": "لَدَيْنَا طَبَقُ وَرْدٍ", "harakaPos": [8, 14]},
+            {"text": "وَ أَرْنَبٌ فِي قِطَارٍ", "harakaPos": [3, 12]},
+            {"text": "وَ زَوْرَقٌ مِنْ وَرَقٍ", "harakaPos": [2, 12]}
+        ]
+    },
+    {
+        "id": 24,
+        "title": "ورد لطيف",
+        "image": "/drsne/images/imagdata/ورد.jpg",
+        "words": [
+            {"text": "وَرْدٌ", "harakaPos": [3]},
+            {"text": "لَطِيفٌ", "harakaPos": [3]},
+            {"text": "وَرْدُ وِدَادٍ لَطِيفٌ", "harakaPos": [4, 9, 14]},
+            {"text": "قِطَارُ فَوْزِي طَوِيلٌ", "harakaPos": [0, 7, 13]},
+            {"text": "زَوْرَقُ أَيْمَنَ وَاقِفٌ", "harakaPos": [12]},
+            {"text": "وَرْدٌ لَطِيفٌ", "harakaPos": [3, 8]},
+            {"text": "قِطَارٌ طَوِيلٌ", "harakaPos": [0, 7]},
+            {"text": "زَوْرَقٌ وَاقِفٌ", "harakaPos": [9]}
+        ]
+    },
+    {
+        "id": 25,
+        "title": "المطر نازل",
+        "image": "/drsne/images/imagdata/المطر.jpg",
+        "words": [
+            {"text": "الْمَطَرُ", "harakaPos": [0]},
+            {"text": "نَازِلٌ", "harakaPos": []},
+            {"text": "الْوَلَدُ يَقُولُ", "harakaPos": []},
+            {"text": "الْمَطَرُ نَازِلٌ", "harakaPos": [0]},
+            {"text": "الْبَرْدُ قَلِيلٌ", "harakaPos": []},
+            {"text": "أَنَا أُرِيدُ الْمَطَرَ", "harakaPos": [0, 4, 11]},
+            {"text": "الْوَرْدُ يُرِيدُ الْمَطَرَ", "harakaPos": [14]},
+            {"text": "مَاءُ الْمَطَرِ مُفِيدٌ", "harakaPos": [5]}
+        ]
+    },
+    {
+        "id": 26,
+        "title": "نوال ونور وريم",
+        "image": "/drsne/images/imagdata/نوال.jpg",
+        "words": [
+            {"text": "نَوَالُ وَ نُورُ وَ رِيمُ", "harakaPos": []},
+            {"text": "بَنَاتٌ", "harakaPos": [3]},
+            {"text": "قَالَتْ نَوَالُ", "harakaPos": [3]},
+            {"text": "نُورُ نَامَتْ", "harakaPos": [7]},
+            {"text": "يَا رِيمُ أَنْتِ مَا نِمْتِ", "harakaPos": [9, 17]},
+            {"text": "يَا رِيمُ أَنْتِ قَرَأْتِ", "harakaPos": [9, 16]},
+            {"text": "أَنَا وَ أَنْتِ قَرَأْنَا", "harakaPos": [6]},
+            {"text": "فِي بَيْتِنَا تَمْرٌ وَ زَيْتُونٌ", "harakaPos": [8, 16]}
+        ]
+    },
+    {
+        "id": 27,
+        "title": "بلال وطلال ودلال",
+        "image": "/drsne/images/imagdata/بلال.jpg",
+        "words": [
+            {"text": "بِلَالٌ وَ طَلَالٌ وَ دَلَالٌ", "harakaPos": [1, 9, 17]},
+            {"text": "أَوْلَادٌ", "harakaPos": []},
+            {"text": "الْأَبُ يُنَادِي", "harakaPos": []},
+            {"text": "يَا أَوْلَادِي", "harakaPos": []},
+            {"text": "لَدَيْنَا أَقْلَامٌ", "harakaPos": [9]},
+            {"text": "الْأَقْلَامُ لِمَنْ يَقْرَأُ", "harakaPos": [1]},
+            {"text": "قَرَأَ الْأَوْلَادُ", "harakaPos": []},
+            {"text": "نَبْنِي الْوَطَنَ", "harakaPos": []},
+            {"text": "نَبْنِي الْبِلَادَ", "harakaPos": [9]}
+        ]
+    },
+    {
+        "id": 28,
+        "title": "فراس وأنيس وميسون",
+        "image": "/drsne/images/imagdata/فراس.jpg",
+        "words": [
+            {"text": "فِرَاسٌ وَ أَنِيسٌ وَ مَيْسُونُ", "harakaPos": [4, 11, 20]},
+            {"text": "فِرَاسٌ يَرْسُمُ", "harakaPos": [4, 10]},
+            {"text": "أَنِيسٌ يَقْرَأُ", "harakaPos": [4]},
+            {"text": "سَأَلَتْ مَيْسُونُ", "harakaPos": [0, 11]},
+            {"text": "أَيْنَ سَلَامٌ", "harakaPos": [6]},
+            {"text": "سَلَامٌ فِي الْبُسْتَانِ", "harakaPos": [0, 12]}
+        ]
+    },
+    {
+        "id": 29,
+        "title": "سالم مزارع",
+        "image": "/drsne/images/imagdata/سالم.jpg",
+        "words": [
+            {"text": "سَالِمٌ مُزَارِعٌ", "harakaPos": [11]},
+            {"text": "بُسْتَانُ سَالِمٍ وَاسِعٌ", "harakaPos": [16]},
+            {"text": "بَدِيعٌ يَقُولُ", "harakaPos": [3]},
+            {"text": "أَبِي يَزْرَعُ الْوَرْدَ", "harakaPos": [8]},
+            {"text": "وَ يَزْرَعُ الْفُلْفُلَ", "harakaPos": [6]},
+            {"text": "أَنَا أَبِيعُ الْوَرْدَ", "harakaPos": [6]},
+            {"text": "وَ أَبِيعُ الْفُلْفُلَ", "harakaPos": [5]}
+        ]
+    },
+    {
+        "id": 30,
+        "title": "علم بلادي",
+        "image": "/drsne/images/imagdata/علم.jpg",
+        "words": [
+            {"text": "عَلَمُ بِلَادِي", "harakaPos": [0]},
+            {"text": "عَلِيٌّ يَقُولُ", "harakaPos": [0]},
+            {"text": "عَلَمُ بِلَادِي مَرْفُوعٌ", "harakaPos": [0, 14]},
+            {"text": "سُعَادُ تَقُولُ", "harakaPos": [2]},
+            {"text": "أَنَا وَ عَادِلٌ رَفَعْنَا الْعَلَمَ", "harakaPos": [5, 13, 20]},
+            {"text": "رَفْرِفْ يَا عَلَمَ الْعِرَاقِ", "harakaPos": [11, 17]}
+        ]
+    },
+    {
+        "id": 31,
+        "title": "حروفنا الجميلة",
+        "image": "/drsne/images/imagdata/           .jpg",
+        "words": [
+            {"text": "أَلِفٌ بَاءٌ تَاءٌ ثَاءٌ", "harakaPos": []},
+            {"text": "هَيَا نَقْرَأُ يَا هَيْفَاءُ", "harakaPos": []},
+            {"text": "أَلِفٌ أَبْنِي بَاءٌ بَلَدِي", "harakaPos": []},
+            {"text": "بِيَدِي بِيَدِي أَبْنِي بَلَدِي", "harakaPos": []},
+            {"text": "كُلُّ حُرُوفِي تَأْتِي بَعْدِي", "harakaPos": []},
+            {"text": "وَأَنَا أَشْدُو أَتَعَلَّمُ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 32,
+        "title": "الربيع",
+        "image": "/drsne/images/imagdata/ربيع.jpg",
+        "words": [
+            {"text": "الرَّبِيعُ", "harakaPos": [0]},
+            {"text": "قَالَتْ سُعَادُ", "harakaPos": []},
+            {"text": "أَنَا أُرِيدُ الرَّبِيعَ", "harakaPos": [9]},
+            {"text": "الْمَطَرُ يَنْزِلُ مِنَ السَّمَاءِ", "harakaPos": [19]},
+            {"text": "وَيَسْقِي الزَّرْعَ", "harakaPos": [10]},
+            {"text": "النَّاسُ تَقُولُ", "harakaPos": []},
+            {"text": "نَزْرَعُ وَ لَانَقْطَعُ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 33,
+        "title": "سلوى وليلى",
+        "image": "/drsne/images/imagdata/سلوى.jpg",
+        "words": [
+            {"text": "سَلْوَى وَ لَيْلَى", "harakaPos": [3, 9]},
+            {"text": "سَلْوَى نَادَتْ لَيْلَى", "harakaPos": [3, 14]},
+            {"text": "تَعَالَيْ نَلْعَبْ مَعَ نَدَى", "harakaPos": [3, 18]},
+            {"text": "قَالَ مُوسَى", "harakaPos": [7]},
+            {"text": "نَقْفِزُ وَ نَدُورُ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 34,
+        "title": "نشيد النور",
+        "image": "/drsne/images/imagdata/نشيد.jpg",
+        "words": [
+            {"text": "نَشِيدُ النُّورِ فِي شَفَتِي", "harakaPos": []},
+            {"text": "تَعِيشُ تَعِيشُ مَدْرَسَتِي", "harakaPos": []},
+            {"text": "أُحِبُّ مُعَلِّمِي الْغَالِي", "harakaPos": []},
+            {"text": "أُحِبُّكِ يَا مُعَلِّمَتِي", "harakaPos": []},
+            {"text": "أَرَى عِلْمِي أَرَى وَطَنِي", "harakaPos": []},
+            {"text": "أَرَى الدُّنْيَا بِمَدْرَسَتِي", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 35,
+        "title": "الفراش بديع",
+        "image": "/drsne/images/imagdata/الفراش.jpg",
+        "words": [
+            {"text": "الْفَرَاشُ", "harakaPos": [4]},
+            {"text": "بَدِيعٌ", "harakaPos": []},
+            {"text": "سُرَى تَقُولُ", "harakaPos": []},
+            {"text": "الْفَرَاشُ يَطِيرُ فِي الْبُسْتَانِ", "harakaPos": [4]},
+            {"text": "يَعِيشُ مَعَ الطُّيُورِ", "harakaPos": [3]},
+            {"text": "لِلطَّيْرِ رِيشٌ", "harakaPos": [10]},
+            {"text": "لِلطَّيْرِ عُشٌّ", "harakaPos": [10]}
+        ]
+    },
+    {
+        "id": 36,
+        "title": "شامل شرطي المرور",
+        "image": "/drsne/images/imagdata/شامل.jpg",
+        "words": [
+            {"text": "شَامِلٌ شُرْطِيُّ الْمُرُورِ", "harakaPos": [0, 8]},
+            {"text": "شَامِلٌ شُرْطِيٌّ نَشِيطٌ", "harakaPos": [0, 8, 17]},
+            {"text": "يَقِفُ فِي الشَّارِعِ", "harakaPos": [9]},
+            {"text": "مَعَ طُلُوعِ الشَّمْسِ", "harakaPos": [13]},
+            {"text": "يُسَاعِدُ النَّاسَ عَلَى عُبُورِ الشَّارِعِ", "harakaPos": [28]}
+        ]
+    },
+    {
+        "id": 37,
+        "title": "رائد يلعب",
+        "image": "/drsne/images/imagdata/رائد.jpg",
+        "words": [
+            {"text": "رَائِدٌ", "harakaPos": [1]},
+            {"text": "يَلْعَبُ", "harakaPos": []},
+            {"text": "رَائِدٌ يَلْعَبُ مَعَ الْأَوْلَادِ", "harakaPos": [1]},
+            {"text": "رَائِدٌ مِنْ فَرِيقِ فَائِزٍ", "harakaPos": [1, 15]},
+            {"text": "فَائِزٌ رَئِيسُ الْفَرِيقِ", "harakaPos": [0, 7]},
+            {"text": "فَائِزٌ دَرَّبَ الْفَرِيقَ", "harakaPos": [0]},
+            {"text": "الْفَرِيقُ نَشِيطٌ", "harakaPos": []},
+            {"text": "فَازَ الْفَرِيقُ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 38,
+        "title": "أستاذ وتلاميذ",
+        "image": "/drsne/images/imagdata/استاذ.jpg",
+        "words": [
+            {"text": "أُسْتَاذٌ وَ تَلَامِيذُ", "harakaPos": [2, 11]},
+            {"text": "مُعَاذٌ أُسْتَاذٌ قَدِيرٌ", "harakaPos": [3, 9]},
+            {"text": "مُنْذِرٌ تِلْمِيذٌ نَشِيطٌ", "harakaPos": [3, 10]},
+            {"text": "قَالَ الْأُسْتَاذُ", "harakaPos": [7]},
+            {"text": "اقْرَأْ يَا مُنْذِرُ", "harakaPos": [10]},
+            {"text": "قَالَ مُنْذِرُ", "harakaPos": [6]},
+            {"text": "أَنَا أَذُوقُ الْعَسَلَ", "harakaPos": [5]},
+            {"text": "الْعَسَلُ لَذِيذٌ", "harakaPos": [10]}
+        ]
+    },
+    {
+        "id": 39,
+        "title": "مالك سماك",
+        "image": "/drsne/images/imagdata/مالك.jpg",
+        "words": [
+            {"text": "مَالِكٌ سَمَّاكٌ", "harakaPos": [5, 11]},
+            {"text": "مَالِكٌ سَمَّاكٌ يَبِيعُ السَّمَكَ", "harakaPos": [5, 11, 24]},
+            {"text": "عِنْدَ مَالِكٍ زَوْرَقٌ وَ شِبَاكٌ", "harakaPos": [8, 23]},
+            {"text": "عِنْدَ مَالِكٍ سَمَكٌ", "harakaPos": [8, 14]},
+            {"text": "السَّمَكُ لَذِيذٌ", "harakaPos": [2]}
+        ]
+    },
+    {
+        "id": 40,
+        "title": "كتاب مكتوب",
+        "image": "/drsne/images/imagdata/كتاب.jpg",
+        "words": [
+            {"text": "كِتَابٌ", "harakaPos": [0]},
+            {"text": "مَكْتُوبٌ", "harakaPos": [2]},
+            {"text": "كَامِلٌ يَقْرَأُ وَ يَكْتُبُ", "harakaPos": [0, 16]},
+            {"text": "كَتَبَ مَكْتُوباً فَقَالَ", "harakaPos": [0, 6]},
+            {"text": "إِلَى الْعَمِّ كَرِيمٍ", "harakaPos": [11]},
+            {"text": "السَّلَامُ عَلَيْكُمْ", "harakaPos": [13]},
+            {"text": "نَسْأَلُ عَنْكَ", "harakaPos": [9]},
+            {"text": "أَرْسِلْ لَنَا مَكْتُوباً", "harakaPos": [12]},
+            {"text": "شُكْراً لَكَ", "harakaPos": [3, 9]}
+        ]
+    },
+    {
+        "id": 41,
+        "title": "مياه المطر",
+        "image": "/drsne/images/imagdata/مياه.jpg",
+        "words": [
+            {"text": "مِيَاهُ الْمَطَرِ", "harakaPos": [4]},
+            {"text": "مِيَاهُ الْمَطَرِ تَسْقِي الزَّرْعَ", "harakaPos": [4]},
+            {"text": "أَبُو نَبِيهٍ يَزْرَعُ", "harakaPos": [7]},
+            {"text": "نَبِيهٌ يُسَاعِدُهُ", "harakaPos": [0, 10]},
+            {"text": "قَالَ لَهُ أَبُوهُ", "harakaPos": [11]},
+            {"text": "شُكْراً لَكَ يَا نَبِيهُ", "harakaPos": [14]},
+            {"text": "رَعَاكَ اللَّهُ يَا وَلَدِي", "harakaPos": [5]}
+        ]
+    },
+    {
+        "id": 42,
+        "title": "هلال العيد",
+        "image": "/drsne/images/imagdata/هلال.jpg",
+        "words": [
+            {"text": "هِلَالُ الْعِيدِ", "harakaPos": [0]},
+            {"text": "هَلَّ هِلَالُ الْعِيدِ", "harakaPos": [0, 5]},
+            {"text": "ذَهَبَ هُمَامٌ وَ مَعَهُ سُهَادُ", "harakaPos": [5, 16]},
+            {"text": "إِلَى عَمِّهِمَا مَهْدِيٍّ", "harakaPos": [12]},
+            {"text": "وَ قَالَا", "harakaPos": []},
+            {"text": "عِيدُكَ مُبَارَكٌ يَا عَمُّ", "harakaPos": []},
+            {"text": "قَالَ الْعَمُّ", "harakaPos": []},
+            {"text": "وَ عِيدُكُمَا سَعِيدٌ يَا أَوْلَادُ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 43,
+        "title": "ناهدة تلميذة",
+        "image": "/drsne/images/imagdata/ناهدة.jpg",
+        "words": [
+            {"text": "نَاهِدَةٌ تِلْمِيذَةٌ", "harakaPos": [5, 14]},
+            {"text": "نَاهِدَةٌ تِلْمِيذَةٌ نَشِيطَةٌ", "harakaPos": [5, 14, 25]},
+            {"text": "تَذْهَبُ إِلَى الْمَدْرَسَةِ", "harakaPos": [0]},
+            {"text": "عِنْدَهَا كُرَةٌ تَلْعَبُ بِهَا", "harakaPos": [7]},
+            {"text": "وَ عِنْدَهَا سَاعَةٌ كَبِيرَةٌ تَعْرِفُ بِهَا الْوَقْتَ", "harakaPos": [16, 35]}
+        ]
+    },
+    {
+        "id": 44,
+        "title": "هذا ولد",
+        "image": "/drsne/images/imagdata/هذا.jpg",
+        "words": [
+            {"text": "هذَا وَلَدٌ", "harakaPos": [0, 1]},
+            {"text": "عِنْدَهُ قِطَارٌ", "harakaPos": []},
+            {"text": "هذِهِ بِنْتٌ", "harakaPos": [0, 1, 2]},
+            {"text": "عِنْدَهَا لُعْبَةٌ", "harakaPos": []},
+            {"text": "قَالَتْ هَنَاءُ", "harakaPos": []},
+            {"text": "مَا هذَا", "harakaPos": [4, 5]},
+            {"text": "هذَا قِطَارٌ", "harakaPos": [0, 1]},
+            {"text": "سَأَلَ وَلِيدٌ", "harakaPos": []},
+            {"text": "مَا هذِهِ", "harakaPos": [4, 5, 6]},
+            {"text": "هذِهِ لُعْبَةٌ", "harakaPos": [0, 1, 2]}
+        ]
+    },
+    {
+        "id": 45,
+        "title": "طيارة وقاص",
+        "image": "/drsne/images/imagdata/طيارة.jpg",
+        "words": [
+            {"text": "طَيَّارَةُ وَقَّاصٍ", "harakaPos": [12]},
+            {"text": "عَادَ وَقَّاصٌ مِنَ الْمَدْرَسَةِ", "harakaPos": [6]},
+            {"text": "طَلَبَ الْمِقَصَّ مِنْ أُمِّهِ", "harakaPos": [9]},
+            {"text": "قَصَّ بِهِ الْوَرَقَ", "harakaPos": [0]},
+            {"text": "وَ صَنَعَ مِنْهُ طَيَّارَةً", "harakaPos": [2]},
+            {"text": "لَعِبَ بِهَا مَعَ صَدِيقِهِ مَنْصُورٍ", "harakaPos": [20]}
+        ]
+    },
+    {
+        "id": 46,
+        "title": "طيارتي",
+        "image": "/drsne/images/imagdata/طيارتاي.jpg",
+        "words": [
+            {"text": "طَيَّارَتِي أُحِبُّهَا", "harakaPos": []},
+            {"text": "مِنْ وَرَقٍ أَصْنَعُهَا", "harakaPos": []},
+            {"text": "طَيَّارَتِي سَرِيعَةٌ", "harakaPos": []},
+            {"text": "خُيُوطُهَا رَفِيعَةٌ", "harakaPos": []},
+            {"text": "أَسْحَبُهَا فَتَرْتَفِعْ", "harakaPos": []},
+            {"text": "وَ فِي الْهَوَاءِ تَنْدَفِعْ", "harakaPos": []},
+            {"text": "بِرَأْسِهَا تَمِيلُ", "harakaPos": []},
+            {"text": "وَ ذَيْلُهَا طَوِيلُ", "harakaPos": []},
+            {"text": "تَطِيرُ فَوْقَ رَأْسِي", "harakaPos": []},
+            {"text": "بَعْدَ انْتِهَاءِ الدَّرْسِ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 47,
+        "title": "صلاح فلاح",
+        "image": "/drsne/images/imagdata/صلاح.jpg",
+        "words": [
+            {"text": "صَلَاحٌ فَلَّاحٌ", "harakaPos": [0, 7]},
+            {"text": "عِنْدَهُ حَقْلٌ", "harakaPos": [6]},
+            {"text": "يَزْرَعُ فِيهِ الْقَمْحَ", "harakaPos": [15]},
+            {"text": "مَحَاسِنُ فَلَّاحَةٌ", "harakaPos": [0, 9]},
+            {"text": "تَحْلُبُ الْبَقَرَةَ", "harakaPos": [0]},
+            {"text": "تَرْبِطُ الْحِصَانَ بِالْحَبْلِ", "harakaPos": [9, 19]},
+            {"text": "وَ تُقَدِّمُ لَهُ الْحَشِيشَ", "harakaPos": [14]}
+        ]
+    },
+    {
+        "id": 48,
+        "title": "أصباغ هشام",
+        "image": "/drsne/images/imagdata/اصباغ.jpg",
+        "words": [
+            {"text": "أَصْبَاغُ", "harakaPos": [4]},
+            {"text": "هِشَامٍ", "harakaPos": [3]},
+            {"text": "هِشَامٌ رَسَّامٌ", "harakaPos": [3]},
+            {"text": "عِنْدَهُ عُلْبَةُ أَصْبَاغٍ", "harakaPos": [13]},
+            {"text": "سَأَلَتْ مَيْسُونُ", "harakaPos": []},
+            {"text": "مَاذَا تَصْبُغُ يَا هِشَامُ", "harakaPos": [8, 18]},
+            {"text": "قَالَ هِشَامٌ", "harakaPos": [7]},
+            {"text": "أَصْبُغُ الصُّورَةَ بِالْأَصْبَاغِ", "harakaPos": [0, 20]}
+        ]
+    },
+    {
+        "id": 49,
+        "title": "غزال وغراب",
+        "image": "/drsne/images/imagdata/غزال.jpg",
+        "words": [
+            {"text": "غَزَالٌ وَ غُرَابٌ", "harakaPos": [0, 8]},
+            {"text": "الْغُرَابُ صَدِيقُ الْغَزَالِ", "harakaPos": [2, 16]},
+            {"text": "صَاحَ الْغَزَالُ", "harakaPos": [7]},
+            {"text": "سَاقِي مَكْسُورَةٌ أَنَا عَطْشَانُ", "harakaPos": []},
+            {"text": "قَدَّمَ الْغُرَابُ إِلَيْهِ مَاءً", "harakaPos": [8]},
+            {"text": "شَرِبَ الْغَزَالُ وَ قَالَ", "harakaPos": [8]},
+            {"text": "الْحَمْدُ لِلّهِ أَشْكُرُكَ يَا صَدِيقِي", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 50,
+        "title": "حوض السباحة",
+        "image": "/drsne/images/imagdata/حوض.jpg",
+        "words": [
+            {"text": "حَوْضُ السِّبَاحَةِ", "harakaPos": [1]},
+            {"text": "رِيَاضٌ يَسْبَحُ فِي الْحَوْضِ", "harakaPos": [5, 18]},
+            {"text": "مَعَ صَدِيقِهِ نَاهِضٍ", "harakaPos": [15]},
+            {"text": "ضِيَاءٌ يَقُولُ", "harakaPos": [0]},
+            {"text": "الرِّيَاضَةُ مُفِيدَةٌ", "harakaPos": [5]},
+            {"text": "نَلْعَبُ وَ نَرْكُضُ", "harakaPos": [11]},
+            {"text": "نَفْرَحُ وَ نَضْحَكُ", "harakaPos": [11]}
+        ]
+    },
+    {
+        "id": 51,
+        "title": "فرج نساج",
+        "image": "/drsne/images/imagdata/فرج.jpg",
+        "words": [
+            {"text": "فَرَجٌ نَسَّاجٌ", "harakaPos": [3, 10]},
+            {"text": "يَنْسِجُ بِسَاطاً جَدِيداً", "harakaPos": [5, 15]},
+            {"text": "جَمِيلَةُ نَسَّاجَةٌ مَاهِرَةٌ", "harakaPos": [0, 8]},
+            {"text": "تَنْسِجُ قُمَاشاً جَمِيلاً", "harakaPos": [5, 15]},
+            {"text": "تَنْقُشُ عَلَيْهِ", "harakaPos": []},
+            {"text": "وَرْداً وَ أَشْجَاراً", "harakaPos": [11]}
+        ]
+    },
+    {
+        "id": 52,
+        "title": "محراث حارث",
+        "image": "/drsne/images/imagdata/محراث.jpg",
+        "words": [
+            {"text": "مِحْرَاثُ حَارِثٍ", "harakaPos": [5, 11]},
+            {"text": "حَارِثٌ فَلَّاحٌ", "harakaPos": [0, 6]},
+            {"text": "يَحْرُثُ الْأَرْضَ", "harakaPos": [1, 9]},
+            {"text": "وَلَدُهُ لَيْثٌ يَقُودُ الْجَرَّارَ", "harakaPos": [6]},
+            {"text": "ثَامِرٌ يَجْمَعُ الْأَثْمَارَ", "harakaPos": [0, 16]},
+            {"text": "ثُرَيَّا تَرْعَى الْغَنَمَ", "harakaPos": [0]},
+            {"text": "وَ تُرَبِّي الدَّجَاجَ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 53,
+        "title": "أفراخ الدجاج",
+        "image": "/drsne/images/imagdata/افراخ.jpg",
+        "words": [
+            {"text": "أَفْرَاخُ الدَّجَاجِ", "harakaPos": [4, 15]},
+            {"text": "فِي مَزْرَعَةِ ثَامِرٍ أَفْرَاخٌ", "harakaPos": [19, 25]},
+            {"text": "أَفْرَاخُ الدَّجَاجِ جَمِيلَةٌ", "harakaPos": [4, 15]},
+            {"text": "يَزْرَعُ ثَامِرٌ الْبِطِّيخَ", "harakaPos": [17]},
+            {"text": "الدَّجَاجُ وَ الْبَطُّ يُعْطِينَا بَيْضاً", "harakaPos": [2, 33]},
+            {"text": "وَ يُعْطِينَا لَحْماً", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 54,
+        "title": "عندنا خيمة",
+        "image": "/drsne/images/imagdata/خيمة.jpg",
+        "words": [
+            {"text": "عِنْدَنَا خَيْمَةٌ", "harakaPos": [6]},
+            {"text": "أَخَذْنَا خَيْمَةً", "harakaPos": [6]},
+            {"text": "وَ ذَهَبْنَا إِلَى الْبُسْتَانِ", "harakaPos": []},
+            {"text": "فِي الْبُسْتَانِ نَخْلٌ", "harakaPos": [15]},
+            {"text": "وَ خَوْخٌ وَ عِنَبٌ", "harakaPos": [2]},
+            {"text": "نَصَبْنَا الْخَيْمَةَ بَيْنَ النَّخِيلِ", "harakaPos": [9, 24]},
+            {"text": "أَكَلْنَا وَ لَعِبْنَا وَ فَرِحْنَا", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 55,
+        "title": "محفوظ وظافر",
+        "image": "/drsne/images/imagdata/محفوض.jpg",
+        "words": [
+            {"text": "مَحْفُوظٌ وَ ظَافِرٌ", "harakaPos": [3, 9]},
+            {"text": "مَحْفُوظٌ تِلْمِيذٌ نَظِيفٌ", "harakaPos": [3, 16]},
+            {"text": "يَقُولُ لِصَدِيقِهِ ظَافِرٍ", "harakaPos": [17]},
+            {"text": "أَحْفَظُ دُرُوسِي كُلَّ يَوْمٍ", "harakaPos": [3]},
+            {"text": "وَ أُحَافِظُ عَلَى نَظَافَةِ مَدْرَسَتِي", "harakaPos": [5, 15]},
+            {"text": "النَّظَافَةُ مِنَ الْإِيمَانِ", "harakaPos": [2]}
+        ]
+    },
+    {
+        "id": 56,
+        "title": "أنا فتى",
+        "image": "/drsne/images/imagdata/انافتى.jpg",
+        "words": [
+            {"text": "أَنَا فَتًى نَظِيفُ", "harakaPos": []},
+            {"text": "وَمَنْظَرِي لَطِيفُ", "harakaPos": []},
+            {"text": "مُعَلِّمِي مِثْلُ أَبِي", "harakaPos": []},
+            {"text": "وَأَصْدِقَائِي كُتُبِي", "harakaPos": []},
+            {"text": "وَإِنَّنِي أُمِّي وَخَلْقِي رَصِينُ", "harakaPos": []},
+            {"text": "أُحِبُّ مَدْرَسَتِي", "harakaPos": []},
+            {"text": "أَنْتَ وَ كُلُّ إِخْوَتِي", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 57,
+        "title": "آمنة تقرأ القرآن",
+        "image": "/drsne/images/imagdata/امنه.jpg",
+        "words": [
+            {"text": "آمِنَةُ تَقْرَأُ الْقُرْآنَ", "harakaPos": [0, 16]},
+            {"text": "تَدْعُو اللَّهَ وَ تَقُولُ آمِينَ", "harakaPos": []},
+            {"text": "آدَمُ يَقْرَأُ الْكِتَابَ", "harakaPos": [0]},
+            {"text": "مَآرِبُ تَقْرَأُ قِصَّةً", "harakaPos": [1]},
+            {"text": "تَقْرَأُ قِصَّةَ الْأَسَدِ وَ الْفَأْرِ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 58,
+        "title": "هيا نتعلم",
+        "image": "/drsne/images/imagdata/هيا.jpg",
+        "words": [
+            {"text": "قَالَ الْمُعَلِّمُ لِتَلَامِيذِهِ", "harakaPos": []},
+            {"text": "هَيَا نَتَعَلَّمُ نَقْرَأُ وَ نَكْتُبُ", "harakaPos": []},
+            {"text": "قَالَتِ الْمُعَلِّمَةُ", "harakaPos": []},
+            {"text": "نَرْسُمُ وَ نَلْعَبُ", "harakaPos": []},
+            {"text": "قَالَ التَّلَامِيذُ", "harakaPos": []},
+            {"text": "نَقْرَأُ وَ نَكْتُبُ", "harakaPos": []},
+            {"text": "نَرْسُمُ وَ نَلْعَبُ", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 59,
+        "title": "هشام وفاطمة",
+        "image": "/drsne/images/imagdata/هشام.jpg",
+        "words": [
+            {"text": "هِشَامٌ تِلْمِيذٌ نَبِيهٌ", "harakaPos": []},
+            {"text": "يَدْرُسُ فِي الصَّفِّ الثَّالِثِ", "harakaPos": []},
+            {"text": "لَهُ أُخْتٌ اسْمُهَا فَاطِمَةُ", "harakaPos": []},
+            {"text": "فَاطِمَةُ تِلْمِيذَةٌ نَبِيهَةٌ", "harakaPos": []},
+            {"text": "تَدْرُسُ فِي الصَّفِّ الثَّانِي", "harakaPos": []},
+            {"text": "هُمَا تِلْمِيذَانِ مُجْتَهِدَانِ", "harakaPos": []},
+            {"text": "يَذْهَبَانِ إِلَى الْمَدْرَسَةِ مَعاً", "harakaPos": []}
+        ]
+    },
+    {
+        "id": 60,
+        "title": "شكراً لله",
+        "image": "/drsne/images/imagdata/شكرا.jpg",
+        "words": [
+            {"text": "اللَّهُ رَبُّنَا اللَّهُ خَالِقُنَا", "harakaPos": []},
+            {"text": "خَلَقَ الشَّمْسَ وَ الْقَمَرَ", "harakaPos": []},
+            {"text": "وَ خَلَقَ الطَّيْرَ وَ الشَّجَرَ", "harakaPos": []},
+            {"text": "أَنْعَمَ عَلَيْنَا بِالْمَاءِ وَ الْهَوَاءِ", "harakaPos": []},
+            {"text": "وَ أَنْعَمَ عَلَيْنَا بِالصِّحَّةِ وَ الْغِذَاءِ", "harakaPos": []},
+            {"text": "حَمْداً لِلّهِ شُكْراً لِلّهِ", "harakaPos": []}
+        ]
+    }
+]

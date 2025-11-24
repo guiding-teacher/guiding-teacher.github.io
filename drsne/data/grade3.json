@@ -1,0 +1,14 @@
+[
+    {
+        "id": 1,
+        "title": "قريبا ",
+        "image": "",
+        "words": [
+            {"text": "انتظرونا", "harakaPos": [1, 3, 5, 7]},
+            {"text": "قريبا", "harakaPos": [1, 4, 6]},
+            {"text": "لاضافة", "harakaPos": [1, 3]},
+            {"text": "منهج", "harakaPos": [1, 4]},
+            {"text": "الصف الثالث", "harakaPos": [1, 4]}
+        ]
+    }
+]

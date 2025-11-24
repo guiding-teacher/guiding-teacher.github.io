@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة استكشاف الصور</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    
+    <style>
+        /* ============================
+           الأنماط الأساسية والخطوط
+           ============================ */
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #ff4757;
+            --correct-color: #2ecc71;
+            --incorrect-color: #e74c3c;
+            --background-color: #eef5ff;
+            --font-family: 'Cairo', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ============================
+           حاوية اللعبة الرئيسية
+           ============================ */
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0, 80, 150, 0.15);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .score-display {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        .progress-container {
+            flex-grow: 1; height: 25px; background-color: #e9ecef; border-radius: 50px;
+            margin: 0 20px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%; background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%; transition: width 0.5s ease-in-out; display: flex;
+            align-items: center; justify-content: center; color: white; font-weight: bold;
+        }
+
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .background-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* ✨ تم التعديل هنا: تصميم النقاط النابضة ✨ */
+        .hotspot {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background-color: var(--secondary-color);
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7);
+            animation: pulse 1.5s infinite;
+            transition: transform 0.3s ease;
+        }
+        
+        .hotspot:hover { transform: scale(1.3); animation-play-state: paused; }
+        .hotspot.found { animation: none; opacity: 0.3; filter: grayscale(100%); pointer-events: none; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        }
+
+        /* أماكن النقاط النابضة الدقيقة */
+        #hotspot-girl { top: 15%; left: 17%; }
+        #hotspot-rooster { top: 13%; left: 36%; }
+        #hotspot-cow { top: 12%; left: 58%; }
+        #hotspot-boy-reading { top: 15%; left: 83%; }
+        #hotspot-boys-playing { top: 38%; left: 21%; }
+        #hotspot-dates { top: 38%; left: 51%; }
+        #hotspot-man-phone { top: 45%; left: 82%; }
+        #hotspot-bells { top: 55%; left: 18%; }
+        #hotspot-saw { top: 57%; left: 51%; }
+        #hotspot-sheep { top: 71%; left: 18%; }
+        #hotspot-apricot { top: 73%; left: 51%; }
+        #hotspot-horse { top: 86%; left: 19%; }
+        #hotspot-hand-writing { top: 86%; left: 51%; }
+        #hotspot-eagle { top: 84%; left: 81%; }
+        
+        /* ============================
+           النافذة المنبثقة
+           ============================ */
+        .popup-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.75); display: none; justify-content: center;
+            align-items: center; z-index: 1000; padding: 20px;
+        }
+        
+        .popup-overlay.visible { display: flex; animation: fadeIn 0.3s ease; }
+
+        .popup-content {
+            background-color: #f8f9fa; padding: 0; border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); max-width: 550px;
+            width: 100%; text-align: center; overflow: hidden;
+            animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #popup-header { background: var(--primary-color); color: white; padding: 20px; }
+        #popup-question { font-size: 1.8rem; font-weight: 700; }
+        #popup-body { padding: 25px; }
+        #popup-options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .option-button {
+            padding: 15px; font-size: 1.3rem; font-family: var(--font-family);
+            border: 2px solid #ddd; background-color: #fff; border-radius: 12px;
+            cursor: pointer; transition: all 0.2s ease; position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .option-button:not(:disabled):hover { background-color: #e9ecef; border-color: var(--primary-color); }
+        .option-button.correct { background-color: #d4edda; color: #155724; border-color: var(--correct-color); }
+        .option-button.incorrect { background-color: #f8d7da; color: #721c24; border-color: var(--incorrect-color); }
+        .option-button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        .option-button .feedback-icon { font-size: 1.2em; margin-right: 10px; display: none; }
+        .option-button.correct .feedback-icon.fa-check { display: inline-block; color: var(--correct-color); }
+        .option-button.incorrect .feedback-icon.fa-times { display: inline-block; color: var(--incorrect-color); }
+
+        /* ✨ تم التعديل هنا: تصميم جديد للفوتر مع نقل التايمر ✨ */
+        .popup-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 25px; border-top: 1px solid #dee2e6; }
+        .footer-actions-group { display: flex; gap: 10px; }
+        .popup-action-button {
+            background: #fff; border: 2px solid #ccc; color: #555; font-size: 1rem;
+            cursor: pointer; transition: all 0.3s; border-radius: 50px;
+            width: 45px; height: 45px; display: flex; justify-content: center; align-items: center;
+        }
+        .popup-action-button:hover { background-color: #e9ecef; }
+        .timer-container { height: 10px; flex-grow: 1; background-color: #e9ecef; border-radius: 50px; overflow: hidden; }
+        .timer-bar { height: 100%; width: 100%; background: linear-gradient(90deg, var(--secondary-color), #ff7979); transition: width 1s linear; }
+
+        /* شاشات النهاية */
+        .completion-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #a29bfe 0%, #74b9ff 100%); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .completion-overlay.visible { display: flex; animation: fadeIn 0.5s ease; }
+        .completion-content { background-color: white; padding: 40px; border-radius: 25px; text-align: center; }
+        .completion-title { font-size: 2.5em; color: var(--primary-color); }
+        #play-again-button { background: var(--primary-color); color: white; border: none; padding: 15px 30px; font-size: 1.2em; border-radius: 50px; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="game-header">
+            <div class="score-display">النقاط: <span id="score">0</span></div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar">0%</div>
+            </div>
+        </div>
+        
+        <div class="image-wrapper">
+            <img src="/drsne/images/dds.jpg" alt="دروس التهيئة والإعداد" class="background-image" id="game-image">
+            <!-- سيتم إضافة النقاط الفعالة هنا بواسطة JavaScript -->
+        </div>
+    </div>
+
+    <div id="popup" class="popup-overlay">
+        <div class="popup-content">
+            <div id="popup-header"> <h2 id="popup-question"></h2> </div>
+            <div id="popup-body"> <div id="popup-options"></div> </div>
+            <div class="popup-footer">
+                <div class="footer-actions-group">
+                    <button class="popup-action-button" id="exit-popup-button" title="خروج"><i class="fas fa-times"></i></button>
+                    <button class="popup-action-button" id="replay-question-button" title="إعادة السؤال"><i class="fas fa-redo-alt"></i></button>
+                </div>
+                <div class="timer-container"> <div class="timer-bar" id="timer-bar"></div> </div>
+                <button class="popup-action-button" id="replay-audio-button" title="استمع مرة أخرى" style="font-size: 1.2rem;"><i class="fas fa-volume-up"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="completion-screen" class="completion-overlay">
+        <div class="completion-content">
+            <h2 class="completion-title">رائع! لقد أكملت اللعبة بنجاح!</h2>
+            <p style="font-size: 1.5em; margin: 20px 0;">نقاطك النهائية: <span id="final-score">0</span></p>
+            <button id="play-again-button">العب مرة أخرى</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameData = {
+                girl: { options: ['بنت', 'ولد', 'رجل', 'امرأة'], correctAnswer: 'بنت' },
+                rooster: { options: ['ديك', 'دجاجة', 'بطة', 'حصان'], correctAnswer: 'ديك' },
+                cow: { options: ['بقرة', 'خروف', 'جمل', 'أسد'], correctAnswer: 'بقرة' },
+                'boy-reading': { options: ['ولد يقرأ', 'بنت تكتب', 'رجل نائم', 'طفل يلعب'], correctAnswer: 'ولد يقرأ' },
+                'boys-playing': { options: ['أولاد يلعبون', 'بنات يجرين', 'أطفال يأكلون', 'معلم يشرح'], correctAnswer: 'أولاد يلعبون' },
+                dates: { options: ['تمر', 'تفاح', 'برتقال', 'عنب'], correctAnswer: 'تمر' },
+                'man-phone': { options: ['رجل معه هاتف', 'شرطي مرور', 'طبيب', 'مهندس'], correctAnswer: 'رجل معه هاتف' },
+                bells: { options: ['جرس', 'طبلة', 'مزمار', 'عصفور'], correctAnswer: 'جرس' },
+                saw: { options: ['منشار', 'مطرقة', 'مفك', 'قلم'], correctAnswer: 'منشار' },
+                sheep: { options: ['خروف', 'ماعز', 'بقرة', 'كلب'], correctAnswer: 'خروف' },
+                apricot: { options: ['مشمش', 'خوخ', 'فراولة', 'رمان'], correctAnswer: 'مشمش' },
+                horse: { options: ['حصان', 'حمار', 'جمل', 'زرافة'], correctAnswer: 'حصان' },
+                'hand-writing': { options: ['يد تكتب', 'يد ترسم', 'يد تأكل', 'يد تلوّن'], correctAnswer: 'يد تكتب' },
+                eagle: { options: ['نسر', 'صقر', 'حمامة', 'غراب'], correctAnswer: 'نسر' }
+            };
+
+            const positions = {
+                girl: { top: '15%', left: '17%' }, rooster: { top: '13%', left: '36%' }, cow: { top: '12%', left: '58%' },
+                'boy-reading': { top: '15%', left: '83%' }, 'boys-playing': { top: '38%', left: '21%' }, dates: { top: '38%', left: '51%' },
+                'man-phone': { top: '45%', left: '82%' }, bells: { top: '55%', left: '18%' }, saw: { top: '57%', left: '51%' },
+                sheep: { top: '71%', left: '18%' }, apricot: { top: '73%', left: '51%' }, horse: { top: '86%', left: '19%' },
+                'hand-writing': { top: '86%', left: '51%' }, eagle: { top: '84%', left: '81%' }
+            };
+
+            // عناصر DOM
+            const imageWrapper = document.querySelector('.image-wrapper'), gameImage = document.getElementById('game-image');
+            const popup = document.getElementById('popup'), popupQuestion = document.getElementById('popup-question'), popupOptions = document.getElementById('popup-options');
+            const replayAudioButton = document.getElementById('replay-audio-button'), replayQuestionButton = document.getElementById('replay-question-button'), exitPopupButton = document.getElementById('exit-popup-button');
+            const timerBar = document.getElementById('timer-bar'), scoreDisplay = document.getElementById('score'), progressBar = document.getElementById('progress-bar');
+            const completionScreen = document.getElementById('completion-screen'), finalScoreDisplay = document.getElementById('final-score'), playAgainButton = document.getElementById('play-again-button');
+
+            let score = 0, foundItems = [], currentItemKey = null, timerInterval;
+            const totalItems = Object.keys(gameData).length;
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            gameImage.onerror = () => { imageWrapper.innerHTML = `<p style="color: red; padding: 50px;">فشل تحميل الصورة.</p>`; };
+
+            function playSound(type) {
+                if (!audioContext) return;
+                const o = audioContext.createOscillator(), g = audioContext.createGain();
+                o.connect(g); g.connect(audioContext.destination); g.gain.setValueAtTime(0.1, audioContext.currentTime);
+                if (type === 'correct') { o.type = 'sine'; o.frequency.setValueAtTime(600, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1); } 
+                else { o.type = 'square'; o.frequency.setValueAtTime(200, audioContext.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.1); }
+                o.start(audioContext.currentTime); o.stop(audioContext.currentTime + 0.2);
+            }
+            
+            function speak(text, callback) {
+                speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'ar-SA'; u.rate = 0.9; u.pitch = 1.2;
+                u.onend = callback;
+                speechSynthesis.speak(u);
+            }
+
+            function startTimer() {
+                clearInterval(timerInterval);
+                timerBar.style.transition = 'none'; timerBar.style.width = '100%';
+                setTimeout(() => {
+                    timerBar.style.transition = 'width 30s linear'; timerBar.style.width = '0%';
+                }, 100);
+                timerInterval = setTimeout(() => handleAnswer(null), 30000);
+            }
+
+            function showPopup(itemKey) {
+                currentItemKey = itemKey;
+                const item = gameData[itemKey];
+                popupQuestion.textContent = "ماذا رأيت في الصورة؟";
+                popupOptions.innerHTML = '';
+                
+                const shuffledOptions = [...item.options].sort(() => 0.5 - Math.random());
+                shuffledOptions.forEach(optionText => {
+                    const button = document.createElement('button');
+                    button.className = 'option-button';
+                    button.disabled = true; // ✨ تعطيل الأزرار مبدئياً
+                    button.innerHTML = `<i class="fas fa-check feedback-icon"></i><i class="fas fa-times feedback-icon"></i><span>${optionText}</span>`;
+                    button.onclick = () => handleAnswer(optionText);
+                    popupOptions.appendChild(button);
+                });
+
+                popup.classList.add('visible');
+                const textToSpeak = `${popupQuestion.textContent}. الخيارات هي: ${shuffledOptions.join(', ')}`;
+                
+                // ✨ سلسلة الأحداث الصوتية الجديدة
+                speak(textToSpeak, () => {
+                    // بعد قراءة الخيارات، قم بتفعيل الأزرار
+                    popupOptions.querySelectorAll('.option-button').forEach(btn => btn.disabled = false);
+                    // ثم قل الجملة الجديدة وابدأ المؤقت
+                    speak("لديك ثلاثون ثانية للإجابة. انطلق الآن!", startTimer);
+                });
+            }
+
+            function handleAnswer(selectedAnswer) {
+                clearInterval(timerInterval);
+                const item = gameData[currentItemKey];
+                const buttons = popupOptions.querySelectorAll('.option-button');
+                
+                buttons.forEach(button => {
+                    button.disabled = true;
+                    if (button.querySelector('span').textContent === item.correctAnswer) button.classList.add('correct');
+                });
+
+                if (selectedAnswer === item.correctAnswer) {
+                    playSound('correct');
+                    if (!foundItems.includes(currentItemKey)) {
+                        score += 10;
+                        foundItems.push(currentItemKey);
+                        document.querySelector(`.hotspot[data-item='${currentItemKey}']`).classList.add('found');
+                    }
+                } else {
+                    playSound('incorrect');
+                    const selectedButton = Array.from(buttons).find(b => b.querySelector('span').textContent === selectedAnswer);
+                    if (selectedButton) selectedButton.classList.add('incorrect');
+                }
+                updateUI();
+                setTimeout(closePopup, 2500);
+            }
+
+            function closePopup() {
+                // ✨ إيقاف المؤقت والصوت فوراً عند الخروج
+                clearInterval(timerInterval);
+                speechSynthesis.cancel();
+                popup.classList.remove('visible');
+                if (foundItems.length === totalItems) {
+                    setTimeout(showCompletionScreen, 500);
+                }
+            }
+
+            function updateUI() {
+                scoreDisplay.textContent = score;
+                const progress = (foundItems.length / totalItems) * 100;
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${Math.round(progress)}%`;
+            }
+
+            function showCompletionScreen() {
+                finalScoreDisplay.textContent = score;
+                completionScreen.classList.add('visible');
+            }
+
+            function createHotspots() {
+                document.querySelectorAll('.hotspot').forEach(hp => hp.remove());
+                for (const key in gameData) {
+                    const pos = positions[key];
+                    const hotspot = document.createElement('div');
+                    hotspot.className = 'hotspot';
+                    hotspot.dataset.item = key;
+                    hotspot.style.top = pos.top;
+                    hotspot.style.left = pos.left;
+                    hotspot.onclick = () => showPopup(key);
+                    imageWrapper.appendChild(hotspot);
+                }
+            }
+
+            function resetGame() {
+                score = 0; foundItems = []; currentItemKey = null;
+                clearInterval(timerInterval);
+                completionScreen.classList.remove('visible');
+                createHotspots();
+                updateUI();
+            }
+            
+            replayAudioButton.addEventListener('click', () => {
+                const optionTexts = Array.from(popupOptions.querySelectorAll('span')).map(s => s.textContent);
+                const textToSpeak = `${popupQuestion.textContent}. الخيارات هي: ${optionTexts.join(', ')}`;
+                showPopup(currentItemKey); // استدعاء الدالة الرئيسية لإعادة التشغيل بنفس المنطق
+            });
+            exitPopupButton.addEventListener('click', closePopup);
+            replayQuestionButton.addEventListener('click', closePopup);
+            playAgainButton.addEventListener('click', resetGame);
+
+            resetGame();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>لعبة التفعيل بالرسم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #0056b3;
+            --trace-color: #ffc107; /* Gold for tracing */
+            --background-color: #e9ecef;
+            --board-color: #ffffff;
+            --font-family: 'Cairo', sans-serif;
+            --dotted-line-color: rgba(44, 62, 80, 0.5);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            font-family: var(--font-family); background-color: var(--background-color);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 15px; overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-container {
+            width: 100%; max-width: 800px; background-color: var(--board-color);
+            border-radius: 25px; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            padding: clamp(10px, 3vw, 20px); text-align: center;
+        }
+
+        .game-header { margin-bottom: 10px; }
+        .prompt-bar {
+            font-size: clamp(1.2rem, 4vw, 1.6rem); font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 12px 20px; border-radius: 15px;
+            transform: translateY(-20px); opacity: 0;
+            animation: slideDown 0.5s ease-out forwards;
+        }
+        @keyframes slideDown { to { transform: translateY(0); opacity: 1; } }
+        
+        .level-progress-bar { width: 100%; height: 8px; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .level-progress-fill { width: 0%; height: 100%; background-color: var(--trace-color); border-radius: 4px; transition: width 0.2s linear; }
+        
+        .tracing-area {
+            position: relative; width: 100%; max-height: 78vh;
+            aspect-ratio: 0.707; margin: 0 auto; border-radius: 15px;
+            overflow: hidden; background-size: contain; background-position: center;
+            background-repeat: no-repeat; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            touch-action: none;
+        }
+        
+        .tracing-area canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #background-canvas { z-index: 1; }
+        #drawing-canvas { z-index: 2; cursor: crosshair; }
+        #fx-canvas { z-index: 4; pointer-events: none; }
+
+        .sprite {
+            position: absolute; z-index: 3; height: auto; display: none;
+            transform-origin: center center; pointer-events: none;
+            filter: grayscale(80%) brightness(0.9);
+            transition: filter 0.5s;
+        }
+        .sprite.active {
+            filter: grayscale(0%) brightness(1);
+            animation: wakeUp 0.8s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        @keyframes wakeUp { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        
+        #car-sprite { width: 25%; } #bike-sprite { width: 22%; } #ball-sprite { width: 15%; }
+
+        .game-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(5px); }
+        .game-overlay.visible { opacity: 1; visibility: visible; }
+        .popup { background: white; padding: 30px 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); transform: scale(0.8); transition: transform 0.3s ease; max-width: 90%; width: 400px; }
+        .game-overlay.visible .popup { transform: scale(1); }
+        .popup-icon { font-size: 4rem; margin-bottom: 15px; }
+        .popup-title { font-size: clamp(1.5rem, 4vw, 2.5rem); margin-bottom: 20px; color: #333; line-height: 1.4; }
+        .popup-button { font-family: var(--font-family); padding: 15px 40px; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: white; border: none; border-radius: 50px; font-size: 1.5rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="game-container">
+    <div class="game-header">
+        <div style="animation-delay: 0.2s" class="prompt-bar" id="prompt-bar">لعبة التفعيل بالرسم</div>
+        <div class="level-progress-bar"><div id="level-progress-fill" class="level-progress-fill"></div></div>
+    </div>
+    <div class="tracing-area" id="tracing-area">
+        <canvas id="background-canvas"></canvas>
+        <canvas id="drawing-canvas"></canvas>
+        <img src="../images/car.png" id="car-sprite" class="sprite" alt="سيارة">
+        <img src="../images/mot.png" id="bike-sprite" class="sprite" alt="دراجة">
+        <img src="../images/poy.png" id="ball-sprite" class="sprite" alt="كرة">
+        <canvas id="fx-canvas"></canvas>
+    </div>
+</div>
+
+<div class="game-overlay visible" id="start-overlay"><div class="popup"><i class="popup-icon fas fa-pencil-alt"></i><h2 class="popup-title">هل أنت جاهز للمغامرة؟</h2><button id="start-button" class="popup-button">ابدأ الآن</button></div></div>
+<div class="game-overlay" id="final-win-overlay"><div class="popup"><i class="popup-icon fas fa-trophy" style="color: #ffc107;"></i><h2 class="popup-title">رائع! أنت فنان حقيقي!</h2><button id="restart-button" class="popup-button">العب مرة أخرى</button></div></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const tracingArea=document.getElementById('tracing-area'),promptBar=document.getElementById('prompt-bar'),levelProgressFill=document.getElementById('level-progress-fill'),canvases={bg:document.getElementById('background-canvas'),draw:document.getElementById('drawing-canvas'),fx:document.getElementById('fx-canvas')},ctx={bg:canvases.bg.getContext('2d'),draw:canvases.draw.getContext('2d'),fx:canvases.fx.getContext('2d')},sprites={car:document.getElementById('car-sprite'),bike:document.getElementById('bike-sprite'),ball:document.getElementById('ball-sprite')},startOverlay=document.getElementById('start-overlay'),finalWinOverlay=document.getElementById('final-win-overlay'),startButton=document.getElementById('start-button'),restartButton=document.getElementById('restart-button');
+    const TRACE_TOLERANCE=20,TRACE_COLOR=getComputedStyle(document.documentElement).getPropertyValue('--trace-color').trim(),DOTTED_COLOR=getComputedStyle(document.documentElement).getPropertyValue('--dotted-line-color').trim(),LINE_WIDTH=12;
+
+    /******************************************************************
+     * 
+     *  -- تعليمات تعديل الخطوط --
+     * 
+     *  هذا هو الجزء الخاص ببيانات المراحل والخطوط. يمكنك تعديله بسهولة.
+     *  - `prompt`: هو السؤال الذي يظهر أعلى الشاشة.
+     *  - `spriteId`: هو اسم الكائن المتحرك (car, bike, ball).
+     *  - `startPos`: هو مكان ظهور الكائن في البداية (قبل الرسم).
+     *  - `paths`: هو الجزء الأهم، ويحتوي على مسارات الرسم.
+     * 
+     *  -- كيفية تعديل طول الخط --
+     *  كل خط يتكون من نقطتين أو أكثر: `[{x:..., y:...}, {x:..., y:...}]`
+     *  الأرقام هي نسبة مئوية من عرض وارتفاع منطقة اللعب:
+     *    - `x`: الموقع الأفقي (0 هو أقصى اليسار، 100 هو أقصى اليمين).
+     *    - `y`: الموقع الرأسي (0 هو الأعلى، 100 هو الأسفل).
+     * 
+     *  مثال: لزيادة طول خط السيارة:
+     *  - المسار الأصلي: `[{x:65, y:15.6}, {x:35, y:15.6}]`
+     *  - لجعله أطول، نزيد المسافة بين الأرقام. مثلاً نبدأ من اليمين أكثر وننتهي في اليسار أكثر:
+     *  - المسار الجديد الأطول: `[{x:68, y:15.6}, {x:32, y:15.6}]` (وهو ما تم تطبيقه في الكود أدناه)
+     * 
+     ******************************************************************/
+    const gameLevels=[
+        {prompt:"ارسم الطريق لتتحرك السيارة!", spriteId:'car', startPos:{x:70,y:15.6}, paths:[[{x:80,y:15.6},{x:20,y:15.6}]]},
+        
+        {prompt:"ساعد الدراجة في الوصول!", spriteId:'bike', startPos:{x:78,y:28}, paths:[[{x:80,y:28},{x:20,y:28}]]},
+        
+        {prompt:"ارسم مسار الكرة نحو المرمى!", spriteId:'ball', startPos:{x:73,y:44.5}, paths:[[{x:80,y:44.5},{x:20,y:44.5}]]},
+        
+       {prompt:"تتبع الخط المتعرج!", paths:[[{x:16.5,y:55},{x:19,y:57},{x:21.5,y:55},{x:24,y:57},{x:26.5,y:55},{x:29,y:57},{x:31.5,y:55},{x:34,y:57},{x:36.5,y:55},{x:39,y:57},{x:41.5,y:55},{x:44,y:57},{x:46.5,y:55},{x:49,y:57},{x:51.5,y:55},{x:54,y:57},{x:56.5,y:55},{x:59,y:57},{x:61.5,y:55},{x:64,y:57},{x:66.5,y:55},{x:69,y:57},{x:71.5,y:55}]]},
+        
+        {prompt:"ارسم الأمواج!", paths:[[{x:16,y:62.5},{x:18,y:61},{x:20,y:62.5},{x:22,y:61},{x:24,y:62.5},{x:26,y:61},{x:28,y:62.5},{x:30,y:61},{x:32,y:62.5},{x:34,y:61},{x:36,y:62.5},{x:38,y:61},{x:40,y:62.5},{x:42,y:61},{x:44,y:62.5},{x:46,y:61},{x:48,y:62.5},{x:50,y:61},{x:52,y:62.5},{x:54,y:61},{x:56,y:62.5},{x:58,y:61},{x:60,y:62.5},{x:62,y:61},{x:64,y:62.5},{x:66,y:61},{x:68,y:62.5}]]},
+    ];
+
+    let gameState='START_SCREEN',currentLevelIndex=0,isTracingInput=false,levelProgress=[],activeSprite=null,particles=[],lastTime=0,completedSprites=[];
+    function speak(text){if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=0.9;window.speechSynthesis.speak(u);}}
+    function gameLoop(timestamp){const deltaTime=(timestamp-lastTime)/1000;lastTime=timestamp;if(gameState==='ANIMATING'){updateAnimation(deltaTime);}updateAndDrawParticles();requestAnimationFrame(gameLoop);}
+    function init(){tracingArea.style.backgroundImage=`url('../images/pcar.png')`;setupEventListeners();window.addEventListener('resize',resizeAndRedraw);}
+    function startGame(){startOverlay.classList.remove('visible');completedSprites.forEach(s=>s.element.style.display='none');completedSprites=[];loadLevel(0);lastTime=performance.now();requestAnimationFrame(gameLoop);}
+    function loadLevel(index){currentLevelIndex=index;const level=gameLevels[index];activeSprite=null;levelProgress=level.paths.map(path=>({points:path.map(p=>percentToPixel(p)),tracedLength:0}));promptBar.textContent=level.prompt;speak(level.prompt);promptBar.style.animation='none';promptBar.offsetHeight;promptBar.style.animation=null;if(level.spriteId){const currentSpriteElement=sprites[level.spriteId];currentSpriteElement.classList.remove('active');activeSprite={element:currentSpriteElement,progress:0,speed:0.5};const startPos=percentToPixel(level.startPos);positionSprite(activeSprite.element,startPos.x,startPos.y);activeSprite.element.style.display='block';}levelProgressFill.style.width='0%';resizeAndRedraw();gameState='TRACING';}
+    function resizeAndRedraw(){const rect=tracingArea.getBoundingClientRect();Object.values(canvases).forEach(canvas=>{canvas.width=rect.width;canvas.height=rect.height;});if(gameState!=='START_SCREEN'){completedSprites.forEach(s=>positionSprite(s.element,s.x,s.y));levelProgress.forEach((path,i)=>{path.points=gameLevels[currentLevelIndex].paths[i].map(p=>percentToPixel(p));});if(activeSprite){const pos=percentToPixel(gameLevels[currentLevelIndex].startPos);positionSprite(activeSprite.element,pos.x,pos.y);}}drawBackground();drawProgress();}
+    function drawBackground(){ctx.bg.clearRect(0,0,canvases.bg.width,canvases.bg.height);ctx.bg.strokeStyle=DOTTED_COLOR;ctx.bg.lineWidth=LINE_WIDTH*0.5;ctx.bg.setLineDash([5,10]);levelProgress.forEach(path=>{ctx.bg.beginPath();ctx.bg.moveTo(path.points[0].x,path.points[0].y);for(let i=1;i<path.points.length;i++)ctx.bg.lineTo(path.points[i].x,path.points[i].y);ctx.bg.stroke();});}
+    function drawProgress(){ctx.draw.clearRect(0,0,canvases.draw.width,canvases.draw.height);ctx.draw.strokeStyle=TRACE_COLOR;ctx.draw.lineWidth=LINE_WIDTH;ctx.draw.lineCap='round';ctx.draw.lineJoin='round';levelProgress.forEach(path=>{const total=getPathLength(path.points);drawPartialPath(ctx.draw,path.points,path.tracedLength/total);});}
+    function startAnimation(){gameState='ANIMATING';activeSprite.progress=0;const startPos=percentToPixel(gameLevels[currentLevelIndex].startPos);const endPos=percentToPixel(gameLevels[currentLevelIndex].paths[0][gameLevels[currentLevelIndex].paths[0].length-1]);activeSprite.animationPath=[startPos,endPos];}
+    function updateAnimation(deltaTime){if(!activeSprite)return;activeSprite.progress=Math.min(1,activeSprite.progress+activeSprite.speed*deltaTime);const easedProgress=1-Math.pow(1-activeSprite.progress,4);const pos=getPointOnPath(activeSprite.animationPath,easedProgress);positionSprite(activeSprite.element,pos.x,pos.y);if(Math.random()>0.5)createTrailParticle(pos.x,pos.y);if(activeSprite.progress===1){gameState='LEVEL_TRANSITION';speak("وصل بنجاح!");createParticleBurst(pos.x,pos.y);completedSprites.push({element:activeSprite.element,x:pos.x,y:pos.y});transitionToNextLevel();}}
+    function positionSprite(spriteElement,x,y){const rect=spriteElement.getBoundingClientRect();if(rect.width===0&&spriteElement.style.display!=='none')return;spriteElement.style.transform='none';spriteElement.style.left=`${x-rect.width/2}px`;spriteElement.style.top=`${y-rect.height/2}px`;}
+    function handleStart(e){if(gameState==='TRACING'){e.preventDefault();isTracingInput=true;handleMove(e);}}
+    function handleEnd(e){if(gameState==='TRACING'){isTracingInput=false;}}
+    function handleMove(e){if(!isTracingInput||gameState!=='TRACING')return;e.preventDefault();const pos=getCanvasCoords(e);let changed=false;levelProgress.forEach(path=>{if(path.tracedLength>=getPathLength(path.points))return;const{distance,newTraceLength}=findProgressOnPath(pos,path.points);if(distance<TRACE_TOLERANCE&&newTraceLength>path.tracedLength){path.tracedLength=newTraceLength;changed=true;}});if(changed){drawProgress();updateLevelProgressBar();checkLevelCompletion();}}
+    function checkLevelCompletion(){const allCompleted=levelProgress.every(p=>p.tracedLength>=getPathLength(p.points)-1);if(allCompleted&&gameState==='TRACING'){gameState='TRACE_COMPLETE';celebrateTraceCompletion();}}
+    function celebrateTraceCompletion(){speak("أحسنت! لقد فتحت الطريق!");if(activeSprite){activeSprite.element.classList.add('active');}setTimeout(()=>{if(activeSprite){startAnimation();}else{transitionToNextLevel();}},1500);}
+    function updateLevelProgressBar(){const total=levelProgress.reduce((acc,p)=>acc+getPathLength(p.points),0);const traced=levelProgress.reduce((acc,p)=>acc+p.tracedLength,0);levelProgressFill.style.width=`${Math.min(100,(traced/total)*100)}%`;}
+    function transitionToNextLevel(){setTimeout(()=>{if(currentLevelIndex<gameLevels.length-1){loadLevel(currentLevelIndex+1);}else{gameState='FINISHED';finalWinOverlay.classList.add('visible');speak("تهانينا! لقد أنهيت كل التمارين بنجاح!");}},2000);}
+    function createParticleBurst(x,y){for(let i=0;i<80;i++)particles.push(new Particle(x,y,{burst:true}));}
+    function createTrailParticle(x,y){if(particles.length<100)particles.push(new Particle(x,y,{trail:true}));}
+    class Particle{constructor(x,y,type={}){this.x=x;this.y=y;if(type.burst){this.color=`hsl(${195+Math.random()*30},100%,60%)`;const a=Math.random()*Math.PI*2,s=Math.random()*5+2;this.vx=Math.cos(a)*s;this.vy=Math.sin(a)*s;this.life=60+Math.random()*40;this.size=Math.random()*4+3;}else if(type.trail){this.color='#ffdd44';this.vx=(Math.random()-0.5)*1;this.vy=(Math.random()-0.5)*1;this.life=20+Math.random()*20;this.size=Math.random()*3+1;}}update(){this.x+=this.vx;this.y+=this.vy;this.life--;this.size*=0.97;}draw(c){c.beginPath();c.arc(this.x,this.y,this.size,0,Math.PI*2);c.fillStyle=this.color;c.globalAlpha=Math.max(0,this.life/60);c.fill();}}
+    function updateAndDrawParticles(){ctx.fx.clearRect(0,0,canvases.fx.width,canvases.fx.height);particles.forEach((p,i)=>{p.update();if(p.life<=0)particles.splice(i,1);else p.draw(ctx.fx);});ctx.fx.globalAlpha=1;}
+    function percentToPixel(p){return{x:(p.x/100)*canvases.bg.width,y:(p.y/100)*canvases.bg.height};}
+    function getCanvasCoords(e){const r=canvases.draw.getBoundingClientRect(),cX=e.type.includes('touch')?e.touches[0].clientX:e.clientX,cY=e.type.includes('touch')?e.touches[0].clientY:e.clientY;return{x:cX-r.left,y:cY-r.top};}
+    function getSegmentLength(p1,p2){return Math.hypot(p2.x-p1.x,p2.y-p1.y);}
+    function getPathLength(pts){let l=0;for(let i=1;i<pts.length;i++)l+=getSegmentLength(pts[i-1],pts[i]);return l;}
+    function drawPartialPath(c,pts,r){const total=getPathLength(pts),len=total*r;let lenSoFar=0;c.beginPath();c.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++){const segLen=getSegmentLength(pts[i-1],pts[i]);if(lenSoFar+segLen>len){const ratio=(len-lenSoFar)/segLen;c.lineTo(pts[i-1].x+(pts[i].x-pts[i-1].x)*ratio,pts[i-1].y+(pts[i].y-pts[i-1].y)*ratio);break;}c.lineTo(pts[i].x,pts[i].y);lenSoFar+=segLen;}c.stroke();}
+    function findProgressOnPath(pos,pts){let minD=Infinity,traceLen=0;for(let i=1;i<pts.length;i++){const p1=pts[i-1],p2=pts[i],dx=p2.x-p1.x,dy=p2.y-p1.y;if(dx===0&&dy===0)continue;const t=Math.max(0,Math.min(1,((pos.x-p1.x)*dx+(pos.y-p1.y)*dy)/(dx*dx+dy*dy)));const cX=p1.x+t*dx,cY=p1.y+t*dy,d=Math.hypot(pos.x-cX,pos.y-cY);if(d<minD){minD=d;traceLen=getPathLength(pts.slice(0,i))+t*getSegmentLength(p1,p2);}}return{distance:minD,newTraceLength:traceLen};}
+    function getPointOnPath(pts,p){const total=getPathLength(pts);let target=total*p,lenSoFar=0;for(let i=1;i<pts.length;i++){const p1=pts[i-1],p2=pts[i],segLen=getSegmentLength(p1,p2);if(lenSoFar+segLen>=target){const r=(target-lenSoFar)/segLen;return{x:p1.x+(p2.x-p1.x)*r,y:p1.y+(p2.y-p1.y)*r};}lenSoFar+=segLen;}return pts[pts.length-1];}
+    function setupEventListeners(){canvases.draw.addEventListener('mousedown',handleStart);canvases.draw.addEventListener('mousemove',handleMove);document.addEventListener('mouseup',handleEnd);canvases.draw.addEventListener('mouseleave',handleEnd);canvases.draw.addEventListener('touchstart',handleStart,{passive:false});canvases.draw.addEventListener('touchmove',handleMove,{passive:false});canvases.draw.addEventListener('touchend',handleEnd);startButton.addEventListener('click',startGame);restartButton.addEventListener('click',()=>{finalWinOverlay.classList.remove('visible');startGame();});}
+    init();
+});
+</script>
+</body>
+</html>

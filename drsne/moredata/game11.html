@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>الرسام العبقري: مراحل المعرفة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+
+        :root {
+            --primary-color: #00a8e8;
+            --secondary-color: #ff6b6b;
+            --success-color: #4caf50;
+            --bg-color: #f0f9ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+
+        header {
+            background: white;
+            width: 100%;
+            padding: 10px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.4rem;
+        }
+
+        .game-container {
+            position: relative;
+            margin: 10px auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            background: white;
+            max-width: 95vw;
+            max-height: 75vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #bg-image {
+            display: block;
+            max-width: 100%;
+            max-height: 75vh;
+            pointer-events: none;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #particlesCanvas { pointer-events: none; }
+
+        .toolbar {
+            position: fixed;
+            bottom: 15px;
+            background: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .color-btn {
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .color-btn.active { transform: scale(1.2); border-color: #ccc; }
+
+        .action-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .action-btn.clear { background: var(--secondary-color); }
+
+        /* مودال الأسئلة */
+        .modal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+
+        .quiz-box {
+            background: #fff;
+            width: 90%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 25px;
+            border-bottom: 8px solid #e0e0e0;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .stage-indicator {
+            background: #ffeb3b;
+            color: #333;
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .quiz-question {
+            font-size: 1.3rem;
+            color: #333;
+            margin: 15px 0 25px 0;
+            font-weight: bold;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: #f8f9fa;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-family: 'Tajawal', sans-serif;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 4px solid #ddd;
+        }
+
+        .option-btn:active { transform: translateY(4px); border-bottom: 0; }
+        .option-btn:hover { background: #e3f2fd; border-color: #2196f3; }
+
+        .star-badge {
+            position: absolute;
+            font-size: 3rem;
+            display: none;
+            filter: drop-shadow(0 0 10px gold);
+            animation: starPop 0.6s infinite alternate;
+            z-index: 50;
+        }
+
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes starPop { from { transform: scale(1); } to { transform: scale(1.2); } }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } 100% { transform: translateX(0); } }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>الرسام العبقري: تتبع واكتشف</h1>
+    </header>
+
+    <div class="game-container" id="container">
+        <img src="/drsne/images/game11.jpg" id="bg-image" alt="ورقة العمل" onload="initGame()">
+        <canvas id="drawingCanvas"></canvas>
+        <canvas id="particlesCanvas"></canvas>
+        
+        <!-- النجوم النهائية -->
+        <div id="star-tl" class="star-badge" style="top: 5%; left: 5%;">🌟</div>
+        <div id="star-tr" class="star-badge" style="top: 5%; right: 5%;">🌟</div>
+        <div id="star-bl" class="star-badge" style="bottom: 5%; left: 5%;">🌟</div>
+        <div id="star-br" class="star-badge" style="bottom: 5%; right: 5%;">🌟</div>
+
+        <!-- نافذة السؤال -->
+        <div class="modal-overlay" id="quizModal">
+            <div class="quiz-box">
+                <div class="stage-indicator" id="stageBadge">سؤال 1 من 4</div>
+                <p class="quiz-question" id="questionText">السؤال هنا؟</p>
+                <div class="options-grid" id="optionsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="color-btn active" style="background-color: #333;" data-color="#333" onclick="setColor(this)"></div>
+        <div class="color-btn" style="background-color: #00a8e8;" data-color="#00a8e8" onclick="setColor(this)"></div>
+        <div class="color-btn" style="background-color: #e91e63;" data-color="#e91e63" onclick="setColor(this)"></div>
+        <div class="color-btn" style="background-color: #4caf50;" data-color="#4caf50" onclick="setColor(this)"></div>
+        <div style="width: 1px; height: 25px; background: #ddd; margin: 0 5px;"></div>
+        <button class="action-btn" onclick="saveWork()">💾 حفظ</button>
+        <button class="action-btn clear" onclick="clearCanvas()">🗑️ مسح</button>
+    </div>
+
+    <script>
+        // بيانات الحيوانات: كل حيوان لديه 4 مراحل من الأسئلة
+        const animalsData = [
+            {
+                id: 'bird',
+                area: { xMin: 0, xMax: 0.5, yMin: 0, yMax: 0.5 }, // أعلى يسار
+                starId: 'star-tl',
+                drawCount: 0,
+                currentStage: 0, // من 0 إلى 3
+                isFinished: false,
+                questions: [
+                    { q: "ماذا يغطي جسم هذا الطائر؟", correct: "الريش", wrong: ["الصوف", "الشعر", "الحراشف"] },
+                    { q: "أين يعيش هذا الطائر عادة؟", correct: "في العش", wrong: ["في الماء", "في الكهف", "تحت الأرض"] },
+                    { q: "كيف يتحرك هذا الحيوان؟", correct: "يطير", wrong: ["يزحف", "يسبح", "يركض"] },
+                    { q: "ما هو اسم هذا الشكل؟", correct: "حمامة", wrong: ["نسر", "بطة", "عصفور"] }
+                ]
+            },
+            {
+                id: 'cat',
+                area: { xMin: 0.5, xMax: 1, yMin: 0, yMax: 0.5 }, // أعلى يمين
+                starId: 'star-tr',
+                drawCount: 0,
+                currentStage: 0,
+                isFinished: false,
+                questions: [
+                    { q: "ما هو الصوت الذي يصدره هذا الحيوان؟", correct: "مواء", wrong: ["نباح", "زئير", "صياح"] },
+                    { q: "ماذا يحب أن يشرب؟", correct: "الحليب", wrong: ["العصير", "الشاي", "القهوة"] },
+                    { q: "هل هذا الحيوان أليف؟", correct: "نعم أليف", wrong: ["لا، مفترس", "يعيش في الغابة", "خطير جداً"] },
+                    { q: "ما اسم هذا الحيوان اللطيف؟", correct: "قطة", wrong: ["أسد", "نمر", "فهد"] }
+                ]
+            },
+            {
+                id: 'rabbit',
+                area: { xMin: 0, xMax: 0.5, yMin: 0.5, yMax: 1 }, // أسفل يسار
+                starId: 'star-bl',
+                drawCount: 0,
+                currentStage: 0,
+                isFinished: false,
+                questions: [
+                    { q: "ماذا يحب هذا الحيوان أن يأكل؟", correct: "الجزر", wrong: ["اللحم", "السمك", "الحلوى"] },
+                    { q: "كيف يتحرك هذا الحيوان؟", correct: "يقفز", wrong: ["يطير", "يسبح", "يزحف"] },
+                    { q: "بماذا يتميز هذا الحيوان؟", correct: "أذنان طويلتان", wrong: ["ذيل طويل", "أجنحة كبيرة", "رقبة طويلة"] },
+                    { q: "من أنا؟", correct: "أرنب", wrong: ["فأر", "سنجاب", "كنغر"] }
+                ]
+            },
+            {
+                id: 'fish',
+                area: { xMin: 0.5, xMax: 1, yMin: 0.5, yMax: 1 }, // أسفل يمين
+                starId: 'star-br',
+                drawCount: 0,
+                currentStage: 0,
+                isFinished: false,
+                questions: [
+                    { q: "أين يعيش هذا الكائن؟", correct: "في الماء", wrong: ["في الشجرة", "في الصحراء", "في الجبل"] },
+                    { q: "كيف يتنفس هذا الحيوان؟", correct: "بالخياشيم", wrong: ["بالأنف", "بالجلد", "لا يتنفس"] },
+                    { q: "هل يمتلك هذا الحيوان أرجلاً؟", correct: "لا", wrong: ["نعم، 2", "نعم، 4", "نعم، 8"] },
+                    { q: "ما اسم هذا الحيوان؟", correct: "سمكة", wrong: ["حوت", "دولفين", "قرش"] }
+                ]
+            }
+        ];
+
+        // حساسية الرسم: كم نقطة رسم مطلوبة لظهور السؤال التالي
+        // كل 60 نقطة رسم = مرحلة واحدة
+        const DRAW_PER_STAGE = 140; 
+
+        const img = document.getElementById('bg-image');
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const pCanvas = document.getElementById('particlesCanvas');
+        const pCtx = pCanvas.getContext('2d');
+        
+        const quizModal = document.getElementById('quizModal');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const questionText = document.getElementById('questionText');
+        const stageBadge = document.getElementById('stageBadge');
+
+        let isDrawing = false;
+        let isQuizActive = false; // لمنع الرسم أثناء السؤال
+        let currentColor = '#333';
+        let particlesArray = [];
+
+        function initGame() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            addEventListeners();
+            animateParticles();
+            speak("مرحباً.. ارسم قليلاً لتفتح الأسئلة!");
+        }
+
+        function resizeCanvas() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            pCanvas.width = img.width;
+            pCanvas.height = img.height;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = currentColor;
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // إيقاف أي صوت سابق
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ar-SA';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            // حساب النسب المئوية للموقع لتحديد الربع
+            const normalizedX = (clientX - rect.left) / rect.width;
+            const normalizedY = (clientY - rect.top) / rect.height;
+
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY,
+                nx: normalizedX,
+                ny: normalizedY
+            };
+        }
+
+        function startDraw(e) {
+            if (isQuizActive) return;
+            e.preventDefault();
+            isDrawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            checkProgress(pos.nx, pos.ny);
+        }
+
+        function draw(e) {
+            if (!isDrawing || isQuizActive) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+
+            if(Math.random() > 0.8) createParticles(pos.x, pos.y);
+
+            checkProgress(pos.nx, pos.ny);
+        }
+
+        function endDraw() { isDrawing = false; ctx.beginPath(); }
+
+        // --- المنطق الأساسي الجديد ---
+        function checkProgress(nx, ny) {
+            // تحديد الحيوان بناءً على الإحداثيات
+            const target = animalsData.find(a => 
+                nx >= a.area.xMin && nx <= a.area.xMax &&
+                ny >= a.area.yMin && ny <= a.area.yMax
+            );
+
+            if (target && !target.isFinished) {
+                target.drawCount++;
+
+                // حساب الحد المطلوب للمرحلة الحالية
+                // المرحلة 0 تحتاج 60 نقطة، المرحلة 1 تحتاج 120 نقطة، وهكذا
+                let neededDraws = (target.currentStage + 1) * DRAW_PER_STAGE;
+
+                // إذا تجاوز الرسم الحد المطلوب للمرحلة الحالية
+                if (target.drawCount >= neededDraws && target.currentStage < 4) {
+                    triggerQuiz(target);
+                }
+            }
+        }
+
+        function triggerQuiz(animal) {
+            isQuizActive = true;
+            isDrawing = false;
+            endDraw(); // إيقاف خط الرسم فوراً
+
+            const stageIndex = animal.currentStage; // 0, 1, 2, 3
+            const questionData = animal.questions[stageIndex];
+
+            // تحديث واجهة السؤال
+            stageBadge.innerText = `سؤال ${stageIndex + 1} من 4`;
+            questionText.innerText = questionData.q;
+            
+            // نطق السؤال
+            speak(questionData.q);
+
+            // خلط الخيارات
+            let allOptions = [...questionData.wrong, questionData.correct];
+            allOptions.sort(() => Math.random() - 0.5);
+
+            optionsContainer.innerHTML = '';
+            allOptions.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, questionData.correct, animal);
+                optionsContainer.appendChild(btn);
+            });
+
+            quizModal.style.display = 'flex';
+        }
+
+        function checkAnswer(selected, correct, animal) {
+            if (selected === correct) {
+                // إجابة صحيحة
+                animal.currentStage++; // الانتقال للمرحلة التالية
+                
+                if (animal.currentStage >= 4) {
+                    // انتهت جميع المراحل لهذا الحيوان
+                    animal.isFinished = true;
+                    speak(`ممتاز! لقد أكملت رسم ${animal.questions[3].correct}`);
+                    document.getElementById(animal.starId).style.display = 'block';
+                    fireworks(canvas.width/2, canvas.height/2);
+                } else {
+                    // لم ينته، شجعه وأغلق النافذة ليكمل الرسم
+                    speak("أحسنت! أكمل الرسم لتفتح السؤال التالي");
+                }
+
+                quizModal.style.display = 'none';
+                isQuizActive = false; // السماح بالرسم مجدداً
+
+            } else {
+                // إجابة خاطئة
+                speak("حاول مرة أخرى");
+                const box = document.querySelector('.quiz-box');
+                box.classList.remove('shake');
+                void box.offsetWidth;
+                box.classList.add('shake');
+            }
+        }
+
+        // --- باقي الكود (الألوان، المسح، الحفظ، المؤثرات) ---
+        function setColor(elem) {
+            document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+            elem.classList.add('active');
+            currentColor = elem.getAttribute('data-color');
+            ctx.strokeStyle = currentColor;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // إعادة تصفير البيانات
+            animalsData.forEach(a => {
+                a.drawCount = 0;
+                a.currentStage = 0;
+                a.isFinished = false;
+                document.getElementById(a.starId).style.display = 'none';
+            });
+            isQuizActive = false;
+        }
+
+        function saveWork() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.fillStyle = "#fff";
+            tCtx.fillRect(0,0,canvas.width, canvas.height);
+            tCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            tCtx.drawImage(canvas, 0, 0);
+            const link = document.createElement('a');
+            link.download = 'إبداعي.png';
+            link.href = tempCanvas.toDataURL();
+            link.click();
+        }
+
+        // نظام الجزيئات والاحتفال
+        class Particle {
+            constructor(x, y, color, speedMultiplier = 1) {
+                this.x = x; this.y = y;
+                this.size = Math.random() * 5 + 2;
+                this.speedX = (Math.random() * 3 - 1.5) * speedMultiplier;
+                this.speedY = (Math.random() * 3 - 1.5) * speedMultiplier;
+                this.color = color;
+                this.life = 1.0;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.1;
+                this.life -= 0.02;
+            }
+            draw() {
+                pCtx.fillStyle = this.color;
+                pCtx.globalAlpha = this.life;
+                pCtx.beginPath();
+                pCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                pCtx.fill();
+                pCtx.globalAlpha = 1.0;
+            }
+        }
+
+        function createParticles(x, y) {
+            for(let i=0; i<2; i++) particlesArray.push(new Particle(x, y, currentColor));
+        }
+
+        function fireworks(x, y) {
+            for(let i=0; i<50; i++) {
+                const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', 'gold'];
+                const col = colors[Math.floor(Math.random()*colors.length)];
+                particlesArray.push(new Particle(x, y, col, 5));
+            }
+        }
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+                if (particlesArray[i].life <= 0 || particlesArray[i].size <= 0) {
+                    particlesArray.splice(i, 1);
+                    i--;
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        function addEventListeners() {
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', endDraw);
+            canvas.addEventListener('mouseleave', endDraw);
+            canvas.addEventListener('touchstart', startDraw, {passive: false});
+            canvas.addEventListener('touchmove', draw, {passive: false});
+            canvas.addEventListener('touchend', endDraw);
+        }
+    </script>
+</body>
+</html>

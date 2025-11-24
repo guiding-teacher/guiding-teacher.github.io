@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق تعليم القراءة للصف الأول</title>
+    
+    <!-- ================================================== -->
+<!-- تحسين محركات البحث (SEO) -->
+<!-- ================================================== -->
+<meta name="description" content="أفضل تطبيق تفاعلي مجاني لتعليم القراءة لطلاب الصف الأول الابتدائي. يشمل دروساً ناطقة، تهجئة الكلمات، بطاقات تهيئة، وألعاب تعليمية ممتعة لتأسيس الطفل في اللغة العربية.">
+<meta name="keywords" content="تعليم القراءة, الصف الأول الابتدائي, لغتي, تأسيس لغة عربية, تعليم أطفال, تهجئة, نطق الكلمات, دروس تفاعلية, القارئ الصغير, منصة مدرستي">
+<meta name="author" content="القارئ الصغير">
+<meta name="robots" content="index, follow">
+
+<!-- ================================================== -->
+<!-- إعدادات الظهور في وسائل التواصل (واتساب، فيسبوك) - Open Graph -->
+<!-- ================================================== -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="القارئ الصغير | تعليم القراءة للصف الأول بأسلوب ممتع">
+<meta property="og:description" content="اجعل طفلك يتقن القراءة والتهجئة بسهولة! دروس صوتية وصورية، اختبارات تفاعلية، وأنشطة تهيئة للصف الأول الابتدائي. جربه الآن مجاناً.">
+<meta property="og:image" content="https://guiding-teacher.github.io/images/3D.jpg"> <!-- استبدل الرابط برابط موقعك الحقيقي -->
+<meta property="og:url" content="https://guiding-teacher.github.io/"> <!-- استبدل الرابط برابط موقعك الحقيقي -->
+<meta property="og:site_name" content="تطبيق القارئ الصغير">
+<meta property="og:locale" content="ar_AR">
+
+<!-- ================================================== -->
+<!-- إعدادات الظهور في تويتر - Twitter Cards -->
+<!-- ================================================== -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="القارئ الصغير | تطبيق تعليمي للصف الأول">
+<meta name="twitter:description" content="دروس تفاعلية، نطق آلي، وتهجئة للكلمات. الرفيق الأمثل لطلاب الصف الأول الابتدائي لتعلم القراءة.">
+<meta name="twitter:image" content="https://yoursite.com/images/social-cover.jpg"> <!-- نفس رابط الصورة أعلاه -->
+
+<!-- ================================================== -->
+<!-- أيقونة الموقع (Favicon) -->
+<!-- ================================================== -->
+<link rel="icon" type="image/png" href="images/favicon.png">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- External CSS File -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- زر القائمة الجانبية -->
+    <div class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- خلفية القائمة الجانبية -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    
+    <!-- القائمة الجانبية -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">القائمة الرئيسية</h2>
+            <button class="close-sidebar" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <!-- تم الاكتفاء بالصف الأول فقط -->
+        <div class="grade-section active">
+            <div class="grade-title" data-grade="1"><i class="fas fa-book-open"></i> دروس الصف الأول</div>
+            <div class="lessons-list" id="grade1-lessons" ></div>
+        </div>
+        
+        <div class="grade-section">                        
+         <div class="grade-title" id="prepMenu"><i class="fas fa-shapes"></i> التهيئة والإعداد</div>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="footer-item" id="aboutUs"><i class="fas fa-info-circle"></i> من نحن</div>
+            <div class="footer-item" id="contactUs"><i class="fas fa-envelope"></i> اتصل بنا</div>
+            <div class="footer-item" id="privacyPolicy"><i class="fas fa-shield-alt"></i> سياسة الخصوصية</div>
+            <div class="footer-item" id="settingsMenu"><i class="fas fa-cog"></i> الإعدادات</div>
+        </div>
+    </div>
+
+    <!-- النافذة الترحيبية -->
+    <div class="welcome-popup" id="welcomePopup">
+        <div class="welcome-content">
+            <div class="welcome-image">
+                <img src="/drsne/images/3D.jpg" alt="طفل يدرس">
+            </div>
+            <h2 class="welcome-message">مرحباً يا بطل! هل أنت مستعد لرحلة ممتعة في عالم القراءة؟</h2>
+            <button class="start-button" id="startButton">
+                <i class="fas fa-book-open"></i> هيا نبدأ الآن
+            </button>
+        </div>
+    </div>
+    
+    <!-- واجهة التنقل الرئيسية (تم حذف قسم اختيار الصفوف) -->
+    <div class="main-navigation" id="mainNavigation" style="display: none;">
+        
+        <!-- قسم اختيار الدرس مباشرة -->
+        <div class="nav-section" id="lessonSelection" style="display: block;">
+            <div class="nav-header">
+                <!-- تم حذف زر العودة للصفوف -->
+                
+                <!-- زر التهيئة -->
+                    <button class="back-btn" id="gradePrepBtn" style="background-color: #9C27B0;">
+                        <i class="fas fa-shapes"></i> التهيئة والتدريب
+                    </button>
+                <h2 class="nav-title" id="selectedGradeTitle">دروس الصف الأول</h2>
+            </div>
+            <div class="lessons-circles-container" id="lessonsCirclesContainer">
+                <!-- سيتم توليد الدوائر هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الإعدادات -->
+    <div class="settings-popup" id="settingsPopup" style="display: none;">
+        <div class="settings-content">
+            <h2 class="settings-title">إعدادات التطبيق</h2>
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-volume-up"></i> إعدادات الصوت</h3>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="settings-section-content">
+                    <div class="settings-group">
+                        <label class="settings-label">اختر الصوت:</label>
+                        <select class="settings-select" id="voiceSelect"></select>
+                    </div>
+                    <div class="settings-group">
+                        <label class="settings-label">سرعة التحدث:</label>
+                        <select class="settings-select" id="speechRate"></select>
+                    </div>
+                    <div class="settings-group">
+                        <label class="settings-label">نبرة الصوت:</label>
+                        <select class="settings-select" id="voicePitch"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-section-header">
+                    <h3><i class="fas fa-book-reader"></i> إعدادات الدرس</h3>
+                    <i class="fas fa-chevron-down toggle-icon"></i>
+                </div>
+                <div class="settings-section-content">
+                    <div class="settings-group">
+                        <label class="settings-label">عدد تكرار الكلمات:</label>
+                        <input type="number" class="settings-input" id="wordRepetitions" min="1" max="10">
+                    </div>
+                    <div class="settings-group">
+                        <label class="settings-label">الوقت بين الكلمات (بالثواني):</label>
+                        <input type="number" class="settings-input" id="wordInterval" min="1" max="10">
+                    </div>
+                    <div class="settings-group">
+                        <label class="settings-label">تمييز الحركات:</label>
+                        <select class="settings-select" id="highlightHarakat"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-text" id="progressText">التقدم: 0%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            <div class="settings-buttons">
+                <button class="cancel-button" id="cancelSettings"><i class="fas fa-times"></i> إلغاء</button>
+                <button class="save-button" id="saveSettings"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- نافذة الاختبار -->
+    <div class="test-popup" id="testPopup" style="display: none;">
+        <div class="test-content">
+            <h2 class="test-title">وقت الاختبار!</h2>
+            <p id="testQuestion">استمع للكلمة جيداً ثم اخترها من الخيارات.</p>
+            <div class="test-options" id="testOptions"></div>
+            <div class="test-result" id="testResult"></div>
+            <div class="settings-buttons">
+                <button class="close-button" id="closeTest"><i class="fas fa-times"></i> إغلاق</button>
+                <button class="save-button" id="nextTest"><i class="fas fa-forward"></i> السؤال التالي</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة التهجئة -->
+    <div class="spell-popup" id="spellPopup" style="display: none;">
+        <div class="spell-content">
+            <h2 class="spell-title">تهجئة الكلمة</h2>
+            <div class="spell-word" id="spellWord"></div>
+            <div class="spell-syllables" id="spellSyllables"></div>
+            <div class="settings-buttons">
+                <button class="close-button" id="closeSpell"><i class="fas fa-times"></i> إغلاق</button>
+                <button class="save-button" id="spellAgain"><i class="fas fa-redo"></i> كرر التهجئة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة المعلومات -->
+    <div class="info-popup" id="infoPopup" style="display: none;">
+        <div class="info-content">
+            <h2 class="info-title" id="infoTitle">عنوان النافذة</h2>
+            <div class="info-body" id="infoBody"></div>
+            <div class="settings-buttons">
+                <button class="close-button" id="closeInfo"><i class="fas fa-times"></i> إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نوافذ التهيئة والإعداد (تم تبسيطها) -->
+    <div class="info-popup" id="prepCardsPopup" style="display: none;">
+        <div class="info-content">
+            <h2 class="info-title" id="prepCardsTitle">بطاقات التهيئة</h2>
+            <div class="prep-cards-container" id="prepCardsContainer"></div>
+            <div class="settings-buttons" style="margin-top: 20px;">
+                <button class="close-button" id="closePrepCards"><i class="fas fa-times"></i> إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- حاوية التطبيق الرئيسية -->
+     <div class="app-container" id="appContainer" style="display: none;">
+        <div class="notebook-lines"></div>
+        <header class="header">
+            <div class="lesson-number" id="lesson-number">...</div>
+            <h1 class="lesson-title" id="lesson-title">تحميل الدرس...</h1>
+        </header>
+        <main class="content">
+            <div class="image-container" id="lesson-image">
+                <img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="صورة الدرس">
+            </div>
+            <div class="lesson-content">
+                <div class="words-container" id="words-container"></div>
+            </div>
+        </main>
+        <footer class="controls">
+            <div class="nav-buttons">
+                <button class="nav-button" id="prev-lesson" title="الدرس السابق"><i class="fas fa-arrow-right"></i></button>
+                <button class="nav-button" id="next-lesson" title="الدرس التالي"><i class="fas fa-arrow-left"></i></button>
+            </div>
+            <div class="right-controls">
+                <button class="control-button test-button" id="test-button"><i class="fas fa-pencil-alt"></i> <span>اختبار</span></button>
+                <button class="control-button spell-button" id="spell-button"><i class="fas fa-spell-check"></i> <span>تهجي</span></button>
+                <button class="control-button settings-button" id="settings-button"><i class="fas fa-cog"></i> <span>إعدادات</span></button>
+                <button class="control-button teach-me-button" id="teach-me-button"><i class="fas fa-chalkboard-teacher"></i> <span>درسني</span></button>
+                <button class="control-button refresh-button" id="refresh-button"><i class="fas fa-sync-alt"></i> <span>إيقاف</span></button>
+                <div class="search-box">
+                    <input type="number" id="lesson-search" placeholder="رقم الدرس" min="1">
+                    <button class="search-button" id="search-button"><i class="fas fa-search"></i> اذهب</button>
+                </div>
+                <!-- زر العودة للرئيسية يعيدك لقائمة الدروس -->
+                <button class="control-button" id="home-button" onclick="showMainNavigation()" style="background-color: #FF5722;">
+                    <i class="fas fa-home"></i> <span>الرئيسية</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- External JavaScript Files -->
+    <script src="script.js"></script>
+    <script src="prep.js"></script>
+</body>
+</html>

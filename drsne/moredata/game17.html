@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عائلتي السعيدة - درس تفاعلي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8e44ad;
+            --secondary: #f39c12;
+            --bg: #fdf2e9;
+            --correct: #27ae60;
+            --wrong: #c0392b;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg);
+            margin: 0 auto; /* توسيط المحتوى */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            /* --- التعديل الأساسي لجعل الحاسوب يشبه الهاتف --- */
+            max-width: 600px; /* عرض يشبه التابلت أو الهاتف الكبير */
+            box-shadow: 0 0 50px rgba(0,0,0,0.1); /* ظل خفيف للجوانب في الحاسوب */
+            background-color: #fff; /* خلفية بيضاء للمحتوى */
+        }
+
+        /* خلفية الصفحة خارج إطار الهاتف (للكمبيوتر فقط) */
+        html {
+            background-color: #eee;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), #9b59b6);
+            color: white;
+            width: 100%;
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            /* إزالة الحواف الدائرية ليبدو كتطبيق ملء الشاشة */
+            border-radius: 0 0 20px 20px;
+            z-index: 20;
+        }
+
+        header h1 { margin: 0; font-size: 1.5rem; }
+        header p { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.9; }
+
+        /* حاوية الصورة التفاعلية */
+        .scene-container {
+            position: relative;
+            width: 100%; /* عرض كامل */
+            margin: 0; /* إلغاء الهوامش لتلتصق بالحواف */
+            border-radius: 0; /* إلغاء التدوير لتكون ممتلئة */
+            overflow: hidden;
+            box-shadow: none; /* إلغاء الظل لتبدو مسطحة */
+            border: none; /* إلغاء الإطار الأبيض */
+        }
+
+        .scene-container img {
+            width: 100%;
+            display: block;
+            height: auto;
+        }
+
+        /* النقاط التفاعلية (Hotspots) */
+        .hotspot {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            width: 35px; 
+            height: 35px;
+            background: rgba(255, 255, 255, 0.2); /* شفافية أكثر */
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            transition: transform 0.2s;
+        }
+
+        .hotspot::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            z-index: -1;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        .hotspot:hover { background: var(--secondary); color: white; border-color: var(--secondary); transform: scale(1.1); }
+
+        /* المواقع (لم تتغير) */
+        .hs-father { top: 25%; left: 45%; }
+        .hs-mother { top: 20%; left: 55%; }
+        .hs-boy-stand { top: 25%; right: 20%; }
+        .hs-baby { top: 35%; left: 35%; }
+        .hs-girl { top: 35%; left: 20%; }
+
+        /* لوحة المعلومات */
+        .info-bubble {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: none;
+            width: 85%;
+            text-align: center;
+            border-right: 5px solid var(--primary);
+            animation: popUp 0.3s ease-out;
+        }
+
+        @keyframes popUp { from { bottom: -50px; opacity: 0; } to { bottom: 15px; opacity: 1; } }
+
+        /* قسم البطاقات */
+        .cards-section {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .word-card {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #eee;
+            flex: 1 1 80px; /* توزيع متناسق */
+            text-align: center;
+        }
+
+        .word-card:hover, .word-card:active { 
+            background: var(--primary); 
+            color: white; 
+            transform: scale(1.05);
+        }
+
+        /* قسم اللعبة */
+        .game-mode {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            width: 90%;
+            margin-bottom: 30px;
+            border: 2px dashed var(--secondary);
+        }
+
+        .game-btn {
+            background: var(--correct);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            margin-top: 10px;
+            box-shadow: 0 4px 0 #1e8449; /* تأثير زر ثلاثي الأبعاد */
+        }
+        .game-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        .game-status {
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 30px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏡 عائلتي السعيدة</h1>
+        <p>المس الشخصيات للتعلم واللعب</p>
+    </header>
+
+    <div class="scene-container">
+        <!-- الصورة -->
+        <img src="/drsne/images/ga17.jpg" alt="صورة العائلة" id="familyImg" onerror="this.src='https://via.placeholder.com/600x450?text=صورة+العائلة'">
+
+        <!-- النقاط -->
+        <div class="hotspot hs-father" onclick="interact('father')">👓</div>
+        <div class="hotspot hs-mother" onclick="interact('mother')">🧕</div>
+        <div class="hotspot hs-baby" onclick="interact('baby')">👶</div>
+        <div class="hotspot hs-boy-stand" onclick="interact('boy')">👦</div>
+        <div class="hotspot hs-girl" onclick="interact('girl')">👧</div>
+
+        <!-- الفقاعة -->
+        <div class="info-bubble" id="bubble">
+            <span id="bubbleText">...</span>
+        </div>
+    </div>
+
+    <!-- البطاقات -->
+    <div class="cards-section">
+        <div class="word-card" onclick="interact('father')">بابا</div>
+        <div class="word-card" onclick="interact('mother')">ماما</div>
+        <div class="word-card" onclick="interact('baby')">دادا</div>
+        <div class="word-card" onclick="interact('boy')">أخي</div>
+        <div class="word-card" onclick="interact('girl')">أختي</div>
+    </div>
+
+    <!-- اللعبة -->
+    <div class="game-mode">
+        <h3>🎮 هيا نلعب: أين هو؟</h3>
+        <button class="game-btn" onclick="startGame()">ابدأ اللعبة</button>
+        <div class="game-status" id="gameStatus"></div>
+    </div>
+
+    <script>
+        const familyData = {
+            father: { name: "بابا", text: "هذا أبي (بابا). هو يقرأ لنا القصة كل يوم وفيها من المعاني  والعبر الجميلة", gender: "male" },
+            mother: { name: "ماما", text: "هذه أمي (ماما) هي تحبنا كثيراً وتهتم بنا ", gender: "female" },
+            baby: { name: "دادا", text: "هذا أخي الصغير (دادا) يحب القصص التي تتحدث عن الابطال الخارقين", gender: "male" },
+            boy: { name: "أخي نور", text: " هذا أخي نور يحب القراءة والقصص المشوقة ويستمع لقصص الحيوانات.", gender: "male" },
+            girl: { name: "أختي", text: "هذه أنا احب القصص العلمية والخيال العلمي والفضاء .", gender: "female" }
+        };
+
+        const bubble = document.getElementById('bubble');
+        const bubbleText = document.getElementById('bubbleText');
+        const gameStatus = document.getElementById('gameStatus');
+        
+        let isGameActive = false;
+        let targetCharacter = null;
+
+        function interact(characterKey) {
+            if (isGameActive) {
+                checkAnswer(characterKey);
+                return;
+            }
+
+            const data = familyData[characterKey];
+            bubbleText.innerText = `${data.name}: ${data.text}`;
+            bubble.style.display = 'block';
+            speak(data.text);
+            
+            // إخفاء الفقاعة تلقائياً بعد 4 ثواني
+            setTimeout(() => {
+                if(!isGameActive) bubble.style.display = 'none';
+            }, 4000);
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ar-SA';
+            utterance.rate = 0.9; 
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function startGame() {
+            isGameActive = true;
+            bubble.style.display = 'none';
+            gameStatus.style.color = "#333";
+            
+            const keys = Object.keys(familyData);
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            targetCharacter = randomKey;
+
+            const targetName = familyData[randomKey].name;
+            const question = `أين هو "${targetName}"؟ اضغط عليه.`;
+            
+            gameStatus.innerText = question;
+            speak(question);
+        }
+
+        function checkAnswer(clickedKey) {
+            if (!isGameActive) return;
+
+            if (clickedKey === targetCharacter) {
+                gameStatus.style.color = "var(--correct)";
+                gameStatus.innerText = "أحسنت! إجابة صحيحة! 🎉";
+                speak("ممتاز! إجابة صحيحة.");
+                isGameActive = false;
+                setTimeout(() => {
+                    gameStatus.innerText = "";
+                    gameStatus.style.color = "#333";
+                }, 3000);
+            } else {
+                gameStatus.style.color = "var(--wrong)";
+                gameStatus.innerText = "حاول مرة أخرى! ❌";
+                speak("كلا، حاول مرة أخرى.");
+            }
+        }
+    </script>
+</body>
+</html>

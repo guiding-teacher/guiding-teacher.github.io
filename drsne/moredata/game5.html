@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة أين هو؟</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
+        
+        :root {
+            --primary-color: #007BFF;
+            --secondary-color: #0056b3;
+            --correct-color: #28a745;
+            --incorrect-color: #dc3545;
+            --star-color: #ffc107;
+            --background-color: #e9f5ff;
+            --font-family: 'Cairo', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            
+            /* ✨ التعديل الأول: تغيير المحاذاة لتبدأ من الأعلى */
+            align-items: flex-start; 
+            
+            min-height: 100vh;
+            padding: 25px 15px; /* زيادة المساحة العلوية والسفلية */
+            
+            /* ✨ التعديل الثاني: السماح بالتمرير عند الحاجة */
+            overflow: auto; 
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 850px;
+            background-color: #fff;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 86, 179, 0.2);
+            padding: 25px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid #d0e8ff;
+        }
+        
+        @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); }}
+        .shake-animation { animation: shake 0.6s cubic-bezier(.36,.07,.19,.97); }
+
+        .game-header { width: 100%; }
+
+        .prompt-bar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white; padding: 15px 25px; border-radius: 20px;
+            font-size: 1.9rem; font-weight: 700; min-height: 75px;
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+        .prompt-bar.pulsing { animation: pulse 1.5s infinite; }
+
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        .stars-container { display: flex; gap: 10px; }
+        .star { font-size: 2rem; color: #ccc; transition: all 0.3s ease-in-out; }
+        .star.active { color: var(--star-color); transform: scale(1.2); text-shadow: 0 0 10px var(--star-color); }
+        .progress-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .progress-bar { width: 100%; max-width: 400px; height: 16px; background-color: #e9ecef; border-radius: 8px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #28a745, #218838); width: 0%; transition: width 0.5s ease-out; border-radius: 8px; }
+        .progress-text { font-weight: bold; font-size: 1.2rem; color: #495057; }
+
+        .image-wrapper { position: relative; width: 100%; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+        .background-image { width: 100%; height: auto; display: block; }
+        
+        .hotspot { position: absolute; cursor: pointer; border-radius: 15px; transition: all 0.2s ease-in-out; background-color: transparent; border: 4px solid transparent; }
+        .hotspot:not(.found):hover { background-color: rgba(255, 255, 255, 0.5); border-color: white; }
+        .hotspot.found { pointer-events: none; }
+        
+        @keyframes correct-pulse-anim { 0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(40, 167, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } }
+        .hotspot.correct-pulse { border-color: var(--correct-color); background-color: rgba(40, 167, 69, 0.2); animation: correct-pulse-anim 1s ease-out; }
+        
+        @keyframes incorrect-flash-anim { from, to { background-color: transparent; border-color: transparent; } 50% { background-color: rgba(220, 53, 69, 0.5); border-color: var(--incorrect-color); } }
+        .hotspot.incorrect-flash { animation: incorrect-flash-anim 0.5s ease; }
+        
+        .item-label {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            background-color: rgba(44, 62, 80, 0.85); color: white; padding: 4px 14px; border-radius: 8px;
+            font-size: 1rem; font-weight: 700; white-space: nowrap;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease, transform 0.4s ease;
+            z-index: 5; pointer-events: none;
+        }
+        .item-label.visible { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+
+        .game-overlay { position: absolute; inset: 0; background-color: rgba(233, 245, 255, 0.98); border-radius: 30px; display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 10; opacity: 0; visibility: hidden; transition: opacity 0.5s ease, visibility 0.5s ease; }
+        .game-overlay.visible { opacity: 1; visibility: visible; }
+        .overlay-content { text-align: center; animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes zoomIn { from { transform: scale(0.7) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+        .overlay-icon { font-size: 7rem; color: var(--primary-color); margin-bottom: 20px; }
+        .overlay-title { font-size: 3rem; color: #2c3e50; margin-bottom: 10px; }
+        .overlay-text { font-size: 1.3rem; color: #555; margin-bottom: 30px; max-width: 400px; }
+        .start-button, .restart-button { font-family: var(--font-family); padding: 18px 50px; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: white; border: none; border-radius: 50px; font-size: 1.6rem; font-weight: 700; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4); }
+        .start-button:hover, .restart-button:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0, 123, 255, 0.5); }
+        #completion-message .overlay-icon { color: var(--star-color); }
+        .confetti { position: absolute; width: 12px; height: 22px; top: -30px; opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+<!-- ... محتوى HTML يبقى كما هو بدون تغيير ... -->
+<div class="game-container" id="game-container">
+    <div class="game-header">
+        <div class="prompt-bar" id="prompt-bar">لعبة البحث عن الكلمات</div>
+        <div class="status-bar">
+            <div class="progress-container"><span class="progress-text" id="progress-text">0/19</span></div>
+            <div class="stars-container" id="stars-container"><i class="fas fa-star star"></i><i class="fas fa-star star"></i><i class="fas fa-star star"></i></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+    <div class="image-wrapper" id="image-wrapper"><img src="/drsne/images/ftr.jpg" alt="لوحة تعليمية" class="background-image"></div>
+    <div class="game-overlay visible" id="start-screen"><div class="overlay-content"><i class="fas fa-search-location overlay-icon"></i><h2 class="overlay-title">لعبة أين هو؟</h2><p class="overlay-text">استمع للاسم ثم اضغط على الصورة الصحيحة!</p><button class="start-button" id="start-button"><i class="fas fa-play"></i> ابدأ اللعب</button></div></div>
+    <div class="game-overlay" id="completion-message"><div class="overlay-content"><i class="fas fa-trophy overlay-icon"></i><h2 class="overlay-title">ممتاز!</h2><p class="overlay-text">لقد أنهيت اللعبة بنجاح.</p><button class="restart-button" id="restart-button"><i class="fas fa-redo"></i> العب مرة أخرى</button></div></div>
+</div>
+
+<script>
+// ... كود JavaScript يبقى كما هو بدون تغيير ...
+document.addEventListener('DOMContentLoaded', () => {
+    // Data setup
+    const gameData = {
+        saw: { name: 'منشار' }, moon: { name: 'قمر' }, mouse: { name: 'فأر' }, house: { name: 'دار' },
+        hoopoe: { name: 'هدهد' }, worms: { name: 'دود' }, rose: { name: 'ورد' }, boy: { name: 'ولد' },
+        dog: { name: 'كلب' }, grapes: { name: 'عنب' }, rabbit: { name: 'أرنب' }, door: { name: 'باب' },
+        horse: { name: 'حصان' }, olives: { name: 'زيتون' }, pomegranate: { name: 'رمان' }, scale: { name: 'ميزان' },
+        bread: { name: 'خبز' }, rice: { name: 'رز' }, geese: { name: 'وز' }
+    };
+    const hotspotCoordinates = {
+        saw: { top: '12.5%', left: '7.5%', width: '23%', height: '11%' }, moon: { top: '12%', left: '33%', width: '18%', height: '12.5%' }, mouse: { top: '14%', left: '54%', width: '17%', height: '9%' }, house: { top: '13%', left: '74%', width: '19%', height: '12%' },
+        hoopoe: { top: '27.5%', left: '11.5%', width: '15%', height: '16%' }, worms: { top: '27.5%', left: '34%', width: '17%', height: '16%' }, rose: { top: '28%', left: '55%', width: '15%', height: '15%' }, boy: { top: '28%', left: '77%', width: '14%', height: '21%' },
+        dog: { top: '48%', left: '10.5%', width: '17%', height: '15%' }, grapes: { top: '47%', left: '35%', width: '14%', height: '17%' }, rabbit: { top: '48.5%', left: '54%', width: '17%', height: '14%' }, door: { top: '47%', left: '77%', width: '12%', height: '18%' },
+        horse: { top: '65%', left: '10%', width: '15%', height: '16%' }, olives: { top: '65%', left: '32%', width: '20%', height: '12%' }, pomegranate: { top: '66%', left: '54%', width: '18%', height: '12%' }, scale: { top: '66%', left: '74%', width: '19%', height: '12.5%' },
+        bread: { top: '81%', left: '16%', width: '22%', height: '10%' }, rice: { top: '80%', left: '42%', width: '22%', height: '10%' }, geese: { top: '81%', left: '70%', width: '23%', height: '11%' }
+    };
+
+    // DOM Elements & Sounds
+    const gameContainer = document.getElementById('game-container'), imageWrapper = document.getElementById('image-wrapper'), promptBar = document.getElementById('prompt-bar');
+    const progressFill = document.getElementById('progress-fill'), progressText = document.getElementById('progress-text'), stars = document.querySelectorAll('.star');
+    const startScreen = document.getElementById('start-screen'), completionMessage = document.getElementById('completion-message');
+    const startButton = document.getElementById('start-button'), restartButton = document.getElementById('restart-button');
+    const sounds = { start: new Audio('sounds/start.mp3'), correct: new Audio('sounds/correct.mp3'), incorrect: new Audio('sounds/incorrect.mp3'), star: new Audio('sounds/star.mp3') };
+    
+    // Game State
+    const allItems = Object.keys(gameData), totalItems = allItems.length;
+    const starThresholds = [Math.ceil(totalItems / 3), Math.ceil(totalItems * 2 / 3), totalItems];
+    let itemsToFind = [], foundItems = [], currentItemKey = null, isTransitioning = true;
+
+    function speak(text, lang = 'ar-IQ') {
+        return new Promise(resolve => {
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang; utterance.rate = 0.9; utterance.pitch = 1.1;
+            utterance.onend = resolve;
+            speechSynthesis.speak(utterance);
+        });
+    }
+
+    function createElements() {
+        imageWrapper.querySelectorAll('.hotspot').forEach(el => el.remove());
+        for (const key in hotspotCoordinates) {
+            const coords = hotspotCoordinates[key];
+            const hotspot = document.createElement('div');
+            hotspot.className = 'hotspot';
+            hotspot.dataset.item = key;
+            Object.assign(hotspot.style, coords);
+            hotspot.addEventListener('click', handleHotspotClick);
+            const label = document.createElement('span');
+            label.className = 'item-label';
+            label.id = `label-${key}`;
+            label.textContent = gameData[key].name;
+            hotspot.appendChild(label);
+            imageWrapper.appendChild(hotspot);
+        }
+    }
+
+    async function initGame() {
+        sounds.start.play();
+        isTransitioning = true;
+        itemsToFind = [...allItems].sort(() => 0.5 - Math.random());
+        foundItems = [];
+        currentItemKey = null;
+        updateProgress();
+        createElements();
+        stars.forEach(star => star.classList.remove('active'));
+        startScreen.classList.remove('visible');
+        completionMessage.classList.remove('visible');
+        await new Promise(r => setTimeout(r, 500));
+        isTransitioning = false;
+        nextQuestion();
+    }
+    
+    async function nextQuestion() {
+        if (foundItems.length === totalItems) {
+            showCompletionScreen();
+            return;
+        }
+        currentItemKey = itemsToFind[foundItems.length];
+        const currentItemName = gameData[currentItemKey].name;
+        promptBar.textContent = `أين هو الـ ${currentItemName}؟`;
+        promptBar.classList.add('pulsing');
+        await speak(`أينَ ${currentItemName}`);
+        isTransitioning = false;
+    }
+
+    async function handleHotspotClick(event) {
+        if (isTransitioning) return;
+        
+        const clickedEl = event.target.closest('.hotspot');
+        if (!clickedEl) return;
+        
+        const clickedItemKey = clickedEl.dataset.item;
+
+        if (clickedItemKey === currentItemKey) {
+            isTransitioning = true;
+            promptBar.classList.remove('pulsing');
+            sounds.correct.play();
+            clickedEl.classList.add('correct-pulse');
+            foundItems.push(clickedItemKey);
+            
+            document.getElementById(`label-${clickedItemKey}`).classList.add('visible');
+
+            const prevFoundCount = foundItems.length - 1;
+            updateProgress();
+
+            for(let i=0; i < starThresholds.length; i++){
+                if(prevFoundCount < starThresholds[i] && foundItems.length >= starThresholds[i]){
+                    setTimeout(() => sounds.star.play(), 200);
+                }
+            }
+
+            promptBar.textContent = gameData[currentItemKey].name;
+            await speak(`أحسنت! هذا ${gameData[currentItemKey].name}`);
+            
+            clickedEl.classList.add('found');
+            setTimeout(() => {
+                clickedEl.classList.remove('correct-pulse');
+                nextQuestion();
+            }, 500);
+
+        } else if (!clickedEl.classList.contains('found')) {
+            sounds.incorrect.play();
+            gameContainer.classList.add('shake-animation');
+            clickedEl.classList.add('incorrect-flash');
+            setTimeout(() => {
+                gameContainer.classList.remove('shake-animation');
+                clickedEl.classList.remove('incorrect-flash');
+            }, 600);
+        }
+    }
+    
+    function updateProgress() {
+        const progress = (foundItems.length / totalItems) * 100;
+        progressFill.style.width = `${progress}%`;
+        progressText.textContent = `${foundItems.length}/${totalItems}`;
+        for(let i=0; i < starThresholds.length; i++){
+            stars[i].classList.toggle('active', foundItems.length >= starThresholds[i]);
+        }
+    }
+
+    function showCompletionScreen() {
+        isTransitioning = true;
+        completionMessage.classList.add('visible');
+        createConfetti();
+        speak("رائع! لقد أكملت اللعبة بنجاح");
+    }
+    
+    function createConfetti() {
+        completionMessage.querySelectorAll('.confetti').forEach(c => c.remove());
+        for (let i = 0; i < 100; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            Object.assign(confetti.style, {
+                left: `${Math.random() * 100}%`,
+                animation: `fall ${Math.random() * 2 + 3}s linear ${Math.random() * 2}s forwards`,
+                backgroundColor: `hsl(${Math.random() * 360}, 90%, 60%)`,
+                transform: `rotate(${Math.random() * 360}deg)`
+            });
+            completionMessage.appendChild(confetti);
+        }
+        if (!document.getElementById('confetti-styles')) {
+            const styleSheet = document.createElement("style");
+            styleSheet.id = 'confetti-styles';
+            styleSheet.innerText = `@keyframes fall { to { transform: translateY(120vh) rotate(720deg); opacity: 0; } }`;
+            document.head.appendChild(styleSheet);
+        }
+    }
+    
+    startButton.addEventListener('click', initGame);
+    restartButton.addEventListener('click', initGame);
+});
+</script>
+</body>
+</html>

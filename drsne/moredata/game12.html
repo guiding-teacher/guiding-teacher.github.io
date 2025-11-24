@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>عالم المعرفة الملون - النسخة المحمولة</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #00cec9;
+            --accent: #fd79a8;
+            --bg: #dfe6e9;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+
+        /* شريط الإنجازات العلوي */
+        .trophy-bar {
+            width: 95%;
+            background: white;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+
+        .trophy-item {
+            min-width: 30px; width: 35px; height: 35px;
+            border-radius: 50%;
+            background: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            opacity: 0.3;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid transparent;
+            margin: 0 2px;
+        }
+
+        .trophy-item.unlocked {
+            opacity: 1;
+            background: #ffeaa7;
+            border-color: #fdcb6e;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px gold;
+        }
+
+        /* منطقة اللعب */
+        .game-wrapper {
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-radius: 15px;
+            background: white;
+            max-width: 98vw;
+            max-height: 70vh; 
+            overflow: hidden;
+            cursor: crosshair;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #bg-image {
+            display: block;
+            max-width: 100%;
+            max-height: 70vh;
+            pointer-events: none;
+        }
+
+        canvas { position: absolute; top: 0; left: 0; touch-action: none; }
+        #uiCanvas { pointer-events: none; }
+
+        /* شريط الأدوات المحسن للموبايل */
+        .toolbar {
+            position: fixed; 
+            bottom: 10px;
+            width: 92%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            display: flex; 
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        .tool-btn.active { transform: scale(1.15); border-color: #636e72; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        
+        .rainbow-btn {
+            background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff);
+            animation: spin 4s linear infinite;
+        }
+        @keyframes spin { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+        .divider { width: 1px; height: 25px; background: #ddd; margin: 0 2px; }
+
+        .action-btn {
+            background: var(--primary); color: white;
+            border: none; padding: 8px 16px;
+            border-radius: 15px; font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer; transition: 0.2s;
+            white-space: nowrap;
+            flex-grow: 1;
+            max-width: 100px;
+        }
+        .action-btn.clear { background: var(--accent); }
+        .action-btn:active { transform: scale(0.95); }
+
+        @media (max-width: 380px) {
+            .tool-btn { width: 32px; height: 32px; }
+            .action-btn { padding: 6px 12px; font-size: 0.8rem; }
+            .toolbar { padding: 8px; gap: 5px; }
+        }
+
+        /* نافذة الأسئلة */
+        .modal-overlay {
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            display: none;
+            justify-content: center; align-items: center;
+        }
+
+        .quiz-card {
+            background: white;
+            width: 85%; max-width: 400px;
+            padding: 20px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .progress-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 15px; }
+        .dot { width: 8px; height: 8px; background: #eee; border-radius: 50%; }
+        .dot.done { background: var(--success-color, #00b894); }
+        .dot.active { background: var(--secondary); transform: scale(1.4); }
+
+        .question-text {
+            font-size: 1.3rem; color: #2d3436;
+            margin-bottom: 20px; font-weight: 800;
+        }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .opt-btn {
+            background: #f1f2f6; border: 2px solid #dfe6e9;
+            padding: 12px; border-radius: 12px;
+            font-size: 1rem; font-family: inherit; font-weight: bold; color: #636e72;
+        }
+        .opt-btn:active { background: #dff9fb; border-color: var(--secondary); }
+        
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="trophy-bar">
+        <div class="trophy-item" id="trophy-leaf">🍃</div>
+        <div class="trophy-item" id="trophy-branch">🌿</div>
+        <div class="trophy-item" id="trophy-apple">🍎</div>
+        <div class="trophy-item" id="trophy-umbrella">☂️</div>
+        <div class="trophy-item" id="trophy-saw">🪚</div>
+        <div class="trophy-item" id="trophy-cup">☕</div>
+        <div class="trophy-item" id="trophy-door">🚪</div>
+    </div>
+
+    <div class="game-wrapper">
+        <img src="/drsne/images/ga12.jpg" id="bg-image" alt="ورقة عمل" onload="initGame()">
+        <canvas id="drawCanvas"></canvas>
+        <canvas id="uiCanvas"></canvas>
+
+        <div class="modal-overlay" id="quizModal">
+            <div class="quiz-card">
+                <div class="progress-dots" id="quizDots">
+                    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                </div>
+                <h3 class="question-text" id="qText">...</h3>
+                <div class="options-grid" id="optsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="tool-btn active" style="background:#2d3436" onclick="setPen('#2d3436', false, this)"></div>
+        <div class="tool-btn" style="background:#0984e3" onclick="setPen('#0984e3', false, this)"></div>
+        <div class="tool-btn" style="background:#e84393" onclick="setPen('#e84393', false, this)"></div>
+        <div class="tool-btn" style="background:#00b894" onclick="setPen('#00b894', false, this)"></div>
+        <div class="tool-btn rainbow-btn" onclick="setPen(null, true, this)"></div>
+        
+        <div class="divider"></div>
+        
+        <button class="action-btn" onclick="saveArt()">📸 صورة</button>
+        <button class="action-btn clear" onclick="resetGame()">🗑️ مسح</button>
+    </div>
+
+    <script>
+    const items = [
+        {
+            id: 'leaf', trophy: 'trophy-leaf',
+            bounds: { x1: 0, x2: 0.4, y1: 0, y2: 0.25 },
+            drawLimit: 40, 
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "ما لون هذه الورقة في الربيع؟", a: "أخضر", w: ["أزرق", "أحمر", "أسود"] },
+                { t: "من أين تسقط هذه الورقة؟", a: "من الشجرة", w: ["من السماء", "من البحر", "من الأرض"] },
+                { t: "ما شكل هذه الورقة؟", a: "بيضاوي", w: ["مربع", "مثلث", "دائري"] },
+                { t: "ما هذا الشكل؟", a: "ورقة شجر", w: ["زهرة", "غصن", "جذر"] }
+            ]
+        },
+        {
+            id: 'branch', trophy: 'trophy-branch',
+            bounds: { x1: 0.6, x2: 1, y1: 0, y2: 0.25 },
+            drawLimit: 40,
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "كم ورقة في هذا الغصن؟", a: "ثلاثة", w: ["واحدة", "خمسة", "عشرة"] },
+                { t: "هل هو جزء من نبات؟", a: "نعم", w: ["لا", "ربما", "لا أعرف"] },
+                { t: "ماذا يحتاج لينمو؟", a: "ماء وشمش", w: ["عصير", "بيتزا", "نوم"] },
+                { t: "ما هذا؟", a: "غصن", w: ["طائر", "سمكة", "حجر"] }
+            ]
+        },
+        {
+            id: 'apple', trophy: 'trophy-apple',
+            bounds: { x1: 0, x2: 0.45, y1: 0.25, y2: 0.5 },
+            drawLimit: 40,
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "ما طعم التفاحة؟", a: "لذيذ", w: ["مالح", "حار", "مر"] },
+                { t: "لون التفاحة الشائع؟", a: "أحمر", w: ["بني", "بنفسجي", "رمادي"] },
+                { t: "هل التفاحة فاكهة؟", a: "نعم", w: ["لا، خضار", "لا، لحوم", "لا، جماد"] },
+                { t: "ما هذا الشكل؟", a: "تفاحة", w: ["برتقالة", "موزة", "عنب"] }
+            ]
+        },
+        {
+            id: 'umbrella', trophy: 'trophy-umbrella',
+            bounds: { x1: 0.55, x2: 1, y1: 0.25, y2: 0.55 },
+            drawLimit: 80,
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "متى نستخدمها؟", a: "في المطر", w: ["في النوم", "في الأكل", "في السباحة"] },
+                { t: "مما تُصنع غالباً؟", a: "من القماش", w: ["من الزجاج", "من الورق", "من الحجر"] },
+                { t: "هل تحمينا من الشمس؟", a: "نعم", w: ["لا أبداً", "تزيد الحرارة", "تحرقنا"] },
+                { t: "ما هذا؟", a: "مظلة", w: ["قبعة", "خيمة", "سقف"] }
+            ]
+        },
+        {
+            id: 'saw', trophy: 'trophy-saw',
+            bounds: { x1: 0, x2: 0.5, y1: 0.51, y2: 0.64 },
+            drawLimit: 80,
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "ما وظيفة الأداة؟", a: "قطع الخشب", w: ["أكل الطعام", "رسم اللوحات", "مشط الشعر"] },
+                { t: "هل هي حادة؟", a: "نعم جداً", w: ["لا، ناعمة", "طرية", "سائلة"] },
+                { t: "من يستخدمها؟", a: "النجار", w: ["الطبيب", "الخباز", "الطيار"] },
+                { t: "ما اسم الأداة؟", a: "منشار", w: ["مطرقة", "مفك", "مسمار"] }
+            ]
+        },
+        {
+            id: 'cup', trophy: 'trophy-cup',
+            bounds: { x1: 0, x2: 0.5, y1: 0.65, y2: 1 },
+            drawLimit: 80,
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "ماذا نشرب فيه؟", a: "الشاي", w: ["الرمل", "الهواء", "الخشب"] },
+                { t: "هل يتحمل الحرارة؟", a: "نعم", w: ["لا، يذوب", "يتجمد", "ينفجر"] },
+                { t: "ماذا يملك في الجانب؟", a: "يد", w: ["عجلات", "أجنحة", "أرجل"] },
+                { t: "ما هذا؟", a: "كوب", w: ["صحن", "ملعقة", "شوكة"] }
+            ]
+        },
+        {
+            id: 'door', trophy: 'trophy-door',
+            bounds: { x1: 0.55, x2: 1, y1: 0.56, y2: 1 },
+            drawLimit: 200,
+            finished: false, stage: 0, drawCount: 0,
+            qs: [
+                { t: "لماذا نستخدمه؟", a: "للدخول", w: ["للطيران", "للنوم", "للكتابة"] },
+                { t: "كيف نفتحه؟", a: "من المقبض", w: ["بالصراخ", "بالقفز", "بالنظر"] },
+                { t: "ما شكله؟", a: "مستطيل", w: ["دائري", "مثلث", "نجمة"] },
+                { t: "ما هذا؟", a: "باب", w: ["نافذة", "سقف", "أرضية"] }
+            ]
+        }
+    ];
+
+    const cvs = document.getElementById('drawCanvas');
+    const ctx = cvs.getContext('2d');
+    const uiCvs = document.getElementById('uiCanvas');
+    const uiCtx = uiCvs.getContext('2d');
+    const img = document.getElementById('bg-image');
+    
+    let isDrawing = false;
+    let isRainbow = false;
+    let penColor = '#2d3436';
+    let hue = 0;
+    let activeItem = null;
+    let particles = []; // مصفوفة المؤثرات الاحتفالية
+
+    function initGame() {
+        resize();
+        window.onresize = resize;
+        loop();
+    }
+
+    function resize() {
+        cvs.width = uiCvs.width = img.width;
+        cvs.height = uiCvs.height = img.height;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 6; 
+    }
+
+    function setPen(color, rainbow, btn) {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        isRainbow = rainbow;
+        if(color) penColor = color;
+    }
+
+    function getCoords(e) {
+        const rect = cvs.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = (clientX - rect.left) * (cvs.width / rect.width);
+        const y = (clientY - rect.top) * (cvs.height / rect.height);
+        return { 
+            x: x, y: y,
+            nx: (clientX - rect.left) / rect.width,
+            ny: (clientY - rect.top) / rect.height 
+        };
+    }
+
+    cvs.addEventListener('mousedown', start);
+    cvs.addEventListener('touchstart', start, {passive: false});
+    cvs.addEventListener('mousemove', move);
+    cvs.addEventListener('touchmove', move, {passive: false});
+    cvs.addEventListener('mouseup', end);
+    cvs.addEventListener('touchend', end);
+
+    function start(e) {
+        if(document.getElementById('quizModal').style.display === 'flex') return;
+        e.preventDefault();
+        isDrawing = true;
+        const p = getCoords(e);
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.strokeStyle = isRainbow ? `hsl(${hue}, 100%, 50%)` : penColor;
+        ctx.stroke();
+        checkZone(p.nx, p.ny);
+    }
+
+    function move(e) {
+        if(!isDrawing) return;
+        e.preventDefault();
+        const p = getCoords(e);
+        
+        if(isRainbow) {
+            hue = (hue + 5) % 360;
+            ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+        } else {
+            ctx.strokeStyle = penColor;
+        }
+
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+
+        checkZone(p.nx, p.ny);
+        
+        if(activeItem && !activeItem.finished) {
+            drawProgressIndicator(p.x, p.y, activeItem);
+        }
+    }
+
+    function end() {
+        isDrawing = false;
+        ctx.beginPath();
+        // لا نمسح uiCtx هنا إذا كان هناك جسيمات احتفالية
+        if(particles.length === 0) {
+             uiCtx.clearRect(0,0,uiCvs.width, uiCvs.height);
+        }
+        activeItem = null;
+    }
+
+    function checkZone(nx, ny) {
+        const found = items.find(i => 
+            nx >= i.bounds.x1 && nx <= i.bounds.x2 &&
+            ny >= i.bounds.y1 && ny <= i.bounds.y2
+        );
+
+        if(found && !found.finished) {
+            activeItem = found;
+            found.drawCount++;
+            const target = (found.stage + 1) * found.drawLimit;
+            if(found.drawCount >= target && found.stage < 4) {
+                triggerQuiz(found);
+            }
+        } else {
+            activeItem = null;
+        }
+    }
+
+    function drawProgressIndicator(x, y, item) {
+        // نمسح الطبقة لكن نحافظ على الجسيمات إذا كانت موجودة (نادراً ما يحدث التداخل)
+        if(particles.length === 0) uiCtx.clearRect(0,0,uiCvs.width, uiCvs.height);
+        
+        const target = (item.stage + 1) * item.drawLimit;
+        const prevTarget = item.stage * item.drawLimit;
+        const progress = (item.drawCount - prevTarget) / (target - prevTarget);
+        
+        uiCtx.beginPath();
+        uiCtx.arc(x, y - 40, 15, 0, Math.PI*2);
+        uiCtx.fillStyle = "rgba(255,255,255,0.9)";
+        uiCtx.fill();
+        
+        uiCtx.beginPath();
+        uiCtx.arc(x, y - 40, 15, -Math.PI/2, (-Math.PI/2) + (Math.PI*2 * progress));
+        uiCtx.lineWidth = 5;
+        uiCtx.strokeStyle = isRainbow ? `hsl(${hue}, 100%, 50%)` : penColor;
+        uiCtx.stroke();
+    }
+
+    function speak(txt) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(txt);
+        u.lang = 'ar-SA';
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+
+    function triggerQuiz(item) {
+        isDrawing = false;
+        end();
+        
+        const qData = item.qs[item.stage];
+        const modal = document.getElementById('quizModal');
+        const qText = document.getElementById('qText');
+        const optsGrid = document.getElementById('optsGrid');
+        const dots = document.querySelectorAll('.dot');
+
+        dots.forEach((d, i) => {
+            d.className = 'dot';
+            if(i < item.stage) d.classList.add('done');
+            if(i === item.stage) d.classList.add('active');
+        });
+
+        qText.innerText = qData.t;
+        speak(qData.t);
+
+        let options = [...qData.w, qData.a].sort(() => Math.random() - 0.5);
+        
+        optsGrid.innerHTML = '';
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = opt;
+            btn.onclick = () => {
+                speak(opt);
+                setTimeout(() => checkAnswer(opt, qData.a, item, modal), 500);
+            };
+            optsGrid.appendChild(btn);
+        });
+
+        modal.style.display = 'flex';
+    }
+
+    function checkAnswer(selected, correct, item, modal) {
+        if(selected === correct) {
+            speak("أحسنت");
+            item.stage++;
+            if(item.stage >= 4) {
+                item.finished = true;
+                finishItem(item);
+            }
+            modal.style.display = 'none';
+        } else {
+            speak("حاول مرة أخرى");
+            const card = document.querySelector('.quiz-card');
+            card.animate([
+                { transform: 'translateX(0)' },
+                { transform: 'translateX(-10px)' },
+                { transform: 'translateX(10px)' },
+                { transform: 'translateX(0)' }
+            ], { duration: 400 });
+        }
+    }
+
+    function finishItem(item) {
+        const trophy = document.getElementById(item.trophy);
+        trophy.classList.add('unlocked');
+        speak("ممتاز! لقد أكملت " + item.qs[3].a);
+        createFirework((item.bounds.x1 + item.bounds.x2)/2 * cvs.width, (item.bounds.y1 + item.bounds.y2)/2 * cvs.height);
+    }
+
+    // --- نظام احتفال الكونفيتي المطور ---
+    function loop() {
+        if(particles.length > 0) {
+            uiCtx.clearRect(0, 0, uiCvs.width, uiCvs.height); // تنظيف الإطار للتحريك
+            
+            particles.forEach((p, i) => {
+                p.x += p.vx; // حركة أفقية
+                p.y += p.vy; // حركة عمودية
+                p.vy += 0.3; // الجاذبية تسحب للأسفل
+                p.vx *= 0.96; // احتكاك الهواء يبطئ الحركة الأفقية
+                p.life -= 0.008; // التلاشي ببطء
+                p.tilt += p.tiltAngle; // دوران القصاصة
+
+                if(p.life > 0) {
+                    uiCtx.globalAlpha = p.life;
+                    uiCtx.fillStyle = p.color;
+                    uiCtx.beginPath();
+                    // رسم قصاصة مربعة تدور
+                    uiCtx.save();
+                    uiCtx.translate(p.x, p.y);
+                    uiCtx.rotate(p.tilt);
+                    uiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    uiCtx.restore();
+                }
+            });
+
+            // إزالة الجسيمات المنتهية
+            particles = particles.filter(p => p.life > 0);
+            uiCtx.globalAlpha = 1;
+        }
+        requestAnimationFrame(loop);
+    }
+
+    function createFirework(x, y) {
+        const colors = ['#ff7675', '#74b9ff', '#55efc4', '#a29bfe', '#ffeaa7', '#fd79a8'];
+        // إنشاء 100 قصاصة احتفالية
+        for(let i=0; i<100; i++) {
+            const angle = Math.random() * Math.PI * 2; // اتجاه عشوائي
+            const velocity = Math.random() * 15 + 5; // سرعة الانفجار
+            
+            particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * velocity * 0.8, // سرعة أفقية
+                vy: Math.sin(angle) * velocity * 0.8 - 5, // سرعة عمودية (دفعة للأعلى)
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 8 + 6, // حجم القصاصة
+                life: 1, // الشفافية الكاملة
+                tilt: Math.random() * 10, // زاوية الدوران الأولية
+                tiltAngle: Math.random() * 0.2 - 0.1 // سرعة الدوران
+            });
+        }
+    }
+
+    function resetGame() {
+        ctx.clearRect(0,0,cvs.width, cvs.height);
+        items.forEach(i => { i.drawCount=0; i.stage=0; i.finished=false; });
+        document.querySelectorAll('.trophy-item').forEach(t => t.classList.remove('unlocked'));
+    }
+
+    function saveArt() {
+        const temp = document.createElement('canvas');
+        temp.width = cvs.width;
+        temp.height = cvs.height;
+        const tctx = temp.getContext('2d');
+        tctx.fillStyle = '#ffffff';
+        tctx.fillRect(0, 0, temp.width, temp.height);
+        tctx.drawImage(img, 0, 0, temp.width, temp.height);
+        tctx.drawImage(cvs, 0, 0);
+        const link = document.createElement('a');
+        const date = new Date().toISOString().slice(0,19).replace(/:/g,"-");
+        link.download = `رسمتي-المبدعة-${date}.png`;
+        link.href = temp.toDataURL('image/png');
+        link.click();
+    }
+    </script>
+</body>
+</html>

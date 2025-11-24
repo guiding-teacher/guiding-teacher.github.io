@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المعلم التفاعلي - سورة الفاتحة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #d4af37;
+            --dark-blue: #1a3c61;
+            --success-green: rgba(46, 204, 113, 0.4);
+            --success-border: #27ae60;
+            --highlight: rgba(212, 175, 55, 0.2);
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--dark-blue);
+            color: var(--gold);
+            width: 100%;
+            padding: 15px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header h1 { margin: 0; font-family: 'Amiri', serif; font-size: 2rem; }
+        
+        .buttons-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .header-btn {
+            background: var(--gold);
+            color: var(--dark-blue);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            font-family: 'Tajawal', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .header-btn:hover { background: #fff; }
+        .header-btn.active { background: #e74c3c; color: white; }
+        .header-btn.play-all { background: #27ae60; color: white; }
+        .header-btn.play-all:hover { background: #2ecc71; }
+
+        .quran-container {
+            position: relative;
+            max-width: 500px;
+            width: 90%;
+            margin: 20px auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            background: white;
+            overflow: hidden;
+        }
+
+        .quran-container img {
+            width: 100%;
+            display: block;
+            transition: filter 0.5s;
+        }
+
+        .verse-zone {
+            position: absolute;
+            left: 15%;
+            width: 70%;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-radius: 5px;
+            z-index: 10;
+        }
+
+        .verse-zone:hover {
+            background: var(--highlight);
+            border: 1px dashed var(--gold);
+        }
+
+        .verse-zone.active {
+            background: rgba(26, 60, 97, 0.15);
+            border: 2px solid var(--gold);
+        }
+
+        .verse-zone.completed {
+            background: var(--success-green);
+            border: 2px solid var(--success-border);
+        }
+
+        /* أماكن الآيات */
+        .v1 { top: 38%; height: 4%; width: 39%;left: 30%; } 
+        .v2 { top: 43%; height: 4%;width: 39%;left: 30%; }
+        .v3 { top: 48%; height: 4%; width: 22%;  left: 47%; }
+        .v4 { top: 48%; height: 4%; width: 19%;  left: 25%; }
+        .v5 { top: 52%; height: 4%; width: 39%;  left: 30%; }
+        .v6 { top: 56%; height: 4%; width: 39%;  left: 30%; }
+        .v7 { top: 61%; height: 13%; width: 39%;left: 30%; }
+
+        .tafsir-panel {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            padding: 20px;
+            box-sizing: border-box;
+            border-top: 5px solid var(--gold);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .tafsir-title {
+            color: var(--dark-blue);
+            font-family: 'Amiri', serif;
+            font-size: 1.5rem;
+            margin: 0 0 10px 0;
+        }
+
+        .tafsir-text {
+            color: #555;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .player-controls {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: var(--dark-blue);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .blur-mode img { filter: blur(10px); }
+        
+        .playing-indicator {
+            color: var(--gold);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .loader {
+            font-size: 0.8rem;
+            color: #ccc;
+            margin-top: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📖 المعلم التفاعلي: الفاتحة</h1>
+        <div class="buttons-container">
+            <button class="header-btn play-all" onclick="playFullSurah()">🔊 تشغيل السورة كاملة</button>
+            <button class="header-btn mode-toggle" onclick="toggleMemoryMode()">🧠 وضع التحفيظ: معطل</button>
+        </div>
+    </header>
+
+    <div class="quran-container" id="quranContainer">
+        <!-- تأكد من مسار الصورة هنا -->
+        <img src="/drsne/images/ga16.jpg" alt="سورة الفاتحة" id="quranImage" onerror="this.src='https://via.placeholder.com/500x700?text=تأكد+من+مسار+الصورة'">
+        
+        <div class="verse-zone v1" id="zone1" onclick="userClickVerse(1)"></div>
+        <div class="verse-zone v2" id="zone2" onclick="userClickVerse(2)"></div>
+        <div class="verse-zone v3" id="zone3" onclick="userClickVerse(3)"></div>
+        <div class="verse-zone v4" id="zone4" onclick="userClickVerse(4)"></div>
+        <div class="verse-zone v5" id="zone5" onclick="userClickVerse(5)"></div>
+        <div class="verse-zone v6" id="zone6" onclick="userClickVerse(6)"></div>
+        <div class="verse-zone v7" id="zone7" onclick="userClickVerse(7)"></div>
+    </div>
+
+    <div class="tafsir-panel">
+        <h3 class="tafsir-title" id="verseTitle">اضغط على الآية للاستماع</h3>
+        <p class="tafsir-text" id="verseTafsir">سيظهر هنا التفسير الميسر للآية المختارة.</p>
+        
+        <div class="playing-indicator" id="indicator">🔊 القارئ مشاري العفاسي يقرأ الآن...</div>
+        
+        <div class="player-controls">
+            <button class="control-btn" onclick="stopButtonAction()">⏹️</button>
+        </div>
+    </div>
+
+    <script>
+        const surahData = {
+            1: { title: "الآية 1", url: "https://everyayah.com/data/Alafasy_128kbps/001001.mp3", tafsir: "أبدأ قراءة القرآن بسم الله، مستعيناً به، (الله) هو المألوه المعبود، (الرحمن) الذي وسعت رحمته كل شيء، (الرحيم) بالمؤمنين." },
+            2: { title: "الآية 2", url: "https://everyayah.com/data/Alafasy_128kbps/001002.mp3", tafsir: "الثناء على الله بصفاته التي كلها أوصاف كمال، وبنعمه الظاهرة والباطنة." },
+            3: { title: "الآية 3", url: "https://everyayah.com/data/Alafasy_128kbps/001003.mp3", tafsir: "الرحمن: الذي وسعت رحمته جميع الخلق، الرحيم: بالمؤمنين خاصة." },
+            4: { title: "الآية 4", url: "https://everyayah.com/data/Alafasy_128kbps/001004.mp3", tafsir: "المالك لكل شيء يوم القيامة، يوم يجازى الناس بأعمالهم." },
+            5: { title: "الآية 5", url: "https://everyayah.com/data/Alafasy_128kbps/001005.mp3", tafsir: "نخصك وحدك بالعبادة، ونستعين بك وحدك في جميع أمورنا." },
+            6: { title: "الآية 6", url: "https://everyayah.com/data/Alafasy_128kbps/001006.mp3", tafsir: "دلنا وأرشدنا ووفقنا إلى الطريق المستقيم، وثبتنا عليه." },
+            7: { title: "الآية 7", url: "https://everyayah.com/data/Alafasy_128kbps/001007.mp3", tafsir: "طريق الذين أنعمت عليهم من الصالحين، غير طريق المغضوب عليهم ولا الضالين." }
+        };
+
+        const audioCache = {};
+        let currentAudioObj = null;
+        let isMemoryMode = false;
+        let isAutoPlaying = false; 
+
+        // 1. تحميل الأصوات مسبقاً للعمل مع الإنترنت الضعيف
+        function preloadAudio() {
+            let loadedCount = 0;
+            const total = Object.keys(surahData).length;
+            const loaderMsg = document.getElementById('loaderMsg');
+
+            for (let id in surahData) {
+                const audio = new Audio();
+                audio.src = surahData[id].url;
+                audio.preload = 'auto'; 
+                audioCache[id] = audio;
+
+                audio.oncanplaythrough = () => {
+                    loadedCount++;
+                    if(loadedCount === total) {
+                        loaderMsg.innerText = "✅ الملفات جاهزة (جاهز للانترنت الضعيف)";
+                        setTimeout(() => loaderMsg.style.display = 'none', 3000);
+                    }
+                };
+            }
+        }
+
+        window.onload = preloadAudio;
+
+        // 2. عند ضغط المستخدم يدوياً على آية
+        function userClickVerse(id) {
+            isAutoPlaying = false; // نوقف التسلسل التلقائي لأن المستخدم تدخل
+            playVerse(id);
+        }
+
+        // 3. دالة تشغيل السورة كاملة
+        function playFullSurah() {
+            // تنظيف كل الألوان لبداية جديدة
+            document.querySelectorAll('.verse-zone').forEach(z => {
+                z.classList.remove('active');
+                z.classList.remove('completed');
+            });
+            
+            isAutoPlaying = true; // تفعيل وضع التشغيل التلقائي
+            playVerse(1); // البدء من أول آية
+        }
+
+        // 4. الدالة الرئيسية لتشغيل الآية
+        function playVerse(id) {
+            // إيقاف الصوت الحالي يدوياً دون استدعاء دالة Stop الكاملة حتى لا نلغي AutoPlay
+            if (currentAudioObj) {
+                currentAudioObj.pause();
+                currentAudioObj.currentTime = 0;
+            }
+
+            // تحديث الواجهة (الألوان)
+            document.querySelectorAll('.verse-zone').forEach(z => z.classList.remove('active'));
+            const currentZone = document.getElementById(`zone${id}`);
+            currentZone.classList.remove('completed'); 
+            currentZone.classList.add('active'); // لون ذهبي للقراءة الحالية
+
+            // تحديث النصوص
+            const data = surahData[id];
+            document.getElementById('verseTitle').innerText = data.title;
+            document.getElementById('verseTafsir').innerText = data.tafsir;
+
+            // التشغيل
+            if (audioCache[id]) {
+                currentAudioObj = audioCache[id];
+                currentAudioObj.currentTime = 0;
+                
+                const playPromise = currentAudioObj.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        document.getElementById('indicator').style.display = 'block';
+                    }).catch(error => console.log("خطأ في الصوت:", error));
+                }
+
+                // عند انتهاء الآية
+                currentAudioObj.onended = () => {
+                    // تحويل اللون للأخضر
+                    currentZone.classList.remove('active');
+                    currentZone.classList.add('completed'); 
+
+                    // منطق الانتقال للآية التالية
+                    if (isAutoPlaying && id < 7) {
+                        playVerse(id + 1); // شغل الآية التالية
+                    } else {
+                        // انتهت السورة أو التوقف
+                        if (id === 7) {
+                            document.getElementById('indicator').style.display = 'none';
+                            isAutoPlaying = false;
+                        }
+                    }
+                };
+            }
+
+            // منطق وضع التحفيظ (إظهار الآية مؤقتاً)
+            if(isMemoryMode) {
+                const img = document.getElementById('quranImage');
+                img.style.filter = "blur(0px)";
+                setTimeout(() => {
+                    if(isMemoryMode) img.style.filter = "blur(10px)";
+                }, 4000);
+            }
+        }
+
+        // 5. زر الإيقاف (المربع)
+        function stopButtonAction() {
+            if (currentAudioObj) {
+                currentAudioObj.pause();
+                currentAudioObj.currentTime = 0;
+            }
+            document.getElementById('indicator').style.display = 'none';
+            isAutoPlaying = false; // إيقاف التشغيل التلقائي نهائياً
+            
+            // إزالة التنشيط الذهبي فقط، وإبقاء الأخضر (المكتمل)
+            document.querySelectorAll('.verse-zone').forEach(z => z.classList.remove('active'));
+        }
+
+        // 6. زر وضع التحفيظ
+        function toggleMemoryMode() {
+            const btn = document.querySelector('.mode-toggle');
+            const img = document.getElementById('quranImage');
+            
+            isMemoryMode = !isMemoryMode;
+
+            if (isMemoryMode) {
+                btn.innerText = "🧠 وضع التحفيظ: مفعل";
+                btn.classList.add('active');
+                img.style.filter = "blur(10px)";
+                document.getElementById('verseTafsir').innerText = "اضغط على مكان الآية لاختبار حفظك.";
+            } else {
+                btn.innerText = "🧠 وضع التحفيظ: معطل";
+                btn.classList.remove('active');
+                img.style.filter = "none";
+                document.getElementById('verseTafsir').innerText = "اضغط على الآية للاستماع للتفسير.";
+            }
+        }
+    </script>
+</body>
+</html>
