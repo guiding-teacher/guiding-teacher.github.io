@@ -81,7 +81,7 @@ const closeInfoEl = document.getElementById('closeInfo');
 // =============================================================
 // تحميل البيانات الديناميكي
 // =============================================================
- async function fetchLessonData(grade) {
+async function fetchLessonData(grade) {
     grade = 1; 
     if (lessonsData[grade]) {
         return lessonsData[grade];
@@ -90,10 +90,10 @@ const closeInfoEl = document.getElementById('closeInfo');
         const timestamp = new Date().getTime(); 
         
         // ========================================================
-        // 👇 التعديل هنا: وضعنا رابط الموقع الكامل بدلاً من النقطة
+        // 👇 التعديل الهام جداً: استخدام مسار نسبي بسيط
+        // هذا يضمن أن يعمل الرابط سواء كنت في الموقع أو التطبيق
         // ========================================================
-        const baseUrl = "https://guiding-teacher.github.io/drsne/";
-        const response = await fetch(`${baseUrl}data/grade${grade}.json?t=${timestamp}`);
+        const response = await fetch(`./data/grade${grade}.json?t=${timestamp}`);
         // ========================================================
 
         if (!response.ok) throw new Error(`Status: ${response.status}`);
@@ -103,8 +103,8 @@ const closeInfoEl = document.getElementById('closeInfo');
         return data;
     } catch (error) {
         console.error("Failed to load lesson data:", error);
-        // إضافة تنبيه ليظهر لك في التطبيق إذا حدث خطأ
-        // alert("فشل تحميل الدروس: تأكد من الإنترنت"); 
+        // أظهرنا التنبيه هنا لنعرف إذا حدث خطأ
+        alert("خطأ في تحميل ملف الدروس: " + error.message); 
         return [];
     }
 }
