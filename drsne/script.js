@@ -488,19 +488,37 @@ async function updateProgressBar() {
     }
 }
 
+function showInfoPopup(title, content) {
+    const popup = document.getElementById('infoPopup');
+    const titleEl = document.getElementById('infoTitle');
+    const bodyEl = document.getElementById('infoBody');
+    
+    if (popup && titleEl && bodyEl) {
+        titleEl.textContent = title;
+        bodyEl.innerHTML = content;
+        popup.style.display = 'flex';
+        
+        // إغلاق القائمة الجانبية عند فتح النافذة ليكون المظهر أفضل
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        if(sidebar) sidebar.classList.remove('active');
+        if(backdrop) backdrop.classList.remove('active');
+    }
+}
+
+
 // =============================================================
 // تهيئة التطبيق (نقطة الدخول)
 // =============================================================
 
 // إضافة المستمعين للأزرار
-function attachGlobalListeners() {
-    // --- أزرار القائمة الجانبية ---
+ function attachGlobalListeners() {
+    // --- أزرار القائمة الجانبية (الفتح والإغلاق) ---
     const menuBtn = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
     const closeSidebarBtn = document.getElementById('closeSidebar');
 
-    // فتح القائمة
     if(menuBtn) {
         menuBtn.onclick = () => {
             if(sidebar) sidebar.classList.add('active');
@@ -508,7 +526,6 @@ function attachGlobalListeners() {
         };
     }
 
-    // إغلاق القائمة (زر X)
     if(closeSidebarBtn) {
         closeSidebarBtn.onclick = () => {
             if(sidebar) sidebar.classList.remove('active');
@@ -516,7 +533,6 @@ function attachGlobalListeners() {
         };
     }
 
-    // إغلاق القائمة (عند الضغط على الخلفية)
     if(backdrop) {
         backdrop.onclick = () => {
             if(sidebar) sidebar.classList.remove('active');
@@ -524,12 +540,56 @@ function attachGlobalListeners() {
         };
     }
 
-    // --- باقي الأزرار (كما كانت) ---
+    // ============================================================
+    // 👇 الجزء الجديد: تفعيل أزرار "من نحن" و"الإعدادات" في القائمة
+    // ============================================================
+    
+    // 1. زر من نحن
+    const aboutBtn = document.getElementById('aboutUs');
+    if (aboutBtn) {
+        aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center; padding:10px;">تطبيق القارئ الصغير<br>تطبيق تعليمي تفاعلي يهدف لتأسيس الأطفال في القراءة الصحيحة.</p>');
+    }
+
+    // 2. زر اتصل بنا
+    const contactBtn = document.getElementById('contactUs');
+    if (contactBtn) {
+        contactBtn.onclick = () => showInfoPopup('اتصل بنا', '<p style="text-align:center; padding:10px;">للملاحظات والاستفسارات:<br>support@example.com</p>');
+    }
+
+    // 3. زر سياسة الخصوصية
+    const privacyBtn = document.getElementById('privacyPolicy');
+    if (privacyBtn) {
+        privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center; padding:10px;">نحن نحترم خصوصية الأطفال ولا نجمع أي بيانات شخصية.</p>');
+    }
+
+    // 4. زر الإعدادات داخل القائمة الجانبية
+    const settingsMenuBtn = document.getElementById('settingsMenu');
+    const settingsPopup = document.getElementById('settingsPopup');
+    if (settingsMenuBtn && settingsPopup) {
+        settingsMenuBtn.onclick = () => {
+            // إغلاق القائمة الجانبية أولاً
+            if(sidebar) sidebar.classList.remove('active');
+            if(backdrop) backdrop.classList.remove('active');
+            // فتح الإعدادات
+            settingsPopup.style.display = 'flex';
+        };
+    }
+
+    // 5. زر إغلاق النافذة المنبثقة (Info Popup Close)
+    const closeInfoBtn = document.getElementById('closeInfo');
+    const infoPopup = document.getElementById('infoPopup');
+    if (closeInfoBtn && infoPopup) {
+        closeInfoBtn.onclick = () => infoPopup.style.display = 'none';
+    }
+
+    // ============================================================
+    // --- باقي الأزرار الرئيسية (كما هي) ---
+    // ============================================================
+    
     const startBtn = document.getElementById('startButton');
     if(startBtn) startBtn.onclick = showMainNavigation;
     
     const settingsBtn = document.getElementById('settings-button');
-    const settingsPopup = document.getElementById('settingsPopup');
     if(settingsBtn && settingsPopup) settingsBtn.onclick = () => settingsPopup.style.display = 'flex';
     
     const closeSettings = document.getElementById('cancelSettings');
@@ -566,6 +626,33 @@ function attachGlobalListeners() {
 
     const homeBtn = document.getElementById('home-button');
     if(homeBtn) homeBtn.onclick = showMainNavigation;
+    
+    // تفعيل أقسام الإعدادات القابلة للطي
+    const settingsHeaders = document.querySelectorAll('.settings-section-header');
+    settingsHeaders.forEach(header => {
+        header.onclick = function() {
+            const section = this.parentElement;
+            section.classList.toggle('open');
+            const content = section.querySelector('.settings-section-content');
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+            } else {
+                content.style.maxHeight = content.scrollHeight + "px";
+            }
+        };
+    });
+    
+    // حفظ الإعدادات
+    const saveSettingsBtn = document.getElementById('saveSettings');
+    if(saveSettingsBtn) {
+        saveSettingsBtn.onclick = () => {
+            const wordRepVal = document.getElementById('wordRepetitions');
+            if(wordRepVal) userSettings.wordRepetitions = wordRepVal.value;
+            // يمكن إضافة حفظ باقي القيم هنا
+            localStorage.setItem('readingAppSettings', JSON.stringify(userSettings));
+            if(settingsPopup) settingsPopup.style.display = 'none';
+        };
+    }
 }
 
 // التشغيل الآمن عند بدء التحميل
