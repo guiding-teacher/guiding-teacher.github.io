@@ -4,12 +4,12 @@
         "title": "دادا",
         "image": "/drsne/images/imagdata/دادا.jpg",
         "words": [
-            {"text": "دَادَا", "harakaPos": [0, 3]},
-            {"text": "دَادَا", "harakaPos": [0, 3]},
-            {"text": "دَا", "harakaPos": [0]},
-             {"text": "دَادَا", "harakaPos": [0, 3]},
-             {"text": "دَادَا", "harakaPos": [0, 3]},
-             {"text": "دَادَا", "harakaPos": [0, 3]}
+            {"text": "دادا", "harakaPos": [0, 3]},
+            {"text": "دادا", "harakaPos": [0, 3]},
+            {"text": "دا", "harakaPos": [0]},
+             {"text": "دادا", "harakaPos": [0, 3]},
+             {"text": "دادا", "harakaPos": [0, 3]},
+             {"text": "دادا", "harakaPos": [0, 3]}
         ]
     },
     {
@@ -17,14 +17,14 @@
         "title": "دار دادا",
         "image": "/drsne/images/imagdata/دار.jpg",
         "words": [
-            {"text": "دَارُ", "harakaPos": [3]},
-            {"text": "دَارُ", "harakaPos": [3]},
-            {"text": "دَارُ", "harakaPos": [3]},
+            {"text": "دار", "harakaPos": [3]},
+            {"text": "دار", "harakaPos": [3]},
+            {"text": "دار", "harakaPos": [3]},
 
-            {"text": "دَادَا", "harakaPos": []},
-            {"text": "دَارُ", "harakaPos": [3]},
+            {"text": "دادا", "harakaPos": []},
+            {"text": "دار", "harakaPos": [3]},
 
-            {"text": "دَادَا", "harakaPos": []}
+            {"text": "دادا", "harakaPos": []}
         ]
     },
     {
@@ -32,18 +32,18 @@
         "title": "دادا دور",
         "image": "/drsne/images/imagdata/دور.jpg",
         "words": [
-            {"text": "دَادَا", "harakaPos": [0]},
-            {"text": "دُورُ", "harakaPos": [2]},
-            {"text": "دَادَا", "harakaPos": [0]},
-            {"text": "دَادَا", "harakaPos": [0]},
-             {"text": "دُورُ", "harakaPos": [2]},
-             {"text": "دُورُ", "harakaPos": [2]},
-            {"text": "دَادَا", "harakaPos": [0]},
-            {"text": "دَادَا", "harakaPos": [0]},
-            {"text": "دَارُ", "harakaPos": []},
-            {"text": "دُورُ", "harakaPos": [2]},
- {"text": "دَارُ", "harakaPos": []},
-            {"text": "دُورُ", "harakaPos": [2]}
+            {"text": "دادا", "harakaPos": [0]},
+            {"text": "دور", "harakaPos": [2]},
+            {"text": "دادا", "harakaPos": [0]},
+            {"text": "دادا", "harakaPos": [0]},
+             {"text": "دور", "harakaPos": [2]},
+             {"text": "دور", "harakaPos": [2]},
+            {"text": "دادا", "harakaPos": [0]},
+            {"text": "دادا", "harakaPos": [0]},
+            {"text": "دار", "harakaPos": []},
+            {"text": "دور", "harakaPos": [2]},
+ {"text": "دار", "harakaPos": []},
+            {"text": "دور", "harakaPos": [2]}
             
             
             
@@ -54,17 +54,17 @@
         "title": "بابا",
         "image": "/drsne/images/imagdata/بابا.jpg",
         "words": [
-            {"text": "بَابَا", "harakaPos": [0, 3]},
-             {"text": "بَابَا", "harakaPos": [0, 3]},
-             {"text": "بَابَا", "harakaPos": [0, 3]},
-             {"text": "بَابَا", "harakaPos": [0, 3]},
-            {"text": "بَابُ", "harakaPos": [0, 3]},
-              {"text": "بَابُ", "harakaPos": [0, 3]},
-            {"text": "دَارُ", "harakaPos": []},
-             {"text": "بَابَا", "harakaPos": [0, 3]},
-            {"text": "بَابُ", "harakaPos": [0, 3]},
-            {"text": "دَارُ", "harakaPos": []},
-            {"text": "دَادَا", "harakaPos": []}
+            {"text": "بابا", "harakaPos": [0, 3]},
+             {"text": "بابا", "harakaPos": [0, 3]},
+             {"text": "بابا", "harakaPos": [0, 3]},
+             {"text": "بابا", "harakaPos": [0, 3]},
+            {"text": "باب", "harakaPos": [0, 3]},
+              {"text": "باب", "harakaPos": [0, 3]},
+            {"text": "دار", "harakaPos": []},
+             {"text": "بابا", "harakaPos": [0, 3]},
+            {"text": "باب", "harakaPos": [0, 3]},
+            {"text": "دار", "harakaPos": []},
+            {"text": "دادا", "harakaPos": []}
         ]
     },
     {
@@ -72,22 +72,22 @@
         "title": "دادا بان",
         "image": "/drsne/images/imagdata/بان.jpg",
         "words": [
-            {"text": "دَادَا", "harakaPos": []},
-            {"text": "بَانُ", "harakaPos": [3]},
-             {"text": "بَابَا", "harakaPos": []},
-            {"text": "بَابَا", "harakaPos": []},
-            {"text": "دَادَا", "harakaPos": []},
-            {"text": "بَانُ", "harakaPos": [3]},
-            {"text": "بَابُ", "harakaPos": []},
-            {"text": "دَارُ", "harakaPos": []},
-            {"text": "بَانُ", "harakaPos": [3]},
- {"text": "بَابَا", "harakaPos": []},
-            {"text": "بَابَا", "harakaPos": []},
+            {"text": "دادا", "harakaPos": []},
+            {"text": "بان", "harakaPos": [3]},
+             {"text": "بابا", "harakaPos": []},
+            {"text": "بابا", "harakaPos": []},
+            {"text": "دادا", "harakaPos": []},
+            {"text": "بان", "harakaPos": [3]},
+            {"text": "باب", "harakaPos": []},
+            {"text": "دار", "harakaPos": []},
+            {"text": "بان", "harakaPos": [3]},
+ {"text": "بابا", "harakaPos": []},
+            {"text": "بابا", "harakaPos": []},
                         {"text": "دَادَا", "harakaPos": []},
-            {"text": "نُورُ", "harakaPos": [3]},
-            {"text": "بَابُ", "harakaPos": []},
-            {"text": "دَارُ", "harakaPos": []},
-                {"text": "نُورُ", "harakaPos": [3]}
+            {"text": "نور", "harakaPos": [3]},
+            {"text": "باب", "harakaPos": []},
+            {"text": "دار", "harakaPos": []},
+                {"text": "نور", "harakaPos": [3]}
 
         ]
     },
@@ -96,18 +96,18 @@
         "title": "ماما",
         "image": "/drsne/images/imagdata/ماما.jpg",
         "words": [
-            {"text": "مَامَا", "harakaPos": [0, 3]},
-             {"text": "مَامَا", "harakaPos": [0, 3]},
-            {"text": "دَادَا", "harakaPos": []},
-            {"text": "نَامَ", "harakaPos": [3]},
-            {"text": "نُورُ", "harakaPos": []},
-            {"text": "نُورُ", "harakaPos": []},
-             {"text": "دَادَا", "harakaPos": []},
-            {"text": "نَامَ", "harakaPos": [3]},
-            {"text": "بَانُ", "harakaPos": []},
-             {"text": "بَانُ", "harakaPos": []},
-            {"text": "بَابَا", "harakaPos": []},
-            {"text": "مَا نَامَ", "harakaPos": [0, 4]}
+            {"text": "ماما", "harakaPos": [0, 3]},
+             {"text": "ماما", "harakaPos": [0, 3]},
+            {"text": "دادا", "harakaPos": []},
+            {"text": "نام", "harakaPos": [3]},
+            {"text": "نور", "harakaPos": []},
+            {"text": "نور", "harakaPos": []},
+             {"text": "دادا", "harakaPos": []},
+            {"text": "نام", "harakaPos": [3]},
+            {"text": "بان", "harakaPos": []},
+             {"text": "بان", "harakaPos": []},
+            {"text": "بابا", "harakaPos": []},
+            {"text": "ما نام", "harakaPos": [0, 4]}
         ]
     },
     {
@@ -130,13 +130,13 @@
         "title": "دار نوري",
         "image": "/drsne/images/imagdata/دارنوري.jpg",
         "words": [
-            {"text": "دَارُ", "harakaPos": [3]},
-            {"text": "نُورِي", "harakaPos": [3, 5]},
-            {"text": "بَابَا", "harakaPos": []},
-            {"text": "بَابُ", "harakaPos": []},
-            {"text": "مَامَا", "harakaPos": []},
-            {"text": "رِيمِ", "harakaPos": [0, 3]},
-            {"text": "دِينَا", "harakaPos": [2]}
+            {"text": "دار", "harakaPos": [3]},
+            {"text": "نوري", "harakaPos": [3, 5]},
+            {"text": "بابا", "harakaPos": []},
+            {"text": "باب", "harakaPos": []},
+            {"text": "ماما", "harakaPos": []},
+            {"text": "ريم", "harakaPos": [0, 3]},
+            {"text": "دينا", "harakaPos": [2]}
         ]
     },
     {
@@ -144,42 +144,45 @@
         "title": "دادا رباب",
         "image": "/drsne/images/imagdata/رباب.jpg",
         "words": [
-            {"text": "دَادَا", "harakaPos": []},
-            {"text": "رَبَابُ", "harakaPos": [2, 5]},
-            {"text": "نَمِيرُ", "harakaPos": [0]},
-            {"text": "نَامَ", "harakaPos": []},
-            {"text": "بَدْرِي", "harakaPos": [0]},
-            {"text": "مَا نَامَ", "harakaPos": []},
-            {"text": "نُورُ", "harakaPos": []},
-            {"text": "رِيمُ", "harakaPos": []},
-            {"text": "نَبْنِي", "harakaPos": [1, 3]},
-            {"text": "دَارَ", "harakaPos": []},
-            {"text": "بَانُ", "harakaPos": [0, 3]}
+            {"text": "دادا", "harakaPos": []},
+            {"text": "رَباب", "harakaPos": [2, 5]},
+            {"text": "نَمير", "harakaPos": [0]},
+            {"text": "نامَ", "harakaPos": []},
+            {"text": "بَدري", "harakaPos": [0]},
+            {"text": "ما نامَ", "harakaPos": []},
+            {"text": "دادا", "harakaPos": []},
+            {"text": "نور", "harakaPos": []},
+            {"text": "دادا", "harakaPos": [1, 3]},
+            {"text": "رِِِيم", "harakaPos": []},
+            {"text": "نَبني", "harakaPos": [0, 3]},
+            {"text": "دارَ", "harakaPos": []},
+            {"text": "بان", "harakaPos": [0, 3]}
         ]
     },
     {
         "id": 10,
-        "title": "بوق نديم",
+        "title": "بوق نَديم",
         "image": "/drsne/images/imagdata/بوق.jpg",
         "words": [
-            {"text": "بُوقُ", "harakaPos": [3]},
-            {"text": "نَدِيمٍ", "harakaPos": []},
-            {"text": "قَدِيمٌ", "harakaPos": [0]},
-            {"text": "نَدِيمٌ يَقُودُ", "harakaPos": [8]},
-            {"text": "بَقَرَ بَدْرَانَ", "harakaPos": [1]},
-            {"text": "بَقَرُ بَدْرَانَ قَرِيبٌ", "harakaPos": [1, 15]}
+            {"text": "بوق", "harakaPos": [3]},
+            {"text": "نَديم", "harakaPos": []},
+            {"text": "قَديم", "harakaPos": [0]},
+            {"text": "نَديم يَقود", "harakaPos": [8]},
+            {"text": "بَقَرَ بَدران", "harakaPos": [1]},
+            {"text": "بَقَر بَدران قََرِيب", "harakaPos": [1, 15]}
         ]
     },
     {
         "id": 11,
-        "title": "وز",
+        "title": "وَز",
         "image": "/drsne/images/imagdata/وز.jpg",
         "words": [
-            {"text": "وَزٌّ", "harakaPos": [2]},
-            {"text": "دَادَا زَيْنَبُ", "harakaPos": [6]},
-            {"text": "زَيْدٌ زَيْدٌ", "harakaPos": [0, 6]},
-            {"text": "زَوْرَقُ زَيْدُونَ قَرِيبٌ", "harakaPos": [0, 8]},
-            {"text": "نَزُورُ دَارَ زَيْدُونَ", "harakaPos": [1, 11]}
+            {"text": "وَز", "harakaPos": [2]},
+            {"text": "دادا زَينَب", "harakaPos": [6]},
+            {"text": "وَز وَز", "harakaPos": [0, 6]},
+            {"text": "َزَيد زَيد", "harakaPos": [0, 6]},
+            {"text": "زَورق زَيدون قَريب", "harakaPos": [0, 8]},
+            {"text": "نَزور دارَ زَيدون", "harakaPos": [1, 11]}
         ]
     },
     {
@@ -197,42 +200,42 @@
     },
     {
         "id": 13,
-        "title": "مزمار مازن",
+        "title": "مِزمار مازِن",
         "image": "/drsne/images/imagdata/مزمار.jpg",
         "words": [
-            {"text": "مِزْمَارُ", "harakaPos": [0, 2]},
-            {"text": "مَازِنٍ", "harakaPos": [0, 2]},
-            {"text": "مِزْمَارُ مَازِنٍ قَدِيمٌ", "harakaPos": [0, 2, 7]},
-            {"text": "قِرْدُ مَازِنٍ يَدُورُ", "harakaPos": [6, 8]},
-            {"text": "يَا وِدَادُ", "harakaPos": []},
-            {"text": "قِرْدِي يَدُورُ", "harakaPos": [2, 7]},
-            {"text": "مِزْمَارِي قَدِيمٌ", "harakaPos": [0, 2, 10]}
+            {"text": "مِزمار", "harakaPos": [0, 2]},
+            {"text": "مازِن", "harakaPos": [0, 2]},
+            {"text": "مِزمار مازِن قَدِيم", "harakaPos": [0, 2, 7]},
+            {"text": "قِرد مازِن يَدور", "harakaPos": [6, 8]},
+            {"text": "يا وِِداد", "harakaPos": []},
+            {"text": "قِردي يَدور", "harakaPos": [2, 7]},
+            {"text": "مِزمار قَدِيم", "harakaPos": [0, 2, 10]}
         ]
     },
     {
         "id": 14,
-        "title": "ميزان قدوري",
+        "title": "مِيزان قََدُوري",
         "image": "/drsne/images/imagdata/ميزان.jpg",
         "words": [
-            {"text": "مِيزَانُ قَدُّورِي", "harakaPos": [8]},
-            {"text": "قَدُّورِي وَزَّانٌ", "harakaPos": [2]},
-            {"text": "وَزَنَ زَبِيبَ مَازِنٍ", "harakaPos": []},
-            {"text": "نَادِرٌ بَزَّازٌ", "harakaPos": [3]},
-            {"text": "نَادِرٌ مَرَّ مِنْ دَرْبِنَا", "harakaPos": [3, 6, 15]},
-            {"text": "مَازِنٌ دَقَّ بَابَنَا", "harakaPos": [5]}
+            {"text": "مِيزان قََدُوري", "harakaPos": [8]},
+            {"text": "قََدُوري وَزًان", "harakaPos": [2]},
+            {"text": "وَزَنَ زَبِيبَ مَازِن", "harakaPos": []},
+            {"text": "نَادِر بَزَّاز", "harakaPos": [3]},
+            {"text": "نَادِر مَرَّ مِن دَربنَا", "harakaPos": [3, 6, 15]},
+            {"text": "مَازِن دَقَّ بَابنَا", "harakaPos": [5]}
         ]
     },
     {
         "id": 15,
-        "title": "دب منير",
+        "title": "دُب مُنير",
         "image": "/drsne/images/imagdata/دب.jpg",
         "words": [
-            {"text": "دُبُّ", "harakaPos": [0]},
-            {"text": "مُنِيرٍ", "harakaPos": [0]},
-            {"text": "دُبُّ مُنِيرٍ مِنْ وَرَقٍ", "harakaPos": [0, 4, 8]},
-            {"text": "دُبُّ مَرْيَمَ مِنْ وَرَقٍ", "harakaPos": [0, 4, 8]},
-            {"text": "قُمْ يَا مُنِيرُ", "harakaPos": [5]},
-            {"text": "نَزُورُ زَيْدَانَ", "harakaPos": []}
+            {"text": "دُب", "harakaPos": [0]},
+            {"text": "مُنير", "harakaPos": [0]},
+            {"text": "دُب مُنير مِن وَرَقِ", "harakaPos": [0, 4, 8]},
+            {"text": "دُبُ مَريَمَ مِن وَرَقِ", "harakaPos": [0, 4, 8]},
+            {"text": "قُم يا مُنير", "harakaPos": [5]},
+            {"text": "نَزُورُ زَيدان", "harakaPos": []}
         ]
     },
     {
