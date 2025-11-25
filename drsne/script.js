@@ -547,13 +547,53 @@ function showInfoPopup(title, content) {
     // 1. زر من نحن
     const aboutBtn = document.getElementById('aboutUs');
     if (aboutBtn) {
-        aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center; padding:10px;">تطبيق القارئ الصغير<br>تطبيق تعليمي تفاعلي يهدف لتأسيس الأطفال في القراءة الصحيحة.</p>');
+        aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center; padding:10px;">تطبيق القارئ الصغير<br>تطبيق تعليمي تفاعلي يهدف لتأسيس الأطفال في القراءة الصحيحة ويكون بمثابة المساعد الالكتروني في تحضير الواجبات.</p>');
     }
 
-    // 2. زر اتصل بنا
+     // 2. زر اتصل بنا (مع الأيقونات والروابط)
     const contactBtn = document.getElementById('contactUs');
     if (contactBtn) {
-        contactBtn.onclick = () => showInfoPopup('اتصل بنا', '<p style="text-align:center; padding:10px;">للملاحظات والاستفسارات:<br>support@example.com</p>');
+        contactBtn.onclick = () => {
+            const content = `
+                <div style="text-align:center; padding:10px; font-family: Tahoma, sans-serif;">
+                    <p style="margin-bottom:20px; color:#555;">يسعدنا تواصلكم معنا عبر:</p>
+
+                    <!-- رقم الهاتف (قابل للنقر) -->
+                    <a href="tel:+9647700000000" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                        <i class="fas fa-phone-alt" style="color:#4CAF50; margin-left:10px;"></i>
+                        <span dir="ltr">+964 770 000 0000</span>
+                    </a>
+
+                    <!-- البريد الإلكتروني (قابل للنقر) -->
+                    <a href="mailto:support@example.com" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                        <i class="fas fa-envelope" style="color:#F44336; margin-left:10px;"></i>
+                        support@example.com
+                    </a>
+
+                    <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
+                    <!-- أيقونات التواصل الاجتماعي -->
+                    <div style="display:flex; justify-content:center; gap:25px; font-size:35px;">
+                        
+                        <!-- واتساب (يفتح التطبيق) -->
+                        <a href="https://api.whatsapp.com/send?phone=9647700000000" style="color:#25D366; text-decoration:none;">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+
+                        <!-- تليجرام (يفتح التطبيق) -->
+                        <a href="tg://resolve?domain=YOUR_USERNAME" style="color:#0088cc; text-decoration:none;">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+
+                        <!-- فيسبوك -->
+                        <a href="https://www.facebook.com/YOUR_PAGE_ID" style="color:#1877F2; text-decoration:none;">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                    </div>
+                </div>
+            `;
+            showInfoPopup('اتصل بنا', content);
+        };
     }
 
     // 3. زر سياسة الخصوصية
