@@ -104,31 +104,26 @@ const closeInfoEl = document.getElementById('closeInfo');
 // =============================================================
 // دالة النطق المحسّنة (تدعم التطبيق والمتصفح)
 // =============================================================
+ // دالة النطق المصححة (تعمل للاختبار والتعليم)
 function speak(text) {
     return new Promise((resolve, reject) => {
         
-        // إذا تم إيقاف الدرس، لا تقم بالنطق واخرج فوراً
-        if (isTeaching === false && text.length > 10) { 
-             resolve();
-             return;
-        }
-
-        // 1. للأندرويد
+        // 1. للأندرويد (التطبيق)
         if (typeof Android !== 'undefined') {
             Android.speakArabic(text);
             
-            // حساب وقت الانتظار
-            let estimatedTime = text.length * 110; 
-            if (estimatedTime < 1000) estimatedTime = 1000; 
+            // حساب وقت تقريبي للانتظار (120 ملي ثانية لكل حرف)
+            let estimatedTime = text.length * 120; 
+            if (estimatedTime < 1000) estimatedTime = 1000; // ثانية واحدة كحد أدنى
             
+            // ننتظر حتى ينتهي الوقت المقدر للنطق
             setTimeout(() => {
-                // فحص إضافي: هل مازلنا ندرس؟
                 resolve();
             }, estimatedTime);
             return; 
         }
 
-        // 2. للمتصفح
+        // 2. للمتصفح (الكمبيوتر)
         if (speechSynthesis.speaking) {
             speechSynthesis.cancel();
         }
@@ -138,11 +133,12 @@ function speak(text) {
             const selectedVoice = voices.find(voice => voice.voiceURI === userSettings.selectedVoiceURI);
             utterance.voice = selectedVoice || null;
             if (!selectedVoice) utterance.lang = 'ar-SA';
+            
             utterance.rate = parseFloat(userSettings.speechRate);
             utterance.pitch = parseFloat(userSettings.voicePitch);
             
             utterance.onend = () => resolve();
-            utterance.onerror = () => resolve(); // حل مهم للتعليق
+            utterance.onerror = () => resolve(); // لضمان عدم تعليق التطبيق عند الخطأ
             
             speechSynthesis.speak(utterance);
         }, 50);
@@ -208,20 +204,18 @@ async function loadLesson(grade, index) {
 // --- تعديل: دالة إيقاف التدريس لضمان تفعيل الزر ---
 // دالة إيقاف التدريس
 const stopTeaching = () => {
-    isTeaching = false; // إيقاف الحلقة
+    isTeaching = false; // هذا سيوقف الحلقة في الدالة السابقة
     
-    // 1. إيقاف صوت المتصفح (للكمبيوتر)
+    // 1. إسكات المتصفح
     speechSynthesis.cancel();
 
-    // 2. إيقاف صوت الأندرويد (للتطبيق) - هذا هو الجزء الجديد
+    // 2. إسكات التطبيق (أندرويد)
     if (typeof Android !== 'undefined') {
         Android.stopSpeaking();
     }
 
-    // إعادة تفعيل الزر
+    // إعادة حالة الأزرار والكلمات
     teachMeButtonEl.disabled = false;
-    
-    // إزالة التظليل عن الكلمات
     document.querySelectorAll('.word').forEach(word => word.classList.remove('active-reading'));
 };
 
@@ -231,39 +225,38 @@ async function startTeaching() {
     teachMeButtonEl.disabled = true;
 
     const wordElements = Array.from(document.querySelectorAll('.word'));
-    if (wordElements.length === 0) {
-        stopTeaching();
-        return;
-    }
+    if (wordElements.length === 0) { stopTeaching(); return; }
 
     try {
-        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا.");
-        // التحقق بعد كل عملية نطق
-        if (!isTeaching) throw new Error("Stopped");
-
+        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ.");
+        
         for (const wordEl of wordElements) {
-            if (!isTeaching) break;
+            if (!isTeaching) break; // نقطة تفتيش 1: الخروج إذا تم الإيقاف
+            
             const wordText = wordEl.dataset.wordText;
             const repetitions = parseInt(userSettings.wordRepetitions);
             const interval = parseInt(userSettings.wordInterval) * 1000;
 
             for (let i = 0; i < repetitions; i++) {
-                if (!isTeaching) break;
+                if (!isTeaching) break; // نقطة تفتيش 2: الخروج الفوري
+                
                 wordElements.forEach(w => w.classList.remove('active-reading'));
                 wordEl.classList.add('active-reading');
                 
                 await speak(wordText);
                 
+                // انتظار بين التكرارات (فقط إذا لم يتم الإيقاف)
                 if (isTeaching && i < repetitions - 1) {
                     await new Promise(resolve => setTimeout(resolve, interval));
                 }
             }
+            // انتظار بين الكلمات
             if (isTeaching) await new Promise(resolve => setTimeout(resolve, 500));
         }
     } catch (error) {
-        console.log("Teaching stopped or error:", error);
+        console.log("Teaching stopped");
     } finally {
-        stopTeaching(); // ضمان استدعاء التوقف في النهاية
+        stopTeaching();
     }
 }
 
