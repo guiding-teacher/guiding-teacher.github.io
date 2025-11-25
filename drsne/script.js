@@ -11,7 +11,7 @@ const lessonsData = {};
 let userProgress = JSON.parse(localStorage.getItem('readingAppProgress')) || {};
 let userSettings = JSON.parse(localStorage.getItem('readingAppSettings')) || {
     wordRepetitions: 3,
-    speechRate: 0.3,
+    speechRate: 0.75, // تم التعديل: السرعة الافتراضية بطيئة
     voicePitch: 1,
     wordInterval: 3,
     highlightHarakat: true,
@@ -97,9 +97,6 @@ const closeInfoEl = document.getElementById('closeInfo');
     }
 }
 
-// =============================================================
-// دالة النطق المحسّنة
-// =============================================================
 // =============================================================
 // دالة النطق المحسّنة (تدعم التطبيق والمتصفح)
 // =============================================================
@@ -205,7 +202,9 @@ async function loadLesson(grade, index) {
 const stopTeaching = () => {
     isTeaching = false;
     speechSynthesis.cancel();
+    // تم التعديل: التأكد من تفعيل الزر وإزالة الكلاسات
     teachMeButtonEl.disabled = false;
+    teachMeButtonEl.style.opacity = "1"; 
     document.querySelectorAll('.word').forEach(word => word.classList.remove('active-reading'));
 };
 
@@ -221,7 +220,7 @@ async function startTeaching() {
     }
 
     try {
-        await speak(" أهلاً بك يا صديقي، سوف ندرس معاً الآن. ردد ورائي الكلمات التالية لتحفظها.");
+        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا...");
         if (isTeaching) await new Promise(resolve => setTimeout(resolve, 500));
 
         for (const wordEl of wordElements) {
@@ -490,16 +489,12 @@ startButtonEl.addEventListener('click', () => {
     showMainNavigation();
 });
 
+// تم التعديل: حل مشكلة عدم ظهور الإعدادات في الهاتف باستخدام classList بدلاً من حساب الارتفاع
 allSettingsSections.forEach(section => {
     const header = section.querySelector('.settings-section-header');
     header.addEventListener('click', () => {
          section.classList.toggle('open');
-         const content = section.querySelector('.settings-section-content');
-         if (content.style.maxHeight) {
-            content.style.maxHeight = null;
-         } else {
-            content.style.maxHeight = content.scrollHeight + "px";
-         }
+         // تم إزالة حساب الارتفاع بـ JS والاعتماد على CSS
     });
 });
 saveSettingsEl.addEventListener('click', () => {
@@ -546,9 +541,9 @@ searchButtonEl.addEventListener('click', async () => {
 teachMeButtonEl.addEventListener('click', startTeaching);
 
 refreshButtonEl.addEventListener('click', () => {
-    if (isTeaching) {
-        stopTeaching();
-    } else {
+    // تم التعديل: إيقاف التدريس دائماً وإعادة التحميل لضمان عمل الزر
+    stopTeaching(); 
+    if (!isTeaching) {
        loadLesson(currentGrade, currentLessonIndex);
     }
 });
