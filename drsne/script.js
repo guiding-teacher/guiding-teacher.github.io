@@ -1,5 +1,5 @@
 // =============================================================
-// الإعدادات والمتغيرات الرئيسية
+// إعدادات التطبيق والمتغيرات (نسخة آمنة للأندرويد)
 // =============================================================
 let currentGrade = 1;
 let currentLessonIndex = 0;
@@ -7,14 +7,17 @@ let isTeaching = false;
 let voices = [];
 const lessonsData = {}; 
 
-// رابط موقعك الأساسي
+// رابط موقعك الأساسي (تأكد من وجود الشرطة المائلة في النهاية)
 const baseUrl = "https://guiding-teacher.github.io/drsne/";
+
+// متغير فحص أمان للمتصفح (هل يدعم الصوت؟)
+const hasBrowserSpeech = typeof speechSynthesis !== 'undefined';
 
 // متغيرات للتحكم في النطق
 let currentSpeakingResolve = null; 
 let currentSpeakTimeout = null;
 
-// تحميل الإعدادات
+// تحميل الإعدادات المحفوظة
 let userProgress = JSON.parse(localStorage.getItem('readingAppProgress')) || {};
 let userSettings = JSON.parse(localStorage.getItem('readingAppSettings')) || {
     wordRepetitions: 3,
@@ -26,37 +29,34 @@ let userSettings = JSON.parse(localStorage.getItem('readingAppSettings')) || {
 };
 
 // =============================================================
-// دوال النطق الآمنة (الحل الجذري للمشكلة)
+// دوال النطق الآمنة (تم الإصلاح لمنع الكراش)
 // =============================================================
 
-// دالة آمنة لجلب الأصوات لا تسبب انهيار التطبيق
-function safeGetVoices() {
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis) {
-        return speechSynthesis.getVoices();
-    }
-    return [];
-}
+function populateVoiceList() {
+    // حماية قصوى: لا تنفذ شيئاً إذا لم يكن المتصفح يدعم الصوت
+    if (!hasBrowserSpeech) return;
 
- function populateVoiceList() {
-    // هذا السطر الجديد يمنع الخطأ إذا كان المتصفح لا يدعم الصوت
-    if (!('speechSynthesis' in window)) return; 
-
-    voices = speechSynthesis.getVoices();
-    const arabicVoices = voices.filter(voice => voice.lang.startsWith('ar'));
-    
-    if (voiceSelectEl) {
-        voiceSelectEl.innerHTML = '<option value="">الصوت الافتراضي</option>';
-        arabicVoices.forEach(voice => {
-            const option = document.createElement('option');
-            option.textContent = `${voice.name} (${voice.lang})`;
-            option.value = voice.voiceURI;
-            voiceSelectEl.appendChild(option);
-        });
-        voiceSelectEl.value = userSettings.selectedVoiceURI;
+    try {
+        voices = speechSynthesis.getVoices();
+        const arabicVoices = voices.filter(voice => voice.lang.startsWith('ar'));
+        const voiceSelectEl = document.getElementById('voiceSelect');
+        
+        if (voiceSelectEl) {
+            voiceSelectEl.innerHTML = '<option value="">الصوت الافتراضي</option>';
+            arabicVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = voice.voiceURI;
+                voiceSelectEl.appendChild(option);
+            });
+            voiceSelectEl.value = userSettings.selectedVoiceURI || '';
+        }
+    } catch (e) {
+        console.warn("Error getting voices:", e);
     }
 }
 
-// دالة النطق الرئيسية المعدلة (آمنة 100%)
+// دالة النطق الرئيسية (مصححة 100%)
 function speak(text) {
     return new Promise((resolve) => {
         if (!text) { resolve(); return; }
@@ -66,30 +66,34 @@ function speak(text) {
             if (!resolved) { resolved = true; resolve(); }
         };
 
-        // مؤقت أمان لضمان عدم التعليق
+        // مؤقت أمان لضمان عدم تعليق التطبيق (3 ثواني كحد أقصى)
         setTimeout(finish, 3000);
 
         try {
-            // 1. الأولوية لتطبيق الأندرويد
+            // 1. الأولوية لتطبيق الأندرويد (الجسر الذي برمجناه في Java)
             if (typeof Android !== 'undefined') {
                 Android.speakArabic(text);
+                // تقدير وقت الانتظار (تقريباً 120ms لكل حرف)
                 let estimatedTime = Math.max(1000, text.length * 120);
                 setTimeout(finish, estimatedTime);
                 return;
             }
 
-            // 2. المتصفح (مع فحص الأمان)
-            if (typeof speechSynthesis !== 'undefined' && speechSynthesis) {
-                // المتصفح (حماية من الخطأ)
-            if ('speechSynthesis' in window && speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-            }
+            // 2. المتصفح العادي (مع فحص الأمان)
+            if (hasBrowserSpeech) {
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                }
 
                 const utterance = new SpeechSynthesisUtterance(text);
-                const selectedVoice = voices.find(voice => voice.voiceURI === userSettings.selectedVoiceURI);
-                utterance.voice = selectedVoice || null;
-                if (!selectedVoice) utterance.lang = 'ar-SA';
+                // محاولة ضبط الصوت المختار
+                if (voices.length > 0) {
+                    const selectedVoice = voices.find(v => v.voiceURI === userSettings.selectedVoiceURI);
+                    if (selectedVoice) utterance.voice = selectedVoice;
+                }
                 
+                // إذا لم يتم تحديد صوت، نضمن اللغة العربية
+                utterance.lang = 'ar-SA';
                 utterance.rate = parseFloat(userSettings.speechRate) || 1;
                 utterance.pitch = parseFloat(userSettings.voicePitch) || 1;
                 
@@ -98,20 +102,38 @@ function speak(text) {
                 
                 speechSynthesis.speak(utterance);
             } else {
-                // إذا لم يكن هناك دعم للصوت، ننهي الوعد فوراً
-                console.warn("Speech Synthesis not supported");
+                // لا يوجد دعم للصوت إطلاقاً
+                console.log("No speech support found");
                 finish();
             }
             
         } catch (error) {
-            console.error("Speech error:", error);
+            console.error("Speech critical error:", error);
             finish();
         }
     });
 }
 
+const stopTeaching = () => {
+    isTeaching = false;
+    
+    // إيقاف آمن
+    if (typeof Android !== 'undefined') {
+        Android.stopSpeaking();
+    } else if (hasBrowserSpeech) {
+        speechSynthesis.cancel();
+    }
+    
+    if (currentSpeakTimeout) clearTimeout(currentSpeakTimeout);
+    if (currentSpeakingResolve) currentSpeakingResolve();
+    
+    const teachBtn = document.getElementById('teach-me-button');
+    if(teachBtn) teachBtn.disabled = false;
+    document.querySelectorAll('.word').forEach(word => word.classList.remove('active-reading'));
+};
+
 // =============================================================
-// تحميل البيانات
+// تحميل البيانات وعرض الدروس (مع إصلاح الصور)
 // =============================================================
 async function fetchLessonData(grade) {
     grade = 1; 
@@ -129,14 +151,13 @@ async function fetchLessonData(grade) {
         return data;
     } catch (error) {
         console.error("Failed to load lesson data:", error);
-        // في حال الخطأ نعرض تنبيهاً صغيراً
-        if(typeof Android === 'undefined') alert("خطأ تحميل البيانات: " + error.message);
+        if(typeof Android === 'undefined') alert("فشل تحميل البيانات: " + error.message);
         return [];
     }
 }
 
 // =============================================================
-// عرض الدرس (مع إصلاح الصور)
+// عرض الدرس (مع إصلاح نهائي لمسار الصور)
 // =============================================================
 async function loadLesson(grade, index) {
     try {
@@ -152,31 +173,49 @@ async function loadLesson(grade, index) {
         currentLessonIndex = index;
         const lesson = gradeData[currentLessonIndex];
 
-        // عناصر DOM
+        // 1. تحديث العناوين
         const titleEl = document.getElementById('lesson-title');
         const numEl = document.getElementById('lesson-number');
-        const imgContainer = document.getElementById('lesson-image');
-        const wordsContainer = document.getElementById('words-container');
-        const prevBtn = document.getElementById('prev-lesson');
-        const nextBtn = document.getElementById('next-lesson');
-
         if(titleEl) titleEl.textContent = lesson.title;
         if(numEl) numEl.textContent = lesson.id;
 
-        // إصلاح الصور
+        // 2. إصلاح الصور (الجزء المهم)
+        const imgContainer = document.getElementById('lesson-image');
         if (imgContainer) {
             const img = imgContainer.querySelector('img');
+            
             if (img && lesson.image) {
                 let imageUrl = lesson.image;
+
+                // إذا لم يكن الرابط يبدأ بـ http (أي أنه رابط داخلي)
                 if (!imageUrl.startsWith('http')) {
+                    
+                    // تنظيف الرابط من أي شرطة مائلة في البداية
+                    if (imageUrl.startsWith('/')) imageUrl = imageUrl.substring(1);
+                    
+                    // منع تكرار اسم المجلد "drsne" إذا كان موجوداً في البيانات
+                    if (imageUrl.startsWith('drsne/')) {
+                        imageUrl = imageUrl.replace('drsne/', '');
+                    }
+                    
+                    // دمج الرابط الأساسي مع مسار الصورة النظيف
                     imageUrl = baseUrl + imageUrl;
                 }
+
+                // تعيين الرابط وإجبار الصورة على الظهور
                 img.src = imageUrl;
-                img.style.display = 'inline-block';
+                img.alt = lesson.title;
+                img.style.display = 'block'; 
+                imgContainer.style.display = 'block';
+                
+            } else {
+                // في حال عدم وجود صورة، نخفي الحاوية حتى لا تأخذ مساحة
+                imgContainer.style.display = 'none';
             }
         }
 
-        // عرض الكلمات
+        // 3. تحديث الكلمات
+        const wordsContainer = document.getElementById('words-container');
         if(wordsContainer) {
             wordsContainer.innerHTML = '';
             if (lesson.words) {
@@ -212,6 +251,8 @@ async function loadLesson(grade, index) {
             updateProgressBar();
         }
 
+        const prevBtn = document.getElementById('prev-lesson');
+        const nextBtn = document.getElementById('next-lesson');
         if(prevBtn) prevBtn.disabled = index === 0;
         if(nextBtn) nextBtn.disabled = index === gradeData.length - 1;
 
@@ -221,21 +262,8 @@ async function loadLesson(grade, index) {
 }
 
 // =============================================================
-// دوال مساعدة
+// منطق التعليم والاختبار
 // =============================================================
-
-const stopTeaching = () => {
-    isTeaching = false;
-    if (typeof speechSynthesis !== 'undefined' && speechSynthesis) speechSynthesis.cancel();
-    if (typeof Android !== 'undefined') Android.stopSpeaking();
-    
-    if (currentSpeakTimeout) clearTimeout(currentSpeakTimeout);
-    if (currentSpeakingResolve) currentSpeakingResolve();
-    
-    const teachBtn = document.getElementById('teach-me-button');
-    if(teachBtn) teachBtn.disabled = false;
-    document.querySelectorAll('.word').forEach(word => word.classList.remove('active-reading'));
-};
 
 async function startTeaching() {
     if (isTeaching) return;
@@ -289,7 +317,6 @@ async function startTest() {
         const correctWord = lesson.words[Math.floor(Math.random() * lesson.words.length)];
         let options = [correctWord];
         
-        // توليد خيارات عشوائية
         let safeCounter = 0;
         while (options.length < Math.min(4, lesson.words.length) && safeCounter < 50) {
             safeCounter++;
@@ -342,7 +369,6 @@ async function startSpelling() {
     if(spellPopup) {
         spellWord.textContent = wordText;
         spellSyl.innerHTML = '';
-        // تبسيط التهجئة هنا لتجنب التعقيد
         spellSyl.textContent = wordText; 
         spellPopup.style.display = 'flex';
         speak(wordText);
@@ -350,9 +376,8 @@ async function startSpelling() {
 }
 
 // =============================================================
-// تهيئة التطبيق
+// واجهة التنقل والقوائم
 // =============================================================
-
 function showMainNavigation() {
     const welcome = document.getElementById('welcomePopup');
     const mainNav = document.getElementById('mainNavigation');
@@ -364,7 +389,7 @@ function showMainNavigation() {
         mainNav.style.display = 'flex';
         const circles = document.getElementById('lessonsCirclesContainer');
         if(circles) {
-            circles.innerHTML = '<div>جاري التحميل...</div>';
+            circles.innerHTML = '<div style="width:100%; text-align:center;">جاري التحميل...</div>';
             fetchLessonData(1).then(data => {
                 circles.innerHTML = '';
                 if(!data || !data.length) { circles.innerHTML = 'لا توجد دروس'; return; }
@@ -372,8 +397,13 @@ function showMainNavigation() {
                     const div = document.createElement('div');
                     div.className = 'lesson-circle';
                     
+                    // تصحيح مسار الصورة في الدوائر أيضاً
                     let imgUrl = lesson.image || '';
-                    if (imgUrl && !imgUrl.startsWith('http')) imgUrl = baseUrl + imgUrl;
+                    if (imgUrl && !imgUrl.startsWith('http')) {
+                        if (imgUrl.startsWith('/')) imgUrl = imgUrl.substring(1);
+                        if (imgUrl.startsWith('drsne/')) imgUrl = imgUrl.replace('drsne/', '');
+                        imgUrl = baseUrl + imgUrl;
+                    }
                     
                     div.style.backgroundImage = `url('${imgUrl}')`;
                     div.innerHTML = `<div class="lesson-circle-content"><span class="number">${lesson.id}</span>${lesson.title}</div>`;
@@ -388,9 +418,64 @@ function showMainNavigation() {
         }
     }
 }
+ 
+
+function initializeSettingsUI() {
+    const el = document.getElementById('wordRepetitions');
+    if(el) el.value = userSettings.wordRepetitions;
+    // (يمكن إضافة باقي عناصر الإعدادات هنا إذا لزم الأمر)
+}
+
+async function initializeSidebar() {
+    const listContainer = document.getElementById('grade1-lessons');
+    if (!listContainer) return;
+    
+    listContainer.innerHTML = '<div style="padding:10px; text-align:center;">جاري التحميل...</div>';
+    
+    try {
+        const data = await fetchLessonData(1);
+        listContainer.innerHTML = ''; 
+
+        if (!data || data.length === 0) {
+            listContainer.innerHTML = '<div style="padding:10px;">لا توجد دروس.</div>';
+            return;
+        }
+
+        data.forEach((lesson, index) => {
+            const item = document.createElement('div');
+            item.className = 'lesson-item';
+            // أيقونة واسم الدرس
+            item.innerHTML = `<i class="fas fa-book-open" style="margin-left:8px;"></i> ${lesson.id}. ${lesson.title}`;
+            
+            item.addEventListener('click', () => {
+                // عند الضغط: نغلق القائمة ونحمل الدرس
+                const sidebar = document.getElementById('sidebar');
+                const backdrop = document.getElementById('sidebarBackdrop');
+                if(sidebar) sidebar.classList.remove('active');
+                if(backdrop) backdrop.classList.remove('active');
+
+                // إخفاء القائمة الرئيسية وإظهار الدرس
+                const mainNav = document.getElementById('mainNavigation');
+                const appCont = document.getElementById('appContainer');
+                if(mainNav) mainNav.style.display = 'none';
+                if(appCont) appCont.style.display = 'flex';
+
+                loadLesson(1, index);
+            });
+            listContainer.appendChild(item);
+        });
+        
+        // فتح القسم الخاص بالصف الأول تلقائياً
+        const parentSection = listContainer.closest('.grade-section');
+        if (parentSection) parentSection.classList.add('active');
+
+    } catch(e) {
+        console.error(e);
+        listContainer.innerHTML = '<div style="color:red; padding:10px;">فشل التحميل</div>';
+    }
+}
 
 async function updateProgressBar() {
-    // تحديث بسيط للتقدم
     const fill = document.getElementById('progressFill');
     const text = document.getElementById('progressText');
     if(fill && text) {
@@ -403,16 +488,95 @@ async function updateProgressBar() {
     }
 }
 
-// تهيئة الأحداث عند التحميل
 // =============================================================
-// تهيئة التطبيق عند تحميل الصفحة (مصحح لمنع الانهيار)
+// تهيئة التطبيق (نقطة الدخول)
 // =============================================================
+
+// إضافة المستمعين للأزرار
+function attachGlobalListeners() {
+    // --- أزرار القائمة الجانبية ---
+    const menuBtn = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    const closeSidebarBtn = document.getElementById('closeSidebar');
+
+    // فتح القائمة
+    if(menuBtn) {
+        menuBtn.onclick = () => {
+            if(sidebar) sidebar.classList.add('active');
+            if(backdrop) backdrop.classList.add('active');
+        };
+    }
+
+    // إغلاق القائمة (زر X)
+    if(closeSidebarBtn) {
+        closeSidebarBtn.onclick = () => {
+            if(sidebar) sidebar.classList.remove('active');
+            if(backdrop) backdrop.classList.remove('active');
+        };
+    }
+
+    // إغلاق القائمة (عند الضغط على الخلفية)
+    if(backdrop) {
+        backdrop.onclick = () => {
+            if(sidebar) sidebar.classList.remove('active');
+            if(backdrop) backdrop.classList.remove('active');
+        };
+    }
+
+    // --- باقي الأزرار (كما كانت) ---
+    const startBtn = document.getElementById('startButton');
+    if(startBtn) startBtn.onclick = showMainNavigation;
+    
+    const settingsBtn = document.getElementById('settings-button');
+    const settingsPopup = document.getElementById('settingsPopup');
+    if(settingsBtn && settingsPopup) settingsBtn.onclick = () => settingsPopup.style.display = 'flex';
+    
+    const closeSettings = document.getElementById('cancelSettings');
+    if(closeSettings && settingsPopup) closeSettings.onclick = () => settingsPopup.style.display = 'none';
+
+    const testBtn = document.getElementById('test-button');
+    if(testBtn) testBtn.onclick = startTest;
+    
+    const closeTest = document.getElementById('closeTest');
+    const testPopup = document.getElementById('testPopup');
+    if(closeTest && testPopup) closeTest.onclick = () => testPopup.style.display = 'none';
+
+    const spellBtn = document.getElementById('spell-button');
+    if(spellBtn) spellBtn.onclick = startSpelling;
+    
+    const closeSpell = document.getElementById('closeSpell');
+    const spellPopup = document.getElementById('spellPopup');
+    if(closeSpell && spellPopup) closeSpell.onclick = () => spellPopup.style.display = 'none';
+    
+    const prevBtn = document.getElementById('prev-lesson');
+    if(prevBtn) prevBtn.onclick = () => loadLesson(currentGrade, currentLessonIndex - 1);
+
+    const nextBtn = document.getElementById('next-lesson');
+    if(nextBtn) nextBtn.onclick = () => loadLesson(currentGrade, currentLessonIndex + 1);
+
+    const teachBtn = document.getElementById('teach-me-button');
+    if(teachBtn) teachBtn.onclick = startTeaching;
+    
+    const refreshBtn = document.getElementById('refresh-button');
+    if(refreshBtn) refreshBtn.onclick = () => {
+        if(isTeaching) stopTeaching();
+        else loadLesson(currentGrade, currentLessonIndex);
+    };
+
+    const homeBtn = document.getElementById('home-button');
+    if(homeBtn) homeBtn.onclick = showMainNavigation;
+}
+
+// التشغيل الآمن عند بدء التحميل
 document.addEventListener('DOMContentLoaded', () => {
     try {
+        console.log("App initializing...");
         initializeSettingsUI();
+        attachGlobalListeners();
 
-        // حماية كود الصوت من التسبب في إيقاف التطبيق
-        if ('speechSynthesis' in window) {
+        // حماية كود الصوت
+        if (hasBrowserSpeech) {
             if (speechSynthesis.onvoiceschanged !== undefined) {
                 speechSynthesis.onvoiceschanged = populateVoiceList;
             }
@@ -423,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProgressBar();
     } catch (e) {
         console.error("Critical Init Error:", e);
-        // في حال حدوث خطأ، نحاول تشغيل القائمة على الأقل
+        // حتى لو فشل شيء ما، نحاول عرض القائمة
         initializeSidebar();
     }
 });
