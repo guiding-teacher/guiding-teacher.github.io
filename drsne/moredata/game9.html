@@ -161,7 +161,26 @@ document.addEventListener('DOMContentLoaded', () => {
         imageRenderInfo = { x, y, width: renderWidth, height: renderHeight };
     }
 
-    function speak(text){if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=0.9;window.speechSynthesis.speak(u);}}
+    // =========================================================
+        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
+        // =========================================================
+        function speak(text) {
+            // 1. التحقق: هل نحن داخل تطبيق الأندرويد؟
+            if (typeof Android !== 'undefined' && Android.speakArabic) {
+                // نعم: استخدم ناطق الأندرويد الأصلي (جودة عالية + يعمل أوفلاين)
+                Android.speakArabic(text);
+            } else {
+                // لا: نحن في متصفح كمبيوتر عادي، استخدم الناطق الافتراضي
+                if (window.speechSynthesis) {
+                    speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ar-SA';
+                    utterance.rate = 0.9; // سرعة القراءة
+                    utterance.pitch = 1.0; // نبرة الصوت
+                    speechSynthesis.speak(utterance);
+                }
+            }
+        }
     
     function init(){
         preloadGameImages(); // <<-- تم استدعاء الدالة الجديدة هنا

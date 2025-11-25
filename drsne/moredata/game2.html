@@ -309,13 +309,25 @@
             };
         })();
         
+        // =========================================================
+        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
+        // =========================================================
         function speak(text) {
-            speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ar-SA';
-            utterance.rate = 0.9;
-            utterance.pitch = 1.5; // حدة صوت أعلى
-            speechSynthesis.speak(utterance);
+            // 1. التحقق: هل نحن داخل تطبيق الأندرويد؟
+            if (typeof Android !== 'undefined' && Android.speakArabic) {
+                // نعم: استخدم ناطق الأندرويد الأصلي (جودة عالية + يعمل أوفلاين)
+                Android.speakArabic(text);
+            } else {
+                // لا: نحن في متصفح كمبيوتر عادي، استخدم الناطق الافتراضي
+                if (window.speechSynthesis) {
+                    speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ar-SA';
+                    utterance.rate = 0.9; // سرعة القراءة
+                    utterance.pitch = 1.0; // نبرة الصوت
+                    speechSynthesis.speak(utterance);
+                }
+            }
         }
 
         labels.forEach(label => {

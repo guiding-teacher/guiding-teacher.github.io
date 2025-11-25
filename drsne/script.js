@@ -100,47 +100,29 @@ const closeInfoEl = document.getElementById('closeInfo');
 // =============================================================
 // دالة النطق المحسّنة (تدعم التطبيق والمتصفح)
 // =============================================================
-function speak(text) {
-    return new Promise((resolve, reject) => {
-        
-        // 1. التحقق هل نحن داخل تطبيق الأندرويد؟
-        if (typeof Android !== 'undefined') {
-            // استخدام ناطق الأندرويد الأصلي (بدون مشاكل)
-            Android.speakArabic(text);
-            
-            // عمل تأخير وهمي لانتظار انتهاء النطق (لأن الأندرويد لا يعيد إشارة انتهاء للجافاسكريبت بسهولة)
-            // نحسب الوقت تقريباً: كل حرف يأخذ 100 ملي ثانية
-            let estimatedTime = text.length * 100; 
-            if (estimatedTime < 1000) estimatedTime = 1000; // ثانية واحدة كحد أدنى
-            
-            setTimeout(() => {
-                resolve();
-            }, estimatedTime);
-            
-            return; // الخروج من الدالة لأننا استخدمنا التطبيق
+// =========================================================
+        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
+        // =========================================================
+       // =========================================================
+        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
+        // =========================================================
+        function speak(text) {
+            // 1. التحقق: هل نحن داخل تطبيق الأندرويد؟
+            if (typeof Android !== 'undefined' && Android.speakArabic) {
+                // نعم: استخدم ناطق الأندرويد الأصلي (جودة عالية + يعمل أوفلاين)
+                Android.speakArabic(text);
+            } else {
+                // لا: نحن في متصفح كمبيوتر عادي، استخدم الناطق الافتراضي
+                if (window.speechSynthesis) {
+                    speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ar-SA';
+                    utterance.rate = 0.9; // سرعة القراءة
+                    utterance.pitch = 1.0; // نبرة الصوت
+                    speechSynthesis.speak(utterance);
+                }
+            }
         }
-
-        // 2. إذا كنا في متصفح عادي (Chrome/Edge) نستخدم الكود القديم
-        if (speechSynthesis.speaking) {
-            speechSynthesis.cancel();
-        }
-        setTimeout(() => {
-            if (!text) return resolve();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            const selectedVoice = voices.find(voice => voice.voiceURI === userSettings.selectedVoiceURI);
-            utterance.voice = selectedVoice || null;
-            if (!selectedVoice) utterance.lang = 'ar-SA';
-            
-            utterance.rate = parseFloat(userSettings.speechRate);
-            utterance.pitch = parseFloat(userSettings.voicePitch);
-            utterance.onend = () => resolve();
-            utterance.onerror = (event) => reject(event);
-            
-            speechSynthesis.speak(utterance);
-        }, 100);
-    });
-}
 
 // =============================================================
 // دوال التطبيق الرئيسية
