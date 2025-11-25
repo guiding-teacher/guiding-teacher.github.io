@@ -7,13 +7,17 @@ let isTeaching = false;
 let voices = [];
 const lessonsData = {}; 
 
+// متغيرات للتحكم في النطق والإيقاف الفوري
+let currentSpeakingResolve = null; // لحل الوعد (Promise) يدوياً عند الإيقاف
+let currentSpeakTimeout = null;    // لإلغاء التوقيت عند الإيقاف
+
 // تحميل الإعدادات والتقدم المحفوظ
 let userProgress = JSON.parse(localStorage.getItem('readingAppProgress')) || {};
 
-// --- تعديل: جعل الصوت الافتراضي بطيء (0.75) ليتطابق مع القائمة ويظهر بشكل صحيح ---
+// الإعدادات الافتراضية
 let userSettings = JSON.parse(localStorage.getItem('readingAppSettings')) || {
     wordRepetitions: 3,
-    speechRate: 0.75, // تم التغيير من 0.3 إلى 0.75 (بطيء)
+    speechRate: 0.75,
     voicePitch: 1,
     wordInterval: 3,
     highlightHarakat: true,
@@ -65,7 +69,6 @@ const menuToggleEl = document.getElementById('menuToggle');
 const sidebarEl = document.getElementById('sidebar');
 const sidebarBackdropEl = document.getElementById('sidebarBackdrop');
 const closeSidebarEl = document.getElementById('closeSidebar');
-const gradeTitles = document.querySelectorAll('.grade-title');
 const aboutUsEl = document.getElementById('aboutUs');
 const contactUsEl = document.getElementById('contactUs');
 const privacyPolicyEl = document.getElementById('privacyPolicy');
@@ -78,14 +81,12 @@ const closeInfoEl = document.getElementById('closeInfo');
 // =============================================================
 // تحميل البيانات الديناميكي
 // =============================================================
- async function fetchLessonData(grade) {
+async function fetchLessonData(grade) {
     grade = 1; // تثبيت الصف
     if (lessonsData[grade]) {
         return lessonsData[grade];
     }
     try {
-        // التعديل: إضافة تاريخ ووقت للرابط لمنع الكاش من تخزين بيانات فارغة أو قديمة
-        // واستخدام رابط نسبي صريح
         const timestamp = new Date().getTime(); 
         const response = await fetch(`./data/grade${grade}.json?t=${timestamp}`);
         
@@ -96,52 +97,63 @@ const closeInfoEl = document.getElementById('closeInfo');
         return data;
     } catch (error) {
         console.error("Failed to load lesson data:", error);
-        // لا تظهر تنبيه للمستخدم لكي لا يزعجه، لكن سيظهر في الكونسول
         return [];
     }
 }
 
 // =============================================================
-// دالة النطق المحسّنة (تدعم التطبيق والمتصفح)
+// دالة النطق المحسّنة (Fix 1: تحكم كامل في الإنهاء)
 // =============================================================
- // دالة النطق المصححة (تعمل للاختبار والتعليم)
-function speak(text) {
-    return new Promise((resolve, reject) => {
+ function speak(text) {
+    return new Promise((resolve) => {
+        // حماية: إذا كان النص فارغاً
+        if (!text) { resolve(); return; }
+
+        let resolved = false;
         
-        // 1. للأندرويد (التطبيق)
-        if (typeof Android !== 'undefined') {
-            Android.speakArabic(text);
-            
-            // حساب وقت تقريبي للانتظار (120 ملي ثانية لكل حرف)
-            let estimatedTime = text.length * 120; 
-            if (estimatedTime < 1000) estimatedTime = 1000; // ثانية واحدة كحد أدنى
-            
-            // ننتظر حتى ينتهي الوقت المقدر للنطق
-            setTimeout(() => {
+        // دالة لإنهاء الـ Promise مرة واحدة فقط
+        const finish = () => {
+            if (!resolved) {
+                resolved = true;
                 resolve();
-            }, estimatedTime);
-            return; 
-        }
+            }
+        };
 
-        // 2. للمتصفح (الكمبيوتر)
-        if (speechSynthesis.speaking) {
-            speechSynthesis.cancel();
-        }
+        // 1. وضع مهلة زمنية قصوى (مثلاً 3 ثواني) لضمان عدم تعليق التطبيق أبداً
+        setTimeout(finish, 3000);
 
-        setTimeout(() => {
+        try {
+            // أندرويد
+            if (typeof Android !== 'undefined') {
+                Android.speakArabic(text);
+                // تقدير الوقت: 120ms لكل حرف، بحد أدنى ثانية واحدة
+                let estimatedTime = Math.max(1000, text.length * 120);
+                setTimeout(finish, estimatedTime);
+                return;
+            }
+
+            // المتصفح
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+
             const utterance = new SpeechSynthesisUtterance(text);
             const selectedVoice = voices.find(voice => voice.voiceURI === userSettings.selectedVoiceURI);
             utterance.voice = selectedVoice || null;
             if (!selectedVoice) utterance.lang = 'ar-SA';
             
-            utterance.rate = parseFloat(userSettings.speechRate);
-            utterance.pitch = parseFloat(userSettings.voicePitch);
+            utterance.rate = parseFloat(userSettings.speechRate) || 1;
+            utterance.pitch = parseFloat(userSettings.voicePitch) || 1;
             
-            utterance.onend = () => resolve();
-            utterance.onerror = () => resolve(); // لضمان عدم تعليق التطبيق عند الخطأ
+            utterance.onend = finish;
+            utterance.onerror = finish; // في حال الخطأ نتابع ولا نتوقف
             
             speechSynthesis.speak(utterance);
-        }, 50);
+            
+        } catch (error) {
+            console.error("Speech error:", error);
+            finish(); // في حال انهيار الكود، نتابع فوراً
+        }
     });
 }
 
@@ -154,7 +166,8 @@ async function loadLesson(grade, index) {
     const gradeData = await fetchLessonData(grade);
     if (!gradeData || index < 0 || index >= gradeData.length) return;
     
-    if (isTeaching) stopTeaching();
+    // تأكد من إيقاف أي درس سابق بشكل كامل
+    stopTeaching();
 
     currentGrade = grade;
     currentLessonIndex = index;
@@ -201,17 +214,26 @@ async function loadLesson(grade, index) {
     nextLessonBtn.disabled = index === gradeData.length - 1;
 }
 
-// --- تعديل: دالة إيقاف التدريس لضمان تفعيل الزر ---
-// دالة إيقاف التدريس
+// دالة إيقاف التدريس (مصححة لإلغاء التعليق)
 const stopTeaching = () => {
-    isTeaching = false; // هذا سيوقف الحلقة في الدالة السابقة
+    isTeaching = false;
     
-    // 1. إسكات المتصفح
+    // 1. إيقاف المتصفح
     speechSynthesis.cancel();
 
-    // 2. إسكات التطبيق (أندرويد)
+    // 2. إيقاف التطبيق (أندرويد)
     if (typeof Android !== 'undefined') {
         Android.stopSpeaking();
+    }
+
+    // 3. (مهم جداً) إنهاء أي عملية انتظار حالية فوراً
+    if (currentSpeakTimeout) {
+        clearTimeout(currentSpeakTimeout);
+        currentSpeakTimeout = null;
+    }
+    if (currentSpeakingResolve) {
+        currentSpeakingResolve(); // هذا يحرر حلقة التكرار في startTeaching فوراً
+        currentSpeakingResolve = null;
     }
 
     // إعادة حالة الأزرار والكلمات
@@ -228,96 +250,133 @@ async function startTeaching() {
     if (wordElements.length === 0) { stopTeaching(); return; }
 
     try {
-        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ.");
+        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا.");
         
         for (const wordEl of wordElements) {
-            if (!isTeaching) break; // نقطة تفتيش 1: الخروج إذا تم الإيقاف
+            if (!isTeaching) break;
             
             const wordText = wordEl.dataset.wordText;
             const repetitions = parseInt(userSettings.wordRepetitions);
             const interval = parseInt(userSettings.wordInterval) * 1000;
 
             for (let i = 0; i < repetitions; i++) {
-                if (!isTeaching) break; // نقطة تفتيش 2: الخروج الفوري
+                if (!isTeaching) break;
                 
                 wordElements.forEach(w => w.classList.remove('active-reading'));
                 wordEl.classList.add('active-reading');
                 
                 await speak(wordText);
                 
-                // انتظار بين التكرارات (فقط إذا لم يتم الإيقاف)
                 if (isTeaching && i < repetitions - 1) {
                     await new Promise(resolve => setTimeout(resolve, interval));
                 }
             }
-            // انتظار بين الكلمات
             if (isTeaching) await new Promise(resolve => setTimeout(resolve, 500));
         }
     } catch (error) {
-        console.log("Teaching stopped");
+        console.log("Teaching stopped or error occurred", error);
     } finally {
         stopTeaching();
     }
 }
 
+// دالة الاختبار (Fix 2: ضمان ظهور النافذة قبل النطق)
+/* في ملف script.js - استبدل دالة startTest القديمة بهذه الدالة المحسنة */
 async function startTest() {
+    console.log("Starting test..."); // للتجربة
+
+    // 1. التأكد من وجود البيانات
     const gradeData = lessonsData[currentGrade];
     const lesson = gradeData ? gradeData[currentLessonIndex] : null;
 
-    if (!lesson || lesson.words.length < 2) {
-        alert('لا توجد كلمات كافية لبدء الاختبار في هذا الدرس.');
+    if (!lesson || !lesson.words || lesson.words.length < 2) {
+        alert('لا توجد كلمات كافية في هذا الدرس لبدء الاختبار.');
         return;
     }
-    
-    testPopupEl.style.display = 'none';
-    await new Promise(resolve => setTimeout(resolve, 200));
 
-    const correctWord = lesson.words[Math.floor(Math.random() * lesson.words.length)];
-    let options = [correctWord];
+    try {
+        // 2. إغلاق القوائم الأخرى وتنظيف الواجهة
+        if (typeof sidebarEl !== 'undefined' && sidebarEl) sidebarEl.classList.remove('active');
+        if (typeof sidebarBackdropEl !== 'undefined' && sidebarBackdropEl) sidebarBackdropEl.classList.remove('active');
+        
+        testResultEl.textContent = '';
+        testOptionsEl.innerHTML = '';
+        testOptionsEl.classList.remove('answered');
 
-    while (options.length < Math.min(4, lesson.words.length)) {
-        const randomWord = lesson.words[Math.floor(Math.random() * lesson.words.length)];
-        if (!options.some(opt => opt.text === randomWord.text)) {
-            options.push(randomWord);
-        }
-    }
-
-    options.sort(() => Math.random() - 0.5);
-
-    testResultEl.textContent = '';
-    testOptionsEl.innerHTML = '';
-    testOptionsEl.classList.remove('answered');
-
-    options.forEach(option => {
-        const optionEl = document.createElement('div');
-        optionEl.className = 'test-option';
-        optionEl.textContent = option.text;
-        optionEl.addEventListener('click', function() {
-            if (testOptionsEl.classList.contains('answered')) return;
-            testOptionsEl.classList.add('answered');
-
-            if (option.text === correctWord.text) {
-                this.classList.add('correct');
-                testResultEl.textContent = 'إجابة صحيحة! أحسنت!';
-                testResultEl.style.color = '#4CAF50';
-                speak('أحسنت');
-            } else {
-                this.classList.add('incorrect');
-                testResultEl.textContent = 'إجابة خاطئة، حاول مرة أخرى!';
-                testResultEl.style.color = '#f44336';
-                document.querySelectorAll('.test-option').forEach(opt => {
-                    if (opt.textContent === correctWord.text) opt.classList.add('correct');
-                });
-                speak('إجابة خاطئة');
+        // 3. اختيار الكزمة الصحيحة
+        const correctWord = lesson.words[Math.floor(Math.random() * lesson.words.length)];
+        
+        // 4. تجهيز الخيارات (بدون حلقة لانهائية تسبب التعليق)
+        // نأخذ كل الكلمات الأخرى، ونزيل الكلمة الصحيحة، ونزيل التكرار
+        let otherWords = lesson.words.filter(w => w.text !== correctWord.text);
+        
+        // إزالة التكرار بناءً على نص الكلمة
+        const uniqueOtherWords = [];
+        const map = new Map();
+        for (const item of otherWords) {
+            if(!map.has(item.text)){
+                map.set(item.text, true);
+                uniqueOtherWords.push(item);
             }
-        });
-        testOptionsEl.appendChild(optionEl);
-    });
+        }
 
-    testPopupEl.style.display = 'flex';
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    await speak(correctWord.text);
+        // خلط الكلمات الأخرى واختيار 3 منها كحد أقصى
+        uniqueOtherWords.sort(() => Math.random() - 0.5);
+        const wrongOptions = uniqueOtherWords.slice(0, 3);
+
+        // دمج الصحيحة مع الخاطئة
+        let finalOptions = [correctWord, ...wrongOptions];
+        
+        // خلط الخيارات النهائية
+        finalOptions.sort(() => Math.random() - 0.5);
+
+        // 5. بناء واجهة الخيارات
+        finalOptions.forEach(option => {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'test-option';
+            optionEl.textContent = option.text;
+            
+            // إضافة مستمع الحدث (Click)
+            optionEl.onclick = function() {
+                if (testOptionsEl.classList.contains('answered')) return;
+                testOptionsEl.classList.add('answered');
+
+                if (option.text === correctWord.text) {
+                    this.classList.add('correct');
+                    testResultEl.textContent = 'إجابة صحيحة! أحسنت!';
+                    testResultEl.style.color = '#4CAF50';
+                    speak('أحسنت');
+                } else {
+                    this.classList.add('incorrect');
+                    testResultEl.textContent = 'إجابة خاطئة، حاول مرة أخرى!';
+                    testResultEl.style.color = '#f44336';
+                    
+                    // تمييز الإجابة الصحيحة
+                    const allOptions = document.querySelectorAll('.test-option');
+                    allOptions.forEach(opt => {
+                        if (opt.textContent === correctWord.text) opt.classList.add('correct');
+                    });
+                    speak('إجابة خاطئة');
+                }
+            };
+            testOptionsEl.appendChild(optionEl);
+        });
+
+        // 6. إظهار النافذة أخيراً
+        testPopupEl.style.display = 'flex';
+
+        // 7. نطق الكلمة (مع تأخير بسيط جداً لضمان رسم الواجهة أولاً)
+        setTimeout(() => {
+            speak(correctWord.text).catch(e => console.log("Speech error ignored"));
+        }, 300);
+
+    } catch (e) {
+        console.error("Error in startTest:", e);
+        alert("حدث خطأ غير متوقع في الاختبار، يرجى المحاولة مرة أخرى.");
+        testPopupEl.style.display = 'none';
+    }
 }
+ 
 
 
 async function startSpelling() {
@@ -355,7 +414,9 @@ async function startSpelling() {
     });
 
     spellPopupEl.style.display = 'flex';
-    await speak(wordText);
+    try {
+        await speak(wordText);
+    } catch(e) { console.error(e); }
 }
 
 function splitIntoSyllables(word) {
@@ -399,12 +460,10 @@ function populateVoiceList() {
         option.value = voice.voiceURI;
         voiceSelectEl.appendChild(option);
     });
-    // إعادة تعيين القيمة بعد ملء القائمة
     voiceSelectEl.value = userSettings.selectedVoiceURI;
 }
 
 function initializeSettingsUI() {
-    // بناء القوائم أولاً
     speechRateEl.innerHTML = `
         <option value="0.5">بطيء جداً</option>
         <option value="0.75">بطيء</option>
@@ -419,8 +478,6 @@ function initializeSettingsUI() {
         <option value="true">مفعل</option>
         <option value="false">غير مفعل</option>`;
         
-    // تعيين القيم من الإعدادات المحفوظة
-    // تأكدنا في بداية الكود أن القيمة الافتراضية هي 0.75 إذا لم تكن موجودة
     wordRepetitionsEl.value = userSettings.wordRepetitions;
     speechRateEl.value = userSettings.speechRate;
     voicePitchEl.value = userSettings.voicePitch;
@@ -433,7 +490,6 @@ function initializeSettingsUI() {
     const lessonsListEl = document.getElementById(`grade1-lessons`);
     if (!lessonsListEl) return;
     
-    // أيقونة تحميل
     lessonsListEl.innerHTML = `<div style="padding:10px; text-align:center;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>`;
     
     try {
@@ -451,16 +507,13 @@ function initializeSettingsUI() {
             lessonItem.innerHTML = `<i class="fas fa-book-open" style="margin-left:8px; color:#4CAF50;"></i> ${lesson.id}. ${lesson.title}`;
             
             lessonItem.addEventListener('click', () => {
-                // عند الضغط على درس
                 loadLesson(grade, index);
                 
-                // أغلق القائمة الجانبية
                 const sidebar = document.getElementById('sidebar');
                 const backdrop = document.getElementById('sidebarBackdrop');
                 if(sidebar) sidebar.classList.remove('active');
                 if(backdrop) backdrop.classList.remove('active');
 
-                // أخفِ واجهة التنقل واظهر التطبيق
                 const mainNav = document.getElementById('mainNavigation');
                 const appCont = document.getElementById('appContainer');
                 if(mainNav) mainNav.style.display = 'none';
@@ -469,12 +522,11 @@ function initializeSettingsUI() {
             lessonsListEl.appendChild(lessonItem);
         });
 
-        // مهم جداً: تأكد من أن الحاوية مفتوحة
         const parentSection = lessonsListEl.closest('.grade-section');
         if (parentSection) {
             parentSection.classList.add('active');
-            lessonsListEl.style.display = 'block'; // إجبار الظهور بالجافاسكريبت
-            lessonsListEl.style.maxHeight = '2000px'; // رقم كبير لضمان ظهور كل الدروس
+            lessonsListEl.style.display = 'block'; 
+            lessonsListEl.style.maxHeight = '2000px'; 
         }
 
     } catch(e) {
@@ -516,7 +568,6 @@ sidebarBackdropEl.addEventListener('click', () => {
     sidebarBackdropEl.classList.remove('active');
 });
 settingsButtonEl.addEventListener('click', () => {
-    // تحديث الواجهة عند فتح الإعدادات للتأكد من ظهور القيم
     initializeSettingsUI();
     settingsPopupEl.style.display = 'flex';
 });
@@ -584,6 +635,7 @@ searchButtonEl.addEventListener('click', async () => {
 teachMeButtonEl.addEventListener('click', startTeaching);
 
 refreshButtonEl.addEventListener('click', () => {
+    // الزر البرتقالي: إما يوقف التدريس أو يعيد تحميل الدرس
     if (isTeaching) {
         stopTeaching();
     } else {
@@ -684,19 +736,10 @@ function startMicrophone() {
     }
 }
 
-function sendTextToWeb(text) {
-    var inputField = document.getElementById("search_input"); 
-    if(inputField) {
-        inputField.value = text;
-    }
-    alert("تم التعرف على: " + text); 
-}
-
 // =============================================================
 // تهيئة التطبيق عند تحميل الصفحة
 // =============================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // تهيئة واجهة الإعدادات أولاً لتفادي الحقول الفارغة
     initializeSettingsUI();
 
     if (speechSynthesis.onvoiceschanged !== undefined) {

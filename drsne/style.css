@@ -162,23 +162,42 @@ body {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 30px;
 }
-.lesson-number {
-    width: 50px; height: 50px; background-color: #4CAF50; color: white;
-    border-radius: 50%; display: flex; justify-content: center;
-    align-items: center; font-weight: bold; font-size: 20px;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.2); flex-shrink: 0;
+/* ================================================== */
+/* تصميم قائمة الدروس مع شريط التمرير */
+/* ================================================== */
+.lessons-list {
+    /* 1. تحديد الارتفاع */
+    max-height: 50%; /* هذا الرقم يتحكم في عدد الدروس الظاهرة (كبره أو صغره حسب رغبتك) */
+    
+    /* 2. تفعيل التمرير العمودي */
+    overflow-y: auto;
+    
+    /* 3. تنسيقات إضافية للجمال */
+    background-color: rgba(0, 0, 0, 0.05); /* خلفية خفيفة جداً للتمييز */
+    border-radius: 8px;
+    padding: 5px;
+    margin-top: 10px;
+    
+    /* 4. إجبار القائمة على الظهور (حل لمشكلة الاختفاء) */
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
-.lesson-title {
-    font-size: 32px; font-weight: bold; color: #333;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    flex-grow: 1; text-align: center; position: relative;
-    padding-bottom: 10px;
+
+/* ================================================== */
+/* تحسين شكل شريط التمرير (Scrollbar) */
+/* ================================================== */
+.lessons-list::-webkit-scrollbar {
+    width: 6px; /* عرض الشريط */
 }
-.lesson-title::after {
-    content: ""; position: absolute; bottom: 0; left: 50%;
-    transform: translateX(-50%); width: 120px; height: 4px;
-    background: linear-gradient(90deg, #FFC107, #FF9800);
-    border-radius: 2px;
+
+.lessons-list::-webkit-scrollbar-track {
+    background: transparent; 
+}
+
+.lessons-list::-webkit-scrollbar-thumb {
+    background-color: #9C27B0; /* لون الشريط (نفس لون ثيم تطبيقك) */
+    border-radius: 10px;
 }
 
 .content {
@@ -271,7 +290,7 @@ body {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background-color: rgba(0, 0, 0, 0.6);
     display: flex; justify-content: center; align-items: center;
-    z-index: 1000; padding: 20px;
+    z-index: 2000; padding: 20px;
 }
 .welcome-content, .settings-content, .test-content, .spell-content, .info-content {
     background-color: white; border-radius: 15px; padding: 30px 40px;
@@ -578,9 +597,8 @@ body {
 @media (max-width: 600px) {
     .lesson-circle { width: 100px; height: 100px; }
     .lesson-circle-content { font-size: 14px; }
+    
 }
-
-
 
 /* ==================================
    أنماط قسم التهيئة والإعداد
@@ -665,7 +683,7 @@ body {
     .right-controls { width: 100%; justify-content: center; }
     .control-button, .search-button { padding: 8px 12px; font-size: 13px; }
     .lesson-title { font-size: 26px; }
-    .sidebar { width: 300px; }
+    .sidebar { width: 260px; }
     .welcome-content, .settings-content, .test-content, .spell-content, .info-content {
         padding: 20px; margin: 10px;
     }
