@@ -57,7 +57,7 @@ function populateVoiceList() {
 }
 
 // دالة النطق الرئيسية (مصححة 100%)
-// دالة النطق الرئيسية (معدلة لقراءة الجمل الطويلة كاملة)
+ // دالة النطق الرئيسية (تدعم السرعة والنبرة في التطبيق)
 function speak(text) {
     return new Promise((resolve) => {
         if (!text) { resolve(); return; }
@@ -67,24 +67,25 @@ function speak(text) {
             if (!resolved) { resolved = true; resolve(); }
         };
 
-        // ============================================================
-        // 👇 التعديل هنا: حساب الوقت بناءً على طول النص
-        // ============================================================
-        // نحسب: عدد الحروف × 150 ملي ثانية.
-        // مثلاً: 100 حرف × 150 = 15000 (15 ثانية)
-        // بحد أدنى 4 ثواني للجمل القصيرة
-        const calculatedDuration = Math.max(4000, text.length * 150);
-
-        // وضع مؤقت الأمان بناءً على الحساب الجديد
-        setTimeout(finish, calculatedDuration);
+        // مؤقت أمان
+        setTimeout(finish, 3000);
 
         try {
-            // 1. الأولوية لتطبيق الأندرويد
+            // جلب الإعدادات الحالية من المتغيرات
+            let rate = userSettings.speechRate || 1;
+            let pitch = userSettings.voicePitch || 1;
+
+            // 1. الأولوية لتطبيق الأندرويد (نرسل النص + السرعة + النبرة)
             if (typeof Android !== 'undefined') {
-                Android.speakArabic(text);
+                // نرسل الأرقام كنصوص (String) لتجنب مشاكل التوافق
+                Android.speakArabic(text, rate.toString(), pitch.toString());
                 
-                // لا نحتاج لوضع setTimeout آخر هنا، لأن المؤقت بالأعلى (calculatedDuration)
-                // سيقوم بإنهاء الأمر في الوقت المناسب تماماً.
+                // تقدير وقت الانتظار بناءً على السرعة
+                // كلما زادت السرعة، قل وقت الانتظار
+                let charDelay = 120 / rate; 
+                let estimatedTime = Math.max(1000, text.length * charDelay);
+                
+                setTimeout(finish, estimatedTime);
                 return;
             }
 
@@ -95,26 +96,28 @@ function speak(text) {
                 }
 
                 const utterance = new SpeechSynthesisUtterance(text);
-                if (voices.length > 0) {
+                
+                // إعدادات المتصفح
+                utterance.lang = 'ar-SA';
+                utterance.rate = parseFloat(rate);
+                utterance.pitch = parseFloat(pitch);
+                
+                // محاولة اختيار الصوت المفضل للمتصفح فقط
+                if (voices.length > 0 && userSettings.selectedVoiceURI) {
                     const selectedVoice = voices.find(v => v.voiceURI === userSettings.selectedVoiceURI);
                     if (selectedVoice) utterance.voice = selectedVoice;
                 }
-                
-                utterance.lang = 'ar-SA';
-                utterance.rate = parseFloat(userSettings.speechRate) || 1;
-                utterance.pitch = parseFloat(userSettings.voicePitch) || 1;
                 
                 utterance.onend = finish;
                 utterance.onerror = finish;
                 
                 speechSynthesis.speak(utterance);
             } else {
-                console.log("No speech support found");
                 finish();
             }
             
         } catch (error) {
-            console.error("Speech critical error:", error);
+            console.error("Speech error:", error);
             finish();
         }
     });
@@ -754,9 +757,42 @@ function showInfoPopup(title, content) {
 
 
     // 2. أزرار المعلومات (من نحن، اتصل بنا...)
+    // 1. زر من نحن (مع الوصف الجديد والأيقونات)
     const aboutBtn = document.getElementById('aboutUs');
     if (aboutBtn) {
-        aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center; padding:10px;">تطبيق القارئ الصغير<br>تطبيق تعليمي تفاعلي يهدف لتأسيس الأطفال.</p>');
+        aboutBtn.onclick = () => {
+            const content = `
+                <div style="text-align: right; padding: 10px; font-family: 'Amiri', Tahoma, sans-serif; line-height: 1.8;">
+                    <p style="color:#555; margin-bottom:15px; font-size:16px;">
+                        <strong>تطبيق القارئ الصغير</strong> هو رفيق طفلك الذكي لتأسيس مهارات القراءة واللغة العربية للصف الأول الابتدائي.
+                    </p>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="margin-bottom: 10px;">
+                            📚 <strong>دروس شاملة:</strong> منهج متكامل مع صور توضيحية جذابة.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🔊 <strong>نطق فصيح:</strong> استماع للنطق الصحيح لكل كلمة بوضوح.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            👨‍🏫 <strong>ميزة درسني:</strong> تكرار آلي للكلمات وكأن المعلم معك.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🧩 <strong>التهجي الذكي:</strong> تحليل الكلمات إلى مقاطع صوتية ملونة.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🏆 <strong>اختبارات ممتعة:</strong> تقييم مستوى الطفل بطريقة شيقة.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            ⚙️ <strong>إعدادات مرنة:</strong> تحكم في سرعة الصوت والتكرار.
+                        </li>
+                    </ul>
+                    <div style="text-align:center; margin-top:20px; color:#4CAF50; font-weight:bold;">
+                        صنع بحب ❤️ لأجل أطفالنا
+                    </div>
+                </div>
+            `;
+            showInfoPopup('من نحن', content);
+        };
     }
 
     const contactBtn = document.getElementById('contactUs');
@@ -787,7 +823,7 @@ function showInfoPopup(title, content) {
 
     const privacyBtn = document.getElementById('privacyPolicy');
     if (privacyBtn) {
-        privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center; padding:10px;">نحن نحترم خصوصية الأطفال.</p>');
+        privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center; padding:10px;">نحن نحترم خصوصية الأطفال ولا نقوم بجمع اي بيانات عنهم او انشطتهم بالتطبيق مطلقا.</p>');
     }
 
     const settingsMenuBtn = document.getElementById('settingsMenu');
