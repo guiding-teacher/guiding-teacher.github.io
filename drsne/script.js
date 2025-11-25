@@ -818,9 +818,9 @@ function showInfoPopup(title, content) {
                         support@example.com
                     </a>
                     <div style="display:flex; justify-content:center; gap:25px; font-size:35px;">
-                        <a href="https://api.whatsapp.com/send?phone=9647700000000" style="color:#25D366;"><i class="fab fa-whatsapp"></i></a>
-                        <a href="tg://resolve?domain=USERNAME" style="color:#0088cc;"><i class="fab fa-telegram"></i></a>
-                        <a href="https://facebook.com/PAGEID" style="color:#1877F2;"><i class="fab fa-facebook"></i></a>
+                        <a href="https://api.whatsapp.com/send?phone=9647708077310" style="color:#25D366;"><i class="fab fa-whatsapp"></i></a>
+                        <a href="tg://resolve?domain=T_abrahim" style="color:#0088cc;"><i class="fab fa-telegram"></i></a>
+                        <a href="https://facebook.com/abrahimaabd" style="color:#1877F2;"><i class="fab fa-facebook"></i></a>
                     </div>
                 </div>
             `;
