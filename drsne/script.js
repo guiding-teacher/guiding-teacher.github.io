@@ -6,7 +6,7 @@ let currentLessonIndex = 0;
 let isTeaching = false;
 let voices = [];
 const lessonsData = {}; 
-
+let isSpellingActive = false; // متغير جديد للتحكم في التهجئة
 // رابط موقعك الأساسي (تأكد من وجود الشرطة المائلة في النهاية)
 const baseUrl = "https://guiding-teacher.github.io/drsne/";
 
@@ -385,49 +385,45 @@ async function startTest() {
  // =============================================================
 // منطق التهجئة (تقسيم الكلمة صوتياً)
 // =============================================================
-
 async function startSpelling() {
     const gradeData = lessonsData[currentGrade];
     if(!gradeData) return;
     const lesson = gradeData[currentLessonIndex];
     if(!lesson || !lesson.words.length) return;
 
-    // اختيار كلمة عشوائية
+    // تفعيل المتغير عند البدء
+    isSpellingActive = true; 
+
     const randomWord = lesson.words[Math.floor(Math.random() * lesson.words.length)];
-    const wordText = randomWord.text; // نأخذ الكلمة مع حركاتها
+    const wordText = randomWord.text;
     
     const spellPopup = document.getElementById('spellPopup');
     const spellWord = document.getElementById('spellWord');
     const spellSyl = document.getElementById('spellSyllables');
     
     if(spellPopup) {
-        // 1. عرض الكلمة كاملة في الأعلى
         spellWord.textContent = wordText;
-        spellSyl.innerHTML = ''; // تنظيف القديم
+        spellSyl.innerHTML = '';
 
-        // 2. تقسيم الكلمة لمقاطع صوتية
         const syllables = splitIntoSyllables(wordText);
-
-        // 3. إنشاء أزرار للمقاطع
         const syllableElements = [];
+
         syllables.forEach((syl, index) => {
             const span = document.createElement('span');
-            span.className = 'syllable-box'; // كلاس جديد للتنسيق
+            span.className = 'syllable-box';
             span.textContent = syl;
             span.style.cssText = "display:inline-block; margin:5px; padding:10px 15px; background:#e3f2fd; border:2px solid #2196F3; border-radius:10px; cursor:pointer; font-size:24px;";
             
-            // عند الضغط على المقطع ينطق
             span.onclick = () => {
-                span.style.background = "#ffff00"; // تلوين عند الضغط
+                span.style.background = "#ffff00";
                 speak(syl).then(() => {
-                    span.style.background = "#e3f2fd"; // إعادة اللون
+                    span.style.background = "#e3f2fd";
                 });
             };
             
             spellSyl.appendChild(span);
             syllableElements.push({ el: span, text: syl });
 
-            // إضافة فاصل بسيط
             if (index < syllables.length - 1) {
                 const dash = document.createElement('span');
                 dash.textContent = "-";
@@ -439,33 +435,44 @@ async function startSpelling() {
 
         spellPopup.style.display = 'flex';
 
-        // 4. التشغيل التلقائي (التهجئة الآلية)
         try {
-            // نطق: "هيا نتهجى"
+            // التحقق قبل النطق الأول
+            if (!isSpellingActive) return;
             await speak("هَيَّا نَتَهَجَّى");
+            
+            if (!isSpellingActive) return;
             await new Promise(r => setTimeout(r, 500));
 
-            // نطق المقاطع واحداً تلو الآخر
+            // الحلقة: التحقق قبل نطق كل مقطع
             for (let item of syllableElements) {
-                item.el.style.background = "#ffff00"; // تمييز المقطع
+                if (!isSpellingActive) break; // توقف إذا أغلقت النافذة
+
+                item.el.style.background = "#ffff00";
                 item.el.style.transform = "scale(1.1)";
                 
-                await speak(item.text); // نطق المقطع
+                await speak(item.text);
                 
-                item.el.style.background = "#e3f2fd"; // إزالة التمييز
+                if (!isSpellingActive) break; // توقف مرة أخرى للتأكيد
+
+                item.el.style.background = "#e3f2fd";
                 item.el.style.transform = "scale(1)";
-                await new Promise(r => setTimeout(r, 300)); // انتظار بسيط
+                await new Promise(r => setTimeout(r, 300));
             }
 
-            // نطق الكلمة كاملة في النهاية
-            await new Promise(r => setTimeout(r, 500));
-            spellWord.style.color = "green";
-            await speak(wordText);
-            spellWord.style.color = ""; // إعادة اللون
+            // النطق النهائي
+            if (isSpellingActive) {
+                await new Promise(r => setTimeout(r, 500));
+                if (!isSpellingActive) return;
+                
+                spellWord.style.color = "green";
+                await speak(wordText);
+                spellWord.style.color = "";
+            }
 
         } catch(e) { console.error(e); }
     }
 }
+
 
 // دالة تقسيم الكلمة العربية إلى مقاطع صوتية (ذكية)
 function splitIntoSyllables(word) {
@@ -864,7 +871,17 @@ function showInfoPopup(title, content) {
     
     const closeSpell = document.getElementById('closeSpell');
     const spellPopup = document.getElementById('spellPopup');
-    if(closeSpell && spellPopup) closeSpell.onclick = () => spellPopup.style.display = 'none';
+    if(closeSpell && spellPopup) {
+        closeSpell.onclick = () => {
+            spellPopup.style.display = 'none';
+            
+            // 1. تغيير المتغير لإيقاف الحلقة
+            isSpellingActive = false; 
+            
+            // 2. إيقاف الصوت الحالي فوراً
+            stopTeaching(); 
+        };
+    }
     
     const prevBtn = document.getElementById('prev-lesson');
     if(prevBtn) prevBtn.onclick = () => loadLesson(currentGrade, currentLessonIndex - 1);
@@ -910,6 +927,42 @@ function showInfoPopup(title, content) {
     }
 }
 
+// =============================================================
+// دالة التحميل المسبق (لعمل التطبيق بدون إنترنت)
+// =============================================================
+async function preloadAllContent() {
+    console.log("Starting preload...");
+    try {
+        // 1. جلب بيانات الدروس
+        const data = await fetchLessonData(1);
+        if (!data || !data.length) return;
+
+        // 2. المرور على كل درس وتحميل صورته
+        data.forEach(lesson => {
+            if (lesson.image) {
+                // معالجة الرابط (نفس المنطق المستخدم في عرض الدرس لضمان تطابق الكاش)
+                let imageUrl = lesson.image;
+                if (!imageUrl.startsWith('http')) {
+                    if (imageUrl.startsWith('/')) imageUrl = imageUrl.substring(1);
+                    if (imageUrl.startsWith('drsne/')) imageUrl = imageUrl.replace('drsne/', '');
+                    imageUrl = baseUrl + imageUrl;
+                }
+
+                // 3. خدعة التحميل: إنشاء صورة مخفية
+                // هذا السطر يجبر المتصفح على تحميل الصورة وحفظها في الكاش
+                const img = new Image();
+                img.src = imageUrl;
+            }
+        });
+        
+        console.log("Preloading images started in background...");
+        
+    } catch (e) {
+        console.error("Preload error:", e);
+    }
+}
+
+
 // التشغيل الآمن عند بدء التحميل
 document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -927,6 +980,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         initializeSidebar();
         updateProgressBar();
+        
+        // 👇👇 أضف هذا السطر هنا 👇👇
+        preloadAllContent(); 
+        // 👆👆 سيقوم بتحميل الصور في الخلفية فور فتح التطبيق 👆👆
+
+        
     } catch (e) {
         console.error("Critical Init Error:", e);
         // حتى لو فشل شيء ما، نحاول عرض القائمة
