@@ -1,3 +1,6 @@
+
+// رابط موقعك الأساسي (مهم جداً أن ينتهي بـ /)
+const baseUrl = "https://guiding-teacher.github.io/drsne/";
 // =============================================================
 // الإعدادات والمتغيرات الرئيسية
 // =============================================================
@@ -81,30 +84,28 @@ const closeInfoEl = document.getElementById('closeInfo');
 // =============================================================
 // تحميل البيانات الديناميكي
 // =============================================================
-async function fetchLessonData(grade) {
+ async function fetchLessonData(grade) {
     grade = 1; 
     if (lessonsData[grade]) {
         return lessonsData[grade];
     }
     try {
         const timestamp = new Date().getTime(); 
+        // استخدام الرابط الكامل دائماً
+        const fullUrl = `${baseUrl}data/grade${grade}.json?t=${timestamp}`;
         
-        // ========================================================
-        // 👇 التعديل الهام جداً: استخدام مسار نسبي بسيط
-        // هذا يضمن أن يعمل الرابط سواء كنت في الموقع أو التطبيق
-        // ========================================================
-        const response = await fetch(`./data/grade${grade}.json?t=${timestamp}`);
-        // ========================================================
-
-        if (!response.ok) throw new Error(`Status: ${response.status}`);
+        console.log("Fetching from:", fullUrl); // للتتبع
+        
+        const response = await fetch(fullUrl);
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         
         const data = await response.json();
         lessonsData[grade] = data;
         return data;
     } catch (error) {
         console.error("Failed to load lesson data:", error);
-        // أظهرنا التنبيه هنا لنعرف إذا حدث خطأ
-        alert("خطأ في تحميل ملف الدروس: " + error.message); 
+        // هذا التنبيه سيظهر لك في التطبيق إذا فشل تحميل الملف
+        alert("خطأ في تحميل البيانات: " + error.message); 
         return [];
     }
 }
