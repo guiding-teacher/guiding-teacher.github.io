@@ -57,6 +57,7 @@ function populateVoiceList() {
 }
 
 // دالة النطق الرئيسية (مصححة 100%)
+// دالة النطق الرئيسية (معدلة لقراءة الجمل الطويلة كاملة)
 function speak(text) {
     return new Promise((resolve) => {
         if (!text) { resolve(); return; }
@@ -66,33 +67,39 @@ function speak(text) {
             if (!resolved) { resolved = true; resolve(); }
         };
 
-        // مؤقت أمان لضمان عدم تعليق التطبيق (3 ثواني كحد أقصى)
-        setTimeout(finish, 3000);
+        // ============================================================
+        // 👇 التعديل هنا: حساب الوقت بناءً على طول النص
+        // ============================================================
+        // نحسب: عدد الحروف × 150 ملي ثانية.
+        // مثلاً: 100 حرف × 150 = 15000 (15 ثانية)
+        // بحد أدنى 4 ثواني للجمل القصيرة
+        const calculatedDuration = Math.max(4000, text.length * 150);
+
+        // وضع مؤقت الأمان بناءً على الحساب الجديد
+        setTimeout(finish, calculatedDuration);
 
         try {
-            // 1. الأولوية لتطبيق الأندرويد (الجسر الذي برمجناه في Java)
+            // 1. الأولوية لتطبيق الأندرويد
             if (typeof Android !== 'undefined') {
                 Android.speakArabic(text);
-                // تقدير وقت الانتظار (تقريباً 120ms لكل حرف)
-                let estimatedTime = Math.max(1000, text.length * 120);
-                setTimeout(finish, estimatedTime);
+                
+                // لا نحتاج لوضع setTimeout آخر هنا، لأن المؤقت بالأعلى (calculatedDuration)
+                // سيقوم بإنهاء الأمر في الوقت المناسب تماماً.
                 return;
             }
 
-            // 2. المتصفح العادي (مع فحص الأمان)
+            // 2. المتصفح العادي
             if (hasBrowserSpeech) {
                 if (speechSynthesis.speaking) {
                     speechSynthesis.cancel();
                 }
 
                 const utterance = new SpeechSynthesisUtterance(text);
-                // محاولة ضبط الصوت المختار
                 if (voices.length > 0) {
                     const selectedVoice = voices.find(v => v.voiceURI === userSettings.selectedVoiceURI);
                     if (selectedVoice) utterance.voice = selectedVoice;
                 }
                 
-                // إذا لم يتم تحديد صوت، نضمن اللغة العربية
                 utterance.lang = 'ar-SA';
                 utterance.rate = parseFloat(userSettings.speechRate) || 1;
                 utterance.pitch = parseFloat(userSettings.voicePitch) || 1;
@@ -102,7 +109,6 @@ function speak(text) {
                 
                 speechSynthesis.speak(utterance);
             } else {
-                // لا يوجد دعم للصوت إطلاقاً
                 console.log("No speech support found");
                 finish();
             }
@@ -559,15 +565,15 @@ function showInfoPopup(title, content) {
                     <p style="margin-bottom:20px; color:#555;">يسعدنا تواصلكم معنا عبر:</p>
 
                     <!-- رقم الهاتف (قابل للنقر) -->
-                    <a href="tel:+9647700000000" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                    <a href="tel:+964" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
                         <i class="fas fa-phone-alt" style="color:#4CAF50; margin-left:10px;"></i>
                         <span dir="ltr">+964 770 000 0000</span>
                     </a>
 
                     <!-- البريد الإلكتروني (قابل للنقر) -->
-                    <a href="mailto:support@example.com" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                    <a href="mailto:" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
                         <i class="fas fa-envelope" style="color:#F44336; margin-left:10px;"></i>
-                        support@example.com
+                        
                     </a>
 
                     <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
@@ -576,17 +582,17 @@ function showInfoPopup(title, content) {
                     <div style="display:flex; justify-content:center; gap:25px; font-size:35px;">
                         
                         <!-- واتساب (يفتح التطبيق) -->
-                        <a href="https://api.whatsapp.com/send?phone=9647700000000" style="color:#25D366; text-decoration:none;">
+                        <a href="https://api.whatsapp.com/send?phone=9647708077310" style="color:#25D366; text-decoration:none;">
                             <i class="fab fa-whatsapp"></i>
                         </a>
 
                         <!-- تليجرام (يفتح التطبيق) -->
-                        <a href="tg://resolve?domain=YOUR_USERNAME" style="color:#0088cc; text-decoration:none;">
+                        <a href="tg://resolve?domain=T_abrahim" style="color:#0088cc; text-decoration:none;">
                             <i class="fab fa-telegram"></i>
                         </a>
 
                         <!-- فيسبوك -->
-                        <a href="https://www.facebook.com/YOUR_PAGE_ID" style="color:#1877F2; text-decoration:none;">
+                        <a href="https://www.facebook.com/abrahimaabd" style="color:#1877F2; text-decoration:none;">
                             <i class="fab fa-facebook"></i>
                         </a>
                     </div>
