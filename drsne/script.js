@@ -281,7 +281,18 @@ async function startTeaching() {
     if (wordElements.length === 0) { stopTeaching(); return; }
 
     try {
-        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا.");
+        // ============================================================
+        // 👇 التعديل هنا: تسريع البداية
+        // ============================================================
+        
+        // 1. نرسل أمر النطق (بدون await) لكي لا يوقف الكود
+        speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا."); 
+        
+        // 2. ننتظر ثانيتين فقط (2000 ميلي ثانية) ثم نبدأ الدرس فوراً
+        await new Promise(r => setTimeout(r, 10000));
+
+        // ============================================================
+
         for (const wordEl of wordElements) {
             if (!isTeaching) break;
             const wordText = wordEl.dataset.wordText;
@@ -289,16 +300,25 @@ async function startTeaching() {
             
             for (let i = 0; i < repetitions; i++) {
                 if (!isTeaching) break;
+                
+                // تلوين الكلمة
                 wordElements.forEach(w => w.classList.remove('active-reading'));
                 wordEl.classList.add('active-reading');
+                
+                // نطق الكلمة
                 await speak(wordText);
-                if (isTeaching && i < repetitions - 1) await new Promise(r => setTimeout(r, 2000));
+                
+                // الانتظار بين التكرارات
+                if (isTeaching && i < repetitions - 1) {
+                    await new Promise(r => setTimeout(r, 1000)); // ثانية واحدة بين التكرار
+                }
             }
+            // الانتظار قبل الانتقال للكلمة التالية
             if (isTeaching) await new Promise(r => setTimeout(r, 500));
         }
     } catch (error) { console.log(error); } 
     finally { stopTeaching(); }
-}
+} 
 
 async function startTest() {
     try {
@@ -679,7 +699,7 @@ function showInfoPopup(title, content) {
 
 // إضافة المستمعين للأزرار
  function attachGlobalListeners() {
-    // --- أزرار القائمة الجانبية (الفتح والإغلاق) ---
+    // 1. أزرار القائمة الجانبية (الفتح والإغلاق)
     const menuBtn = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
@@ -707,54 +727,57 @@ function showInfoPopup(title, content) {
     }
 
     // ============================================================
-    // 👇 الجزء الجديد: تفعيل أزرار "من نحن" و"الإعدادات" في القائمة
+    // 👇 الجزء الجديد: إصلاح زر التهيئة والتدريب
     // ============================================================
-    
-    // 1. زر من نحن
-    const aboutBtn = document.getElementById('aboutUs');
-    if (aboutBtn) {
-        aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center; padding:10px;">تطبيق القارئ الصغير<br>تطبيق تعليمي تفاعلي يهدف لتأسيس الأطفال في القراءة الصحيحة ويكون بمثابة المساعد الالكتروني في تحضير الواجبات.</p>');
+    const prepBtn = document.getElementById('gradePrepBtn');
+    if (prepBtn) {
+        prepBtn.onclick = () => {
+            // نحاول استدعاء الدالة من ملف prep.js
+            if (typeof window.showPrepCards === 'function') {
+                window.showPrepCards(1); // 1 = الصف الأول
+            } else {
+                // إذا لم يعمل ملف prep.js، نقوم بفتح النافذة يدوياً كحل احتياطي
+                const popup = document.getElementById('prepCardsPopup');
+                if (popup) popup.style.display = 'flex';
+                else alert("نافذة التهيئة غير موجودة");
+            }
+        };
     }
 
-     // 2. زر اتصل بنا (مع الأيقونات والروابط)
+    // زر إغلاق نافذة التهيئة
+    const closePrepBtn = document.getElementById('closePrepCards');
+    const prepPopup = document.getElementById('prepCardsPopup');
+    if (closePrepBtn && prepPopup) {
+        closePrepBtn.onclick = () => prepPopup.style.display = 'none';
+    }
+    // ============================================================
+
+
+    // 2. أزرار المعلومات (من نحن، اتصل بنا...)
+    const aboutBtn = document.getElementById('aboutUs');
+    if (aboutBtn) {
+        aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center; padding:10px;">تطبيق القارئ الصغير<br>تطبيق تعليمي تفاعلي يهدف لتأسيس الأطفال.</p>');
+    }
+
     const contactBtn = document.getElementById('contactUs');
     if (contactBtn) {
         contactBtn.onclick = () => {
+            // محتوى اتصل بنا مع الأيقونات
             const content = `
                 <div style="text-align:center; padding:10px; font-family: Tahoma, sans-serif;">
-                    <p style="margin-bottom:20px; color:#555;">يسعدنا تواصلكم معنا عبر:</p>
-
-                    <!-- رقم الهاتف (قابل للنقر) -->
-                    <a href="tel:+964" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                    <p style="margin-bottom:20px; color:#555;">تواصل معنا عبر:</p>
+                    <a href="tel:+9647700000000" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
                         <i class="fas fa-phone-alt" style="color:#4CAF50; margin-left:10px;"></i>
                         <span dir="ltr">+964 770 000 0000</span>
                     </a>
-
-                    <!-- البريد الإلكتروني (قابل للنقر) -->
-                    <a href="mailto:" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                    <a href="mailto:support@example.com" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
                         <i class="fas fa-envelope" style="color:#F44336; margin-left:10px;"></i>
-                        
+                        support@example.com
                     </a>
-
-                    <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
-
-                    <!-- أيقونات التواصل الاجتماعي -->
                     <div style="display:flex; justify-content:center; gap:25px; font-size:35px;">
-                        
-                        <!-- واتساب (يفتح التطبيق) -->
-                        <a href="https://api.whatsapp.com/send?phone=9647708077310" style="color:#25D366; text-decoration:none;">
-                            <i class="fab fa-whatsapp"></i>
-                        </a>
-
-                        <!-- تليجرام (يفتح التطبيق) -->
-                        <a href="tg://resolve?domain=T_abrahim" style="color:#0088cc; text-decoration:none;">
-                            <i class="fab fa-telegram"></i>
-                        </a>
-
-                        <!-- فيسبوك -->
-                        <a href="https://www.facebook.com/abrahimaabd" style="color:#1877F2; text-decoration:none;">
-                            <i class="fab fa-facebook"></i>
-                        </a>
+                        <a href="https://api.whatsapp.com/send?phone=9647700000000" style="color:#25D366;"><i class="fab fa-whatsapp"></i></a>
+                        <a href="tg://resolve?domain=USERNAME" style="color:#0088cc;"><i class="fab fa-telegram"></i></a>
+                        <a href="https://facebook.com/PAGEID" style="color:#1877F2;"><i class="fab fa-facebook"></i></a>
                     </div>
                 </div>
             `;
@@ -762,36 +785,28 @@ function showInfoPopup(title, content) {
         };
     }
 
-    // 3. زر سياسة الخصوصية
     const privacyBtn = document.getElementById('privacyPolicy');
     if (privacyBtn) {
-        privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center; padding:10px;">نحن نحترم خصوصية الأطفال ولا نجمع أي بيانات شخصية.</p>');
+        privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center; padding:10px;">نحن نحترم خصوصية الأطفال.</p>');
     }
 
-    // 4. زر الإعدادات داخل القائمة الجانبية
     const settingsMenuBtn = document.getElementById('settingsMenu');
     const settingsPopup = document.getElementById('settingsPopup');
     if (settingsMenuBtn && settingsPopup) {
         settingsMenuBtn.onclick = () => {
-            // إغلاق القائمة الجانبية أولاً
             if(sidebar) sidebar.classList.remove('active');
             if(backdrop) backdrop.classList.remove('active');
-            // فتح الإعدادات
             settingsPopup.style.display = 'flex';
         };
     }
 
-    // 5. زر إغلاق النافذة المنبثقة (Info Popup Close)
     const closeInfoBtn = document.getElementById('closeInfo');
     const infoPopup = document.getElementById('infoPopup');
     if (closeInfoBtn && infoPopup) {
         closeInfoBtn.onclick = () => infoPopup.style.display = 'none';
     }
 
-    // ============================================================
-    // --- باقي الأزرار الرئيسية (كما هي) ---
-    // ============================================================
-    
+    // 3. الأزرار الأساسية (تشغيل، إعدادات، اختبار...)
     const startBtn = document.getElementById('startButton');
     if(startBtn) startBtn.onclick = showMainNavigation;
     
@@ -833,7 +848,7 @@ function showInfoPopup(title, content) {
     const homeBtn = document.getElementById('home-button');
     if(homeBtn) homeBtn.onclick = showMainNavigation;
     
-    // تفعيل أقسام الإعدادات القابلة للطي
+    // إعدادات قابلة للطي
     const settingsHeaders = document.querySelectorAll('.settings-section-header');
     settingsHeaders.forEach(header => {
         header.onclick = function() {
@@ -848,13 +863,11 @@ function showInfoPopup(title, content) {
         };
     });
     
-    // حفظ الإعدادات
     const saveSettingsBtn = document.getElementById('saveSettings');
     if(saveSettingsBtn) {
         saveSettingsBtn.onclick = () => {
             const wordRepVal = document.getElementById('wordRepetitions');
             if(wordRepVal) userSettings.wordRepetitions = wordRepVal.value;
-            // يمكن إضافة حفظ باقي القيم هنا
             localStorage.setItem('readingAppSettings', JSON.stringify(userSettings));
             if(settingsPopup) settingsPopup.style.display = 'none';
         };
