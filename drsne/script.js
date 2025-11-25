@@ -207,10 +207,22 @@ async function loadLesson(grade, index) {
 }
 
 // --- تعديل: دالة إيقاف التدريس لضمان تفعيل الزر ---
+// دالة إيقاف التدريس
 const stopTeaching = () => {
-    isTeaching = false;
+    isTeaching = false; // إيقاف الحلقة
+    
+    // 1. إيقاف صوت المتصفح (للكمبيوتر)
     speechSynthesis.cancel();
-    teachMeButtonEl.disabled = false; // إعادة تفعيل الزر إجبارياً
+
+    // 2. إيقاف صوت الأندرويد (للتطبيق) - هذا هو الجزء الجديد
+    if (typeof Android !== 'undefined') {
+        Android.stopSpeaking();
+    }
+
+    // إعادة تفعيل الزر
+    teachMeButtonEl.disabled = false;
+    
+    // إزالة التظليل عن الكلمات
     document.querySelectorAll('.word').forEach(word => word.classList.remove('active-reading'));
 };
 
@@ -226,7 +238,7 @@ async function startTeaching() {
     }
 
     try {
-        await speak(" أهلاً بك يا صديقي، سوف ندرس معاً الآن. ردد ورائي الكلمات التالية لتحفظها.");
+        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا.");
         // التحقق بعد كل عملية نطق
         if (!isTeaching) throw new Error("Stopped");
 
