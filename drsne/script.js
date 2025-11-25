@@ -281,7 +281,7 @@ async function startTeaching() {
     if (wordElements.length === 0) { stopTeaching(); return; }
 
     try {
-        await speak("أَهْلًا بِكَ يَا صَدِيقِي.");
+        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا.");
         for (const wordEl of wordElements) {
             if (!isTeaching) break;
             const wordText = wordEl.dataset.wordText;
@@ -359,26 +359,149 @@ async function startTest() {
     } catch(e) { console.error(e); }
 }
 
+ // =============================================================
+// منطق التهجئة (تقسيم الكلمة صوتياً)
+// =============================================================
+
 async function startSpelling() {
     const gradeData = lessonsData[currentGrade];
     if(!gradeData) return;
     const lesson = gradeData[currentLessonIndex];
     if(!lesson || !lesson.words.length) return;
 
+    // اختيار كلمة عشوائية
     const randomWord = lesson.words[Math.floor(Math.random() * lesson.words.length)];
-    const wordText = randomWord.text.replace(/[.,!?;:]/g, '');
+    const wordText = randomWord.text; // نأخذ الكلمة مع حركاتها
     
     const spellPopup = document.getElementById('spellPopup');
     const spellWord = document.getElementById('spellWord');
     const spellSyl = document.getElementById('spellSyllables');
     
     if(spellPopup) {
+        // 1. عرض الكلمة كاملة في الأعلى
         spellWord.textContent = wordText;
-        spellSyl.innerHTML = '';
-        spellSyl.textContent = wordText; 
+        spellSyl.innerHTML = ''; // تنظيف القديم
+
+        // 2. تقسيم الكلمة لمقاطع صوتية
+        const syllables = splitIntoSyllables(wordText);
+
+        // 3. إنشاء أزرار للمقاطع
+        const syllableElements = [];
+        syllables.forEach((syl, index) => {
+            const span = document.createElement('span');
+            span.className = 'syllable-box'; // كلاس جديد للتنسيق
+            span.textContent = syl;
+            span.style.cssText = "display:inline-block; margin:5px; padding:10px 15px; background:#e3f2fd; border:2px solid #2196F3; border-radius:10px; cursor:pointer; font-size:24px;";
+            
+            // عند الضغط على المقطع ينطق
+            span.onclick = () => {
+                span.style.background = "#ffff00"; // تلوين عند الضغط
+                speak(syl).then(() => {
+                    span.style.background = "#e3f2fd"; // إعادة اللون
+                });
+            };
+            
+            spellSyl.appendChild(span);
+            syllableElements.push({ el: span, text: syl });
+
+            // إضافة فاصل بسيط
+            if (index < syllables.length - 1) {
+                const dash = document.createElement('span');
+                dash.textContent = "-";
+                dash.style.margin = "0 5px";
+                dash.style.color = "#ccc";
+                spellSyl.appendChild(dash);
+            }
+        });
+
         spellPopup.style.display = 'flex';
-        speak(wordText);
+
+        // 4. التشغيل التلقائي (التهجئة الآلية)
+        try {
+            // نطق: "هيا نتهجى"
+            await speak("هَيَّا نَتَهَجَّى");
+            await new Promise(r => setTimeout(r, 500));
+
+            // نطق المقاطع واحداً تلو الآخر
+            for (let item of syllableElements) {
+                item.el.style.background = "#ffff00"; // تمييز المقطع
+                item.el.style.transform = "scale(1.1)";
+                
+                await speak(item.text); // نطق المقطع
+                
+                item.el.style.background = "#e3f2fd"; // إزالة التمييز
+                item.el.style.transform = "scale(1)";
+                await new Promise(r => setTimeout(r, 300)); // انتظار بسيط
+            }
+
+            // نطق الكلمة كاملة في النهاية
+            await new Promise(r => setTimeout(r, 500));
+            spellWord.style.color = "green";
+            await speak(wordText);
+            spellWord.style.color = ""; // إعادة اللون
+
+        } catch(e) { console.error(e); }
     }
+}
+
+// دالة تقسيم الكلمة العربية إلى مقاطع صوتية (ذكية)
+function splitIntoSyllables(word) {
+    const syllables = [];
+    let currentChunk = "";
+    
+    // الحروف المتحركة والحركات
+    const harakat = ['َ', 'ُ', 'ِ', 'ً', 'ٌ', 'ٍ'];
+    const sukun = 'ْ';
+    const shadda = 'ّ';
+    const longVowels = ['ا', 'و', 'ي', 'ى']; 
+
+    for (let i = 0; i < word.length; i++) {
+        const char = word[i];
+        const nextChar = word[i + 1];
+        
+        currentChunk += char;
+
+        // إذا كان الحرف الحالي حركة أو شدة، نتابع للحرف التالي ولا نقطع هنا
+        if (harakat.includes(char) || char === sukun || char === shadda) {
+            continue;
+        }
+
+        // قواعد القطع:
+        // 1. إذا وصلنا لآخر حرف، انتهى المقطع.
+        if (!nextChar) {
+            syllables.push(currentChunk);
+            currentChunk = "";
+            continue;
+        }
+
+        // 2. إذا كان الحرف القادم شدة أو حركة أو سكون، فهو تابع للحرف الحالي (لا تقطع).
+        if (harakat.includes(nextChar) || nextChar === sukun || nextChar === shadda) {
+            continue;
+        }
+
+        // 3. حروف المد (ا، و، ي) الساكنة تتبع ما قبلها (مقطع طويل)
+        // الشرط: الحرف القادم حرف مد وليس عليه حركة
+        const afterNext = word[i + 2];
+        const isNextLongVowel = longVowels.includes(nextChar) && 
+                                (!afterNext || (!harakat.includes(afterNext) && afterNext !== sukun && afterNext !== shadda));
+
+        if (isNextLongVowel) {
+            continue; // الحرف القادم مد، ضمه للمقطع الحالي
+        }
+        
+        // 4. الحرف الساكن يتبع ما قبله (المقطع الساكن)
+        // تم التعامل معه في الخطوة رقم 2 (nextChar === sukun)
+
+        // إذا لم تنطبق الشروط أعلاه، فهذا يعني بداية مقطع جديد
+        syllables.push(currentChunk);
+        currentChunk = "";
+    }
+
+    // إضافة ما تبقى إن وجد
+    if (currentChunk) syllables.push(currentChunk);
+
+    // تنظيف المقاطع الفارغة
+    return syllables.filter(s => s.trim().length > 0);
 }
 
 // =============================================================
@@ -425,12 +548,49 @@ function showMainNavigation() {
     }
 }
  
-
 function initializeSettingsUI() {
-    const el = document.getElementById('wordRepetitions');
-    if(el) el.value = userSettings.wordRepetitions;
-    // (يمكن إضافة باقي عناصر الإعدادات هنا إذا لزم الأمر)
+    // 1. ملء قائمة سرعة التحدث
+    const speechRateEl = document.getElementById('speechRate');
+    if (speechRateEl) {
+        speechRateEl.innerHTML = `
+            <option value="0.5">بطيء جداً</option>
+            <option value="0.75">بطيء</option>
+            <option value="1">عادي</option>
+            <option value="1.25">سريع</option>
+            <option value="1.5">سريع جداً</option>
+        `;
+        speechRateEl.value = userSettings.speechRate || 0.75;
+    }
+
+    // 2. ملء قائمة نبرة الصوت
+    const voicePitchEl = document.getElementById('voicePitch');
+    if (voicePitchEl) {
+        voicePitchEl.innerHTML = `
+            <option value="0.5">غليظ (منخفض)</option>
+            <option value="1">طبيعي</option>
+            <option value="1.5">حاد (مرتفع)</option>
+        `;
+        voicePitchEl.value = userSettings.voicePitch || 1;
+    }
+
+    // 3. ملء قائمة تمييز الحركات
+    const highlightHarakatEl = document.getElementById('highlightHarakat');
+    if (highlightHarakatEl) {
+        highlightHarakatEl.innerHTML = `
+            <option value="true">مفعل (تلوين الحركات)</option>
+            <option value="false">غير مفعل</option>
+        `;
+        highlightHarakatEl.value = userSettings.highlightHarakat;
+    }
+
+    // 4. إعداد القيم الرقمية (التكرار والوقت)
+    const wordRepetitionsEl = document.getElementById('wordRepetitions');
+    if(wordRepetitionsEl) wordRepetitionsEl.value = userSettings.wordRepetitions || 3;
+
+    const wordIntervalEl = document.getElementById('wordInterval');
+    if(wordIntervalEl) wordIntervalEl.value = userSettings.wordInterval || 3;
 }
+
 
 async function initializeSidebar() {
     const listContainer = document.getElementById('grade1-lessons');
