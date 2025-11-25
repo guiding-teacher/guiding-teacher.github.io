@@ -424,36 +424,58 @@ function initializeSettingsUI() {
     highlightHarakatEl.value = userSettings.highlightHarakat;
 }
 
-async function initializeSidebar() {
+ async function initializeSidebar() {
     const grade = 1;
     const lessonsListEl = document.getElementById(`grade1-lessons`);
     if (!lessonsListEl) return;
     
-    lessonsListEl.innerHTML = `<div><i class="fas fa-spinner fa-spin"></i> جاري تحميل الدروس...</div>`;
+    // أيقونة تحميل
+    lessonsListEl.innerHTML = `<div style="padding:10px; text-align:center;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>`;
+    
     try {
         const gradeData = await fetchLessonData(grade);
         lessonsListEl.innerHTML = ''; 
 
         if (gradeData.length === 0) {
-                lessonsListEl.innerHTML = `<div>لا توجد دروس حالياً.</div>`;
-                return;
+            lessonsListEl.innerHTML = `<div style="padding:10px;">لا توجد دروس.</div>`;
+            return;
         }
 
         gradeData.forEach((lesson, index) => {
             const lessonItem = document.createElement('div');
             lessonItem.className = 'lesson-item';
-            lessonItem.textContent = `${lesson.id}. ${lesson.title}`;
+            lessonItem.innerHTML = `<i class="fas fa-book-open" style="margin-left:8px; color:#4CAF50;"></i> ${lesson.id}. ${lesson.title}`;
+            
             lessonItem.addEventListener('click', () => {
+                // عند الضغط على درس
                 loadLesson(grade, index);
-                sidebarEl.classList.remove('active');
-                sidebarBackdropEl.classList.remove('active');
-                document.getElementById('mainNavigation').style.display = 'none';
-                document.getElementById('appContainer').style.display = 'flex';
+                
+                // أغلق القائمة الجانبية
+                const sidebar = document.getElementById('sidebar');
+                const backdrop = document.getElementById('sidebarBackdrop');
+                if(sidebar) sidebar.classList.remove('active');
+                if(backdrop) backdrop.classList.remove('active');
+
+                // أخفِ واجهة التنقل واظهر التطبيق
+                const mainNav = document.getElementById('mainNavigation');
+                const appCont = document.getElementById('appContainer');
+                if(mainNav) mainNav.style.display = 'none';
+                if(appCont) appCont.style.display = 'flex';
             });
             lessonsListEl.appendChild(lessonItem);
         });
+
+        // مهم جداً: تأكد من أن الحاوية مفتوحة
+        const parentSection = lessonsListEl.closest('.grade-section');
+        if (parentSection) {
+            parentSection.classList.add('active');
+            lessonsListEl.style.display = 'block'; // إجبار الظهور بالجافاسكريبت
+            lessonsListEl.style.maxHeight = '2000px'; // رقم كبير لضمان ظهور كل الدروس
+        }
+
     } catch(e) {
-            lessonsListEl.innerHTML = `<div><i class="fas fa-exclamation-triangle"></i> فشل تحميل الدروس.</div>`;
+        console.error(e);
+        lessonsListEl.innerHTML = `<div style="padding:10px; color:red;">فشل التحميل.</div>`;
     }
 }
 
