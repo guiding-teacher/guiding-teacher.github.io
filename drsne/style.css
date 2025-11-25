@@ -1,3 +1,5 @@
+--- START OF FILE style.css ---
+
 /* ==================================
    الأنماط الأساسية والخطوط
    ================================== */
@@ -24,11 +26,7 @@ body {
 .app-container {
     width: 100%;
     max-width: 800px;
-    
-    /* --- التعديل هنا --- */
-    min-height: 80vh;  /* تم التغيير من 1123px إلى 80vh ليتناسب مع ارتفاع الشاشة */
-    /* أو يمكنك كتابة: min-height: auto; */
-    
+    min-height: 80vh; 
     background-color: #ffffff;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     position: relative;
@@ -123,15 +121,19 @@ body {
 .grade-section.active .grade-title i { transform: rotate(-90deg); }
 
 
-/* تعديل قائمة الدروس لتمرير المحتوى وإخفاء المؤشر */
+/* تعديل قائمة الدروس */
 .lessons-list {
-    /* تم التعديل: إزالة القيود لتمكين القائمة الجانبية من التعامل مع التمرير في الهاتف */
-    /* max-height: 70vh;  <-- محذوف */
-    /* overflow-y: auto; <-- محذوف */
+    max-height: 70vh; 
+    overflow-y: auto; 
     padding-right: 10px; 
     margin-top: 10px;
+    scrollbar-width: none; 
+    -ms-overflow-style: none; 
 }
 
+.lessons-list::-webkit-scrollbar {
+    display: none;
+}
 .lesson-item {
     padding: 8px 0; cursor: pointer; transition: all 0.2s;
     border-bottom: 1px solid #f5f5f5;
@@ -304,7 +306,7 @@ body {
 .start-button:hover { background-color: #3e8e41; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }
 
 /* ==================================
-   نافذة الإعدادات الاحترافية
+   نافذة الإعدادات
    ================================== */
 .settings-title { font-size: 24px; margin-bottom: 25px; color: #333; }
 .settings-section {
@@ -331,10 +333,8 @@ body {
     transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
     background-color: #fff;
 }
-/* تم التعديل: إجبار الإعدادات على الظهور عند الفتح بدون الاعتماد على حسابات JS */
 .settings-section.open .settings-section-content {
     padding: 15px;
-    max-height: 1000px !important;
 }
 
 .settings-group { margin-bottom: 15px; text-align: right; }
@@ -418,13 +418,13 @@ body {
 .contact-info p { margin: 10px 0; display: flex; align-items: center; gap: 10px; }
 
 /* ==================================
-   أنماط واجهة التنقل الجديدة
+   أنماط واجهة التنقل
    ================================== */
 .main-navigation {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background-color: #f0f4f8;
-    z-index: 900; /* تحت النوافذ المنبثقة وفوق التطبيق */
+    z-index: 900; 
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -446,7 +446,6 @@ body {
     font-weight: bold;
 }
 
-/* تنسيق بطاقات الصفوف */
 .grades-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -485,7 +484,6 @@ body {
     color: #333;
 }
 
-/* تنسيق دوائر الدروس */
 .nav-header {
     display: flex;
     justify-content: space-between;
@@ -517,63 +515,47 @@ body {
     justify-content: center;
 }
 
-
-
-
-/* تنسيق الدائرة مع الصورة الخلفية */
 .lesson-circle {
-    width: 130px;                /* حجم الدائرة */
+    width: 130px;             
     height: 130px;
-    border-radius: 50%;          /* جعلها دائرية */
-    
-    /* خصائص الصورة الخلفية */
-    background-size: cover;      /* جعل الصورة تغطي كامل الدائرة */
-    background-position: center; /* توسيط الصورة */
+    border-radius: 50%;          
+    background-size: cover;      
+    background-position: center; 
     background-repeat: no-repeat;
-    
-    /* تنسيق الحدود والظلال */
-    border: 4px solid #fff;      /* إطار أبيض جميل */
+    border: 4px solid #fff;      
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    
-    /* لترتيب النص في المنتصف */
     display: flex;
     justify-content: center;
     align-items: center;
-    
     cursor: pointer;
-    overflow: hidden;            /* لضمان عدم خروج المحتوى عن الدائرة */
+    overflow: hidden;            
     transition: transform 0.3s ease, border-color 0.3s;
 }
 
 .lesson-circle:hover {
-    transform: scale(1.1);       /* تكبير عند التمرير */
-    border-color: #4CAF50;       /* تغيير لون الإطار للأخضر */
+    transform: scale(1.1);       
+    border-color: #4CAF50;       
     z-index: 10;
 }
 
-/* تنسيق خلفية النص داخل الدائرة */
 .lesson-circle-content {
-    width: 100%;                 /* الشريط يمتد لعرض الدائرة */
-    background-color: rgba(255, 255, 255, 0.85); /* لون أبيض شفاف بنسبة 85% */
-    padding: 8px 0;              /* مسافة داخلية علوية وسفلية */
+    width: 100%;                 
+    background-color: rgba(255, 255, 255, 0.85); 
+    padding: 8px 0;              
     text-align: center;
-    color: #000;                 /* لون النص أسود */
+    color: #000;                 
     font-weight: bold;
     font-size: 14px;
     line-height: 1.2;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* ظل خفيف للنص */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
 }
 
-/* تنسيق رقم الدرس المصغر */
 .lesson-circle-content .number {
     display: block;
     font-size: 11px;
-    color: #E91E63;              /* لون مميز للرقم */
+    color: #E91E63;              
     margin-bottom: 2px;
 }
-
-
-
 
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
@@ -586,10 +568,8 @@ body {
     .lesson-circle-content { font-size: 14px; }
 }
 
-
-
 /* ==================================
-   أنماط قسم التهيئة والإعداد
+   أنماط قسم التهيئة
    ================================== */
 #prepCardsPopup .info-content {
     max-width: 950px;
@@ -629,9 +609,6 @@ body {
     gap: 20px;
     margin-top: 20px;
     padding: 10px;
-    /* ✨ التغيير: تم حذف الأسطر التالية لإزالة شريط التمرير الداخلي ✨ */
-    /* max-height: 60vh; */
-    /* overflow-y: auto; */
 }
 
 .prep-card {
@@ -690,15 +667,12 @@ body {
     }
 }
 
-
 @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
-/* ==================================
-   أنماط أيقونات التواصل الاجتماعي
-   ================================== */
+
 .social-icons {
     display: flex;
     justify-content: center;
@@ -728,27 +702,24 @@ body {
 .social-icon.telegram { background-color: #0088cc; }
 .social-icon.facebook { background-color: #1877F2; }
 
-
-/* تنسيق مجموعة الأزرار في القائمة */
 .nav-buttons-group {
     display: flex;
     gap: 10px;
     align-items: center;
 }
 
-/* تحسين للجوال لضمان عدم تداخل الأزرار */
+/* تحسين للجوال */
 @media (max-width: 600px) {
     .nav-header {
         flex-direction: column;
         gap: 23px;
     }
     .lessons-list {
-    /* تم التعديل: إزالة القيود هنا أيضاً */
-    /* max-height: 70vh; <-- محذوف */
-    /* overflow-y: auto; <-- محذوف */
-    padding-right: 10px; 
-    margin-top: 10px;
+        max-height: none;
+        overflow-y: visible;
+        padding-bottom: 50px; /* مسافة إضافية للأسفل */
     }
+
     .nav-buttons-group {
         width: 100%;
         justify-content: space-between;
@@ -756,7 +727,7 @@ body {
     .back-btn {
         font-size: 13px;
         padding: 8px 15px;
-        flex: 1; /* جعل الأزرار تأخذ مساحة متساوية */
+        flex: 1; 
         justify-content: center;
     }
 }

@@ -9,9 +9,11 @@ const lessonsData = {};
 
 // تحميل الإعدادات والتقدم المحفوظ
 let userProgress = JSON.parse(localStorage.getItem('readingAppProgress')) || {};
+
+// --- تعديل: جعل الصوت الافتراضي بطيء (0.75) ليتطابق مع القائمة ويظهر بشكل صحيح ---
 let userSettings = JSON.parse(localStorage.getItem('readingAppSettings')) || {
     wordRepetitions: 3,
-    speechRate: 0.75, // تم التعديل: السرعة الافتراضية بطيئة
+    speechRate: 0.75, // تم التغيير من 0.3 إلى 0.75 (بطيء)
     voicePitch: 1,
     wordInterval: 3,
     highlightHarakat: true,
@@ -83,7 +85,6 @@ const closeInfoEl = document.getElementById('closeInfo');
         return lessonsData[grade];
     }
     try {
-        // تم حذف الجزء الخاص بالوقت للسماح للمتصفح بحفظ الملف (Cache)
         const response = await fetch(`data/grade${grade}.json`);
         
         if (!response.ok) throw new Error(`Could not fetch grade ${grade} data.`);
@@ -100,36 +101,60 @@ const closeInfoEl = document.getElementById('closeInfo');
 // =============================================================
 // دالة النطق المحسّنة (تدعم التطبيق والمتصفح)
 // =============================================================
-// =========================================================
-        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
-        // =========================================================
-       // =========================================================
-        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
-        // =========================================================
-        function speak(text) {
-            // 1. التحقق: هل نحن داخل تطبيق الأندرويد؟
-            if (typeof Android !== 'undefined' && Android.speakArabic) {
-                // نعم: استخدم ناطق الأندرويد الأصلي (جودة عالية + يعمل أوفلاين)
-                Android.speakArabic(text);
-            } else {
-                // لا: نحن في متصفح كمبيوتر عادي، استخدم الناطق الافتراضي
-                if (window.speechSynthesis) {
-                    speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'ar-SA';
-                    utterance.rate = 0.9; // سرعة القراءة
-                    utterance.pitch = 1.0; // نبرة الصوت
-                    speechSynthesis.speak(utterance);
-                }
-            }
+function speak(text) {
+    return new Promise((resolve, reject) => {
+        
+        // 1. التحقق هل نحن داخل تطبيق الأندرويد؟
+        if (typeof Android !== 'undefined') {
+            Android.speakArabic(text);
+            
+            // تقدير الوقت لانتظار النطق في الأندرويد
+            let estimatedTime = text.length * 120; 
+            if (estimatedTime < 1000) estimatedTime = 1000; 
+            
+            setTimeout(() => {
+                resolve();
+            }, estimatedTime);
+            return; 
         }
+
+        // 2. المتصفح العادي
+        if (speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        }
+
+        // --- تعديل: تقليل وقت الانتظار ---
+        setTimeout(() => {
+            if (!text || !isTeaching && text.length > 20) { 
+                // إذا تم الإيقاف، لا تكمل إلا إذا كانت جملة قصيرة
+            } 
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            const selectedVoice = voices.find(voice => voice.voiceURI === userSettings.selectedVoiceURI);
+            utterance.voice = selectedVoice || null;
+            if (!selectedVoice) utterance.lang = 'ar-SA';
+            
+            utterance.rate = parseFloat(userSettings.speechRate);
+            utterance.pitch = parseFloat(userSettings.voicePitch);
+            
+            utterance.onend = () => resolve();
+            
+            // --- تعديل هام: حل مشكلة التعليق عند الخطأ أو الإيقاف ---
+            utterance.onerror = (event) => {
+                // في حال حدوث خطأ أو إلغاء، ننهي الوعد فوراً لكي لا يعلق الزر
+                resolve(); 
+            };
+            
+            speechSynthesis.speak(utterance);
+        }, 50);
+    });
+}
 
 // =============================================================
 // دوال التطبيق الرئيسية
 // =============================================================
 
 async function loadLesson(grade, index) {
-    // إجبار الصف على 1
     grade = 1;
     const gradeData = await fetchLessonData(grade);
     if (!gradeData || index < 0 || index >= gradeData.length) return;
@@ -181,12 +206,11 @@ async function loadLesson(grade, index) {
     nextLessonBtn.disabled = index === gradeData.length - 1;
 }
 
+// --- تعديل: دالة إيقاف التدريس لضمان تفعيل الزر ---
 const stopTeaching = () => {
     isTeaching = false;
     speechSynthesis.cancel();
-    // تم التعديل: التأكد من تفعيل الزر وإزالة الكلاسات
-    teachMeButtonEl.disabled = false;
-    teachMeButtonEl.style.opacity = "1"; 
+    teachMeButtonEl.disabled = false; // إعادة تفعيل الزر إجبارياً
     document.querySelectorAll('.word').forEach(word => word.classList.remove('active-reading'));
 };
 
@@ -202,8 +226,9 @@ async function startTeaching() {
     }
 
     try {
-        await speak("أَهْلًا بِكَ يَا صَدِيقِي، سَوْفَ نَدْرُسُ مَعًا الآنَ دَرْسَ الْقِرَاءَةِ. رَدِّدْ وَرَائِي الْكَلِمَاتِ التَّالِيَةَ لِتَحْفَظَهَا...");
-        if (isTeaching) await new Promise(resolve => setTimeout(resolve, 500));
+        await speak(" أهلاً بك يا صديقي، سوف ندرس معاً الآن. ردد ورائي الكلمات التالية لتحفظها.");
+        // التحقق بعد كل عملية نطق
+        if (!isTeaching) throw new Error("Stopped");
 
         for (const wordEl of wordElements) {
             if (!isTeaching) break;
@@ -215,7 +240,9 @@ async function startTeaching() {
                 if (!isTeaching) break;
                 wordElements.forEach(w => w.classList.remove('active-reading'));
                 wordEl.classList.add('active-reading');
+                
                 await speak(wordText);
+                
                 if (isTeaching && i < repetitions - 1) {
                     await new Promise(resolve => setTimeout(resolve, interval));
                 }
@@ -223,9 +250,9 @@ async function startTeaching() {
             if (isTeaching) await new Promise(resolve => setTimeout(resolve, 500));
         }
     } catch (error) {
-        console.error("An error occurred during teaching:", error);
+        console.log("Teaching stopped or error:", error);
     } finally {
-        stopTeaching();
+        stopTeaching(); // ضمان استدعاء التوقف في النهاية
     }
 }
 
@@ -368,10 +395,12 @@ function populateVoiceList() {
         option.value = voice.voiceURI;
         voiceSelectEl.appendChild(option);
     });
+    // إعادة تعيين القيمة بعد ملء القائمة
     voiceSelectEl.value = userSettings.selectedVoiceURI;
 }
 
 function initializeSettingsUI() {
+    // بناء القوائم أولاً
     speechRateEl.innerHTML = `
         <option value="0.5">بطيء جداً</option>
         <option value="0.75">بطيء</option>
@@ -386,6 +415,8 @@ function initializeSettingsUI() {
         <option value="true">مفعل</option>
         <option value="false">غير مفعل</option>`;
         
+    // تعيين القيم من الإعدادات المحفوظة
+    // تأكدنا في بداية الكود أن القيمة الافتراضية هي 0.75 إذا لم تكن موجودة
     wordRepetitionsEl.value = userSettings.wordRepetitions;
     speechRateEl.value = userSettings.speechRate;
     voicePitchEl.value = userSettings.voicePitch;
@@ -394,7 +425,6 @@ function initializeSettingsUI() {
 }
 
 async function initializeSidebar() {
-    // تحميل دروس الصف الأول فقط في القائمة الجانبية
     const grade = 1;
     const lessonsListEl = document.getElementById(`grade1-lessons`);
     if (!lessonsListEl) return;
@@ -415,7 +445,6 @@ async function initializeSidebar() {
             lessonItem.textContent = `${lesson.id}. ${lesson.title}`;
             lessonItem.addEventListener('click', () => {
                 loadLesson(grade, index);
-                // إغلاق القائمة الجانبية والانتقال لواجهة التطبيق
                 sidebarEl.classList.remove('active');
                 sidebarBackdropEl.classList.remove('active');
                 document.getElementById('mainNavigation').style.display = 'none';
@@ -429,7 +458,6 @@ async function initializeSidebar() {
 }
 
 async function updateProgressBar() {
-    // حساب التقدم للصف الأول فقط
     const gradeData = await fetchLessonData(1).catch(()=>[]);
     const totalLessons = gradeData.length;
     
@@ -438,7 +466,6 @@ async function updateProgressBar() {
         return;
     }
     
-    // فلترة التقدم المحفوظ لدروس الصف الأول فقط (التي تبدأ بـ "1-")
     const completedLessons = Object.keys(userProgress).filter(k => k.startsWith('1-')).length;
     const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
     
@@ -462,21 +489,29 @@ sidebarBackdropEl.addEventListener('click', () => {
     sidebarEl.classList.remove('active');
     sidebarBackdropEl.classList.remove('active');
 });
-settingsButtonEl.addEventListener('click', () => settingsPopupEl.style.display = 'flex');
+settingsButtonEl.addEventListener('click', () => {
+    // تحديث الواجهة عند فتح الإعدادات للتأكد من ظهور القيم
+    initializeSettingsUI();
+    settingsPopupEl.style.display = 'flex';
+});
+
 testButtonEl.addEventListener('click', startTest);
 spellButtonEl.addEventListener('click', startSpelling);
 
 startButtonEl.addEventListener('click', () => {
-    // تم التعديل: تخطي اختيار الصفوف وعرض الدروس مباشرة
     showMainNavigation();
 });
 
-// تم التعديل: حل مشكلة عدم ظهور الإعدادات في الهاتف باستخدام classList بدلاً من حساب الارتفاع
 allSettingsSections.forEach(section => {
     const header = section.querySelector('.settings-section-header');
     header.addEventListener('click', () => {
          section.classList.toggle('open');
-         // تم إزالة حساب الارتفاع بـ JS والاعتماد على CSS
+         const content = section.querySelector('.settings-section-content');
+         if (content.style.maxHeight) {
+            content.style.maxHeight = null;
+         } else {
+            content.style.maxHeight = content.scrollHeight + "px";
+         }
     });
 });
 saveSettingsEl.addEventListener('click', () => {
@@ -523,9 +558,9 @@ searchButtonEl.addEventListener('click', async () => {
 teachMeButtonEl.addEventListener('click', startTeaching);
 
 refreshButtonEl.addEventListener('click', () => {
-    // تم التعديل: إيقاف التدريس دائماً وإعادة التحميل لضمان عمل الزر
-    stopTeaching(); 
-    if (!isTeaching) {
+    if (isTeaching) {
+        stopTeaching();
+    } else {
        loadLesson(currentGrade, currentLessonIndex);
     }
 });
@@ -542,36 +577,31 @@ privacyPolicyEl.addEventListener('click', () => {
     showInfoPopup('سياسة الخصوصية', `<p>نحن نحرص على خصوصية بيانات أطفالكم ولا نجمع أي معلومات شخصية.</p>`);
 });
 settingsMenuEl.addEventListener('click', () => {
+    initializeSettingsUI();
     settingsPopupEl.style.display = 'flex';
     sidebarEl.classList.remove('active');
     sidebarBackdropEl.classList.remove('active');
 });
 
 // =============================================================
-// دوال واجهة التنقل (تم التعديل للحذف)
+// دوال واجهة التنقل
 // =============================================================
 
-// إظهار واجهة التنقل (تنتقل مباشرة للدروس)
 function showMainNavigation() {
     document.getElementById('welcomePopup').style.display = 'none';
     document.getElementById('appContainer').style.display = 'none';
     
     document.getElementById('mainNavigation').style.display = 'flex';
-    // نعرض فقط قسم الدروس ونخفي أي قسم اختيار صفوف (إن وجد)
     document.getElementById('lessonSelection').style.display = 'block';
     
-    // استدعاء عرض الدوائر للصف الأول مباشرة
     showLessonsCircles(1);
 }
 
-// عرض دوائر الدروس
 async function showLessonsCircles(grade) {
-    // نتأكد دائماً أن الصف هو 1
     grade = 1;
     const container = document.getElementById('lessonsCirclesContainer');
     const title = document.getElementById('selectedGradeTitle');
     
-    // إعداد زر التهيئة
     const prepBtn = document.getElementById('gradePrepBtn');
     if (prepBtn) {
         prepBtn.onclick = function() {
@@ -582,7 +612,6 @@ async function showLessonsCircles(grade) {
     }
     
     container.innerHTML = '<div style="font-size:20px; width:100%; text-align:center;"><i class="fas fa-spinner fa-spin"></i> جاري جلب الدروس...</div>';
-    
     title.textContent = `دروس الصف الأول`;
 
     try {
@@ -621,42 +650,34 @@ async function showLessonsCircles(grade) {
     }
 }
 
-// دالة لتشغيل المايكروفون
 function startMicrophone() {
     if (typeof Android !== 'undefined') {
-        // إذا كان الموقع مفتوحاً داخل التطبيق، استدعِ ميكروفون الأندرويد
         Android.startListening();
     } else {
-        // إذا كان مفتوحاً في متصفح عادي (كروم)، استخدم الكود القديم
-        // (ضع كود webkitSpeechRecognition القديم هنا)
         console.log("Using standard browser speech api");
     }
 }
 
-// دالة يستقبل بها الموقع النص من التطبيق
 function sendTextToWeb(text) {
-    // هنا يصل النص الذي قاله المستخدم
-    // قم بوضعه في مربع النص أو التعامل معه
-    
-    // مثال: وضع النص في حقل الإدخال (غيّر id حسب الموجود في موقعك)
-    var inputField = document.getElementById("search_input"); // ضع الـ ID الصحيح هنا
+    var inputField = document.getElementById("search_input"); 
     if(inputField) {
         inputField.value = text;
-        // يمكنك تشغيل دالة البحث تلقائياً هنا إذا أردت
     }
-    
-    alert("تم التعرف على: " + text); // للتجربة فقط
+    alert("تم التعرف على: " + text); 
 }
+
 // =============================================================
 // تهيئة التطبيق عند تحميل الصفحة
 // =============================================================
 document.addEventListener('DOMContentLoaded', () => {
+    // تهيئة واجهة الإعدادات أولاً لتفادي الحقول الفارغة
+    initializeSettingsUI();
+
     if (speechSynthesis.onvoiceschanged !== undefined) {
         speechSynthesis.onvoiceschanged = populateVoiceList;
     }
     populateVoiceList();
     
-    initializeSettingsUI();
     initializeSidebar();
     updateProgressBar();
 });
