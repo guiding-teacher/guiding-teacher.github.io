@@ -79,21 +79,24 @@ const closeInfoEl = document.getElementById('closeInfo');
 // تحميل البيانات الديناميكي
 // =============================================================
  async function fetchLessonData(grade) {
-    // دائماً نستخدم الصف الأول
-    grade = 1;
+    grade = 1; // تثبيت الصف
     if (lessonsData[grade]) {
         return lessonsData[grade];
     }
     try {
-        const response = await fetch(`data/grade${grade}.json`);
+        // التعديل: إضافة تاريخ ووقت للرابط لمنع الكاش من تخزين بيانات فارغة أو قديمة
+        // واستخدام رابط نسبي صريح
+        const timestamp = new Date().getTime(); 
+        const response = await fetch(`./data/grade${grade}.json?t=${timestamp}`);
         
-        if (!response.ok) throw new Error(`Could not fetch grade ${grade} data.`);
+        if (!response.ok) throw new Error(`Status: ${response.status}`);
+        
         const data = await response.json();
         lessonsData[grade] = data;
         return data;
     } catch (error) {
         console.error("Failed to load lesson data:", error);
-        alert(`حدث خطأ أثناء تحميل البيانات.`);
+        // لا تظهر تنبيه للمستخدم لكي لا يزعجه، لكن سيظهر في الكونسول
         return [];
     }
 }
@@ -104,46 +107,42 @@ const closeInfoEl = document.getElementById('closeInfo');
 function speak(text) {
     return new Promise((resolve, reject) => {
         
-        // 1. التحقق هل نحن داخل تطبيق الأندرويد؟
+        // إذا تم إيقاف الدرس، لا تقم بالنطق واخرج فوراً
+        if (isTeaching === false && text.length > 10) { 
+             resolve();
+             return;
+        }
+
+        // 1. للأندرويد
         if (typeof Android !== 'undefined') {
             Android.speakArabic(text);
             
-            // تقدير الوقت لانتظار النطق في الأندرويد
-            let estimatedTime = text.length * 120; 
+            // حساب وقت الانتظار
+            let estimatedTime = text.length * 110; 
             if (estimatedTime < 1000) estimatedTime = 1000; 
             
             setTimeout(() => {
+                // فحص إضافي: هل مازلنا ندرس؟
                 resolve();
             }, estimatedTime);
             return; 
         }
 
-        // 2. المتصفح العادي
+        // 2. للمتصفح
         if (speechSynthesis.speaking) {
             speechSynthesis.cancel();
         }
 
-        // --- تعديل: تقليل وقت الانتظار ---
         setTimeout(() => {
-            if (!text || !isTeaching && text.length > 20) { 
-                // إذا تم الإيقاف، لا تكمل إلا إذا كانت جملة قصيرة
-            } 
-            
             const utterance = new SpeechSynthesisUtterance(text);
             const selectedVoice = voices.find(voice => voice.voiceURI === userSettings.selectedVoiceURI);
             utterance.voice = selectedVoice || null;
             if (!selectedVoice) utterance.lang = 'ar-SA';
-            
             utterance.rate = parseFloat(userSettings.speechRate);
             utterance.pitch = parseFloat(userSettings.voicePitch);
             
             utterance.onend = () => resolve();
-            
-            // --- تعديل هام: حل مشكلة التعليق عند الخطأ أو الإيقاف ---
-            utterance.onerror = (event) => {
-                // في حال حدوث خطأ أو إلغاء، ننهي الوعد فوراً لكي لا يعلق الزر
-                resolve(); 
-            };
+            utterance.onerror = () => resolve(); // حل مهم للتعليق
             
             speechSynthesis.speak(utterance);
         }, 50);
