@@ -635,16 +635,85 @@ function attachGlobalListeners() {
     const closePrepBtn = document.getElementById('closePrepCards');
     const prepPopup = document.getElementById('prepCardsPopup');
     if (closePrepBtn && prepPopup) closePrepBtn.onclick = () => prepPopup.style.display = 'none';
+    
+    
+    
+    
 
     // 3. أزرار المعلومات
+    // 3. أزرار المعلومات (من نحن، اتصل بنا، الخصوصية) - 🛑 تم التعديل هنا 🛑
     const aboutBtn = document.getElementById('aboutUs');
-    if (aboutBtn) aboutBtn.onclick = () => showInfoPopup('من نحن', '<p style="text-align:center;">تطبيق القارئ الصغير</p>');
+    if (aboutBtn) {
+        aboutBtn.onclick = () => {
+            const content = `
+                <div style="text-align: right; padding: 10px; font-family: 'Amiri', Tahoma, sans-serif; line-height: 1.8;">
+                    <p style="color:#555; margin-bottom:15px; font-size:16px;">
+                        <strong>تطبيق القارئ الصغير</strong> هو رفيق طفلك الذكي لتأسيس مهارات القراءة واللغة العربية للصف الأول الابتدائي.
+                    </p>
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        <li style="margin-bottom: 10px;">
+                            📚 <strong>دروس شاملة:</strong> منهج متكامل مع صور توضيحية جذابة.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🔊 <strong>نطق فصيح:</strong> استماع للنطق الصحيح لكل كلمة بوضوح.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            👨‍🏫 <strong>ميزة درسني:</strong> تكرار آلي للكلمات وكأن المعلم معك.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🧩 <strong>التهجي الذكي:</strong> تحليل الكلمات إلى مقاطع صوتية ملونة.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            🏆 <strong>اختبارات ممتعة:</strong> تقييم مستوى الطفل بطريقة شيقة.
+                        </li>
+                        <li style="margin-bottom: 10px;">
+                            ⚙️ <strong>إعدادات مرنة:</strong> تحكم في سرعة الصوت والتكرار.
+                        </li>
+                    </ul>
+                    <div style="text-align:center; margin-top:20px; color:#4CAF50; font-weight:bold;">
+                        صنع بحب ❤️ لأجل أطفالنا
+                    </div>
+                </div>
+            `;
+            showInfoPopup('من نحن', content);
+        };
+    }
     
     const contactBtn = document.getElementById('contactUs');
-    if (contactBtn) contactBtn.onclick = () => showInfoPopup('اتصل بنا', '<p style="text-align:center;">support@example.com</p>');
+    if (contactBtn) {
+        contactBtn.onclick = () => {
+            const content = `
+                <div style="text-align:center; padding:10px; font-family: Tahoma, sans-serif;">
+                    <p style="margin-bottom:20px; color:#555;">تواصل معنا عبر:</p>
+                    <a href="tel:+9647700000000" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:10px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                        <i class="fas fa-phone-alt" style="color:#4CAF50; margin-left:10px;"></i>
+                        <span dir="ltr">+964 770 000 0000</span>
+                    </a>
+                    <a href="mailto:support@example.com" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                        <i class="fas fa-envelope" style="color:#F44336; margin-left:10px;"></i>
+                        support@example.com
+                    </a>
+                    <!-- الرابط الجديد: منصة المعلم المرشد -->
+                    <!-- target="_blank" هو المسؤول عن فتح الرابط في متصفح خارجي -->
+                    <a href="https://guiding-teacher.github.io/" target="_blank" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
+                        <i class="fas fa-globe" style="color:#2196F3; margin-left:10px;"></i>
+                        منصة المعلم المرشد
+                    </a>
+                    <div style="display:flex; justify-content:center; gap:25px; font-size:35px;">
+                        <a href="https://api.whatsapp.com/send?phone=9647708077310" style="color:#25D366;"><i class="fab fa-whatsapp"></i></a>
+                        <a href="tg://resolve?domain=T_abrahim" style="color:#0088cc;"><i class="fab fa-telegram"></i></a>
+                        <a href="https://facebook.com/abrahimaabd" style="color:#1877F2;"><i class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            `;
+            showInfoPopup('اتصل بنا', content);
+        };
+    }
 
     const privacyBtn = document.getElementById('privacyPolicy');
-    if (privacyBtn) privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center;">نحترم خصوصيتك.</p>');
+    if (privacyBtn) {
+        privacyBtn.onclick = () => showInfoPopup('سياسة الخصوصية', '<p style="text-align:center; padding:10px;">نحن نحترم خصوصية الأطفال ولا نقوم بجمع اي بيانات عنهم او انشطتهم بالتطبيق مطلقا.</p>');
+    }
 
     const settingsMenuBtn = document.getElementById('settingsMenu');
     const settingsPopup = document.getElementById('settingsPopup');

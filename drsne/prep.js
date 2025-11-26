@@ -30,22 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
             { img: 'images/ga17.jpg', text: 'عائلتي التي احبها .', url: 'moredata/game17.html' }
     ];
 
-    // ########################################################
-    // حل مشكلة تحميل الصور: تحميل مسبق فوري
-    // ########################################################
+    // تحميل الصور مسبقاً لضمان السرعة
     function preloadPrepImages() {
         prepData.forEach(item => {
             const img = new Image();
             img.src = item.img;
         });
     }
-    // استدعاء الدالة فوراً
     preloadPrepImages();
 
     // دالة عرض البطاقات
     function showPrepCards() {
         if (!prepCardsContainerEl) return;
         
+        // 1. حفظ الحالة: نخبر المتصفح أن النافذة "مفتوحة" الآن
+        sessionStorage.setItem('isPrepPopupOpen', 'true');
+
         prepCardsTitleEl.textContent = `بطاقات التهيئة للصف الأول`;
         prepCardsContainerEl.innerHTML = '';
     
@@ -56,13 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
             cardEl.className = 'prep-card';
             cardEl.href = card.url;
             
-            // هذا يجعل اللعبة تفتح في نافذة جديدة، مما يبقي التطبيق الأصلي ونافذة التهيئة مفتوحة
+            // محاولة فتح في نافذة جديدة (قد يفتح في نفس النافذة في الويب فيو حسب الإعدادات)
             cardEl.target = '_blank'; 
             cardEl.title = `فتح نشاط: ${card.text}`;
             
-            // منع إغلاق النافذة المنبثقة عند الضغط
             cardEl.onclick = (e) => {
-                e.stopPropagation(); // منع انتقال الحدث للعناصر الأب
+                // حفظ الحالة مرة أخرى للتأكيد قبل الانتقال
+                sessionStorage.setItem('isPrepPopupOpen', 'true');
+                e.stopPropagation(); 
             };
             
             cardEl.innerHTML = `
@@ -76,30 +77,42 @@ document.addEventListener('DOMContentLoaded', () => {
             prepCardsContainerEl.appendChild(cardEl);
         });
         
-        // عرض النافذة كطبقة (Overlay)
         if (prepCardsPopupEl) {
             prepCardsPopupEl.style.display = 'flex';
-            prepCardsPopupEl.style.zIndex = '2500'; // التأكد من أنها فوق كل شيء
+            prepCardsPopupEl.style.zIndex = '2500'; 
         }
     }
    
-    // إتاحة الدالة للاستخدام العام (في script.js)
     window.showPrepCards = showPrepCards;
     
     // ربط القائمة الجانبية
     if (prepMenuEl) {
         prepMenuEl.addEventListener('click', () => {
             showPrepCards();
-            // إغلاق القائمة الجانبية فقط، وإبقاء نافذة التهيئة
             if (sidebarEl) sidebarEl.classList.remove('active');
             if (sidebarBackdropEl) sidebarBackdropEl.classList.remove('active');
         });
     }
     
-    // زر الإغلاق السفلي فقط هو من يغلق النافذة
+    // زر الإغلاق: هنا فقط نقوم بإزالة الحالة وإخفاء النافذة
     if (closePrepCardsEl) {
         closePrepCardsEl.addEventListener('click', () => {
+            // 2. إزالة الحالة: نخبر المتصفح أن المستخدم أغلق النافذة بيده
+            sessionStorage.removeItem('isPrepPopupOpen');
             prepCardsPopupEl.style.display = 'none';
         });
+    }
+
+    // ============================================================
+    // 👇👇 الكود السحري: استعادة الحالة عند العودة أو التحديث 👇👇
+    // ============================================================
+    const shouldBeOpen = sessionStorage.getItem('isPrepPopupOpen');
+    if (shouldBeOpen === 'true') {
+        // إذا كانت النافذة مفتوحة سابقاً، أعد فتحها فوراً
+        showPrepCards();
+        
+        // إغلاق أي نوافذ أخرى قد تظهر فوقها بالخطأ (مثل القائمة الجانبية)
+        if (sidebarEl) sidebarEl.classList.remove('active');
+        if (sidebarBackdropEl) sidebarBackdropEl.classList.remove('active');
     }
 });
