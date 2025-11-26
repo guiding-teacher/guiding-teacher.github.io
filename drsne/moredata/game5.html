@@ -25,14 +25,9 @@
             background-color: var(--background-color);
             display: flex;
             justify-content: center;
-            
-            /* ✨ التعديل الأول: تغيير المحاذاة لتبدأ من الأعلى */
             align-items: flex-start; 
-            
             min-height: 100vh;
-            padding: 25px 15px; /* زيادة المساحة العلوية والسفلية */
-            
-            /* ✨ التعديل الثاني: السماح بالتمرير عند الحاجة */
+            padding: 25px 15px;
             overflow: auto; 
         }
 
@@ -114,7 +109,6 @@
 </head>
 <body>
 
-<!-- ... محتوى HTML يبقى كما هو بدون تغيير ... -->
 <div class="game-container" id="game-container">
     <div class="game-header">
         <div class="prompt-bar" id="prompt-bar">لعبة البحث عن الكلمات</div>
@@ -130,7 +124,6 @@
 </div>
 
 <script>
-// ... كود JavaScript يبقى كما هو بدون تغيير ...
 document.addEventListener('DOMContentLoaded', () => {
     // Data setup
     const gameData = {
@@ -161,25 +154,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemsToFind = [], foundItems = [], currentItemKey = null, isTransitioning = true;
 
     // =========================================================
-        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
-        // =========================================================
-        function speak(text) {
-            // 1. التحقق: هل نحن داخل تطبيق الأندرويد؟
+    // دالة النطق المعدلة (تعيد Promise للتحكم في التوقيت)
+    // =========================================================
+    function speak(text) {
+        return new Promise((resolve) => {
             if (typeof Android !== 'undefined' && Android.speakArabic) {
-                // نعم: استخدم ناطق الأندرويد الأصلي (جودة عالية + يعمل أوفلاين)
                 Android.speakArabic(text);
+                // في الأندرويد، نعطي مهلة تقريبية لأننا لا نملك callback مباشر
+                setTimeout(resolve, 2000); 
             } else {
-                // لا: نحن في متصفح كمبيوتر عادي، استخدم الناطق الافتراضي
                 if (window.speechSynthesis) {
                     speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(text);
                     utterance.lang = 'ar-SA';
-                    utterance.rate = 0.9; // سرعة القراءة
-                    utterance.pitch = 1.0; // نبرة الصوت
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.0;
+                    
+                    // حل المشكلة: الانتظار حتى انتهاء الكلام
+                    utterance.onend = resolve;
+                    utterance.onerror = resolve; // احتياطاً في حال حدوث خطأ
+                    
                     speechSynthesis.speak(utterance);
+                } else {
+                    resolve(); // إذا لم يوجد نطق، ننهي الوعد فوراً
                 }
             }
-        }
+        });
+    }
 
     function createElements() {
         imageWrapper.querySelectorAll('.hotspot').forEach(el => el.remove());
@@ -224,8 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentItemName = gameData[currentItemKey].name;
         promptBar.textContent = `أين هو الـ ${currentItemName}؟`;
         promptBar.classList.add('pulsing');
+        
+        isTransitioning = true; // منع النقر أثناء نطق السؤال
         await speak(`أينَ ${currentItemName}`);
-        isTransitioning = false;
+        isTransitioning = false; // السماح بالنقر بعد انتهاء السؤال
     }
 
     async function handleHotspotClick(event) {
@@ -237,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const clickedItemKey = clickedEl.dataset.item;
 
         if (clickedItemKey === currentItemKey) {
-            isTransitioning = true;
+            isTransitioning = true; // منع النقر المتكرر
             promptBar.classList.remove('pulsing');
             sounds.correct.play();
             clickedEl.classList.add('correct-pulse');
@@ -255,9 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             promptBar.textContent = gameData[currentItemKey].name;
+            
+            // هنا التعديل الجوهري: نستخدم await لانتظار انتهاء جملة "أحسنت" قبل الانتقال
             await speak(`أحسنت! هذا ${gameData[currentItemKey].name}`);
             
             clickedEl.classList.add('found');
+            
+            // بعد انتهاء النطق تماماً، ننتظر قليلاً ثم ننتقل للسؤال التالي
             setTimeout(() => {
                 clickedEl.classList.remove('correct-pulse');
                 nextQuestion();

@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. تعريف عناصر DOM
     const prepMenuEl = document.getElementById('prepMenu');
-    // تم حذف النوافذ الوسيطة لاختيار الصف
     const prepCardsPopupEl = document.getElementById('prepCardsPopup');
     const closePrepCardsEl = document.getElementById('closePrepCards');
     const prepCardsContainerEl = document.getElementById('prepCardsContainer');
@@ -10,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarEl = document.getElementById('sidebar');
     const sidebarBackdropEl = document.getElementById('sidebarBackdrop');
 
-    // بيانات التهيئة للصف الأول فقط
+    // بيانات التهيئة
     const prepData = [
             { img: 'images/gg1.jpg', text: ' التعرف على الالعاب الجميلة 1.', url: 'moredata/game.html' },
             { img: 'images/background.jpg', text: 'التعرف على الادوات المدرسية 2. ', url: 'moredata/game2.html' },
@@ -31,8 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
             { img: 'images/ga17.jpg', text: 'عائلتي التي احبها .', url: 'moredata/game17.html' }
     ];
 
-    // عرض البطاقات مباشرة
+    // ########################################################
+    // حل مشكلة تحميل الصور: تحميل مسبق فوري
+    // ########################################################
+    function preloadPrepImages() {
+        prepData.forEach(item => {
+            const img = new Image();
+            img.src = item.img;
+        });
+    }
+    // استدعاء الدالة فوراً
+    preloadPrepImages();
+
+    // دالة عرض البطاقات
     function showPrepCards() {
+        if (!prepCardsContainerEl) return;
+        
         prepCardsTitleEl.textContent = `بطاقات التهيئة للصف الأول`;
         prepCardsContainerEl.innerHTML = '';
     
@@ -42,12 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const cardEl = document.createElement('a');
             cardEl.className = 'prep-card';
             cardEl.href = card.url;
-            cardEl.target = '_blank';
+            
+            // هذا يجعل اللعبة تفتح في نافذة جديدة، مما يبقي التطبيق الأصلي ونافذة التهيئة مفتوحة
+            cardEl.target = '_blank'; 
             cardEl.title = `فتح نشاط: ${card.text}`;
+            
+            // منع إغلاق النافذة المنبثقة عند الضغط
+            cardEl.onclick = (e) => {
+                e.stopPropagation(); // منع انتقال الحدث للعناصر الأب
+            };
             
             cardEl.innerHTML = `
                 <div class="prep-card-image">
-                    <img src="${card.img}" alt="${card.text.substring(0, 20)}">
+                    <img src="${card.img}" alt="${card.text.substring(0, 20)}" loading="eager">
                 </div>
                 <div class="prep-card-description">
                     ${card.text}
@@ -56,20 +76,27 @@ document.addEventListener('DOMContentLoaded', () => {
             prepCardsContainerEl.appendChild(cardEl);
         });
         
-        prepCardsPopupEl.style.display = 'flex';
+        // عرض النافذة كطبقة (Overlay)
+        if (prepCardsPopupEl) {
+            prepCardsPopupEl.style.display = 'flex';
+            prepCardsPopupEl.style.zIndex = '2500'; // التأكد من أنها فوق كل شيء
+        }
     }
    
+    // إتاحة الدالة للاستخدام العام (في script.js)
     window.showPrepCards = showPrepCards;
     
-    // ربط الأحداث
+    // ربط القائمة الجانبية
     if (prepMenuEl) {
         prepMenuEl.addEventListener('click', () => {
-            showPrepCards(); // عرض البطاقات مباشرة
-            sidebarEl.classList.remove('active');
-            sidebarBackdropEl.classList.remove('active');
+            showPrepCards();
+            // إغلاق القائمة الجانبية فقط، وإبقاء نافذة التهيئة
+            if (sidebarEl) sidebarEl.classList.remove('active');
+            if (sidebarBackdropEl) sidebarBackdropEl.classList.remove('active');
         });
     }
     
+    // زر الإغلاق السفلي فقط هو من يغلق النافذة
     if (closePrepCardsEl) {
         closePrepCardsEl.addEventListener('click', () => {
             prepCardsPopupEl.style.display = 'none';

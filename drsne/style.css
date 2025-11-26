@@ -50,6 +50,34 @@ body {
 .header, .content, .controls {
     position: relative;
     z-index: 1;
+    
+}
+
+/* ==================================
+   محتوى التطبيق (Header, Content)
+   ================================== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    
+    /* 👇👇 هذا هو السطر الجديد الذي سيقلب الأماكن 👇👇 */
+    flex-direction: row-reverse; 
+}
+
+/* تنسيق إضافي لضمان جمالية العنوان والرقم */
+.lesson-title {
+    text-align: center; /* ضمان أن النص العربي يبدأ من اليمين */
+    flex-grow: 1; /* يأخذ المساحة المتبقية */
+    border-bottom: 2px solid #1f8ce2;
+}
+
+.lesson-number {
+    /* يمكنك تغيير لون أو حجم الرقم هنا إذا أردت */
+    font-weight: bold;
+    color: #4CAF50; /* لون أخضر مثلاً */
+    font-size: 24px;
 }
 
 /* ==================================
@@ -707,8 +735,9 @@ body {
     .controls { flex-direction: column; gap: 20px; }
     .right-controls { width: 100%; justify-content: center; }
     .control-button, .search-button { padding: 8px 12px; font-size: 13px; }
-    .lesson-title { font-size: 26px; }
+    .lesson-title { font-size: 30px;  }
     .sidebar { width: 260px; }
+   
     .lessons-list {
         max-height: 201px; /* تقليل الارتفاع في الشاشات القصيرة جداً */
     }

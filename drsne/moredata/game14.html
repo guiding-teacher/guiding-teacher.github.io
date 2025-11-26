@@ -265,24 +265,24 @@
         <img src="/drsne/images/ga14.jpg" id="base-image" alt="قصة المدرسة">
         
         <div class="story-grid">
-            <!-- 1: أعلى اليمين -->
-            <div class="interactive-zone" style="grid-column: 2; grid-row: 1;" onclick="openScene(1)">
-                <div class="number-badge" id="badge-1" style="bottom: 10px; left: 10px;">1</div>
+            <!-- 1: أصبح الآن في اليمين (grid-column: 1) -->
+            <div class="interactive-zone" style="grid-column: 1; grid-row: 1;" onclick="openScene(1)">
+                <div class="number-badge" id="badge-1" style="bottom: 10px; right: 10px;">1</div>
             </div>
 
-            <!-- 2: أعلى اليسار -->
-            <div class="interactive-zone" style="grid-column: 1; grid-row: 1;" onclick="openScene(2)">
-                <div class="number-badge" id="badge-2" style="bottom: 10px; right: 10px;">2</div>
+            <!-- 2: أصبح الآن في اليسار (grid-column: 2) -->
+            <div class="interactive-zone" style="grid-column: 2; grid-row: 1;" onclick="openScene(2)">
+                <div class="number-badge" id="badge-2" style="bottom: 10px; left: 10px;">2</div>
             </div>
 
-            <!-- 3: أسفل اليمين -->
-            <div class="interactive-zone" style="grid-column: 2; grid-row: 2;" onclick="openScene(3)">
-                <div class="number-badge" id="badge-3" style="top: 10px; left: 10px;">3</div>
+            <!-- 3: أصبح الآن في اليمين (grid-column: 1) -->
+            <div class="interactive-zone" style="grid-column: 1; grid-row: 2;" onclick="openScene(3)">
+                <div class="number-badge" id="badge-3" style="top: 10px; right: 10px;">3</div>
             </div>
 
-            <!-- 4: أسفل اليسار -->
-            <div class="interactive-zone" style="grid-column: 1; grid-row: 2;" onclick="openScene(4)">
-                <div class="number-badge" id="badge-4" style="top: 10px; right: 10px;">4</div>
+            <!-- 4: أصبح الآن في اليسار (grid-column: 2) -->
+            <div class="interactive-zone" style="grid-column: 2; grid-row: 2;" onclick="openScene(4)">
+                <div class="number-badge" id="badge-4" style="top: 10px; left: 10px;">4</div>
             </div>
         </div>
     </div>
@@ -317,14 +317,11 @@
     <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; pointer-events:none; z-index:3000;"></canvas>
 
     <script>
-        // تم تبديل القيم لعكس أماكن الصور في النافذة المنبثقة
-        // 0% = اليسار
-        // 100% = اليمين
         const scenes = {
             1: {
                 id: 1,
-                // كان 100% 0% - أصبح 0% 0% (ليأخذ الجهة اليسرى بدلاً من اليمنى)
-                bgPos: '0% 0%', 
+                // صورة اليمين
+                bgPos: '100% 0%', 
                 vocab: 'أمي',
                 text: "في الصباح الباكر، ارتدت سارة زي المدرسة وودعت أمها عند الباب قائلة: مع السلامة يا أمي الحبيبة.",
                 options: [
@@ -335,8 +332,8 @@
             },
             2: {
                 id: 2,
-                // كان 0% 0% - أصبح 100% 0%
-                bgPos: '100% 0%', 
+                // صورة اليسار
+                bgPos: '0% 0%', 
                 vocab: 'صديقتي',
                 text: "خرجت سارة من الدار، وقابلت صديقتها ليلى في الطريق. فرحت الصديقتان باللقاء وقالتا: صباح الخير!",
                 options: [
@@ -347,8 +344,8 @@
             },
             3: {
                 id: 3,
-                // كان 100% 100% - أصبح 0% 100%
-                bgPos: '0% 100%', 
+                // صورة اليمين
+                bgPos: '100% 80%', 
                 vocab: 'جارنا',
                 text: "أثناء المشي، شاهدت البنتان جارهما أحمد يحمل حقيبته. انضم أحمد إليهما ليمشوا معاً بنشاط.",
                 options: [
@@ -359,8 +356,8 @@
             },
             4: {
                 id: 4,
-                // كان 0% 100% - أصبح 100% 100%
-                bgPos: '100% 100%', 
+                // صورة اليسار
+                bgPos: '0% 70%', 
                 vocab: 'المدرسة',
                 text: "سار الأصدقاء الثلاثة معاً في نظام واحترام، حتى وصلوا إلى مدرستهم الجميلة في الوقت المحدد.",
                 options: [

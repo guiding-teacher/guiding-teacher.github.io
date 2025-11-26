@@ -90,7 +90,7 @@
             display: block;
         }
         
-        /* ✨ تم التعديل هنا: تصميم النقاط النابضة ✨ */
+        /* تصميم النقاط النابضة */
         .hotspot {
             position: absolute;
             width: 25px;
@@ -117,11 +117,11 @@
         #hotspot-girl { top: 15%; left: 17%; }
         #hotspot-rooster { top: 13%; left: 36%; }
         #hotspot-cow { top: 12%; left: 58%; }
-        #hotspot-boy-reading { top: 15%; left: 83%; }
-        #hotspot-boys-playing { top: 38%; left: 21%; }
+        #hotspot-boy-reading { top: 13%; left: 38%; }
+        #hotspot-boys-playing { top: 38%; left: 32%; }
         #hotspot-dates { top: 38%; left: 51%; }
         #hotspot-man-phone { top: 45%; left: 82%; }
-        #hotspot-bells { top: 55%; left: 18%; }
+        #hotspot-bells { top: 41%; left: 31%; }
         #hotspot-saw { top: 57%; left: 51%; }
         #hotspot-sheep { top: 71%; left: 18%; }
         #hotspot-apricot { top: 73%; left: 51%; }
@@ -170,7 +170,7 @@
         .option-button.correct .feedback-icon.fa-check { display: inline-block; color: var(--correct-color); }
         .option-button.incorrect .feedback-icon.fa-times { display: inline-block; color: var(--incorrect-color); }
 
-        /* ✨ تم التعديل هنا: تصميم جديد للفوتر مع نقل التايمر ✨ */
+        /* الفوتر */
         .popup-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 25px; border-top: 1px solid #dee2e6; }
         .footer-actions-group { display: flex; gap: 10px; }
         .popup-action-button {
@@ -201,8 +201,8 @@
         </div>
         
         <div class="image-wrapper">
+            <!-- تأكد من وجود مسار الصورة الصحيح -->
             <img src="/drsne/images/dds.jpg" alt="دروس التهيئة والإعداد" class="background-image" id="game-image">
-            <!-- سيتم إضافة النقاط الفعالة هنا بواسطة JavaScript -->
         </div>
     </div>
 
@@ -249,11 +249,11 @@
             };
 
             const positions = {
-                girl: { top: '15%', left: '17%' }, rooster: { top: '13%', left: '36%' }, cow: { top: '12%', left: '58%' },
-                'boy-reading': { top: '15%', left: '83%' }, 'boys-playing': { top: '38%', left: '21%' }, dates: { top: '38%', left: '51%' },
-                'man-phone': { top: '45%', left: '82%' }, bells: { top: '55%', left: '18%' }, saw: { top: '57%', left: '51%' },
-                sheep: { top: '71%', left: '18%' }, apricot: { top: '73%', left: '51%' }, horse: { top: '86%', left: '19%' },
-                'hand-writing': { top: '86%', left: '51%' }, eagle: { top: '84%', left: '81%' }
+                girl: { top: '17%', left: '17%' }, rooster: { top: '13%', left: '36%' }, cow: { top: '12%', left: '58%' },
+                'boy-reading': { top: '15%', left: '83%' }, 'boys-playing': { top: '30%', left: '5%' }, dates: { top: '30%', left: '51%' },
+                'man-phone': { top: '45%', left: '82%' }, bells: { top: '45%', left: '8%' }, saw: { top: '45%', left: '51%' },
+                sheep: { top: '60%', left: '10%' }, apricot: { top: '60%', left: '51%' }, horse: { top: '75%', left: '10%' },
+                'hand-writing': { top: '75%', left: '51%' }, eagle: { top: '75%', left: '81%' }
             };
 
             // عناصر DOM
@@ -279,25 +279,44 @@
             }
             
             // =========================================================
-        // دالة النطق الموحدة (تعمل على التطبيق والمتصفح)
-        // =========================================================
-        function speak(text) {
-            // 1. التحقق: هل نحن داخل تطبيق الأندرويد؟
-            if (typeof Android !== 'undefined' && Android.speakArabic) {
-                // نعم: استخدم ناطق الأندرويد الأصلي (جودة عالية + يعمل أوفلاين)
-                Android.speakArabic(text);
-            } else {
-                // لا: نحن في متصفح كمبيوتر عادي، استخدم الناطق الافتراضي
-                if (window.speechSynthesis) {
-                    speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'ar-SA';
-                    utterance.rate = 0.9; // سرعة القراءة
-                    utterance.pitch = 1.0; // نبرة الصوت
-                    speechSynthesis.speak(utterance);
+            // دالة النطق المصححة (تدعم callback)
+            // =========================================================
+            function speak(text, callback) {
+                // 1. حالة الأندرويد
+                if (typeof Android !== 'undefined' && Android.speakArabic) {
+                    Android.speakArabic(text);
+                    // في الأندرويد، من الصعب معرفة متى ينتهي الصوت بدقة بدون تعديل كود الجافا
+                    // لذلك سنقوم بتفعيل الـ Callback فوراً لضمان عدم توقف اللعبة
+                    if (callback) callback();
+                } 
+                // 2. حالة المتصفح العادي
+                else {
+                    if (window.speechSynthesis) {
+                        speechSynthesis.cancel();
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        utterance.lang = 'ar-SA';
+                        utterance.rate = 0.9; 
+                        utterance.pitch = 1.0; 
+
+                        // *** هذا هو الجزء الذي تم إصلاحه ***
+                        // تنفيذ الـ callback عند انتهاء الكلام
+                        utterance.onend = function() {
+                            if (callback) callback();
+                        };
+
+                        // في حالة حدوث خطأ في النطق، نفذ الـ callback أيضاً حتى لا تتجمد اللعبة
+                        utterance.onerror = function() {
+                            if (callback) callback();
+                        };
+
+                        speechSynthesis.speak(utterance);
+                    } else {
+                        // إذا لم يكن المتصفح يدعم النطق، نفذ الكود فوراً
+                        if (callback) callback();
+                    }
                 }
             }
-        }
+
             function startTimer() {
                 clearInterval(timerInterval);
                 timerBar.style.transition = 'none'; timerBar.style.width = '100%';
@@ -317,7 +336,7 @@
                 shuffledOptions.forEach(optionText => {
                     const button = document.createElement('button');
                     button.className = 'option-button';
-                    button.disabled = true; // ✨ تعطيل الأزرار مبدئياً
+                    button.disabled = true; // الأزرار معطلة في البداية
                     button.innerHTML = `<i class="fas fa-check feedback-icon"></i><i class="fas fa-times feedback-icon"></i><span>${optionText}</span>`;
                     button.onclick = () => handleAnswer(optionText);
                     popupOptions.appendChild(button);
@@ -326,11 +345,11 @@
                 popup.classList.add('visible');
                 const textToSpeak = `${popupQuestion.textContent}. الخيارات هي: ${shuffledOptions.join(', ')}`;
                 
-                // ✨ سلسلة الأحداث الصوتية الجديدة
+                // الآن عند استدعاء speak، سيتم تنفيذ الكود التالي بعد انتهاء قراءة الخيارات
                 speak(textToSpeak, () => {
-                    // بعد قراءة الخيارات، قم بتفعيل الأزرار
+                    // تفعيل الأزرار
                     popupOptions.querySelectorAll('.option-button').forEach(btn => btn.disabled = false);
-                    // ثم قل الجملة الجديدة وابدأ المؤقت
+                    // نطق الجملة الثانية وبدء التايمر بعدها
                     speak("لديك ثلاثون ثانية للإجابة. انطلق الآن!", startTimer);
                 });
             }
@@ -362,7 +381,6 @@
             }
 
             function closePopup() {
-                // ✨ إيقاف المؤقت والصوت فوراً عند الخروج
                 clearInterval(timerInterval);
                 speechSynthesis.cancel();
                 popup.classList.remove('visible');
@@ -408,7 +426,7 @@
             replayAudioButton.addEventListener('click', () => {
                 const optionTexts = Array.from(popupOptions.querySelectorAll('span')).map(s => s.textContent);
                 const textToSpeak = `${popupQuestion.textContent}. الخيارات هي: ${optionTexts.join(', ')}`;
-                showPopup(currentItemKey); // استدعاء الدالة الرئيسية لإعادة التشغيل بنفس المنطق
+                showPopup(currentItemKey); 
             });
             exitPopupButton.addEventListener('click', closePopup);
             replayQuestionButton.addEventListener('click', closePopup);
