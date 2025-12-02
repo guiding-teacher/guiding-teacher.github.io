@@ -557,6 +557,12 @@
             background: #f1f2f6;
             color: #2f3542;
         }
+         .home-btn {
+            position: absolute; top: 5px; right: 5px; font-size: 25px; background: #eeeef0;
+            color: #d81212; border: 2px solid white;  border-radius: 50px; padding: 8px 15px;
+            text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 1px; cursor: pointer; z-index: 100;
+        }
+        
 
         @media (max-width: 768px) {
             .color-palette, .bg-color-palette, .sticker-palette {
@@ -586,6 +592,13 @@
             .tool-btn .label {
                 font-size: 0.6rem;
             }
+            
+            .home-btn {
+            position: absolute; top: 5px; right: 5px; font-size: 10px; background: #eeeef0;
+            color: #d81212; border: 2px solid white;  border-radius: 50px; padding: 8px 15px;
+            text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 1px; cursor: pointer; z-index: 100;
+        }
+            
         }
 
         @media (max-width: 480px) {
@@ -625,14 +638,31 @@
                 max-width: 95vw;
                 padding: 10px;
             }
+            
+            .home-btn {
+            position: absolute; top: 5px; right: 5px; font-size: 10px; background: #eeeef0;
+            color: #d81212; border: 2px solid white;  border-radius: 50px; padding: 8px 15px;
+            text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 1px; cursor: pointer; z-index: 100;
         }
+            
+        }
+        
     </style>
 </head>
 <body>
     <div class="app-title">
         <span class="mascot">👦</span>
+        
         تعلم رسم الحروف العربية
+    
+    
+     <a href="drsne.html" class="home-btn">
+            <i class="fas fa-arrow-right"></i> الرجوع
+        </a>
+    
+    
     </div>
+    
     
     <div class="target-container">
         <span>ارسم هذا الحرف:</span>

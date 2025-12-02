@@ -428,6 +428,13 @@
             button {
                 max-width: none;
             }
+            
+        }
+        
+        .home-btn {
+            position: absolute; top: 5px; right: 5px; font-size: 15px; background: #eeeef0;
+            color: #d81212; border: 2px solid white;  border-radius: 50px; padding: 8px 15px;
+            text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 1px; cursor: pointer; z-index: 100;
         }
     </style>
 </head>
@@ -453,8 +460,9 @@
                         <input type="text" id="student-class" placeholder="اكتب صفك">
                     </div>
                     <div class="student-input">
-                        <label for="student-group">الشعبة</label>
-                        <input type="text" id="student-group" placeholder="الشعبة">
+                         <a href="drsne.html" class="home-btn">
+            <i class="fas fa-arrow-right"></i> الرجوع للرئيسية
+        </a>
                     </div>
                 </div>
             </div>
