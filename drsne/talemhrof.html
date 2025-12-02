@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تعلم الحروف العربية مع الحركات للأطفال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <meta name="theme-color" content="#4CAF50">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --success-color: #8BC34A;
+            --warning-color: #FFC107;
+            --error-color: #F44336;
+            --light-color: #E8F5E9;
+            --dark-color: #2E7D32;
+            --accent-color: #FF5722;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #F1F8E9;
+            color: var(--dark-color);
+            line-height: 1.6;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 15px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* زر الخروج */
+        .home-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50px;
+            padding: 8px 15px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="white" opacity="0.1"><text x="50%" y="50%" font-size="30" text-anchor="middle" dominant-baseline="middle">أ ب ت</text></svg>');
+            pointer-events: none;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin: 0;
+            position: relative;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .letter-card {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            border: 3px solid var(--primary-color);
+            aspect-ratio: 1/1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .letter-card:hover, .letter-card:active {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        
+        .letter-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--accent-color), var(--warning-color));
+        }
+        
+        .letter-card.completed::before {
+            content: "✓";
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 25px;
+            height: 25px;
+            background-color: var(--success-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        
+        .letter {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--dark-color);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .letter-name {
+            font-size: 1rem;
+            color: var(--dark-color);
+            background-color: rgba(76, 175, 80, 0.1);
+            padding: 5px 10px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 25px;
+            width: 95%;
+            max-width: 500px;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            animation: modalFadeIn 0.4s;
+            border: 5px solid var(--accent-color);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        
+        .close-modal:hover, .close-modal:active {
+            transform: rotate(90deg) scale(1.1);
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .modal-letter {
+            font-size: 5rem;
+            margin: 20px 0;
+            line-height: 1;
+            color: var(--dark-color);
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            position: relative;
+            display: inline-block;
+        }
+        
+        .modal-letter::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 2px;
+        }
+        
+        .letter-name-modal {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--dark-color);
+            background-color: rgba(139, 195, 74, 0.2);
+            padding: 10px 15px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        
+        .harakat-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+        
+        .haraka-btn {
+            background-color: var(--light-color);
+            border: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            font-size: 2.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            color: var(--dark-color);
+        }
+        
+        .haraka-btn:hover, .haraka-btn:active {
+            background-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .haraka-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+        
+        .haraka-btn.completed {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+        
+        .haraka-name {
+            position: absolute;
+            bottom: -25px;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            white-space: nowrap;
+        }
+        
+        .voice-section {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: var(--light-color);
+            border-radius: 20px;
+            border: 2px dashed var(--primary-color);
+        }
+        
+        .record-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 250px;
+            justify-content: center;
+        }
+        
+        .record-btn:hover, .record-btn:active {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .record-btn.recording {
+            background: linear-gradient(135deg, var(--error-color), #D32F2F);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(244, 67, 54, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+            }
+        }
+        
+        .status-message {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 15px;
+            display: none;
+            font-size: 1.1rem;
+            border-left: 5px solid transparent;
+        }
+        
+        .status-message.success {
+            background-color: rgba(139, 195, 74, 0.3);
+            color: #2E7D32;
+            display: block;
+            border-left-color: var(--success-color);
+        }
+        
+        .status-message.error {
+            background-color: rgba(244, 67, 54, 0.2);
+            color: #C62828;
+            display: block;
+            border-left-color: var(--error-color);
+        }
+        
+        .status-message.info {
+            background-color: rgba(33, 150, 243, 0.2);
+            color: #0D47A1;
+            display: block;
+            border-left-color: var(--primary-color);
+        }
+        
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: #E0E0E0;
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            transition: width 0.5s ease;
+        }
+        
+        .next-btn {
+            background: linear-gradient(135deg, var(--success-color), #689F38);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 15px;
+            display: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 250px;
+        }
+        
+        .next-btn:hover, .next-btn:active {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .try-again-btn {
+            background: linear-gradient(135deg, var(--warning-color), #FF8F00);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 15px;
+            display: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 250px;
+        }
+        
+        .try-again-btn:hover, .try-again-btn:active {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .audio-wave {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50px;
+            gap: 5px;
+            margin: 15px 0;
+        }
+        
+        .audio-wave span {
+            display: inline-block;
+            width: 5px;
+            height: 15px;
+            background: linear-gradient(to top, var(--primary-color), var(--accent-color));
+            border-radius: 3px;
+            animation: audioWave 1.5s infinite ease-in-out;
+        }
+        
+        .audio-wave span:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        
+        .audio-wave span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .audio-wave span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        
+        .audio-wave span:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+        
+        .audio-wave span:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+        
+        @keyframes audioWave {
+            0%, 100% {
+                height: 15px;
+            }
+            50% {
+                height: 35px;
+            }
+        }
+        
+        .recording-timer {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--dark-color);
+            opacity: 0.7;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-color);
+            opacity: 0;
+            z-index: 9999;
+            animation: confetti 3s ease-in-out;
+            pointer-events: none;
+        }
+        
+        @keyframes confetti {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .offline-message {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background-color: var(--warning-color);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .letters-grid {
+                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+                gap: 12px;
+            }
+            
+            .letter {
+                font-size: 2.5rem;
+            }
+            
+            .letter-name {
+                font-size: 0.9rem;
+            }
+            
+            .modal-letter {
+                font-size: 4rem;
+            }
+            
+            .haraka-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+            
+            .haraka-name {
+                font-size: 0.8rem;
+                bottom: -20px;
+            }
+            
+            h1 {
+                font-size: 1.7rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="drsne.html" class="home-btn">
+            <i class="fas fa-arrow-right"></i> خروج
+        </a>
+        
+        <h1>تعلم الحروف العربية</h1>
+        <div class="subtitle">استمع وردد وتعلم الحركات</div>
+    </header>
+    
+    <div class="container">
+        <div class="letters-grid" id="lettersGrid"></div>
+    </div>
+    
+    <div class="modal" id="letterModal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">×</span>
+            <div class="modal-letter" id="modalLetter"></div>
+            <div class="letter-name-modal" id="letterNameModal"></div>
+            
+            <div class="harakat-container" id="harakatContainer"></div>
+            
+            <div class="voice-section" id="voiceSection">
+                <div id="instruction">اضغط على إحدى الحركات أعلاه ثم سجل صوتك</div>
+                
+                <button class="record-btn" id="recordBtn">
+                    <span id="recordIcon">🎤</span>
+                    <span id="recordText">تسجيل الصوت</span>
+                </button>
+                
+                <div class="audio-wave" id="audioWave">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                
+                <div class="recording-timer" id="recordingTimer">
+                    مدة التسجيل: <span id="timerValue">0:00</span> / 0:05
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
+                <div class="status-message" id="statusMessage"></div>
+                
+                <button class="next-btn" id="nextBtn">الحركة التالية</button>
+                <button class="try-again-btn" id="tryAgainBtn">حاول مرة أخرى</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="offline-message" id="offlineMessage">
+        أنت الآن تستخدم التطبيق في وضع عدم الاتصال. بعض الميزات قد لا تعمل.
+    </div>
+    
+    <script>
+        function appSpeak(text) {
+            return new Promise((resolve) => {
+                if (!text) { resolve(); return; }
+                let rate = 1; let pitch = 1;
+                if (typeof Android !== 'undefined') {
+                    Android.speakArabic(text, rate.toString(), pitch.toString());
+                    let charDelay = 120 / rate; 
+                    let estimatedTime = Math.max(1000, text.length * charDelay);
+                    setTimeout(resolve, estimatedTime);
+                    return;
+                }
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ar-SA';
+                    utterance.rate = rate;
+                    utterance.onend = resolve;
+                    utterance.onerror = resolve;
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    resolve();
+                }
+            });
+        }
+
+        const arabicLetters = [
+            { letter: 'ا', name: 'ألف', pronunciations: { 'َ': 'أَ', 'ُ': 'أُ', 'ِ': 'إِ' } },
+            { letter: 'ب', name: 'باء', pronunciations: { 'َ': 'بَ', 'ُ': 'بُ', 'ِ': 'بِ' } },
+            { letter: 'ت', name: 'تاء', pronunciations: { 'َ': 'تَ', 'ُ': 'تُ', 'ِ': 'تِ' } },
+            { letter: 'ث', name: 'ثاء', pronunciations: { 'َ': 'ثَ', 'ُ': 'ثُ', 'ِ': 'ثِ' } },
+            { letter: 'ج', name: 'جيم', pronunciations: { 'َ': 'جَ', 'ُ': 'جُ', 'ِ': 'جِ' } },
+            { letter: 'ح', name: 'حاء', pronunciations: { 'َ': 'حَ', 'ُ': 'حُ', 'ِ': 'حِ' } },
+            { letter: 'خ', name: 'خاء', pronunciations: { 'َ': 'خَ', 'ُ': 'خُ', 'ِ': 'خِ' } },
+            { letter: 'د', name: 'دال', pronunciations: { 'َ': 'دَ', 'ُ': 'دُ', 'ِ': 'دِ' } },
+            { letter: 'ذ', name: 'ذال', pronunciations: { 'َ': 'ذَ', 'ُ': 'ذُ', 'ِ': 'ذِ' } },
+            { letter: 'ر', name: 'راء', pronunciations: { 'َ': 'رَ', 'ُ': 'رُ', 'ِ': 'رِ' } },
+            { letter: 'ز', name: 'زاي', pronunciations: { 'َ': 'زَ', 'ُ': 'زُ', 'ِ': 'زِ' } },
+            { letter: 'س', name: 'سين', pronunciations: { 'َ': 'سَ', 'ُ': 'سُ', 'ِ': 'سِ' } },
+            { letter: 'ش', name: 'شين', pronunciations: { 'َ': 'شَ', 'ُ': 'شُ', 'ِ': 'شِ' } },
+            { letter: 'ص', name: 'صاد', pronunciations: { 'َ': 'صَ', 'ُ': 'صُ', 'ِ': 'صِ' } },
+            { letter: 'ض', name: 'ضاد', pronunciations: { 'َ': 'ضَ', 'ُ': 'ضُ', 'ِ': 'ضِ' } },
+            { letter: 'ط', name: 'طاء', pronunciations: { 'َ': 'طَ', 'ُ': 'طُ', 'ِ': 'طِ' } },
+            { letter: 'ظ', name: 'ظاء', pronunciations: { 'َ': 'ظَ', 'ُ': 'ظُ', 'ِ': 'ظِ' } },
+            { letter: 'ع', name: 'عين', pronunciations: { 'َ': 'عَ', 'ُ': 'عُ', 'ِ': 'عِ' } },
+            { letter: 'غ', name: 'غين', pronunciations: { 'َ': 'غَ', 'ُ': 'غُ', 'ِ': 'غِ' } },
+            { letter: 'ف', name: 'فاء', pronunciations: { 'َ': 'فَ', 'ُ': 'فُ', 'ِ': 'فِ' } },
+            { letter: 'ق', name: 'قاف', pronunciations: { 'َ': 'قَ', 'ُ': 'قُ', 'ِ': 'قِ' } },
+            { letter: 'ك', name: 'كاف', pronunciations: { 'َ': 'كَ', 'ُ': 'كُ', 'ِ': 'كِ' } },
+            { letter: 'ل', name: 'لام', pronunciations: { 'َ': 'لَ', 'ُ': 'لُ', 'ِ': 'لِ' } },
+            { letter: 'م', name: 'ميم', pronunciations: { 'َ': 'مَ', 'ُ': 'مُ', 'ِ': 'مِ' } },
+            { letter: 'ن', name: 'نون', pronunciations: { 'َ': 'نَ', 'ُ': 'نُ', 'ِ': 'نِ' } },
+            { letter: 'ه', name: 'هاء', pronunciations: { 'َ': 'هَ', 'ُ': 'هُ', 'ِ': 'هِ' } },
+            { letter: 'و', name: 'واو', pronunciations: { 'َ': 'وَ', 'ُ': 'وُ', 'ِ': 'وِ' } },
+            { letter: 'ي', name: 'ياء', pronunciations: { 'َ': 'يَ', 'ُ': 'يُ', 'ِ': 'يِ' } }
+        ];
+
+        const harakat = [
+            { symbol: 'َ', name: 'فتحة' },
+            { symbol: 'ُ', name: 'ضمة' },
+            { symbol: 'ِ', name: 'كسرة' }
+        ];
+        
+        const lettersGrid = document.getElementById('lettersGrid');
+        const letterModal = document.getElementById('letterModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalLetter = document.getElementById('modalLetter');
+        const letterNameModal = document.getElementById('letterNameModal');
+        const harakatContainer = document.getElementById('harakatContainer');
+        const voiceSection = document.getElementById('voiceSection');
+        const recordBtn = document.getElementById('recordBtn');
+        const recordIcon = document.getElementById('recordIcon');
+        const recordText = document.getElementById('recordText');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const nextBtn = document.getElementById('nextBtn');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+        const instruction = document.getElementById('instruction');
+        const audioWave = document.getElementById('audioWave');
+        const recordingTimer = document.getElementById('recordingTimer');
+        const timerValue = document.getElementById('timerValue');
+        const offlineMessage = document.getElementById('offlineMessage');
+        
+        let currentLetter = null;
+        let currentHaraka = null;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let recordingTimeout = null;
+        let timerInterval = null;
+        let secondsElapsed = 0;
+        let storedPronunciations = {};
+        let completedHarakat = {};
+        let isOnline = navigator.onLine;
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let hasSpoken = false;
+        let speechRecognition = null;
+        
+        function initApp() {
+            updateOnlineStatus();
+            window.addEventListener('online', updateOnlineStatus);
+            window.addEventListener('offline', updateOnlineStatus);
+            loadStoredData();
+            initLettersGrid();
+            initHarakatButtons();
+            audioWave.style.display = 'none';
+            recordingTimer.style.display = 'none';
+            initSpeechRecognition();
+        }
+        
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                speechRecognition = new webkitSpeechRecognition();
+                speechRecognition.continuous = false;
+                speechRecognition.interimResults = false;
+                speechRecognition.lang = 'ar-SA';
+                
+                speechRecognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript.trim();
+                    console.log("Heard:", transcript); // Debugging
+                    const expected = currentLetter.pronunciations[currentHaraka];
+                    const isCorrect = checkPronunciationMatch(transcript, expected);
+                    
+                    if (isCorrect) handleCorrectPronunciation();
+                    else handleIncorrectPronunciation();
+                };
+                
+                speechRecognition.onerror = (event) => {
+                    console.error('Speech recognition error', event.error);
+                    // هنا التغيير المهم: لا تخمين عشوائي إذا فشل الميكروفون
+                    showError("لم أسمعك جيداً، حاول مرة أخرى");
+                };
+            }
+        }
+        
+        // دالة لمقارنة النصوص مع تجاهل التشكيل والهمزات لتسهيل المطابقة
+        function normalizeArabic(text) {
+            if (!text) return "";
+            text = text.replace(/([^\u0621-\u064A\u0660-\u0669\u06F0-\u06F9])/g, ''); // إزالة التشكيل
+            // توحيد الألفات
+            text = text.replace(/(آ|إ|أ)/g, 'ا');
+            text = text.replace(/ة/g, 'ه');
+            text = text.replace(/ئ/g, 'ء');
+            return text;
+        }
+
+        // ========================================================
+        // الدالة المحسنة للتحقق من النطق (تدعم المرونة في الإجابات)
+        // ========================================================
+        function checkPronunciationMatch(spoken, expected) {
+            // 1. تنظيف النص المنطوق والحرف الأساسي
+            let cleanSpoken = normalizeArabic(spoken);
+            let baseLetter = normalizeArabic(currentLetter.letter);
+            
+            console.log(`Checking: Spoken[${cleanSpoken}] vs Base[${baseLetter}] - Haraka: ${currentHaraka}`);
+
+            // 2. بناء قائمة بالاحتمالات الصحيحة لهذا الحرف مع هذه الحركة
+            let validVariations = [];
+            
+            // إضافة النطق المتوقع الأصلي (مع التنظيف)
+            validVariations.push(normalizeArabic(expected));
+
+            // إضافة الحرف الساكن دائماً كخيار مقبول (لأن جوجل أحياناً يسقط الحركة)
+            // ملاحظة: إذا كنت تريد التشديد، يمكنك إزالة هذا السطر، لكنه مفيد للأطفال
+            validVariations.push(baseLetter);
+
+            if (currentHaraka === 'َ') {
+                // في حالة الفتحة: نقبل المد بالألف (با) أو الألف المقصورة (بى)
+                validVariations.push(baseLetter + 'ا');
+                validVariations.push(baseLetter + 'ى');
+                
+                // حالة خاصة للألف (أ + ا = ا)
+                if(baseLetter === 'ا') validVariations.push('ا'); 
+            } 
+            else if (currentHaraka === 'ُ') {
+                // في حالة الضمة: نقبل المد بالواو (بو)
+                validVariations.push(baseLetter + 'و');
+            } 
+            else if (currentHaraka === 'ِ') {
+                // في حالة الكسرة: نقبل المد بالياء (بي)
+                validVariations.push(baseLetter + 'ي');
+            }
+
+            console.log("Valid variations:", validVariations);
+
+            // 3. التحقق: هل النص المنطوق يحتوي على أي من الاحتمالات الصحيحة؟
+            // نستخدم includes لأن جوجل قد يضيف كلمات إضافية أحياناً
+            return validVariations.some(variation => cleanSpoken.includes(variation));
+        }
+        
+        function updateOnlineStatus() {
+            isOnline = navigator.onLine;
+            if (!isOnline) {
+                offlineMessage.style.display = 'block';
+                setTimeout(() => { offlineMessage.style.display = 'none'; }, 5000);
+            }
+        }
+        
+        function loadStoredData() {
+            const storedData = localStorage.getItem('arabicLettersAppData');
+            if (storedData) {
+                storedPronunciations = JSON.parse(storedData);
+                updateLetterCardsCompletion();
+            } else { storedPronunciations = {}; }
+        }
+        
+        function updateLetterCardsCompletion() {
+            const letterCards = document.querySelectorAll('.letter-card');
+            letterCards.forEach(card => {
+                const letter = card.querySelector('.letter').textContent;
+                if (storedPronunciations[letter] && 
+                    Object.keys(storedPronunciations[letter]).length === harakat.length) {
+                    card.classList.add('completed');
+                } else { card.classList.remove('completed'); }
+            });
+        }
+        
+        function saveData() {
+            localStorage.setItem('arabicLettersAppData', JSON.stringify(storedPronunciations));
+            updateLetterCardsCompletion();
+        }
+        
+        function initLettersGrid() {
+            lettersGrid.innerHTML = '';
+            arabicLetters.forEach(letterData => {
+                const letterCard = document.createElement('div');
+                letterCard.className = 'letter-card';
+                const isCompleted = storedPronunciations[letterData.letter] && 
+                                   Object.keys(storedPronunciations[letterData.letter]).length === harakat.length;
+                if (isCompleted) letterCard.classList.add('completed');
+                letterCard.innerHTML = `<div class="letter">${letterData.letter}</div><div class="letter-name">${letterData.name}</div>`;
+                letterCard.addEventListener('click', () => {
+                    currentLetter = letterData;
+                    completedHarakat = storedPronunciations[letterData.letter] || {};
+                    openModal();
+                });
+                lettersGrid.appendChild(letterCard);
+            });
+        }
+        
+        function initHarakatButtons() {
+            harakatContainer.innerHTML = '';
+            harakat.forEach(haraka => {
+                const harakaBtn = document.createElement('button');
+                harakaBtn.className = 'haraka-btn';
+                if (completedHarakat[haraka.symbol]) harakaBtn.classList.add('completed');
+                harakaBtn.dataset.haraka = haraka.symbol;
+                harakaBtn.innerHTML = `${haraka.symbol}<div class="haraka-name">${haraka.name}</div>`;
+                harakaBtn.addEventListener('click', (e) => { handleHarakaClick(e, haraka); });
+                harakatContainer.appendChild(harakaBtn);
+            });
+        }
+        
+        function openModal() {
+            modalLetter.textContent = currentLetter.letter;
+            letterNameModal.textContent = currentLetter.name;
+            initHarakatButtons();
+            resetVoiceSection();
+            letterModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            if (isOnline) playSound('pop');
+            appSpeak(currentLetter.name);
+        }
+        
+        function closeModalHandler() {
+            letterModal.style.display = 'none';
+            document.body.style.overflow = '';
+            currentHaraka = null;
+            if (isRecording) stopRecording();
+            if (audioContext && audioContext.state !== 'closed') audioContext.close();
+            if (speechRecognition) speechRecognition.stop();
+            if (isOnline) playSound('pop');
+        }
+        
+        function resetVoiceSection() {
+            statusMessage.style.display = 'none';
+            progressContainer.style.display = 'none';
+            progressBar.style.width = '0%';
+            nextBtn.style.display = 'none';
+            tryAgainBtn.style.display = 'none';
+            recordBtn.style.display = 'none';
+            recordIcon.textContent = '🎤';
+            recordText.textContent = 'تسجيل الصوت';
+            recordBtn.className = 'record-btn';
+            instruction.textContent = 'اضغط على إحدى الحركات أعلاه ثم سجل صوتك';
+            audioWave.style.display = 'none';
+            recordingTimer.style.display = 'none';
+            clearTimeout(recordingTimeout);
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            timerValue.textContent = '0:00';
+            hasSpoken = false;
+        }
+        
+        function handleHarakaClick(e, haraka) {
+            const harakaBtns = document.querySelectorAll('.haraka-btn');
+            harakaBtns.forEach(btn => btn.classList.remove('active'));
+            e.target.classList.add('active');
+            currentHaraka = haraka.symbol;
+            
+            const expected = currentLetter.pronunciations[currentHaraka];
+            const professionalPhrase = `${currentLetter.name} مع ${haraka.name} ... ${expected}`;
+            
+            instruction.textContent = `استمع ثم اضغط على زر التسجيل وقل: "${expected}"`;
+            resetVoiceSection();
+            recordBtn.style.display = 'flex';
+            appSpeak(professionalPhrase);
+        }
+        
+        function playSound(type) {
+            const sounds = {
+                'correct': 'https://www.soundjay.com/buttons/sounds/button-09.mp3',
+                'wrong': 'https://www.soundjay.com/buttons/sounds/button-10.mp3',
+                'pop': 'https://www.soundjay.com/buttons/sounds/button-21.mp3'
+            };
+            try { new Audio(sounds[type]).play().catch(e => console.log(e)); } catch (e) { console.error(e); }
+        }
+        
+        function speakInstruction(text) { appSpeak(text); }
+        
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = getRandomColor();
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => { confetti.remove(); }, 3000);
+            }
+        }
+        
+        function getRandomColor() {
+            const colors = ['#4CAF50', '#8BC34A', '#FFC107', '#FF5722', '#2196F3', '#9C27B0'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        function formatTime(seconds) {
+            if (seconds < 60) return `0:${seconds < 10 ? '0' : ''}${seconds}`;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+        
+        async function startRecording() {
+            if (!currentHaraka) { showError('الرجاء اختيار حركة أولاً'); return; }
+            try {
+                resetRecordingState();
+                
+                // التأكد من دعم المتصفح
+                if (!('webkitSpeechRecognition' in window)) {
+                     showError("جهازك لا يدعم التعرف على الصوت");
+                     return;
+                }
+
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (e) => { audioChunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                     // عند التوقف، نحلل الصوت
+                     analyzeRecording();
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                updateUIForRecording(true);
+                startTimer();
+                detectVoice();
+                
+                recordingTimeout = setTimeout(() => {
+                    if (isRecording) {
+                        stopRecording();
+                    }
+                }, 4000); // 4 ثواني كحد أقصى
+            } catch (error) {
+                console.error('General Error:', error);
+                showError('يرجى السماح بصلاحية الميكروفون.');
+            }
+        }
+        
+        function resetRecordingState() {
+            audioChunks = [];
+            hasSpoken = false;
+            secondsElapsed = 0;
+            timerValue.textContent = '0:00';
+            clearTimeout(recordingTimeout);
+            clearInterval(timerInterval);
+        }
+        
+        function updateUIForRecording(recording) {
+            if (recording) {
+                recordIcon.textContent = '🔴';
+                recordText.textContent = 'جارٍ التسجيل...';
+                recordBtn.className = 'record-btn recording';
+                audioWave.style.display = 'flex';
+                recordingTimer.style.display = 'block';
+                statusMessage.style.display = 'none';
+            } else {
+                recordIcon.textContent = '🎤';
+                recordText.textContent = 'تسجيل الصوت';
+                recordBtn.className = 'record-btn';
+                audioWave.style.display = 'none';
+                recordingTimer.style.display = 'none';
+            }
+        }
+        
+        function showError(message) {
+            statusMessage.className = 'status-message error';
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            tryAgainBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none';
+            appSpeak(message);
+        }
+        
+        function startTimer() {
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            timerValue.textContent = '0:00';
+            timerInterval = setInterval(() => {
+                secondsElapsed++;
+                timerValue.textContent = formatTime(secondsElapsed);
+            }, 1000);
+        }
+        
+        function detectVoice() {
+            if (!isRecording || !analyser) return;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            const checkVoice = () => {
+                if (!isRecording) return;
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
+                if (sum / bufferLength > 20) hasSpoken = true;
+                requestAnimationFrame(checkVoice);
+            };
+            checkVoice();
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                try { mediaRecorder.stop(); } catch(e){}
+                isRecording = false;
+                updateUIForRecording(false);
+                clearTimeout(recordingTimeout);
+                clearInterval(timerInterval);
+                if(mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                if (audioContext && audioContext.state !== 'closed') audioContext.close();
+            }
+        }
+        
+        function analyzeRecording() {
+            showAnalyzingMessage();
+            if (speechRecognition && isOnline) {
+                // إلغاء أي عمليات سابقة
+                try { speechRecognition.stop(); } catch(e) {}
+                
+                // بدء التعرف الفعلي
+                setTimeout(() => {
+                    try { speechRecognition.start(); } 
+                    catch (e) { 
+                        console.error(e); 
+                        showError("خطأ في خدمة الصوت");
+                    }
+                }, 500);
+            } else {
+                showError("تحتاج لاتصال إنترنت للتحليل");
+            }
+        }
+        
+        function showAnalyzingMessage() {
+            statusMessage.className = 'status-message info';
+            statusMessage.textContent = 'جارٍ تحليل النطق...';
+            statusMessage.style.display = 'block';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '50%';
+        }
+        
+        function handleCorrectPronunciation() {
+            completedHarakat[currentHaraka] = true;
+            if (!storedPronunciations[currentLetter.letter]) storedPronunciations[currentLetter.letter] = {};
+            storedPronunciations[currentLetter.letter][currentHaraka] = true;
+            saveData();
+            
+            statusMessage.className = 'status-message success';
+            statusMessage.textContent = 'أحسنت! النطق صحيح.';
+            nextBtn.style.display = 'inline-block';
+            tryAgainBtn.style.display = 'none';
+            progressBar.style.width = '100%';
+            
+            createConfetti();
+            playSound('correct');
+            appSpeak('أحسنت النطق صحيح');
+            
+            initHarakatButtons();
+            checkAllHarakatCompleted();
+        }
+        
+        function handleIncorrectPronunciation() {
+            statusMessage.className = 'status-message error';
+            statusMessage.textContent = 'النطق غير صحيح. حاول مرة أخرى.';
+            tryAgainBtn.style.display = 'inline-block';
+            nextBtn.style.display = 'none';
+            progressBar.style.width = '0%';
+            playSound('wrong');
+            appSpeak('حاول مرة أخرى');
+        }
+        
+        function checkAllHarakatCompleted() {
+            if (Object.keys(completedHarakat).length === harakat.length) {
+                statusMessage.textContent = 'ممتاز! لقد أكملت جميع الحركات لهذا الحرف.';
+                appSpeak('ممتاز لقد أكملت جميع الحركات لهذا الحرف');
+            }
+        }
+        
+        function nextHaraka() {
+            const harakaBtns = document.querySelectorAll('.haraka-btn');
+            const currentIndex = Array.from(harakaBtns).findIndex(btn => btn.dataset.haraka === currentHaraka);
+            if (currentIndex < harakaBtns.length - 1) {
+                harakaBtns[currentIndex + 1].click();
+            } else {
+                statusMessage.className = 'status-message success';
+                statusMessage.textContent = 'تهانينا! لقد أكملت جميع الحركات لهذا الحرف.';
+                appSpeak('تهانينا لقد أكملت جميع الحركات لهذا الحرف');
+                nextBtn.style.display = 'none';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initApp);
+        closeModal.addEventListener('click', closeModalHandler);
+        letterModal.addEventListener('click', (e) => { if (e.target === letterModal) closeModalHandler(); });
+        recordBtn.addEventListener('click', () => { if (isRecording) stopRecording(); else startRecording(); });
+        nextBtn.addEventListener('click', nextHaraka);
+        tryAgainBtn.addEventListener('click', () => {
+            resetVoiceSection();
+            const expected = currentLetter.pronunciations[currentHaraka];
+            instruction.textContent = `اضغط على زر التسجيل وقل: "${expected}"`;
+            recordBtn.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
