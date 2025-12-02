@@ -695,6 +695,7 @@ function attachGlobalListeners() {
                     </a>
                     <!-- الرابط الجديد: منصة المعلم المرشد -->
                     <!-- target="_blank" هو المسؤول عن فتح الرابط في متصفح خارجي -->
+                    <!-- هنا التعديل: تمت إضافة target="_blank" -->
                     <a href="https://guiding-teacher.github.io/" target="_blank" style="display:block; background:#f9f9f9; padding:10px; margin-bottom:20px; border-radius:10px; text-decoration:none; color:#333; border:1px solid #eee;">
                         <i class="fas fa-globe" style="color:#2196F3; margin-left:10px;"></i>
                         منصة المعلم المرشد

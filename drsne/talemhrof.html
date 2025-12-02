@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>تعلم الحروف العربية مع الحركات للأطفال</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <meta name="theme-color" content="#4CAF50">
     <style>
@@ -19,567 +18,117 @@
             --accent-color: #FF5722;
         }
         
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            font-family: 'Tajawal', sans-serif;
-            background-color: #F1F8E9;
-            color: var(--dark-color);
-            line-height: 1.6;
-            touch-action: manipulation;
-        }
-        
-        .container {
-            max-width: 100%;
-            padding: 15px;
-            margin: 0 auto;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Tajawal', sans-serif; background-color: #F1F8E9; color: var(--dark-color); line-height: 1.6; touch-action: manipulation; }
+        .container { max-width: 100%; padding: 15px; margin: 0 auto; }
         
         header {
             background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
-            color: white;
-            padding: 20px 0;
-            text-align: center;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-            position: relative;
-            overflow: hidden;
+            color: white; padding: 20px 0; text-align: center; border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 25px; position: relative; overflow: hidden;
         }
-
-        /* زر الخروج */
         .home-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            border-radius: 50px;
-            padding: 8px 15px;
-            text-decoration: none;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            z-index: 10;
+            position: absolute; top: 15px; right: 15px; background: rgba(255, 255, 255, 0.2);
+            color: white; border: 2px solid white; border-radius: 50px; padding: 8px 15px;
+            text-decoration: none; font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; z-index: 10;
         }
-        
         header::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="white" opacity="0.1"><text x="50%" y="50%" font-size="30" text-anchor="middle" dominant-baseline="middle">أ ب ت</text></svg>');
             pointer-events: none;
         }
+        h1 { font-size: 2rem; margin: 0; position: relative; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .subtitle { font-size: 1.1rem; opacity: 0.9; margin-top: 5px; }
         
-        h1 {
-            font-size: 2rem;
-            margin: 0;
-            position: relative;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
-        
-        .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-        
-        .letters-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
+        .letters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .letter-card {
-            background-color: white;
-            border-radius: 15px;
-            padding: 20px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-            border: 3px solid var(--primary-color);
-            aspect-ratio: 1/1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            background-color: white; border-radius: 15px; padding: 20px 10px; text-align: center; cursor: pointer;
+            transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0,0,0,0.1); position: relative; overflow: hidden;
+            border: 3px solid var(--primary-color); aspect-ratio: 1/1; display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        
-        .letter-card:hover, .letter-card:active {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-        }
-        
-        .letter-card::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, var(--accent-color), var(--warning-color));
-        }
-        
+        .letter-card:hover, .letter-card:active { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+        .letter-card::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: linear-gradient(90deg, var(--accent-color), var(--warning-color)); }
         .letter-card.completed::before {
-            content: "✓";
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            width: 25px;
-            height: 25px;
-            background-color: var(--success-color);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1rem;
-            font-weight: bold;
+            content: "✓"; position: absolute; top: 5px; left: 5px; width: 25px; height: 25px;
+            background-color: var(--success-color); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1rem; font-weight: bold;
         }
-        
-        .letter {
-            font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: var(--dark-color);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .letter-name {
-            font-size: 1rem;
-            color: var(--dark-color);
-            background-color: rgba(76, 175, 80, 0.1);
-            padding: 5px 10px;
-            border-radius: 10px;
-            display: inline-block;
-        }
+        .letter { font-size: 3rem; font-weight: bold; margin-bottom: 10px; color: var(--dark-color); text-shadow: 2px 2px 4px rgba(0,0,0,0.1); }
+        .letter-name { font-size: 1rem; color: var(--dark-color); background-color: rgba(76, 175, 80, 0.1); padding: 5px 10px; border-radius: 10px; display: inline-block; }
         
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(5px);
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);
         }
-        
         .modal-content {
-            background-color: white;
-            border-radius: 25px;
-            width: 95%;
-            max-width: 500px;
-            padding: 25px;
-            text-align: center;
-            position: relative;
-            animation: modalFadeIn 0.4s;
-            border: 5px solid var(--accent-color);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            max-height: 90vh;
-            overflow-y: auto;
+            background-color: white; border-radius: 25px; width: 95%; max-width: 500px; padding: 25px;
+            text-align: center; position: relative; animation: modalFadeIn 0.4s; border: 5px solid var(--accent-color);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;
         }
-        
-        @keyframes modalFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
+        @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-30px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .close-modal {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            font-size: 1.8rem;
-            cursor: pointer;
-            color: var(--dark-color);
-            background-color: var(--light-color);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-            z-index: 1;
+            position: absolute; top: 15px; left: 15px; font-size: 1.8rem; cursor: pointer; color: var(--dark-color);
+            background-color: var(--light-color); width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; transition: all 0.3s ease; z-index: 1;
         }
+        .close-modal:hover, .close-modal:active { transform: rotate(90deg) scale(1.1); background-color: var(--accent-color); color: white; }
+        .modal-letter { font-size: 5rem; margin: 20px 0; line-height: 1; color: var(--dark-color); text-shadow: 3px 3px 6px rgba(0,0,0,0.1); position: relative; display: inline-block; }
+        .modal-letter::after { content: ""; position: absolute; bottom: -10px; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); border-radius: 2px; }
+        .letter-name-modal { font-size: 1.3rem; margin-bottom: 20px; color: var(--dark-color); background-color: rgba(139, 195, 74, 0.2); padding: 10px 15px; border-radius: 15px; display: inline-block; }
         
-        .close-modal:hover, .close-modal:active {
-            transform: rotate(90deg) scale(1.1);
-            background-color: var(--accent-color);
-            color: white;
-        }
-        
-        .modal-letter {
-            font-size: 5rem;
-            margin: 20px 0;
-            line-height: 1;
-            color: var(--dark-color);
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
-            position: relative;
-            display: inline-block;
-        }
-        
-        .modal-letter::after {
-            content: "";
-            position: absolute;
-            bottom: -10px;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-            border-radius: 2px;
-        }
-        
-        .letter-name-modal {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            color: var(--dark-color);
-            background-color: rgba(139, 195, 74, 0.2);
-            padding: 10px 15px;
-            border-radius: 15px;
-            display: inline-block;
-        }
-        
-        .harakat-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 25px 0;
-            flex-wrap: wrap;
-        }
-        
+        .harakat-container { display: flex; justify-content: center; gap: 15px; margin: 25px 0; flex-wrap: wrap; }
         .haraka-btn {
-            background-color: var(--light-color);
-            border: 3px solid var(--primary-color);
-            border-radius: 50%;
-            width: 70px;
-            height: 70px;
-            font-size: 2.2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            color: var(--dark-color);
+            background-color: var(--light-color); border: 3px solid var(--primary-color); border-radius: 50%;
+            width: 70px; height: 70px; font-size: 2.2rem; cursor: pointer; transition: all 0.3s ease; display: flex;
+            justify-content: center; align-items: center; position: relative; color: var(--dark-color);
         }
+        .haraka-btn:hover, .haraka-btn:active { background-color: var(--primary-color); color: white; transform: scale(1.1); }
+        .haraka-btn.active { background-color: var(--primary-color); color: white; transform: scale(1.1); box-shadow: 0 0 15px rgba(76, 175, 80, 0.5); }
+        .haraka-btn.completed { background-color: var(--success-color); color: white; border-color: var(--success-color); }
+        .haraka-name { position: absolute; bottom: -25px; font-size: 0.9rem; color: var(--dark-color); white-space: nowrap; }
         
-        .haraka-btn:hover, .haraka-btn:active {
-            background-color: var(--primary-color);
-            color: white;
-            transform: scale(1.1);
-        }
-        
-        .haraka-btn.active {
-            background-color: var(--primary-color);
-            color: white;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
-        }
-        
-        .haraka-btn.completed {
-            background-color: var(--success-color);
-            color: white;
-            border-color: var(--success-color);
-        }
-        
-        .haraka-name {
-            position: absolute;
-            bottom: -25px;
-            font-size: 0.9rem;
-            color: var(--dark-color);
-            white-space: nowrap;
-        }
-        
-        .voice-section {
-            margin-top: 25px;
-            padding: 20px;
-            background-color: var(--light-color);
-            border-radius: 20px;
-            border: 2px dashed var(--primary-color);
-        }
-        
+        .voice-section { margin-top: 25px; padding: 20px; background-color: var(--light-color); border-radius: 20px; border: 2px dashed var(--primary-color); }
         .record-btn {
-            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 15px 25px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 0 auto;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 250px;
-            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color)); color: white; border: none;
+            border-radius: 50px; padding: 15px 25px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center;
+            gap: 10px; margin: 0 auto; transition: all 0.3s ease; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 250px; justify-content: center;
         }
+        .record-btn:hover, .record-btn:active { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .record-btn.recording { background: linear-gradient(135deg, var(--error-color), #D32F2F); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(244, 67, 54, 0); } 100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); } }
         
-        .record-btn:hover, .record-btn:active {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-        
-        .record-btn.recording {
-            background: linear-gradient(135deg, var(--error-color), #D32F2F);
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 15px rgba(244, 67, 54, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
-            }
-        }
-        
-        .status-message {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 15px;
-            display: none;
-            font-size: 1.1rem;
-            border-left: 5px solid transparent;
-        }
-        
-        .status-message.success {
-            background-color: rgba(139, 195, 74, 0.3);
-            color: #2E7D32;
-            display: block;
-            border-left-color: var(--success-color);
-        }
-        
-        .status-message.error {
-            background-color: rgba(244, 67, 54, 0.2);
-            color: #C62828;
-            display: block;
-            border-left-color: var(--error-color);
-        }
-        
-        .status-message.info {
-            background-color: rgba(33, 150, 243, 0.2);
-            color: #0D47A1;
-            display: block;
-            border-left-color: var(--primary-color);
-        }
-        
-        .progress-container {
-            width: 100%;
-            height: 8px;
-            background-color: #E0E0E0;
-            border-radius: 10px;
-            margin-top: 15px;
-            overflow: hidden;
-            display: none;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-            transition: width 0.5s ease;
-        }
+        .status-message { margin-top: 15px; padding: 12px; border-radius: 15px; display: none; font-size: 1.1rem; border-left: 5px solid transparent; }
+        .status-message.success { background-color: rgba(139, 195, 74, 0.3); color: #2E7D32; display: block; border-left-color: var(--success-color); }
+        .status-message.error { background-color: rgba(244, 67, 54, 0.2); color: #C62828; display: block; border-left-color: var(--error-color); }
+        .status-message.info { background-color: rgba(33, 150, 243, 0.2); color: #0D47A1; display: block; border-left-color: var(--primary-color); }
         
         .next-btn {
-            background: linear-gradient(135deg, var(--success-color), #689F38);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            margin-top: 15px;
-            display: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 250px;
+            background: linear-gradient(135deg, var(--success-color), #689F38); color: white; border: none; border-radius: 50px;
+            padding: 12px 25px; font-size: 1.1rem; cursor: pointer; margin-top: 15px; display: none; transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 250px;
         }
-        
-        .next-btn:hover, .next-btn:active {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-        
         .try-again-btn {
-            background: linear-gradient(135deg, var(--warning-color), #FF8F00);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            margin-top: 15px;
-            display: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 250px;
+            background: linear-gradient(135deg, var(--warning-color), #FF8F00); color: white; border: none; border-radius: 50px;
+            padding: 12px 25px; font-size: 1.1rem; cursor: pointer; margin-top: 15px; display: none; transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 250px;
         }
-        
-        .try-again-btn:hover, .try-again-btn:active {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-        
-        .audio-wave {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 50px;
-            gap: 5px;
-            margin: 15px 0;
-        }
-        
+        .audio-wave { display: flex; justify-content: center; align-items: center; height: 50px; gap: 5px; margin: 15px 0; }
         .audio-wave span {
-            display: inline-block;
-            width: 5px;
-            height: 15px;
-            background: linear-gradient(to top, var(--primary-color), var(--accent-color));
-            border-radius: 3px;
-            animation: audioWave 1.5s infinite ease-in-out;
+            display: inline-block; width: 5px; height: 15px; background: linear-gradient(to top, var(--primary-color), var(--accent-color));
+            border-radius: 3px; animation: audioWave 1.5s infinite ease-in-out;
         }
+        .audio-wave span:nth-child(1) { animation-delay: 0.1s; } .audio-wave span:nth-child(2) { animation-delay: 0.2s; }
+        .audio-wave span:nth-child(3) { animation-delay: 0.3s; } .audio-wave span:nth-child(4) { animation-delay: 0.4s; } .audio-wave span:nth-child(5) { animation-delay: 0.5s; }
+        @keyframes audioWave { 0%, 100% { height: 15px; } 50% { height: 35px; } }
         
-        .audio-wave span:nth-child(1) {
-            animation-delay: 0.1s;
-        }
+        .confetti { position: fixed; width: 10px; height: 10px; background-color: var(--accent-color); opacity: 0; z-index: 9999; animation: confetti 3s ease-in-out; pointer-events: none; }
+        @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
         
-        .audio-wave span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        
-        .audio-wave span:nth-child(3) {
-            animation-delay: 0.3s;
-        }
-        
-        .audio-wave span:nth-child(4) {
-            animation-delay: 0.4s;
-        }
-        
-        .audio-wave span:nth-child(5) {
-            animation-delay: 0.5s;
-        }
-        
-        @keyframes audioWave {
-            0%, 100% {
-                height: 15px;
-            }
-            50% {
-                height: 35px;
-            }
-        }
-        
-        .recording-timer {
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: var(--dark-color);
-            opacity: 0.7;
-        }
-        
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background-color: var(--accent-color);
-            opacity: 0;
-            z-index: 9999;
-            animation: confetti 3s ease-in-out;
-            pointer-events: none;
-        }
-        
-        @keyframes confetti {
-            0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(100vh) rotate(720deg);
-                opacity: 0;
-            }
-        }
-        
-        .offline-message {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background-color: var(--warning-color);
-            color: white;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 1001;
-            display: none;
-        }
+        .offline-message { position: fixed; bottom: 20px; left: 20px; right: 20px; background-color: var(--warning-color); color: white; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1001; display: none; }
         
         @media (max-width: 480px) {
-            .letters-grid {
-                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-                gap: 12px;
-            }
-            
-            .letter {
-                font-size: 2.5rem;
-            }
-            
-            .letter-name {
-                font-size: 0.9rem;
-            }
-            
-            .modal-letter {
-                font-size: 4rem;
-            }
-            
-            .haraka-btn {
-                width: 60px;
-                height: 60px;
-                font-size: 2rem;
-            }
-            
-            .haraka-name {
-                font-size: 0.8rem;
-                bottom: -20px;
-            }
-            
-            h1 {
-                font-size: 1.7rem;
-            }
-            
-            .subtitle {
-                font-size: 1rem;
-            }
+            .letters-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 12px; }
+            .letter { font-size: 2.5rem; } .letter-name { font-size: 0.9rem; }
+            .modal-letter { font-size: 4rem; } .haraka-btn { width: 60px; height: 60px; font-size: 2rem; }
+            .haraka-name { font-size: 0.8rem; bottom: -20px; } h1 { font-size: 1.7rem; } .subtitle { font-size: 1rem; }
         }
     </style>
 </head>
@@ -588,7 +137,6 @@
         <a href="drsne.html" class="home-btn">
             <i class="fas fa-arrow-right"></i> خروج
         </a>
-        
         <h1>تعلم الحروف العربية</h1>
         <div class="subtitle">استمع وردد وتعلم الحركات</div>
     </header>
@@ -602,7 +150,6 @@
             <span class="close-modal" id="closeModal">×</span>
             <div class="modal-letter" id="modalLetter"></div>
             <div class="letter-name-modal" id="letterNameModal"></div>
-            
             <div class="harakat-container" id="harakatContainer"></div>
             
             <div class="voice-section" id="voiceSection">
@@ -617,16 +164,7 @@
                     <span></span><span></span><span></span><span></span><span></span>
                 </div>
                 
-                <div class="recording-timer" id="recordingTimer">
-                    مدة التسجيل: <span id="timerValue">0:00</span> / 0:05
-                </div>
-                
-                <div class="progress-container" id="progressContainer">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                
                 <div class="status-message" id="statusMessage"></div>
-                
                 <button class="next-btn" id="nextBtn">الحركة التالية</button>
                 <button class="try-again-btn" id="tryAgainBtn">حاول مرة أخرى</button>
             </div>
@@ -637,11 +175,13 @@
         أنت الآن تستخدم التطبيق في وضع عدم الاتصال. بعض الميزات قد لا تعمل.
     </div>
     
-    <script>
+  <script>
         function appSpeak(text) {
             return new Promise((resolve) => {
                 if (!text) { resolve(); return; }
                 let rate = 1; let pitch = 1;
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                
                 if (typeof Android !== 'undefined') {
                     Android.speakArabic(text, rate.toString(), pitch.toString());
                     let charDelay = 120 / rate; 
@@ -650,7 +190,6 @@
                     return;
                 }
                 if ('speechSynthesis' in window) {
-                    window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(text);
                     utterance.lang = 'ar-SA';
                     utterance.rate = rate;
@@ -711,33 +250,25 @@
         const recordIcon = document.getElementById('recordIcon');
         const recordText = document.getElementById('recordText');
         const statusMessage = document.getElementById('statusMessage');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
         const nextBtn = document.getElementById('nextBtn');
         const tryAgainBtn = document.getElementById('tryAgainBtn');
         const instruction = document.getElementById('instruction');
         const audioWave = document.getElementById('audioWave');
-        const recordingTimer = document.getElementById('recordingTimer');
-        const timerValue = document.getElementById('timerValue');
         const offlineMessage = document.getElementById('offlineMessage');
         
         let currentLetter = null;
         let currentHaraka = null;
-        let mediaRecorder = null;
-        let audioChunks = [];
         let isRecording = false;
-        let recordingTimeout = null;
-        let timerInterval = null;
-        let secondsElapsed = 0;
         let storedPronunciations = {};
         let completedHarakat = {};
         let isOnline = navigator.onLine;
+        let speechRecognition = null;
+        
+        // لإظهار المؤثرات البصرية فقط
         let audioContext = null;
         let analyser = null;
         let microphone = null;
-        let hasSpoken = false;
-        let speechRecognition = null;
-        
+
         function initApp() {
             updateOnlineStatus();
             window.addEventListener('online', updateOnlineStatus);
@@ -746,88 +277,220 @@
             initLettersGrid();
             initHarakatButtons();
             audioWave.style.display = 'none';
-            recordingTimer.style.display = 'none';
             initSpeechRecognition();
         }
         
         function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window) {
-                speechRecognition = new webkitSpeechRecognition();
+            // إنشاء كائن التعرف على الصوت
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                speechRecognition = new SpeechRecognition();
                 speechRecognition.continuous = false;
                 speechRecognition.interimResults = false;
                 speechRecognition.lang = 'ar-SA';
+                speechRecognition.maxAlternatives = 3; // الحصول على بدائل متعددة
+                
+                speechRecognition.onstart = () => {
+                    console.log("التعرف على الصوت بدأ");
+                };
                 
                 speechRecognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript.trim();
-                    console.log("Heard:", transcript); // Debugging
-                    const expected = currentLetter.pronunciations[currentHaraka];
-                    const isCorrect = checkPronunciationMatch(transcript, expected);
+                    let bestMatch = null;
+                    let bestConfidence = 0;
                     
-                    if (isCorrect) handleCorrectPronunciation();
-                    else handleIncorrectPronunciation();
+                    // البحث في جميع البدائل
+                    for (let i = 0; i < event.results.length; i++) {
+                        for (let j = 0; j < event.results[i].length; j++) {
+                            const transcript = event.results[i][j].transcript.trim();
+                            const confidence = event.results[i][j].confidence;
+                            console.log(`البديل ${j}: "${transcript}" (ثقة: ${confidence})`);
+                            
+                            if (confidence > bestConfidence) {
+                                bestMatch = transcript;
+                                bestConfidence = confidence;
+                            }
+                        }
+                    }
+                    
+                    console.log("أفضل نتيجة:", bestMatch);
+                    
+                    if (bestMatch) {
+                        const expected = currentLetter.pronunciations[currentHaraka];
+                        const isCorrect = checkPronunciationMatch(bestMatch, expected);
+                        
+                        stopVisuals();
+                        if (isCorrect) handleCorrectPronunciation(bestMatch);
+                        else handleIncorrectPronunciation();
+                    } else {
+                        showError("لم أسمعك جيداً، حاول مرة أخرى");
+                    }
                 };
                 
                 speechRecognition.onerror = (event) => {
+                    stopVisuals();
                     console.error('Speech recognition error', event.error);
-                    // هنا التغيير المهم: لا تخمين عشوائي إذا فشل الميكروفون
-                    showError("لم أسمعك جيداً، حاول مرة أخرى");
+                    if (event.error === 'no-speech') {
+                        showError("لم يتم اكتشاف صوت. تأكد من السماح باستخدام الميكروفون");
+                    } else if (event.error === 'audio-capture') {
+                        showError("لا يوجد ميكروفون متاح. تأكد من توصيل الميكروفون");
+                    } else if (event.error === 'not-allowed') {
+                        showError("لم يتم السماح باستخدام الميكروفون. يرجى تفعيل الإذن");
+                    } else {
+                        showError("حدث خطأ في التعرف على الصوت. حاول مرة أخرى");
+                    }
                 };
+                
+                speechRecognition.onend = () => {
+                    isRecording = false;
+                    updateUIForRecording(false);
+                    stopVisuals();
+                };
+            } else {
+                console.warn('التعرف على الصوت غير مدعوم في هذا المتصفح');
+                recordBtn.style.display = 'none';
+                instruction.innerHTML = "الميزة غير مدعومة في متصفحك. جرب استخدام Chrome أو Edge.";
             }
         }
         
-        // دالة لمقارنة النصوص مع تجاهل التشكيل والهمزات لتسهيل المطابقة
+        // ========================================================
+        // دالة التطبيع المحسنة
+        // ========================================================
         function normalizeArabic(text) {
-            if (!text) return "";
-            text = text.replace(/([^\u0621-\u064A\u0660-\u0669\u06F0-\u06F9])/g, ''); // إزالة التشكيل
-            // توحيد الألفات
-            text = text.replace(/(آ|إ|أ)/g, 'ا');
-            text = text.replace(/ة/g, 'ه');
-            text = text.replace(/ئ/g, 'ء');
-            return text;
+            if (!text || typeof text !== 'string') return "";
+            
+            // تحويل إلى نص عربي
+            let normalized = text;
+            
+            // إزالة المسافات والفواصل الزائدة
+            normalized = normalized.replace(/\s+/g, '');
+            
+            // إزالة علامات التشكيل والتنوين
+            normalized = normalized.replace(/[\u064B-\u065F]/g, '');
+            
+            // توحيد أشكال الألف
+            normalized = normalized.replace(/[أإآ]/g, 'ا');
+            
+            // توحيد أشكال الياء
+            normalized = normalized.replace(/[ىٰ]/g, 'ي');
+            
+            // توحيد أشكال التاء المربوطة
+            normalized = normalized.replace(/ة/g, 'ه');
+            
+            // إزالة أي أحرف غير عربية
+            normalized = normalized.replace(/[^\u0600-\u06FF]/g, '');
+            
+            return normalized.trim();
         }
 
         // ========================================================
-        // الدالة المحسنة للتحقق من النطق (تدعم المرونة في الإجابات)
+        // دالة التحقق المرنة المحسنة
         // ========================================================
         function checkPronunciationMatch(spoken, expected) {
-            // 1. تنظيف النص المنطوق والحرف الأساسي
+            if (!spoken || !expected) return false;
+            
             let cleanSpoken = normalizeArabic(spoken);
             let baseLetter = normalizeArabic(currentLetter.letter);
+            let haraka = currentHaraka;
             
-            console.log(`Checking: Spoken[${cleanSpoken}] vs Base[${baseLetter}] - Haraka: ${currentHaraka}`);
-
-            // 2. بناء قائمة بالاحتمالات الصحيحة لهذا الحرف مع هذه الحركة
-            let validVariations = [];
+            console.log(`التحقق: "${cleanSpoken}" مقابل "${baseLetter}" مع الحركة "${haraka}"`);
+            console.log(`المتوقع الأصلي: "${expected}"`);
             
-            // إضافة النطق المتوقع الأصلي (مع التنظيف)
-            validVariations.push(normalizeArabic(expected));
-
-            // إضافة الحرف الساكن دائماً كخيار مقبول (لأن جوجل أحياناً يسقط الحركة)
-            // ملاحظة: إذا كنت تريد التشديد، يمكنك إزالة هذا السطر، لكنه مفيد للأطفال
-            validVariations.push(baseLetter);
-
-            if (currentHaraka === 'َ') {
-                // في حالة الفتحة: نقبل المد بالألف (با) أو الألف المقصورة (بى)
-                validVariations.push(baseLetter + 'ا');
-                validVariations.push(baseLetter + 'ى');
-                
-                // حالة خاصة للألف (أ + ا = ا)
-                if(baseLetter === 'ا') validVariations.push('ا'); 
+            // قائمة بالنطقات المقبولة
+            let validPronunciations = [];
+            
+            // 1. النطق الأصلي المتوقع (بَ، بُ، بِ)
+            validPronunciations.push(normalizeArabic(expected));
+            
+            // 2. الحرف الساكن فقط (ب)
+            validPronunciations.push(baseLetter);
+            
+            // 3. نطق الحركة كحرف مد
+            if (haraka === 'َ') { // فتحة
+                // الفتحة يمكن نطقها كألف بعد الحرف
+                validPronunciations.push(baseLetter + 'ا'); // با
+                validPronunciations.push('ا' + baseLetter); // اب (في بعض اللهجات)
+                validPronunciations.push(baseLetter + 'ى'); // بى
+                // للألف فقط
+                if (baseLetter === 'ا') {
+                    validPronunciations.push('أ');
+                    validPronunciations.push('إ');
+                    validPronunciations.push('آ');
+                }
             } 
-            else if (currentHaraka === 'ُ') {
-                // في حالة الضمة: نقبل المد بالواو (بو)
-                validVariations.push(baseLetter + 'و');
+            else if (haraka === 'ُ') { // ضمة
+                // الضمة يمكن نطقها كواو بعد الحرف
+                validPronunciations.push(baseLetter + 'و'); // بو
+                validPronunciations.push('و' + baseLetter); // وب (في بعض اللهجات)
             } 
-            else if (currentHaraka === 'ِ') {
-                // في حالة الكسرة: نقبل المد بالياء (بي)
-                validVariations.push(baseLetter + 'ي');
+            else if (haraka === 'ِ') { // كسرة
+                // الكسرة يمكن نطقها كياء بعد الحرف
+                validPronunciations.push(baseLetter + 'ي'); // بي
+                validPronunciations.push('ي' + baseLetter); // يب (في بعض اللهجات)
+                validPronunciations.push(baseLetter + 'ى'); // بى
             }
-
-            console.log("Valid variations:", validVariations);
-
-            // 3. التحقق: هل النص المنطوق يحتوي على أي من الاحتمالات الصحيحة؟
-            // نستخدم includes لأن جوجل قد يضيف كلمات إضافية أحياناً
-            return validVariations.some(variation => cleanSpoken.includes(variation));
+            
+            console.log("النطقات المقبولة:", validPronunciations);
+            
+            // التحقق من التطابق المباشر
+            for (let pronunciation of validPronunciations) {
+                if (cleanSpoken === pronunciation) {
+                    console.log(`تطابق مباشر: "${cleanSpoken}" مع "${pronunciation}"`);
+                    return true;
+                }
+            }
+            
+            // التحقق من التطابق الجزئي (إذا كان النطق يحتوي على النطق المقبول)
+            for (let pronunciation of validPronunciations) {
+                if (cleanSpoken.includes(pronunciation) && pronunciation.length > 0) {
+                    console.log(`تطابق جزئي: "${cleanSpoken}" يحتوي على "${pronunciation}"`);
+                    return true;
+                }
+            }
+            
+            // تحقق إضافي للتشابه الصوتي
+            if (isPhoneticallySimilar(cleanSpoken, baseLetter, haraka)) {
+                console.log(`تشابه صوتي: "${cleanSpoken}"`);
+                return true;
+            }
+            
+            console.log("لا يوجد تطابق");
+            return false;
+        }
+        
+        // ========================================================
+        // دالة التحقق من التشابه الصوتي
+        // ========================================================
+        function isPhoneticallySimilar(spoken, baseLetter, haraka) {
+            // إذا كان النطق فارغاً
+            if (!spoken || spoken.length === 0) return false;
+            
+            // إذا كان النطق هو الحرف الأساسي فقط
+            if (spoken === baseLetter) return true;
+            
+            // التحقق حسب نوع الحركة
+            if (haraka === 'َ') { // فتحة
+                // تحقق إذا كان يحتوي على الحرف والألف معاً
+                if (spoken.includes(baseLetter) && 
+                    (spoken.includes('ا') || spoken.includes('أ') || spoken.includes('إ') || spoken.includes('آ') || spoken.includes('ى'))) {
+                    return true;
+                }
+            } 
+            else if (haraka === 'ُ') { // ضمة
+                // تحقق إذا كان يحتوي على الحرف والواو معاً
+                if (spoken.includes(baseLetter) && 
+                    (spoken.includes('و') || spoken.includes('ؤ'))) {
+                    return true;
+                }
+            } 
+            else if (haraka === 'ِ') { // كسرة
+                // تحقق إذا كان يحتوي على الحرف والياء معاً
+                if (spoken.includes(baseLetter) && 
+                    (spoken.includes('ي') || spoken.includes('ى') || spoken.includes('ئ'))) {
+                    return true;
+                }
+            }
+            
+            return false;
         }
         
         function updateOnlineStatus() {
@@ -909,15 +572,12 @@
             document.body.style.overflow = '';
             currentHaraka = null;
             if (isRecording) stopRecording();
-            if (audioContext && audioContext.state !== 'closed') audioContext.close();
-            if (speechRecognition) speechRecognition.stop();
+            stopVisuals();
             if (isOnline) playSound('pop');
         }
         
         function resetVoiceSection() {
             statusMessage.style.display = 'none';
-            progressContainer.style.display = 'none';
-            progressBar.style.width = '0%';
             nextBtn.style.display = 'none';
             tryAgainBtn.style.display = 'none';
             recordBtn.style.display = 'none';
@@ -926,12 +586,7 @@
             recordBtn.className = 'record-btn';
             instruction.textContent = 'اضغط على إحدى الحركات أعلاه ثم سجل صوتك';
             audioWave.style.display = 'none';
-            recordingTimer.style.display = 'none';
-            clearTimeout(recordingTimeout);
-            clearInterval(timerInterval);
-            secondsElapsed = 0;
-            timerValue.textContent = '0:00';
-            hasSpoken = false;
+            isRecording = false;
         }
         
         function handleHarakaClick(e, haraka) {
@@ -941,12 +596,26 @@
             currentHaraka = haraka.symbol;
             
             const expected = currentLetter.pronunciations[currentHaraka];
-            const professionalPhrase = `${currentLetter.name} مع ${haraka.name} ... ${expected}`;
             
-            instruction.textContent = `استمع ثم اضغط على زر التسجيل وقل: "${expected}"`;
+            // تحديد أمثلة النطق المقبولة
+            let examples = [];
+            if (haraka.symbol === 'َ') {
+                examples = [`"${expected}" (مثل بَ)`, `"${currentLetter.letter}ا" (مثل با)`];
+            } else if (haraka.symbol === 'ُ') {
+                examples = [`"${expected}" (مثل بُ)`, `"${currentLetter.letter}و" (مثل بو)`];
+            } else if (haraka.symbol === 'ِ') {
+                examples = [`"${expected}" (مثل بِ)`, `"${currentLetter.letter}ي" (مثل بي)`];
+            }
+            
+            instruction.innerHTML = `اضغط على زر التسجيل وقل:<br><strong>${examples.join(' أو ')}</strong>`;
             resetVoiceSection();
             recordBtn.style.display = 'flex';
-            appSpeak(professionalPhrase);
+            
+            // النطق التعليمي
+            appSpeak(`حاول نطق ${currentLetter.name} مع ${haraka.name}`);
+            setTimeout(() => {
+                appSpeak(`يمكنك قول ${examples.join(' أو ')}`);
+            }, 1500);
         }
         
         function playSound(type) {
@@ -977,79 +646,134 @@
             return colors[Math.floor(Math.random() * colors.length)];
         }
         
-        function formatTime(seconds) {
-            if (seconds < 60) return `0:${seconds < 10 ? '0' : ''}${seconds}`;
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-        }
+        // ========================================================
+        // نظام التسجيل والتحليل
+        // ========================================================
         
-        async function startRecording() {
-            if (!currentHaraka) { showError('الرجاء اختيار حركة أولاً'); return; }
-            try {
-                resetRecordingState();
-                
-                // التأكد من دعم المتصفح
-                if (!('webkitSpeechRecognition' in window)) {
-                     showError("جهازك لا يدعم التعرف على الصوت");
-                     return;
-                }
+        function startRecording() {
+            if (!currentHaraka) { 
+                showError('الرجاء اختيار حركة أولاً');
+                appSpeak('الرجاء اختيار حركة أولاً');
+                return; 
+            }
+            
+            if (isRecording) { 
+                stopRecording(); 
+                return; 
+            }
 
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                microphone = audioContext.createMediaStreamSource(stream);
-                microphone.connect(analyser);
-                analyser.fftSize = 256;
-                mediaRecorder = new MediaRecorder(stream);
-                
-                mediaRecorder.ondataavailable = (e) => { audioChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                     // عند التوقف، نحلل الصوت
-                     analyzeRecording();
-                };
-                
-                mediaRecorder.start();
-                isRecording = true;
-                updateUIForRecording(true);
-                startTimer();
-                detectVoice();
-                
-                recordingTimeout = setTimeout(() => {
-                    if (isRecording) {
-                        stopRecording();
-                    }
-                }, 4000); // 4 ثواني كحد أقصى
-            } catch (error) {
-                console.error('General Error:', error);
-                showError('يرجى السماح بصلاحية الميكروفون.');
+            // التحقق من دعم التعرف على الصوت
+            if (!speechRecognition) {
+                showError("الميزة غير مدعومة في متصفحك");
+                return;
+            }
+
+            // طلب إذن الميكروفون
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(() => {
+                        // بدء التعرف على الصوت
+                        try {
+                            speechRecognition.start();
+                            isRecording = true;
+                            updateUIForRecording(true);
+                            startVisuals();
+                            showInfo("أنا أستمع إليك الآن... تحدث بوضوح");
+                        } catch (e) {
+                            console.error(e);
+                            showError("تعذر بدء التسجيل");
+                        }
+                    })
+                    .catch(err => {
+                        console.error('خطأ في إذن الميكروفون:', err);
+                        showError("يجب السماح باستخدام الميكروفون");
+                        appSpeak("يجب السماح باستخدام الميكروفون في إعدادات المتصفح");
+                    });
+            } else {
+                // بدء مباشرة إذا كان getUserMedia غير متوفر
+                try {
+                    speechRecognition.start();
+                    isRecording = true;
+                    updateUIForRecording(true);
+                    startVisuals();
+                } catch (e) {
+                    console.error(e);
+                    showError("تعذر بدء التسجيل");
+                }
             }
         }
         
-        function resetRecordingState() {
-            audioChunks = [];
-            hasSpoken = false;
-            secondsElapsed = 0;
-            timerValue.textContent = '0:00';
-            clearTimeout(recordingTimeout);
-            clearInterval(timerInterval);
+        function stopRecording() {
+            if (speechRecognition && isRecording) {
+                speechRecognition.stop();
+            }
+            isRecording = false;
+            updateUIForRecording(false);
+            stopVisuals();
         }
-        
+
         function updateUIForRecording(recording) {
             if (recording) {
                 recordIcon.textContent = '🔴';
-                recordText.textContent = 'جارٍ التسجيل...';
+                recordText.textContent = 'أتحدث الآن...';
                 recordBtn.className = 'record-btn recording';
                 audioWave.style.display = 'flex';
-                recordingTimer.style.display = 'block';
                 statusMessage.style.display = 'none';
             } else {
                 recordIcon.textContent = '🎤';
                 recordText.textContent = 'تسجيل الصوت';
                 recordBtn.className = 'record-btn';
                 audioWave.style.display = 'none';
-                recordingTimer.style.display = 'none';
             }
+        }
+        
+        // تشغيل المؤثرات البصرية
+        async function startVisuals() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                microphone.connect(analyser);
+                
+                // مؤثرات بصرية فقط
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+                
+                function updateWave() {
+                    if (!isRecording) return;
+                    
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    const waveSpans = document.querySelectorAll('.audio-wave span');
+                    for (let i = 0; i < waveSpans.length; i++) {
+                        const value = dataArray[i] || 0;
+                        const height = 15 + (value / 255) * 30;
+                        waveSpans[i].style.height = `${height}px`;
+                    }
+                    
+                    requestAnimationFrame(updateWave);
+                }
+                
+                updateWave();
+            } catch (e) {
+                console.warn("Visuals disabled:", e);
+            }
+        }
+
+        function stopVisuals() {
+            if (microphone && microphone.mediaStream) {
+                microphone.mediaStream.getTracks().forEach(track => track.stop());
+            }
+            // إعادة تعليمات الموجة إلى الحجم الافتراضي
+            const waveSpans = document.querySelectorAll('.audio-wave span');
+            waveSpans.forEach(span => span.style.height = '15px');
         }
         
         function showError(message) {
@@ -1058,88 +782,52 @@
             statusMessage.style.display = 'block';
             tryAgainBtn.style.display = 'inline-block';
             nextBtn.style.display = 'none';
+            if (isOnline) playSound('wrong');
             appSpeak(message);
         }
         
-        function startTimer() {
-            clearInterval(timerInterval);
-            secondsElapsed = 0;
-            timerValue.textContent = '0:00';
-            timerInterval = setInterval(() => {
-                secondsElapsed++;
-                timerValue.textContent = formatTime(secondsElapsed);
-            }, 1000);
-        }
-        
-        function detectVoice() {
-            if (!isRecording || !analyser) return;
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            const checkVoice = () => {
-                if (!isRecording) return;
-                analyser.getByteFrequencyData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < bufferLength; i++) sum += dataArray[i];
-                if (sum / bufferLength > 20) hasSpoken = true;
-                requestAnimationFrame(checkVoice);
-            };
-            checkVoice();
-        }
-        
-        function stopRecording() {
-            if (mediaRecorder && isRecording) {
-                try { mediaRecorder.stop(); } catch(e){}
-                isRecording = false;
-                updateUIForRecording(false);
-                clearTimeout(recordingTimeout);
-                clearInterval(timerInterval);
-                if(mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                if (audioContext && audioContext.state !== 'closed') audioContext.close();
-            }
-        }
-        
-        function analyzeRecording() {
-            showAnalyzingMessage();
-            if (speechRecognition && isOnline) {
-                // إلغاء أي عمليات سابقة
-                try { speechRecognition.stop(); } catch(e) {}
-                
-                // بدء التعرف الفعلي
-                setTimeout(() => {
-                    try { speechRecognition.start(); } 
-                    catch (e) { 
-                        console.error(e); 
-                        showError("خطأ في خدمة الصوت");
-                    }
-                }, 500);
-            } else {
-                showError("تحتاج لاتصال إنترنت للتحليل");
-            }
-        }
-        
-        function showAnalyzingMessage() {
+        function showInfo(message) {
             statusMessage.className = 'status-message info';
-            statusMessage.textContent = 'جارٍ تحليل النطق...';
+            statusMessage.textContent = message;
             statusMessage.style.display = 'block';
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '50%';
+            tryAgainBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
         }
         
-        function handleCorrectPronunciation() {
+        function handleCorrectPronunciation(spokenText) {
+            // حفظ النتيجة
             completedHarakat[currentHaraka] = true;
-            if (!storedPronunciations[currentLetter.letter]) storedPronunciations[currentLetter.letter] = {};
+            if (!storedPronunciations[currentLetter.letter]) {
+                storedPronunciations[currentLetter.letter] = {};
+            }
             storedPronunciations[currentLetter.letter][currentHaraka] = true;
             saveData();
             
+            // تحديد نوع النطق الذي استخدمه المستخدم
+            let feedback = "أحسنت! النطق صحيح.";
+            const cleanSpoken = normalizeArabic(spokenText);
+            const baseLetter = normalizeArabic(currentLetter.letter);
+            
+            if (cleanSpoken.includes(baseLetter + 'ا') || cleanSpoken.includes('ا' + baseLetter)) {
+                feedback = "ممتاز! نطقتها 'با' بشكل صحيح.";
+            } else if (cleanSpoken.includes(baseLetter + 'و') || cleanSpoken.includes('و' + baseLetter)) {
+                feedback = "ممتاز! نطقتها 'بو' بشكل صحيح.";
+            } else if (cleanSpoken.includes(baseLetter + 'ي') || cleanSpoken.includes('ي' + baseLetter)) {
+                feedback = "ممتاز! نطقتها 'بي' بشكل صحيح.";
+            } else if (cleanSpoken === baseLetter) {
+                feedback = "جيد! نطقت الحرف الساكن بشكل صحيح.";
+            } else {
+                feedback = "أحسنت! نطقت الحرف مع الحركة بشكل صحيح.";
+            }
+            
             statusMessage.className = 'status-message success';
-            statusMessage.textContent = 'أحسنت! النطق صحيح.';
+            statusMessage.textContent = feedback;
             nextBtn.style.display = 'inline-block';
             tryAgainBtn.style.display = 'none';
-            progressBar.style.width = '100%';
             
             createConfetti();
-            playSound('correct');
-            appSpeak('أحسنت النطق صحيح');
+            if (isOnline) playSound('correct');
+            appSpeak("أحسنت! النطق صحيح");
             
             initHarakatButtons();
             checkAllHarakatCompleted();
@@ -1150,8 +838,7 @@
             statusMessage.textContent = 'النطق غير صحيح. حاول مرة أخرى.';
             tryAgainBtn.style.display = 'inline-block';
             nextBtn.style.display = 'none';
-            progressBar.style.width = '0%';
-            playSound('wrong');
+            if (isOnline) playSound('wrong');
             appSpeak('حاول مرة أخرى');
         }
         
@@ -1166,6 +853,7 @@
             const harakaBtns = document.querySelectorAll('.haraka-btn');
             const currentIndex = Array.from(harakaBtns).findIndex(btn => btn.dataset.haraka === currentHaraka);
             if (currentIndex < harakaBtns.length - 1) {
+                // النقر على الزر التالي
                 harakaBtns[currentIndex + 1].click();
             } else {
                 statusMessage.className = 'status-message success';
@@ -1175,6 +863,7 @@
             }
         }
         
+        // تهيئة التطبيق
         document.addEventListener('DOMContentLoaded', initApp);
         closeModal.addEventListener('click', closeModalHandler);
         letterModal.addEventListener('click', (e) => { if (e.target === letterModal) closeModalHandler(); });
@@ -1183,8 +872,21 @@
         tryAgainBtn.addEventListener('click', () => {
             resetVoiceSection();
             const expected = currentLetter.pronunciations[currentHaraka];
-            instruction.textContent = `اضغط على زر التسجيل وقل: "${expected}"`;
+            
+            let examples = [];
+            if (currentHaraka === 'َ') {
+                examples = [`"${expected}" (مثل بَ)`, `"${currentLetter.letter}ا" (مثل با)`];
+            } else if (currentHaraka === 'ُ') {
+                examples = [`"${expected}" (مثل بُ)`, `"${currentLetter.letter}و" (مثل بو)`];
+            } else if (currentHaraka === 'ِ') {
+                examples = [`"${expected}" (مثل بِ)`, `"${currentLetter.letter}ي" (مثل بي)`];
+            }
+            
+            instruction.innerHTML = `حاول مرة أخرى وقل:<br><strong>${examples.join(' أو ')}</strong>`;
             recordBtn.style.display = 'flex';
+            
+            // إعادة النطق التعليمي
+            appSpeak(`حاول نطق ${examples.join(' أو ')}`);
         });
     </script>
 </body>
