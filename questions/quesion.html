@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صانع الأسئلة العراقي - طباعة كاملة</title>
+    <!-- خطوط عربية -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Traditional+Arabic&display=swap" rel="stylesheet">
+    <!-- مكتبات PDF و Canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --font-main: 'Traditional Arab', 'Times New Roman', serif;
+            --font-ui: 'Cairo', sans-serif;
+            --paper-width: 210mm;
+            --paper-height: 297mm;
+        }
+
+        /* ضبط شامل للقياسات */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #525659;
+            margin: 0;
+            padding: 70px 0 100px 0;
+            font-family: var(--font-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- الأشرطة --- */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0;
+            height: 55px; background: #2c3e50; color: white;
+            display: flex; align-items: center; justify-content: center;
+            gap: 15px; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            font-family: var(--font-ui);
+        }
+        
+        .bottom-bar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); padding: 10px 25px; border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            display: flex; gap: 10px; z-index: 2000;
+            backdrop-filter: blur(5px);
+            flex-wrap: wrap; justify-content: center;
+        }
+
+        .btn-tool {
+            background: #34495e; border: 1px solid #7f8c8d; color: white;
+            padding: 5px 12px; border-radius: 4px; cursor: pointer; transition: 0.2s; font-family: var(--font-ui);
+        }
+        .btn-tool:hover { background: #1abc9c; }
+
+        .btn-action {
+            padding: 10px 20px; border-radius: 20px; border: none;
+            color: white; font-weight: bold; cursor: pointer;
+            font-family: var(--font-ui); display: flex; align-items: center; gap: 5px;
+            transition: transform 0.2s; white-space: nowrap;
+        }
+        .btn-action:hover { transform: translateY(-3px); }
+        .btn-edit { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .btn-print { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .btn-pdf { background: linear-gradient(135deg, #f39c12, #d35400); }
+        .btn-img { background: linear-gradient(135deg, #16a085, #1abc9c); }
+        .btn-add { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .btn-del { background: linear-gradient(135deg, #c0392b, #e74c3c); }
+
+        /* --- الورقة --- */
+        .sheet {
+            background: white;
+            width: var(--paper-width);
+            height: var(--paper-height);
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            /* هوامش العرض العادي */
+            padding: 0; 
+        }
+
+        .page-border {
+            border: 4px double #000;
+            /* الهوامش الداخلية في وضع العرض */
+            margin: 10mm; 
+            height: calc(100% - 20mm);
+            padding: 5mm;
+            display: flex; flex-direction: column;
+        }
+
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 10px;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            align-items: start;
+        }
+
+        .h-col { display: flex; flex-direction: column; gap: 3px; font-weight: bold; font-size: 13pt; }
+        .h-right { text-align: right; }
+        .h-center { text-align: center; }
+        .h-left { text-align: left; }
+        
+        .editable { 
+            border-bottom: 1px dotted #ccc; 
+            min-width: 50px; 
+            display: inline-block; 
+            cursor: text;
+        }
+        .editable:focus { background: #e8f0fe; outline: none; border-bottom: 1px solid blue; }
+
+        .questions-body {
+            flex-grow: 1;
+            display: flex; flex-direction: column; gap: 0;
+            overflow: hidden;
+        }
+
+        .q-block { 
+            margin-bottom: 0;
+            page-break-inside: avoid;
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px 10px 0 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .q-block:focus-within, .section-header:focus {
+            border: 2px solid #3498db;
+        }
+        
+        .q-title-line { 
+            font-weight: 900; 
+            font-size: 1.15em; 
+            margin-bottom: 5px;
+            line-height: 1.4;
+            color: #000;
+        }
+        
+        .q-content { 
+            display: block; 
+            font-weight: normal; 
+            font-size: 1em;
+            line-height: 1.6; 
+            text-align: justify; 
+            padding-right: 5px;
+            padding-bottom: 5px;
+        }
+
+        .q-separator {
+            border-top: 2px dotted #000;
+            margin: 0;
+            width: 100%;
+            height: 0;
+            opacity: 1;
+            display: block;
+        }
+
+        .section-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16pt;
+            background: #eee;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 5px;
+            margin: 8px 0;
+            cursor: pointer;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+
+        .footer {
+            margin-top: auto;
+            border-top: 2px solid #000;
+            padding-top: 5px;
+            display: flex; justify-content: space-between;
+            font-weight: bold; font-size: 13pt;
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            justify-content: center; align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-box {
+            background: white; width: 85%; height: 90%;
+            padding: 20px; border-radius: 10px; display: flex; flex-direction: column;
+        }
+        textarea {
+            flex-grow: 1; padding: 15px; font-size: 16px; font-family: var(--font-main);
+            border: 2px solid #ccc; border-radius: 5px; resize: none; direction: rtl;
+        }
+
+        /* --- أنماط الجولة التعريفية --- */
+        .tour-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 5000; pointer-events: none;
+            display: none;
+        }
+        .tour-highlight {
+            position: relative; z-index: 5001;
+            box-shadow: 0 0 0 4px #e74c3c, 0 0 0 5000px rgba(0,0,0,0.6);
+            border-radius: 4px; pointer-events: auto;
+        }
+        .tour-tooltip {
+            position: absolute; z-index: 5002;
+            background: white; color: #333; padding: 15px 20px;
+            border-radius: 8px; width: 280px; font-family: var(--font-ui);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+            display: none;
+        }
+        .tour-tooltip::after {
+            content: ''; position: absolute; border-width: 10px; border-style: solid;
+        }
+        .tour-btn {
+            background: #3498db; color: white; border: none; padding: 8px 15px;
+            border-radius: 4px; margin-top: 10px; cursor: pointer; font-family: var(--font-ui);
+        }
+
+        /* --- تعديلات الطباعة الدقيقة (تم التعديل لملء الورقة) --- */
+        @media print {
+            @page { 
+                size: A4; 
+                margin: 0; /* إلغاء هوامش المتصفح */
+            }
+            body { 
+                margin: 0; 
+                padding: 0; 
+                background: white; 
+                display: block; /* إلغاء Flexbox لتجنب التوسيط الخاطئ */
+            }
+            .top-bar, .bottom-bar, .modal, .tour-overlay, .tour-tooltip { display: none !important; }
+            
+            .sheet {
+                width: 210mm; /* عرض ثابت */
+                height: 297mm; /* ارتفاع ثابت */
+                margin: 0; 
+                border: none; 
+                box-shadow: none;
+                page-break-after: always;
+                padding: 5mm; /* هامش بسيط جداً لحدود الورقة */
+            }
+            
+            .page-border {
+                margin: 0; /* إلغاء الهوامش الداخلية الكبيرة */
+                width: 100%; /* ملء الورقة بالكامل */
+                height: 100%; /* ملء الورقة بالكامل */
+                border: 4px double #000; /* الحفاظ على الإطار */
+            }
+
+            .q-block { 
+                background-color: #fafafa !important; 
+                box-shadow: none !important; 
+                border: 1px solid #ddd !important;
+            }
+            .section-header { background-color: #eee !important; }
+            .editable { border: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- عناصر الجولة التعريفية -->
+    <div id="tour-overlay" class="tour-overlay"></div>
+    <div id="tour-tooltip" class="tour-tooltip">
+        <div id="tour-text">نص التعليمات</div>
+        <button class="tour-btn" onclick="nextTourStep()">فهمت</button>
+    </div>
+
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+        <div id="tour-fs">
+            <label>حجم الخط:</label>
+            <input type="range" id="fs-range" min="14" max="24" value="16" oninput="updateFontSize(this.value)">
+            <span id="fs-val">16px</span>
+        </div>
+        <div>
+            <button class="btn-tool" onclick="execCmd('bold')">B تضخيم</button>
+        </div>
+        <div>
+            <button class="btn-tool" onclick="alignElement('right')">يمين</button>
+            <button class="btn-tool" onclick="alignElement('center')">وسط</button>
+            <button class="btn-tool" onclick="alignElement('left')">يسار</button>
+        </div>
+    </div>
+
+    <!-- حاوية الأوراق -->
+    <div id="exam-container"></div>
+
+    <!-- الشريط السفلي -->
+    <div class="bottom-bar">
+        <button id="tour-editor" class="btn-action btn-edit" onclick="openModal()">✏️ المحرر</button>
+        <button id="tour-add" class="btn-action btn-add" onclick="insertManualSection()">➕ إضافة قسم</button>
+        <button id="tour-del" class="btn-action btn-del" onclick="removeSection()">🗑️ حذف قسم</button>
+        <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
+        <button class="btn-action btn-pdf" onclick="downloadPDF()">📄 PDF</button>
+        <button id="tour-img" class="btn-action btn-img" onclick="downloadImage()">🖼️ صورة</button>
+    </div>
+
+    <!-- نافذة التحرير -->
+    <div id="editorModal" class="modal">
+        <div class="modal-box">
+            <h3 style="font-family: var(--font-ui); margin: 0 0 10px 0;">محرر الأسئلة</h3>
+            <div style="font-family: var(--font-ui); font-size: 13px; color: #666; margin-bottom: 5px;">
+                اكتب الأسئلة (س1، س2، السؤال الأول..). يتم الحفظ تلقائياً.
+            </div>
+            <textarea id="rawInput" onkeyup="autoSave()">
+=== العقيدة الإسلامية ( 20 درجة ) ===
+س1: عرف ما يأتي (خمس فقط):
+1. الصلاة 2. الصوم 3. الزكاة 4. الحج 5. الجهاد.
+
+السؤال الثاني: علل ما يأتي:
+1. سمي العام الذي ولد فيه النبي (ص) بعام الفيل.
+2. فرض الله الصيام على المسلمين.
+
+=== الحديث الشريف ( 20 درجة ) ===
+سين 3: املأ الفراغات التالية:
+1. ولد النبي (ص) في شهر ............. .
+2. أول من أسلم من الرجال هو ............. .
+            </textarea>
+            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                <button class="btn-action btn-edit" style="flex: 1; justify-content: center;" onclick="renderExam()">✅ تحديث الورقة</button>
+                <button class="btn-action btn-print" style="background: #7f8c8d;" onclick="closeModal()">إلغاء</button>
+                <button class="btn-action btn-add" onclick="addSectionTag()">➕ إضافة كود قسم</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultHeader = {
+            right: `<div class="editable" contenteditable="true">إدارة مدرسة: ...................</div>
+                    <div class="editable" contenteditable="true">للبنين / للبنات</div>`,
+            center: `<div>جمهورية العراق</div>
+                     <div class="editable" contenteditable="true" style="font-size:1.2em; margin:5px 0;">أسئلة امتحانات نصف السنة</div>
+                     <div class="editable" contenteditable="true">للعام الدراسي 2024 / 2025 ( الدور الأول )</div>
+                     <div class="editable" contenteditable="true" style="margin-top:5px; text-decoration:underline; font-size:0.9em;">ملاحظة: الإجابة على جميع الأسئلة</div>`,
+            left:  `<div class="editable" contenteditable="true">المادة: التربية الإسلامية</div>
+                    <div class="editable" contenteditable="true">الصف: الخامس الابتدائي</div>
+                    <div class="editable" contenteditable="true">التاريخ: ... / ... / 2025</div>`
+        };
+
+        const defaultFooter = {
+            right: `<div class="editable" contenteditable="true">معلم المادة</div><br><div class="editable" contenteditable="true">...................</div>`,
+            center: `<div class="editable" contenteditable="true">تمنياتي لكم بالنجاح</div>`,
+            left:  `<div class="editable" contenteditable="true">مدير المدرسة</div><br><div class="editable" contenteditable="true">...................</div>`
+        };
+
+        window.onload = function() {
+            if(localStorage.getItem('examDataFinalV5')) {
+                document.getElementById('rawInput').value = localStorage.getItem('examDataFinalV5');
+            }
+            renderExam();
+            checkTour();
+        };
+
+        function openModal() { document.getElementById('editorModal').classList.add('active'); }
+        function closeModal() { document.getElementById('editorModal').classList.remove('active'); }
+
+        function autoSave() {
+            const text = document.getElementById('rawInput').value;
+            localStorage.setItem('examDataFinalV5', text);
+        }
+
+        function addSectionTag() {
+            const textarea = document.getElementById('rawInput');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const tag = "\n=== عنوان القسم الجديد ( الدرجة ) ===\n";
+            textarea.value = text.substring(0, start) + tag + text.substring(end);
+            textarea.focus();
+            autoSave();
+        }
+
+        function insertManualSection() {
+            const selection = window.getSelection();
+            let inserted = false;
+            
+            if (selection.rangeCount > 0 && !document.getElementById('editorModal').classList.contains('active')) {
+                const node = selection.anchorNode;
+                const block = node.nodeType === 1 ? node.closest('.q-block, .section-header') : node.parentElement.closest('.q-block, .section-header');
+                
+                if (block) {
+                    const newSection = document.createElement('div');
+                    newSection.className = 'section-header';
+                    newSection.contentEditable = "true";
+                    newSection.innerText = "عنوان قسم جديد (اضغط للتعديل)";
+                    block.after(newSection);
+                    
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.selectNodeContents(newSection);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    
+                    inserted = true;
+                }
+            }
+
+            if (!inserted) {
+                const textarea = document.getElementById('rawInput');
+                textarea.value += "\n=== قسم جديد مضاف (الدرجة) ===\n";
+                renderExam();
+                setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 100);
+            }
+        }
+
+        function removeSection() {
+            const selection = window.getSelection();
+            if(selection.rangeCount > 0) {
+                const node = selection.anchorNode;
+                const section = node.parentElement ? node.parentElement.closest('.section-header') : null;
+                if(section) {
+                    section.remove();
+                } else {
+                    alert("يرجى وضع المؤشر على عنوان القسم المراد حذفه أولاً.");
+                }
+            }
+        }
+
+        function execCmd(cmd) { document.execCommand(cmd, false, null); }
+        
+        function alignElement(align) {
+            const selection = window.getSelection();
+            if(selection.rangeCount > 0) {
+                const node = selection.anchorNode;
+                const el = node.nodeType === 1 ? node : node.parentElement;
+                const target = el.closest('.editable, .q-title-line, .q-content, .section-header');
+                if(target) {
+                    target.style.textAlign = align === 'left' ? 'left' : (align === 'center' ? 'center' : 'justify');
+                    if(align === 'right') target.style.textAlignLast = 'right';
+                }
+            }
+        }
+
+        function updateFontSize(val) {
+            document.getElementById('fs-val').innerText = val + 'px';
+            document.querySelectorAll('.q-block, .section-header').forEach(el => el.style.fontSize = val + 'px');
+        }
+
+        function renderExam() {
+            const rawText = document.getElementById('rawInput').value;
+            localStorage.setItem('examDataFinalV5', rawText);
+            
+            const container = document.getElementById('exam-container');
+            container.innerHTML = '';
+
+            const blocks = parseText(rawText);
+
+            let currentPage = createSheet(true);
+            container.appendChild(currentPage);
+            let currentBody = currentPage.querySelector('.questions-body');
+
+            blocks.forEach(block => {
+                currentBody.appendChild(block);
+                
+                if (currentBody.scrollHeight > currentBody.clientHeight) {
+                    currentBody.removeChild(block);
+                    currentPage = createSheet(false);
+                    container.appendChild(currentPage);
+                    currentBody = currentPage.querySelector('.questions-body');
+                    currentBody.appendChild(block);
+                }
+            });
+
+            addFooter(container);
+            if(document.getElementById('editorModal').classList.contains('active')) closeModal();
+            
+            const fs = document.getElementById('fs-range').value;
+            updateFontSize(fs);
+        }
+
+        function parseText(text) {
+            const lines = text.split('\n');
+            const blocks = [];
+            const qRegex = /^(س\s*\d*|سين\s*\d*|س\.|س\-|السؤال\s*\d*|السؤال\s+[\u0621-\u064A]+)\s*[:\-\/.]?/;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if(!line) return;
+
+                if (line.startsWith('===') && line.endsWith('===')) {
+                    const div = document.createElement('div');
+                    div.className = 'section-header';
+                    div.contentEditable = "true";
+                    div.innerText = line.replace(/===/g, '').trim();
+                    blocks.push(div);
+                }
+                else if (qRegex.test(line)) {
+                    const div = document.createElement('div');
+                    div.className = 'q-block';
+                    
+                    const titleDiv = document.createElement('div');
+                    titleDiv.className = 'q-title-line';
+                    titleDiv.contentEditable = "true";
+                    titleDiv.innerText = line;
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'q-content';
+                    contentDiv.contentEditable = "true";
+                    
+                    const separator = document.createElement('div');
+                    separator.className = 'q-separator';
+
+                    div.appendChild(titleDiv);
+                    div.appendChild(contentDiv);
+                    div.appendChild(separator);
+                    blocks.push(div);
+                }
+                else {
+                    if(blocks.length > 0 && blocks[blocks.length-1].className === 'q-block') {
+                        const block = blocks[blocks.length-1];
+                        const contentDiv = block.querySelector('.q-content');
+                        if(contentDiv.innerText !== "") contentDiv.innerHTML += "<br>";
+                        contentDiv.innerHTML += line;
+                    } else {
+                        const div = document.createElement('div');
+                        div.className = 'q-block';
+                        div.innerHTML = `<div class="q-content" contenteditable="true">${line}</div>`;
+                        blocks.push(div);
+                    }
+                }
+            });
+            return blocks;
+        }
+
+        function createSheet(isFirst) {
+            const sheet = document.createElement('div');
+            sheet.className = 'sheet';
+            const border = document.createElement('div');
+            border.className = 'page-border';
+            
+            if (isFirst) {
+                const header = document.createElement('div');
+                header.className = 'header-grid';
+                header.innerHTML = `
+                    <div class="h-col h-right">${defaultHeader.right}</div>
+                    <div class="h-col h-center">${defaultHeader.center}</div>
+                    <div class="h-col h-left">${defaultHeader.left}</div>
+                `;
+                border.appendChild(header);
+            } else {
+                const miniHeader = document.createElement('div');
+                miniHeader.style.textAlign = 'center';
+                miniHeader.style.borderBottom = '1px dashed #ccc';
+                miniHeader.style.marginBottom = '10px';
+                miniHeader.innerHTML = 'تابع الأسئلة ...';
+                border.appendChild(miniHeader);
+            }
+
+            const body = document.createElement('div');
+            body.className = 'questions-body';
+            border.appendChild(body);
+            sheet.appendChild(border);
+            return sheet;
+        }
+
+        function addFooter(container) {
+            const pages = container.querySelectorAll('.sheet');
+            const lastPage = pages[pages.length - 1];
+            const border = lastPage.querySelector('.page-border');
+            const body = border.querySelector('.questions-body');
+
+            const footer = document.createElement('div');
+            footer.className = 'footer';
+            footer.innerHTML = `
+                <div class="h-col h-right">${defaultFooter.right}</div>
+                <div class="h-col h-center">${defaultFooter.center}</div>
+                <div class="h-col h-left">${defaultFooter.left}</div>
+            `;
+
+            const temp = document.createElement('div');
+            temp.style.height = '60px';
+            body.appendChild(temp);
+            
+            if (body.scrollHeight > body.clientHeight) {
+                body.removeChild(temp);
+                const newPage = createSheet(false);
+                newPage.querySelector('.page-border').appendChild(footer);
+                container.appendChild(newPage);
+            } else {
+                body.removeChild(temp);
+                border.appendChild(footer);
+            }
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('exam-container');
+            document.querySelector('.top-bar').style.display = 'none';
+            document.querySelector('.bottom-bar').style.display = 'none';
+
+            const opt = {
+                margin: 0,
+                filename: 'اسئلة_الامتحان.pdf',
+                image: { type: 'jpeg', quality: 1.0 },
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.querySelector('.top-bar').style.display = 'flex';
+                document.querySelector('.bottom-bar').style.display = 'flex';
+            });
+        }
+
+        async function downloadImage() {
+            document.querySelector('.top-bar').style.display = 'none';
+            document.querySelector('.bottom-bar').style.display = 'none';
+            
+            const sheets = document.querySelectorAll('.sheet');
+            
+            for (let i = 0; i < sheets.length; i++) {
+                const sheet = sheets[i];
+                try {
+                    const canvas = await html2canvas(sheet, {
+                        scale: 3, 
+                        useCORS: true,
+                        scrollY: 0
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = `ورقة_الامتحان_${i+1}.png`;
+                    link.href = canvas.toDataURL('image/png', 1.0);
+                    link.click();
+                } catch (err) {
+                    console.error(err);
+                    alert("حدث خطأ أثناء حفظ الصورة");
+                }
+            }
+
+            document.querySelector('.top-bar').style.display = 'flex';
+            document.querySelector('.bottom-bar').style.display = 'flex';
+        }
+
+        let currentStep = 0;
+        const tourSteps = [
+            { id: 'tour-editor', msg: 'أهلاً بك! اضغط هنا لفتح المحرر وكتابة الأسئلة أو لصقها.' },
+            { id: 'tour-fs', msg: 'تحكم بحجم الخط لكامل الورقة من هنا.' },
+            { id: 'tour-add', msg: 'لإضافة عنوان قسم جديد، ضع المؤشر بعد أي سؤال واضغط هنا.' },
+            { id: 'tour-del', msg: 'لحذف قسم، ضع المؤشر على العنوان واضغط هذا الزر (بدون تأكيد).' },
+            { id: 'tour-img', msg: 'جديد: قم بتنزيل الأسئلة كصورة عالية الدقة من هنا.' }
+        ];
+
+        function checkTour() {
+            if (!localStorage.getItem('seenTourV1')) {
+                startTour();
+            }
+        }
+
+        function startTour() {
+            currentStep = 0;
+            document.getElementById('tour-overlay').style.display = 'block';
+            document.getElementById('tour-tooltip').style.display = 'block';
+            showStep();
+        }
+
+        function showStep() {
+            if (currentStep >= tourSteps.length) {
+                endTour();
+                return;
+            }
+
+            const step = tourSteps[currentStep];
+            const target = document.getElementById(step.id);
+            
+            document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+            
+            if(target) {
+                target.classList.add('tour-highlight');
+                const rect = target.getBoundingClientRect();
+                const tooltip = document.getElementById('tour-tooltip');
+                document.getElementById('tour-text').innerText = step.msg;
+
+                let top = rect.top - tooltip.offsetHeight - 15;
+                if (top < 0) top = rect.bottom + 15;
+                
+                tooltip.style.top = top + 'px';
+                tooltip.style.left = (rect.left + rect.width/2 - 140) + 'px';
+            }
+        }
+
+        function nextTourStep() {
+            currentStep++;
+            showStep();
+        }
+
+        function endTour() {
+            document.getElementById('tour-overlay').style.display = 'none';
+            document.getElementById('tour-tooltip').style.display = 'none';
+            document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+            localStorage.setItem('seenTourV1', 'true');
+        }
+
+    </script>
+</body>
+</html>
