@@ -1,0 +1,170 @@
+ <!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة المحيبس العراقية - متعددة اللاعبين</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="connection-status disconnected" id="connection-status">غير متصل</div>
+    
+    <div class="container">
+        <h2 class="animate__animated animate__fadeInDown">لعبة المحيبس العراقية 🇮🇶</h2>
+        <p class="subtitle animate__animated animate__fadeIn animate__delay-1s">
+<br>اهلا وسهلا بك في تطبيق درري😍
+ابحث عن المحبس المخفي في إحدى الأيدي الـ24</p>
+        
+        <div class="admin-note" id="admin-note"></div>
+        
+        <div class="players-count" id="players-count">عدد اللاعبين: 0</div>
+        
+        <div class="timer-container animate__animated animate__fadeIn animate__delay-1s">
+            <div class="timer" id="timer">01:00</div>
+            <div class="timer-label">الوقت المتبقي</div>
+        </div>
+        
+      
+        
+        <div id="waiting-message" class="waiting-message animate__animated animate__pulse animate__infinite">
+            في انتظار بدء اللعبة من قبل المشرف...😁
+        </div>
+        
+        <div class="player-choice-info" id="player-choice-info">
+            لقد قمت باختيار اليد رقم <span id="player-choice-number"></span> في هذه الجولة😋
+        </div>
+        
+        <div class="hands-container" id="hands-container">
+            <!-- الأيدي سيتم إضافتها بواسطة الجافاسكريبت -->
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="winners-container" id="winners-container">
+            <h2>النتائج النهائية</h2>
+            <div id="winners-list"></div>
+        </div>
+
+        <table class="participants-table" id="participants-table">
+            <thead>
+                <tr>
+                    <th>اسم المشترك</th>
+                    <th>اليد المختارة</th>
+                    <th>وقت المشاركة</th>
+                </tr>
+            </thead>
+            <tbody id="participants-body">
+                <!-- البيانات ستضاف بواسطة الجافاسكريبت -->
+            </tbody>
+        </table>
+        
+        <!-- قسم الدردشة -->
+        <div class="chat-container" id="chat-container">
+            <div class="chat-header">
+                <span>دردشة اللعبة</span>
+                <span class="chat-status" id="chat-status">مفتوحة</span>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <!-- الرسائل ستضاف هنا -->
+            </div>
+            <div class="chat-input-container">
+                <button class="chat-btn" id="emoji-btn" title="إرسال ابتسامة">😊</button>
+                <input type="text" class="chat-input" id="chat-input" placeholder="اكتب رسالتك هنا (حد أقصى 100 حرف)" maxlength="100">
+                <button class="chat-btn" id="send-btn" disabled>إرسال</button>
+            </div>
+            <div class="emoji-picker" id="emoji-picker">
+                <div class="emoji-category">
+                    <div class="emoji-category-title">الوجوه</div>
+                    <div class="emoji-list">
+                        <button class="emoji-btn">😀</button>
+                        <button class="emoji-btn">😁</button>
+                        <button class="emoji-btn">😂</button>
+                        <button class="emoji-btn">🤣</button>
+                        <button class="emoji-btn">😃</button>
+                        <button class="emoji-btn">😄</button>
+                        <button class="emoji-btn">😅</button>
+                        <button class="emoji-btn">😆</button>
+                        <button class="emoji-btn">😉</button>
+                        <button class="emoji-btn">😊</button>
+                        <button class="emoji-btn">😋</button>
+                        <button class="emoji-btn">😎</button>
+                        <button class="emoji-btn">😍</button>
+                        <button class="emoji-btn">😘</button>
+                        <button class="emoji-btn">🥰</button>
+                        <button class="emoji-btn">😗</button>
+                        <button class="emoji-btn">😙</button>
+                        <button class="emoji-btn">😚</button>
+                        <button class="emoji-btn">☺️</button>
+                        <button class="emoji-btn">🙂</button>
+                    </div>
+                </div>
+                <div class="emoji-category">
+                    <div class="emoji-category-title">أيدي</div>
+                    <div class="emoji-list">
+                        <button class="emoji-btn">👍</button>
+                        <button class="emoji-btn">👎</button>
+                        <button class="emoji-btn">👌</button>
+                        <button class="emoji-btn">✌️</button>
+                        <button class="emoji-btn">🤞</button>
+                        <button class="emoji-btn">🤟</button>
+                        <button class="emoji-btn">🤘</button>
+                        <button class="emoji-btn">🤙</button>
+                        <button class="emoji-btn">👋</button>
+                        <button class="emoji-btn">🤚</button>
+                        <button class="emoji-btn">🖐️</button>
+                        <button class="emoji-btn">✋</button>
+                        <button class="emoji-btn">🖖</button>
+                        <button class="emoji-btn">👏</button>
+                        <button class="emoji-btn">🙌</button>
+                        <button class="emoji-btn">🤲</button>
+                        <button class="emoji-btn">🤝</button>
+                        <button class="emoji-btn">🙏</button>
+                        <button class="emoji-btn">✍️</button>
+                        <button class="emoji-btn">💪</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <br>development by |Ibrahim
+    </div>
+    
+    <a href="#" class="admin-link" id="adminLink">درري</a>
+    
+    <div class="modal" id="name-modal" style="display: flex;">
+        <div class="modal-content">
+            <h2>بدء اللعبة</h2>
+            <div class="form-group">
+                <label for="player-name">ادخل اسمك للمشاركة:</label>
+                <input type="text" id="player-name" placeholder="اسمك هنا">
+            </div>
+
+            <div id="char-counter" style="color:#666; font-size:0.8em; margin-top:5px;">الأحرف المتبقية: 12</div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" id="confirm-name">تأكيد</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="confirm-modal">
+        <div class="modal-content">
+            <h2>تأكيد الاختيار</h2>
+            <p id="confirm-message">هل أنت متأكد من اختيارك اليد رقم <span id="selected-hand-number"></span>؟</p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" id="confirm-choice">نعم، تأكيد</button>
+                <button class="modal-btn cancel" id="cancel-choice">إلغاء</button>
+            </div>
+        </div>
+    </div>
+    
+   
+
+<script src="script.js"></script>
+    </body>
+</html>
