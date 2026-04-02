@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>CV Studio — منصة السيرة الذاتية الاحترافية</title>
+<meta name="description" content="أنشئ سيرتك الذاتية باحترافية مع CV Studio – 12 قالباً فاخراً، تحرير متقدم، تصدير PDF، وأدوات تخصيص كاملة. مجاني بالكامل.">
+<meta name="keywords" content="سيرة ذاتية, CV, قوالب سيرة ذاتية, تصميم سيرة ذاتية, ProCV, سيرة ذاتية عربية, PDF, توظيف">
+<meta name="author" content="CV Studio">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="CV Studio — منصة السيرة الذاتية الاحترافية">
+<meta property="og:description" content="أداة متكاملة لإنشاء وتصميم سيرة ذاتية بجودة عالية – 12 قالباً، تخصيص كامل، تصدير PDF فوري.">
+<meta property="og:image" content="../cv/ds.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@300;400;500;700;800&family=Noto+Kufi+Arabic:wght@300;400;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+ <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- Loading Spinner -->
+<div class="spinner-overlay" id="spinner-overlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- ==================== HOME VIEW ==================== -->
+<div id="view-home" class="view active">
+  <nav class="home-nav" id="home-nav">
+    <div class="nav-logo">
+      <div class="logo-icon"><img src="../cv/ds.png" alt="أيقونة " class="header-title-icon"></div>
+      <span>CV <span style="color:var(--gold);font-weight:300;font-size:15px;">Studio</span></span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" onclick="scrollToTemplates()"><i class="fas fa-th"></i> القوالب</button>
+      <button class="btn btn-primary btn-sm" onclick="showView('editor','1')"><i class="fas fa-bolt"></i> ابدأ الآن</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-particles" id="hero-particles"></div>
+    
+    <div class="hero-content">
+      
+      <div style="font-size:30px; font-weight: 702"><span>CV <span style="color:var(--gold);font-weight:443;font-size:40px;">Studio</span></span></div>
+      
+      <div class="hero-badge"><i class="fas fa-gem" style="color:var(--gold)"></i> الأداة الأكثر احترافاً لبناء السيرة الذاتية</div>
+      
+      <h1 style="">أنشئ سيرتك الذاتية مع
+       
+        CVStudio
+        
+        كالمحترفين</h1>
+      <p>منصة متكاملة لتصميم وتحرير سيرة ذاتية احترافية — 12 قالب فاخر، أدوات تحرير ضخمة، تصدير PDF فوري، وتخصيص كامل</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary btn-lg" onclick="scrollToTemplates()"><i class="fas fa-th-large"></i> استعرض القوالب</button>
+        <button class="btn btn-ghost btn-lg" onclick="showView('editor','1')"><i class="fas fa-magic"></i> ابدأ فوراً</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><div class="stat-num">12+</div><div class="stat-label">قالب احترافي</div></div>
+        <div class="stat"><div class="stat-num">50+</div><div class="stat-label">أداة تحرير</div></div>
+        <div class="stat"><div class="stat-num">PDF</div><div class="stat-label">تصدير فوري</div></div>
+        <div class="stat"><div class="stat-num">100%</div><div class="stat-label">مجاني</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-header">
+      <h2>لماذا <span class="highlight">ProCV Studio</span> ؟</h2>
+      <p>كل ما تحتاجه في مكان واحد لإنشاء سيرة ذاتية تفتح أبواب الفرص</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card" style="animation-delay:0.1s;">
+        <div class="feature-icon icon-blue"><i class="fas fa-paint-brush"></i></div>
+        <h3>12 قالب فاخر</h3>
+        <p>قوالب احترافية لكل مجال وذوق، مع إمكانية تخصيص كامل للألوان والخطوط والتخطيط</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.15s;">
+        <div class="feature-icon icon-teal"><i class="fas fa-text-height"></i></div>
+        <h3>محرر نصوص متكامل</h3>
+        <p>شريط تنسيق ضخم: عريض، مائل، ألوان، تظليل، محاذاة، قوائم، خطوط، وأكثر</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.2s;">
+        <div class="feature-icon icon-gold"><i class="fas fa-sliders-h"></i></div>
+        <h3>تخصيص شامل</h3>
+        <p>تحكم في اللون الرئيسي، خلفية السيرة، شكل الصورة، حجم الخط، التباعد، ونسبة الأعمدة</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.25s;">
+        <div class="feature-icon icon-pink"><i class="fas fa-arrows-alt"></i></div>
+        <h3>سحب وإفلات الأقسام</h3>
+        <p>أعِد ترتيب أقسام سيرتك بسهولة بالسحب والإفلات مع إمكانية إخفاء أي قسم بنقرة واحدة</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.3s;">
+        <div class="feature-icon icon-green"><i class="fas fa-file-pdf"></i></div>
+        <h3>تصدير PDF فوري</h3>
+        <p>احصل على ملف PDF بجودة طباعة عالية 300dpi جاهز للإرسال لأصحاب العمل</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.35s;">
+        <div class="feature-icon icon-orange"><i class="fas fa-save"></i></div>
+        <h3>حفظ وتصدير JSON</h3>
+        <p>يحفظ عملك تلقائياً ويمكنك تصدير سيرتك بصيغة JSON وإعادة تحميلها في أي وقت</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.4s;">
+        <div class="feature-icon icon-purple"><i class="fas fa-history"></i></div>
+        <h3>تراجع وإعادة لا نهائية</h3>
+        <p>50 خطوة للتراجع والإعادة لاسترجاع أي تغيير بسرعة</p>
+      </div>
+      <div class="feature-card" style="animation-delay:0.45s;">
+        <div class="feature-icon icon-blue"><i class="fas fa-cloud"></i></div>
+        <h3>حفظ سحابي</h3>
+        <p>احفظ سيرتك في السحابة واسترجعها من أي جهاز في أي وقت</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="gallery-section" id="templates-section">
+    <div class="section-header">
+      <h2>اختر <span class="highlight">القالب</span> المثالي</h2>
+      <p>12 قالب احترافي لكل مجال وذوق</p>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="filterTemplates('all',this)">جميع القوالب</button>
+      <button class="filter-btn" data-filter="rtl" onclick="filterTemplates('rtl',this)">عربي (RTL)</button>
+      <button class="filter-btn" data-filter="ltr" onclick="filterTemplates('ltr',this)">إنجليزي (LTR)</button>
+      <button class="filter-btn" data-filter="modern" onclick="filterTemplates('modern',this)">عصري</button>
+      <button class="filter-btn" data-filter="classic" onclick="filterTemplates('classic',this)">كلاسيكي</button>
+      <button class="filter-btn" data-filter="creative" onclick="filterTemplates('creative',this)">إبداعي</button>
+    </div>
+    <div class="template-grid" id="template-grid"></div>
+  </section>
+
+  <footer class="home-footer">
+    <p>صُنع بـ <i class="fas fa-heart" style="color:var(--red);"></i> · <strong>منصة المعلم المرشد</strong> —  السيرة الذاتية الاحترافية © 2025</p>
+  </footer>
+</div>
+
+<!-- ==================== EDITOR VIEW ==================== -->
+<div id="view-editor" class="view">
+  <!-- TOPBAR -->
+  <div class="editor-topbar">
+    <div class="topbar-left">
+      <button class="btn btn-ghost btn-sm tooltip" data-tooltip="العودة للرئيسية" onclick="showView('home')" title="الرئيسية"><i class="fas fa-arrow-right"></i></button>
+      <div class="editor-logo">
+        <div class="logo-icon">✦</div>
+        <div>
+          <div style="font-size:16px;font-weight:800;">ProCV</div>
+          <div style="font-size:12px;color:var(--text-dim);" id="tpl-name-display">القالب 1</div>
+        </div>
+      </div>
+      <div class="tpl-name-badge" id="dir-badge">RTL</div>
+      <div class="undo-redo">
+        <button onclick="undoAction()" title="تراجع (Ctrl+Z)" class="tooltip" data-tooltip="تراجع"><i class="fas fa-undo"></i></button>
+        <button onclick="redoAction()" title="إعادة (Ctrl+Y)" class="tooltip" data-tooltip="إعادة"><i class="fas fa-redo"></i></button>
+      </div>
+      <div class="save-indicator" id="save-status"><div class="save-dot"></div><span>محفوظ</span></div>
+      <div class="live-preview-badge" id="live-badge">
+        <div class="live-dot"></div>
+        <span>معاينة حية</span>
+      
+  <!-- ZOOM CONTROLS -->
+  <div id="zoom-controls">
+    <button class="zoom-btn" onclick="changeZoom(10)" title="تكبير"><i class="fas fa-plus"></i></button>
+    <div id="zoom-label">100%</div>
+    <button class="zoom-btn" onclick="changeZoom(-10)" title="تصغير"><i class="fas fa-minus"></i></button>
+    <button class="zoom-btn" onclick="resetZoom()" title="حجم طبيعي" style="font-size:13px;">⌂</button>
+    <button class="zoom-btn" onclick="fitToScreen()" title="ملء الشاشة" style="font-size:13px;"><i class="fas fa-expand"></i></button>
+  </div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+  <button class="btn btn-ghost btn-sm tooltip" data-tooltip="إظهار/إخفاء اللوحة" onclick="togglePanel()" title="اللوحة الجانبية"><i class="fas fa-columns"></i></button>
+  
+  <!-- مجموعة أزرار التكبير والتصغير -->
+  <div class="zoom-group">
+    <button class="zoom-btn-sm" onclick="changeZoom(-10)" title="تصغير"><i class="fas fa-minus"></i></button>
+    <span id="zoom-label-top">100%</span>
+    <button class="zoom-btn-sm" onclick="changeZoom(10)" title="تكبير"><i class="fas fa-plus"></i></button>
+    <button class="zoom-btn-sm" onclick="resetZoom()" title="حجم طبيعي">⌂</button>
+    <button class="zoom-btn-sm" onclick="fitToScreen()" title="ملء الشاشة"><i class="fas fa-expand"></i></button>
+  </div>
+
+  <!-- مجموعة أزرار معاينة الأجهزة -->
+  <div class="device-group">
+    <button class="device-btn-sm" onclick="previewDevice('desktop')" title="حاسوب"><i class="fas fa-desktop"></i></button>
+    <button class="device-btn-sm" onclick="previewDevice('tablet')" title="تابلت"><i class="fas fa-tablet-alt"></i></button>
+    <button class="device-btn-sm" onclick="previewDevice('mobile')" title="موبايل"><i class="fas fa-mobile-alt"></i></button>
+  </div>
+
+  <button class="btn btn-ghost btn-sm tooltip" data-tooltip="ملء بيانات تجريبية" onclick="fillSampleData()" title="ملء بيانات تجريبية"><i class="fas fa-fill-drip"></i> نموذج</button>
+  <button class="btn btn-ghost btn-sm tooltip" data-tooltip="معاينة السيرة" onclick="showPreview()" title="معاينة"><i class="fas fa-eye"></i> معاينة</button>
+        <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
+  <button class="btn btn-gold btn-sm" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> تحميل PDF</button>
+</div>
+    
+    
+  </div>
+
+  <!-- BODY -->
+  <div class="editor-body">
+    <!-- LEFT PANEL -->
+    <div id="left-panel">
+      <div class="panel-tabs">
+        <button class="panel-tab active" data-tab="design" onclick="switchTab('design',this)"><i class="fas fa-palette"></i>التصميم</button>
+        <button class="panel-tab" data-tab="sections" onclick="switchTab('sections',this)"><i class="fas fa-list-ul"></i>الأقسام</button>
+        <button class="panel-tab" data-tab="layout" onclick="switchTab('layout',this)"><i class="fas fa-th-large"></i>التخطيط</button>
+        <button class="panel-tab" data-tab="advanced" onclick="switchTab('advanced',this)"><i class="fas fa-magic"></i>متقدم</button>
+        <button class="panel-tab" data-tab="export" onclick="switchTab('export',this)"><i class="fas fa-download"></i>تصدير</button>
+      </div>
+
+      <!-- TAB: DESIGN -->
+      <div class="tab-content active" id="tab-design">
+        <!-- Photo Settings -->
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-user-circle"></i> الصورة الشخصية</div>
+          <div class="photo-shape-grid">
+            <div class="shape-btn active" data-shape="circle" onclick="setPhotoShape('circle',this)" title="دائري">
+              <div class="shape-preview shape-circle" style="background:#94a3b8;width:34px;height:34px;"></div>
+            </div>
+            <div class="shape-btn" data-shape="rounded" onclick="setPhotoShape('rounded',this)" title="مدور">
+              <div class="shape-preview shape-rounded" style="background:#94a3b8;width:34px;height:34px;"></div>
+            </div>
+            <div class="shape-btn" data-shape="square" onclick="setPhotoShape('square',this)" title="مربع">
+              <div class="shape-preview shape-square" style="background:#94a3b8;width:34px;height:34px;"></div>
+            </div>
+            <div class="shape-btn" data-shape="hex" onclick="setPhotoShape('hex',this)" title="سداسي">
+              <div class="shape-preview shape-hex" style="background:#94a3b8;width:34px;height:34px;"></div>
+            </div>
+          </div>
+          <div class="color-row" style="margin-top:8px;">
+            <input type="color" id="photo-border-color" onchange="setPhotoBorderColor(this.value)" value="#5b8ef0">
+            <label>لون الإطار</label>
+            <select class="select-input" onchange="setPhotoFilter(this.value)" style="flex:1;margin-right:10px;">
+              <option value="">بلا فلتر</option>
+              <option value="grayscale(100%)">أبيض وأسود</option>
+              <option value="sepia(60%)">بني دافئ</option>
+              <option value="brightness(1.1) contrast(1.05)">ناصع</option>
+              <option value="contrast(1.2) saturate(1.2)">حيوي</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Theme Color -->
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-circle"></i> اللون الرئيسي</div>
+          <div class="color-grid" id="color-swatches"></div>
+          <div class="color-row">
+            <input type="color" id="custom-color" onchange="applyThemeColor(this.value)" value="#5b8ef0">
+            <label>لون مخصص</label>
+          </div>
+          <div class="color-preset-group" style="margin-top:16px;">
+            <div class="color-preset-title">مجموعات الألوان</div>
+            <div class="color-preset-row">
+              <div class="color-preset-btn" style="background:linear-gradient(135deg,#4f8ef7,#14b8a6);" onclick="applyGradientTheme(['#4f8ef7','#14b8a6'])" title="أزرق فيروزي"></div>
+              <div class="color-preset-btn" style="background:linear-gradient(135deg,#e74c3c,#f39c12);" onclick="applyGradientTheme(['#e74c3c','#f39c12'])" title="حمراء برتقالية"></div>
+              <div class="color-preset-btn" style="background:linear-gradient(135deg,#8e44ad,#3498db);" onclick="applyGradientTheme(['#8e44ad','#3498db'])" title="بنفسجي أزرق"></div>
+              <div class="color-preset-btn" style="background:linear-gradient(135deg,#27ae60,#2ecc71);" onclick="applyGradientTheme(['#27ae60','#2ecc71'])" title="أخضر طبيعي"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CV Background -->
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-fill"></i> خلفية السيرة</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <div class="color-swatch active" style="background:#ffffff;border:2px solid #ddd;" onclick="setCVBackground('#ffffff',this)" title="أبيض"></div>
+            <div class="color-swatch" style="background:#fdf8f0;" onclick="setCVBackground('#fdf8f0',this)" title="كريمي"></div>
+            <div class="color-swatch" style="background:#f8fafc;" onclick="setCVBackground('#f8fafc',this)" title="رمادي فاتح"></div>
+            <div class="color-swatch" style="background:#f0f7ff;" onclick="setCVBackground('#f0f7ff',this)" title="أزرق فاتح جداً"></div>
+            <div class="color-swatch" style="background:#f0fff4;" onclick="setCVBackground('#f0fff4',this)" title="أخضر فاتح جداً"></div>
+            <div class="color-swatch" style="background:#faf5ff;" onclick="setCVBackground('#faf5ff',this)" title="بنفسجي فاتح"></div>
+            <input type="color" id="cv-bg-custom" onchange="setCVBackground(this.value,null)" value="#ffffff" style="width:34px;height:34px;border:none;background:none;cursor:pointer;border-radius:9px;">
+          </div>
+        </div>
+
+        <!-- Page Border Frame -->
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-border-all"></i> إطار الصفحة</div>
+          <div class="border-style-group" style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+            <select id="border-style-select" class="select-input" onchange="setBorderStyle(this.value)" style="flex:1;">
+              <option value="none">بدون إطار</option>
+              <option value="solid">صلب</option>
+              <option value="dashed">متقطع</option>
+              <option value="dotted">منقط</option>
+              <option value="double">مزدوج</option>
+              <option value="groove">أخدود</option>
+              <option value="ridge">نتوء</option>
+              <option value="inset">غائر</option>
+              <option value="outset">بارز</option>
+            </select>
+            <div class="color-row" style="margin:0;">
+              <input type="color" id="border-color-picker" onchange="setBorderColor(this.value)" value="#5b8ef0">
+              <label>لون الإطار</label>
+            </div>
+          </div>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>سمك الإطار</span><span id="border-width-val">2px</span></div>
+            <input type="range" min="1" max="15" value="2" oninput="setBorderWidth(this.value)">
+          </div>
+        </div>
+
+        <!-- Font -->
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-font"></i> الخط</div>
+          <select class="select-input" id="cv-font-select" onchange="applyFont(this.value)" style="margin-bottom:14px;">
+            <option value="Cairo">Cairo (القاهرة)</option>
+            <option value="Tajawal">Tajawal (تجوّل)</option>
+            <option value="Noto Kufi Arabic">Noto Kufi Arabic</option>
+            <option value="Arial">Arial</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Tahoma">Tahoma</option>
+          </select>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>حجم الخط</span><span id="font-scale-val">100%</span></div>
+            <input type="range" min="75" max="130" value="100" oninput="setFontScale(this.value)">
+          </div>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>تباعد الأسطر</span><span id="line-height-val">1.6</span></div>
+            <input type="range" min="12" max="22" value="16" oninput="setLineHeight(this.value)">
+          </div>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>سمك الخط</span><span id="font-weight-val">عادي</span></div>
+            <input type="range" min="3" max="9" value="4" oninput="setFontWeight(this.value)">
+          </div>
+        </div>
+      </div><!-- /tab-design -->
+
+      <!-- TAB: SECTIONS -->
+      <div class="tab-content" id="tab-sections">
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-grip-vertical"></i> ترتيب الأقسام (سحب وإفلات)</div>
+          <div id="sections-manager"></div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:14px;" onclick="openAddSectionModal()">
+            <i class="fas fa-plus"></i> إضافة قسم جديد
+          </button>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-heading"></i> نمط عناوين الأقسام</div>
+          <div class="sec-style-grid">
+            <button class="sec-style-btn active" data-style="default" onclick="applySecStyle('default',this)">افتراضي</button>
+            <button class="sec-style-btn" data-style="underline" onclick="applySecStyle('underline',this)">خط سفلي</button>
+            <button class="sec-style-btn" data-style="filled" onclick="applySecStyle('filled',this)">ملوّن</button>
+            <button class="sec-style-btn" data-style="outlined" onclick="applySecStyle('outlined',this)">مؤطّر</button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-arrows-alt-v"></i> تباعد الأقسام</div>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>المسافة</span><span id="sec-spacing-val">16px</span></div>
+            <input type="range" min="6" max="40" value="16" oninput="setSectionSpacing(this.value)">
+          </div>
+        </div>
+      </div><!-- /tab-sections -->
+
+      <!-- TAB: LAYOUT -->
+      <div class="tab-content" id="tab-layout">
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-th-large"></i> تغيير القالب</div>
+          <div class="tpl-mini-grid" id="tpl-mini-switcher"></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-columns"></i> نسبة الأعمدة</div>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>العمود الجانبي</span><span id="col-ratio-val">35%</span></div>
+            <input type="range" min="25" max="50" value="35" oninput="setColumnRatio(this.value)">
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-arrows-alt-h"></i> هوامش الصفحة</div>
+          <div class="slider-wrap">
+            <div class="slider-label"><span>الهامش</span><span id="margin-val">20mm</span></div>
+            <input type="range" min="8" max="35" value="20" oninput="setPageMargin(this.value)">
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-mobile-alt"></i> معاينة الجهاز</div>
+          <div class="quick-actions">
+            <button class="quick-action-btn" onclick="previewDevice('desktop')"><i class="fas fa-desktop"></i> حاسوب</button>
+            <button class="quick-action-btn" onclick="previewDevice('tablet')"><i class="fas fa-tablet-alt"></i> تابلت</button>
+            <button class="quick-action-btn" onclick="previewDevice('mobile')"><i class="fas fa-mobile-alt"></i> موبايل</button>
+          </div>
+        </div>
+      </div><!-- /tab-layout -->
+
+      <!-- TAB: ADVANCED -->
+      <div class="tab-content" id="tab-advanced">
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-shapes"></i> تأثيرات الصورة الشخصية</div>
+          <div class="photo-effects-grid">
+            <button class="effect-btn" onclick="setPhotoEffect('none')" title="بدون تأثير">بدون</button>
+            <button class="effect-btn" onclick="setPhotoEffect('shadow')" title="ظل">ظل</button>
+            <button class="effect-btn" onclick="setPhotoEffect('glow')" title="توهج">توهج</button>
+            <button class="effect-btn" onclick="setPhotoEffect('border')" title="إطار مزدوج">إطار</button>
+            <button class="effect-btn" onclick="setPhotoEffect('3d')" title="ثلاثي الأبعاد">3D</button>
+            <button class="effect-btn" onclick="setPhotoEffect('vintage')" title="كلاسيكي">كلاسيكي</button>
+          </div>
+          <div class="slider-wrap" style="margin-top:12px;">
+            <div class="slider-label"><span>حجم الصورة</span><span id="photo-size-val">100%</span></div>
+            <input type="range" min="50" max="150" value="100" oninput="setPhotoSize(this.value)">
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-fill-drip"></i> تدرجات الخلفية</div>
+          <div class="gradient-presets">
+            <div class="gradient-btn" onclick="setCVGradient('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%)"></div>
+            <div class="gradient-btn" onclick="setCVGradient('linear-gradient(135deg, #f093fb 0%, #f5576c 100%)')" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"></div>
+            <div class="gradient-btn" onclick="setCVGradient('linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)')" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"></div>
+            <div class="gradient-btn" onclick="setCVGradient('linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)')" style="background:linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"></div>
+            <div class="gradient-btn" onclick="setCVGradient('linear-gradient(135deg, #fa709a 0%, #fee140 100%)')" style="background:linear-gradient(135deg, #fa709a 0%, #fee140 100%)"></div>
+            <div class="gradient-btn" onclick="setCVGradient('linear-gradient(135deg, #30cfd0 0%, #330867 100%)')" style="background:linear-gradient(135deg, #30cfd0 0%, #330867 100%)"></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px;" onclick="setCVBackground('#ffffff',null)"><i class="fas fa-eraser"></i> إزالة التدرج</button>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-text-height"></i> تنسيق النصوص المتقدم</div>
+          <div class="advanced-text-options">
+            <div class="slider-wrap">
+              <div class="slider-label"><span>تباعد الحروف</span><span id="letter-spacing-val">0px</span></div>
+              <input type="range" min="-2" max="5" value="0" oninput="setLetterSpacing(this.value)">
+            </div>
+            <div class="slider-wrap">
+              <div class="slider-label"><span>ارتفاع السطر</span><span id="line-height-adv-val">1.6</span></div>
+              <input type="range" min="10" max="25" value="16" oninput="setAdvancedLineHeight(this.value)">
+            </div>
+            <div class="text-transform-options">
+              <label>تحويل النص:</label>
+              <div class="transform-btns">
+                <button class="transform-btn" onclick="setTextTransform('none')">عادي</button>
+                <button class="transform-btn" onclick="setTextTransform('uppercase')">كبير</button>
+                <button class="transform-btn" onclick="setTextTransform('capitalize')">عنوان</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-layer-group"></i> تأثيرات الأقسام</div>
+          <div class="section-effects">
+            <div class="effect-option">
+              <label>ظل للأقسام</label>
+              <input type="checkbox" id="section-shadow" onchange="toggleSectionShadow(this.checked)">
+            </div>
+            <div class="effect-option">
+              <label>زوايا مدورة</label>
+              <input type="checkbox" id="section-rounded" onchange="toggleSectionRounded(this.checked)">
+            </div>
+            <div class="effect-option">
+              <label>حدود خفيفة</label>
+              <input type="checkbox" id="section-border" onchange="toggleSectionBorder(this.checked)">
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-palette"></i> أنماط الألوان</div>
+          <div class="color-themes">
+            <button class="color-theme-btn" onclick="applyColorTheme('professional')">
+              <span class="theme-preview" style="background:linear-gradient(90deg,#2c3e50,#3498db)"></span>
+              <span>احترافي</span>
+            </button>
+            <button class="color-theme-btn" onclick="applyColorTheme('creative')">
+              <span class="theme-preview" style="background:linear-gradient(90deg,#e74c3c,#f39c12)"></span>
+              <span>إبداعي</span>
+            </button>
+            <button class="color-theme-btn" onclick="applyColorTheme('elegant')">
+              <span class="theme-preview" style="background:linear-gradient(90deg,#8e44ad,#9b59b6)"></span>
+              <span>أنيق</span>
+            </button>
+            <button class="color-theme-btn" onclick="applyColorTheme('nature')">
+              <span class="theme-preview" style="background:linear-gradient(90deg,#27ae60,#2ecc71)"></span>
+              <span>طبيعي</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-wand-magic-sparkles"></i> أدوات سريعة</div>
+          <div class="quick-tools-grid">
+            <button class="quick-tool-btn" onclick="autoFormat()">
+              <i class="fas fa-magic"></i>
+              <span>تنسيق تلقائي</span>
+            </button>
+            <button class="quick-tool-btn" onclick="optimizeLayout()">
+              <i class="fas fa-compress-arrows-alt"></i>
+              <span>تحسين التخطيط</span>
+            </button>
+            <button class="quick-tool-btn" onclick="enhanceReadability()">
+              <i class="fas fa-eye"></i>
+              <span>تحسين القراءة</span>
+            </button>
+            <button class="quick-tool-btn" onclick="resetFormatting()">
+              <i class="fas fa-undo"></i>
+              <span>إعادة التنسيق</span>
+            </button>
+          </div>
+        </div>
+      </div><!-- /tab-advanced -->
+
+      <!-- TAB: EXPORT -->
+      <div class="tab-content" id="tab-export">
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-chart-pie"></i> مستوى الاكتمال</div>
+          <div class="score-circle-wrap">
+            <div class="score-number" id="score-number">0%</div>
+            <div class="score-label">اكتمال السيرة الذاتية</div>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+          <div class="progress-items" id="progress-items"></div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-file-export"></i> خيارات التصدير</div>
+          <div class="export-btn-row">
+            <button class="export-btn pdf" onclick="downloadPDF()"><i class="fas fa-file-pdf"></i> تحميل PDF (جودة عالية)</button>
+            <button class="export-btn" onclick="window.print()"><i class="fas fa-print"></i> طباعة مباشرة</button>
+            <button class="export-btn json" onclick="exportJSON()"><i class="fas fa-file-code"></i> تصدير كملف JSON</button>
+            <button class="export-btn json" onclick="openModal('import-modal')"><i class="fas fa-file-import"></i> استيراد ملف JSON</button>
+            <button class="export-btn" onclick="shareCV()"><i class="fas fa-share-alt"></i> مشاركة السيرة</button>
+            <button class="export-btn" onclick="showPreview()"><i class="fas fa-eye"></i> معاينة كاملة</button>
+            <button class="export-btn danger" onclick="confirmReset()"><i class="fas fa-trash-alt"></i> إعادة تعيين السيرة</button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-cloud"></i> الحفظ السحابي</div>
+          <div class="export-btn-row">
+            <button class="export-btn" onclick="saveToCloud()"><i class="fas fa-cloud-upload-alt"></i> حفظ في السحابة</button>
+            <button class="export-btn" onclick="loadFromCloud()"><i class="fas fa-cloud-download-alt"></i> استرجاع من السحابة</button>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-section-title"><i class="fas fa-keyboard"></i> اختصارات لوحة المفاتيح</div>
+          <div class="shortcut-item"><span class="shortcut-desc">تراجع</span><span class="shortcut-key">Ctrl+Z</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">إعادة</span><span class="shortcut-key">Ctrl+Y</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">معاينة</span><span class="shortcut-key">Ctrl+P</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">تكبير</span><span class="shortcut-key">Ctrl++</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">تصغير</span><span class="shortcut-key">Ctrl+-</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">حجم طبيعي</span><span class="shortcut-key">Ctrl+0</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">حفظ</span><span class="shortcut-key">Ctrl+S</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">تحديد الكل</span><span class="shortcut-key">Ctrl+A</span></div>
+        </div>
+      </div><!-- /tab-export -->
+    </div><!-- /left-panel -->
+
+    <!-- CANVAS -->
+    <div id="canvas-area">
+      <div id="cv-container" class="cv-inner" data-tpl="1">
+        <!-- CV content injected by JS -->
+      </div>
+    </div>
+  </div><!-- /editor-body -->
+
+  
+
+  <!-- FORMAT BUBBLE -->
+  <div id="format-bubble">
+    <button class="fmt-btn" onclick="exec('bold')" title="عريض (Ctrl+B)"><i class="fas fa-bold"></i></button>
+    <button class="fmt-btn" onclick="exec('italic')" title="مائل (Ctrl+I)"><i class="fas fa-italic"></i></button>
+    <button class="fmt-btn" onclick="exec('underline')" title="خط تحته (Ctrl+U)"><i class="fas fa-underline"></i></button>
+    <button class="fmt-btn" onclick="exec('strikeThrough')" title="شطب"><i class="fas fa-strikethrough"></i></button>
+    <button class="fmt-btn" onclick="exec('superscript')" title="علوي"><i class="fas fa-superscript"></i></button>
+    <button class="fmt-btn" onclick="exec('subscript')" title="سفلي"><i class="fas fa-subscript"></i></button>
+    <div class="bubble-divider"></div>
+    <input type="color" class="fmt-color" onchange="exec('foreColor',this.value)" title="لون النص" value="#333333">
+    <input type="color" class="fmt-color" onchange="exec('hiliteColor',this.value)" title="تظليل" value="#ffff00" style="margin-right:3px;">
+    <div class="bubble-divider"></div>
+    <select class="fmt-select fmt-font" onchange="exec('fontName',this.value)" title="نوع الخط">
+      <option value="">الخط</option>
+      <option value="Cairo">Cairo</option>
+      <option value="Tajawal">Tajawal</option>
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Times New Roman">Times</option>
+      <option value="Verdana">Verdana</option>
+    </select>
+    <select class="fmt-select fmt-size" onchange="setFontSize(this.value)" title="حجم الخط">
+      <option value="">حجم</option>
+      <option value="10px">10</option>
+      <option value="12px">12</option>
+      <option value="14px">14</option>
+      <option value="16px">16</option>
+      <option value="18px">18</option>
+      <option value="20px">20</option>
+      <option value="24px">24</option>
+      <option value="28px">28</option>
+      <option value="32px">32</option>
+      <option value="40px">40</option>
+      <option value="50px">50</option>
+      <option value="60px">60</option>
+      <option value="70px">70</option>
+    </select>
+    <div class="bubble-divider"></div>
+    <button class="fmt-btn" onclick="exec('justifyRight')" title="محاذاة يمين"><i class="fas fa-align-right"></i></button>
+    <button class="fmt-btn" onclick="exec('justifyCenter')" title="وسط"><i class="fas fa-align-center"></i></button>
+    <button class="fmt-btn" onclick="exec('justifyLeft')" title="يسار"><i class="fas fa-align-left"></i></button>
+    <button class="fmt-btn" onclick="exec('justifyFull')" title="ضبط"><i class="fas fa-align-justify"></i></button>
+    <div class="bubble-divider"></div>
+    <button class="fmt-btn" onclick="exec('insertUnorderedList')" title="قائمة نقطية"><i class="fas fa-list-ul"></i></button>
+    <button class="fmt-btn" onclick="exec('insertOrderedList')" title="قائمة مرقمة"><i class="fas fa-list-ol"></i></button>
+    <button class="fmt-btn" onclick="exec('indent')" title="زيادة مسافة بادئة"><i class="fas fa-indent"></i></button>
+    <button class="fmt-btn" onclick="exec('outdent')" title="تقليل مسافة بادئة"><i class="fas fa-outdent"></i></button>
+    <div class="bubble-divider"></div>
+    <button class="fmt-btn" onclick="openIconLib()" title="مكتبة الأيقونات"><i class="fas fa-icons"></i></button>
+    <button class="fmt-btn" onclick="exec('removeFormat')" title="إزالة التنسيق"><i class="fas fa-eraser"></i></button>
+  </div>
+</div><!-- /view-editor -->
+
+<!-- ==================== PREVIEW MODAL ==================== -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-box" style="padding:26px;width:90%;max-width:950px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-eye" style="color:var(--teal)"></i> معاينة السيرة الذاتية</div>
+      <button class="modal-close" onclick="closeModal('preview-modal')">✕</button>
+    </div>
+    <div id="preview-wrap" style="overflow:auto;max-height:72vh;background:#888;padding:22px;border-radius:var(--radius);text-align:center;"></div>
+     <div class="modal-footer">
+  <button class="btn btn-ghost" onclick="closeModal('preview-modal')">إغلاق</button>
+</div>
+  </div>
+</div>
+
+<!-- ==================== ICON MODAL ==================== -->
+<div class="modal-overlay" id="icon-modal">
+  <div class="modal-box modal-md">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-icons" style="color:var(--gold)"></i> مكتبة الأيقونات</div>
+      <button class="modal-close" onclick="closeModal('icon-modal')">✕</button>
+    </div>
+    <input class="icon-search" id="icon-search-input" placeholder="ابحث عن أيقونة..." oninput="filterIcons(this.value)">
+    <div class="icon-grid" id="icon-grid"></div>
+  </div>
+</div>
+
+<!-- ==================== ADD SECTION MODAL ==================== -->
+<div class="modal-overlay" id="add-section-modal">
+  <div class="modal-box modal-md">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-plus" style="color:var(--teal)"></i> إضافة قسم جديد</div>
+      <button class="modal-close" onclick="closeModal('add-section-modal')">✕</button>
+    </div>
+    <div class="section-type-grid">
+      <button class="sec-type-btn" onclick="addCustomSection('projects')"><div class="mode-icon">🚀</div><div class="mode-title">المشاريع</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('certifications')"><div class="mode-icon">🏆</div><div class="mode-title">الشهادات والدورات</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('hobbies')"><div class="mode-icon">🎨</div><div class="mode-title">الهوايات</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('references')"><div class="mode-icon">👥</div><div class="mode-title">المراجع</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('volunteer')"><div class="mode-icon">❤️</div><div class="mode-title">التطوع</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('awards')"><div class="mode-icon">⭐</div><div class="mode-title">الجوائز</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('publications')"><div class="mode-icon">📚</div><div class="mode-title">المنشورات</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('portfolio')"><div class="mode-icon">🖼️</div><div class="mode-title">المحفظة الإبداعية</div></button>
+      <button class="sec-type-btn" onclick="addCustomSection('custom')"><div class="mode-icon">✏️</div><div class="mode-title">قسم مخصص</div></button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== RESET MODAL ==================== -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal-box modal-sm">
+    <div class="modal-header">
+      <div class="modal-title" style="color:var(--red)"><i class="fas fa-exclamation-triangle"></i> تأكيد الإعادة</div>
+      <button class="modal-close" onclick="closeModal('reset-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-muted);margin-bottom:24px;font-size:15px;line-height:1.7;">هل تريد إعادة تعيين كل المحتوى؟ سيتم حذف جميع التغييرات.</p>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('reset-modal')">إلغاء</button>
+      <button class="btn btn-danger" onclick="resetCV();closeModal('reset-modal')"><i class="fas fa-trash"></i> إعادة تعيين</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== IMPORT MODAL ==================== -->
+<div class="modal-overlay" id="import-modal">
+  <div class="modal-box modal-md">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-file-import" style="color:var(--primary)"></i> استيراد ملف JSON</div>
+      <button class="modal-close" onclick="closeModal('import-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-muted);margin-bottom:16px;font-size:14px;">الصق محتوى ملف JSON الذي سبق تصديره:</p>
+    <textarea class="import-textarea" id="import-json-text" placeholder='{"templateId":"1","themeColor":"#4f8ef7",...}'></textarea>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('import-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="importJSON()"><i class="fas fa-upload"></i> استيراد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SHARE MODAL ==================== -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal-box modal-sm">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-share-alt" style="color:var(--teal)"></i> مشاركة السيرة</div>
+      <button class="modal-close" onclick="closeModal('share-modal')">✕</button>
+    </div>
+    <div style="padding:16px 0;">
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">اختر طريقة المشاركة:</p>
+      <div class="export-btn-row">
+        <button class="export-btn" onclick="shareByEmail()"><i class="fas fa-envelope"></i> مشاركة بالبريد</button>
+        <button class="export-btn" onclick="shareByLink()"><i class="fas fa-link"></i> نسخ الرابط</button>
+        <button class="export-btn" onclick="shareByWhatsApp()"><i class="fab fa-whatsapp"></i> واتساب</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "ProCV Studio",
+  "description": "منصة متكاملة لبناء سيرة ذاتية احترافية مع 12 قالباً وتخصيص كامل وتصدير PDF",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "All",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": "12 قالب احترافي، محرر نصوص متقدم، سحب وإفلات الأقسام، تصدير PDF، حفظ سحابي، تخصيص كامل للألوان والخطوط"
+}
+</script>
+</body>
+</html>
