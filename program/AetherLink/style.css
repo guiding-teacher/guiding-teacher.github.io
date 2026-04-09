@@ -651,6 +651,13 @@ body::before {
     flex-shrink: 0;
 }
 
+/* Full-height mode when no transfer section */
+.messages-section.messages-full {
+    flex: 1;
+    max-height: none;
+    min-height: 0;
+}
+
 .messages-list {
     flex: 1;
     overflow-y: auto;
@@ -981,11 +988,84 @@ body::before {
     gap: 4px;
 }
 
+.header-action-btn.session-link {
+    background: linear-gradient(135deg, #9b59b6, #6c3483);
+    color: #fff;
+}
+.header-action-btn.session-link:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(155,89,182,0.4);
+}
+
+/* Drag-over state for chat area */
+.messages-list.drag-over-chat {
+    background: rgba(0,210,255,0.04);
+    outline: 2px dashed rgba(0,210,255,0.45);
+    outline-offset: -4px;
+    border-radius: 12px;
+}
+
+/* ── Session Link Modal ─────────────────── */
+.session-modal { max-width: 400px !important; }
+
+.session-modal-hint {
+    font-size: 0.8rem;
+    color: #8899aa;
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.session-url-box {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(0,210,255,0.25);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    word-break: break-all;
+}
+
+.session-url-text {
+    font-size: 0.75rem;
+    color: #00d2ff;
+    font-family: monospace;
+    direction: ltr;
+    display: block;
+    text-align: left;
+}
+
+.session-modal-qr {
+    margin: 0 auto 16px;
+    text-align: center;
+}
+
+.session-modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.session-copy-btn, .session-wa-btn, .session-share-btn {
+    flex: 1;
+    padding: 9px 10px;
+    border: none;
+    border-radius: 14px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.session-copy-btn  { background: rgba(255,255,255,0.1); color: #dde; border: 1px solid rgba(255,255,255,0.15); }
+.session-wa-btn    { background: #25D366; color: #fff; }
+.session-share-btn { background: linear-gradient(135deg, #9b59b6, #3a7bd5); color: #fff; }
+.session-copy-btn:hover, .session-wa-btn:hover, .session-share-btn:hover {
+    transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+}
 .header-action-btn.end-session {
     background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
     color: #fff;
 }
-.header-action-btn.end-session:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 15px rgba(255,107,107,0.4);
 }

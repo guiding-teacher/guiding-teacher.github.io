@@ -651,6 +651,8 @@ function createFileMessageBox(meta, blob, senderName, isReceived = false) {
         previewHtml = `<div class="file-icon">📄</div>`;
     }
     
+    const timeStr = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+
     div.innerHTML = `
       <span class="msg-sender">${esc(senderName)}</span>
       <div class="file-msg-box" onclick="openFullscreen('${fileId}')">
@@ -660,12 +662,12 @@ function createFileMessageBox(meta, blob, senderName, isReceived = false) {
         </div>
         <div class="file-info">
           <span class="file-name">${esc(meta.fileName)}</span>
-          <span class="file-size">${fmtBytes(meta.fileSize)}</span>
+          <span class="file-size">${fmtBytes(meta.fileSize)} · ${timeStr}</span>
           <div class="file-progress">
             <div class="file-progress-bar">
               <div class="file-progress-inner done" style="width:100%"></div>
             </div>
-            <span class="file-pct">100%</span>
+            <span class="file-pct">✓ مكتمل</span>
           </div>
           <div class="file-actions">
             <button class="file-action-btn download" onclick="event.stopPropagation(); downloadFileById('${fileId}')">⬇ تحميل</button>
@@ -888,7 +890,7 @@ function renderJoinerUI() {
 // ─────────────────────────────────────────
 function renderConnectedUI() {
     // Already rendered? Just update peers panel.
-    if (document.getElementById('transfer-section')) { updatePeersUI(); return; }
+    if (document.getElementById('msg-list') && document.getElementById('peers-panel')) { updatePeersUI(); return; }
 
     mainEl.innerHTML = `
     <div class="app-layout">
@@ -899,6 +901,7 @@ function renderConnectedUI() {
         </div>
         <div class="header-right">
           <div class="header-actions">
+            <button class="header-action-btn session-link" id="session-link-btn" title="رابط الجلسة">🔗 الجلسة</button>
             <button class="header-action-btn show-users" id="show-users-btn" title="المتصلين">👥 المتصلين</button>
             <button class="header-action-btn end-session" id="end-session-btn" title="إنهاء الجلسة">✕ إنهاء</button>
           </div>
@@ -918,21 +921,11 @@ function renderConnectedUI() {
         <button class="broadcast-btn" id="broadcast-btn">📡 إرسال للجميع</button>
       </div>
 
-      <!-- Transfer area -->
-      <div class="transfer-section" id="transfer-section">
-        <div class="drop-zone" id="drop-zone">
-          <div class="drop-icon">📁</div>
-          <p class="drop-label">أسقط ملفات هنا أو انقر للاختيار</p>
-          <p class="drop-hint">يمكن إرسال ملفات متعددة في وقت واحد</p>
-          <input type="file" id="file-input" multiple>
-        </div>
-        <div class="transfer-list" id="transfer-list"></div>
-      </div>
-
-      <!-- Messages -->
-      <div class="messages-section">
+      <!-- Messages — full height chat area with file support -->
+      <div class="messages-section messages-full">
         <div class="messages-list" id="msg-list"></div>
         <div class="msg-bar">
+          <input type="file" id="file-input" multiple style="display:none">
           <input type="text" class="msg-field" id="msg-field" placeholder="اكتب رسالة..." autocomplete="off">
           <button class="file-input-btn" id="file-btn" title="إرفاق ملف">📎</button>
           <button class="send-btn" id="send-btn">↑</button>
@@ -946,6 +939,21 @@ function renderConnectedUI() {
     bindMinBtn();
     bindHeaderActions();
     restoreSessionMessages();
+
+    // Drag & drop on the chat area
+    const msgList = document.getElementById('msg-list');
+    if (msgList) {
+        ['dragenter','dragover','dragleave','drop'].forEach(ev =>
+            msgList.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
+        );
+        msgList.addEventListener('dragenter', () => msgList.classList.add('drag-over-chat'));
+        msgList.addEventListener('dragleave', () => msgList.classList.remove('drag-over-chat'));
+        msgList.addEventListener('drop', (e) => {
+            msgList.classList.remove('drag-over-chat');
+            const isBcast = document.getElementById('broadcast-btn')?.dataset.broadcast === '1';
+            queueFiles(e.dataTransfer.files, isBcast);
+        });
+    }
 }
 
 // ─────────────────────────────────────────
@@ -1045,18 +1053,9 @@ function bindHomeEvents(joinUrl) {
 //  Event binding — transfer
 // ─────────────────────────────────────────
 function bindTransferEvents() {
-    const dz   = document.getElementById('drop-zone');
-    const fi   = document.getElementById('file-input');
+    const fi    = document.getElementById('file-input');
     const bcast = document.getElementById('broadcast-btn');
 
-    dz?.addEventListener('click', () => fi?.click());
-
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev =>
-        dz?.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
-    );
-    dz?.addEventListener('dragenter', () => dz.classList.add('drag-over'));
-    dz?.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-    dz?.addEventListener('drop', (e) => { dz.classList.remove('drag-over'); queueFiles(e.dataTransfer.files, false); });
     fi?.addEventListener('change', (e) => {
         const isBcast = fi.dataset.broadcast === '1';
         fi.removeAttribute('data-broadcast');
@@ -1074,8 +1073,10 @@ function bindTransferEvents() {
 //  Event binding — messages
 // ─────────────────────────────────────────
 function bindMsgEvents() {
-    const field = document.getElementById('msg-field');
-    const btn   = document.getElementById('send-btn');
+    const field   = document.getElementById('msg-field');
+    const btn     = document.getElementById('send-btn');
+    const fileBtn = document.getElementById('file-btn');
+    const fi      = document.getElementById('file-input');
 
     const send = () => {
         const txt = field?.value.trim();
@@ -1090,11 +1091,7 @@ function bindMsgEvents() {
     btn?.addEventListener('click', send);
     field?.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
 
-    // File button opens file picker
-    const fileBtn = document.getElementById('file-btn');
-    fileBtn?.addEventListener('click', () => {
-        fi?.click();
-    });
+    fileBtn?.addEventListener('click', () => fi?.click());
 }
 
 // ─────────────────────────────────────────
@@ -1127,6 +1124,9 @@ function bindHeaderActions() {
     // Show connected users
     document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
 
+    // Session link
+    document.getElementById('session-link-btn')?.addEventListener('click', showSessionLinkModal);
+
     // End session
     document.getElementById('end-session-btn')?.addEventListener('click', endSession);
 }
@@ -1151,6 +1151,59 @@ function showUsersModal() {
       </div>`;
     document.body.appendChild(overlay);
     overlay.querySelector('.users-modal-close')?.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showSessionLinkModal() {
+    const sessionUrl = `${location.origin}${location.pathname}?id=${roomId}`;
+    const overlay = document.createElement('div');
+    overlay.className = 'users-modal-overlay';
+    overlay.innerHTML = `
+      <div class="users-modal session-modal">
+        <h3>🔗 رابط الجلسة الجماعية</h3>
+        <p class="session-modal-hint">شارك هذا الرابط ليتمكن أي شخص من الانضمام</p>
+        <div class="session-url-box">
+          <span class="session-url-text" id="session-url-text">${esc(sessionUrl)}</span>
+        </div>
+        <div class="session-modal-qr" id="session-modal-qr"></div>
+        <div class="session-modal-actions">
+          <button class="session-copy-btn" id="scopy-btn">📋 نسخ الرابط</button>
+          <button class="session-wa-btn" id="swa-btn">💬 واتساب</button>
+          <button class="session-share-btn" id="sshare-btn">↗ مشاركة</button>
+        </div>
+        <button class="users-modal-close" id="sclose-btn">إغلاق</button>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // Generate QR
+    try {
+        const qr = qrcode(0, 'L');
+        qr.addData(sessionUrl);
+        qr.make();
+        const qrEl = overlay.querySelector('#session-modal-qr');
+        if (qrEl) {
+            qrEl.innerHTML = qr.createImgTag(3, 6);
+            const img = qrEl.querySelector('img');
+            if (img) img.style.cssText = 'width:120px;height:120px;display:block;border-radius:10px;margin:0 auto;';
+        }
+    } catch(_) {}
+
+    overlay.querySelector('#scopy-btn')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(sessionUrl).then(() => {
+            const b = overlay.querySelector('#scopy-btn');
+            if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => { b.textContent = '📋 نسخ الرابط'; }, 2000); }
+        });
+    });
+    overlay.querySelector('#swa-btn')?.addEventListener('click', () => {
+        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + sessionUrl)}`, '_blank');
+    });
+    overlay.querySelector('#sshare-btn')?.addEventListener('click', async () => {
+        if (navigator.share) {
+            try { await navigator.share({ title: 'AetherLink', url: sessionUrl }); return; } catch(_) {}
+        }
+        open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('AetherLink - نقل الملفات الآمن\n' + sessionUrl)}`, '_blank');
+    });
+    overlay.querySelector('#sclose-btn')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
@@ -1359,6 +1412,8 @@ function createSenderFileBox(file, meta) {
         previewHtml = `<div class="file-icon">📄</div>`;
     }
     
+    const timeStr = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+
     div.innerHTML = `
       <span class="msg-sender">أنت</span>
       <div class="file-msg-box" onclick="openSenderFullscreen('${meta.fileId}')">
@@ -1368,7 +1423,7 @@ function createSenderFileBox(file, meta) {
         </div>
         <div class="file-info">
           <span class="file-name">${esc(meta.fileName)}</span>
-          <span class="file-size">${fmtBytes(meta.fileSize)}</span>
+          <span class="file-size">${fmtBytes(meta.fileSize)} · ${timeStr}</span>
           <div class="file-progress">
             <div class="file-progress-bar">
               <div class="file-progress-inner" id="sender-progress-${meta.fileId}" style="width:0%"></div>
@@ -1401,8 +1456,9 @@ function updateSenderFileBox(fileId, pct, done = false, errorMsg = null) {
         }
     }
     if (pctEl) {
-        pctEl.textContent = errorMsg || `${pct}%`;
-        if (errorMsg) pctEl.style.color = '#ff6b6b';
+        if (errorMsg) { pctEl.textContent = errorMsg; pctEl.style.color = '#ff6b6b'; }
+        else if (done && pct >= 100) { pctEl.textContent = '✓ تم الإرسال'; pctEl.style.color = '#43e97b'; }
+        else { pctEl.textContent = `${pct}%`; }
     }
 }
 
@@ -1452,42 +1508,9 @@ function openSenderFullscreen(fileId) {
 //  Transfer item UI (newest first)
 // ─────────────────────────────────────────
 function updateTransferItem(meta, pct, statusText, done = false, err = false) {
-    const list = document.getElementById('transfer-list');
-    if (!list) return;
-
-    const id  = `tr-${meta.fileId}`;
-    let   el  = document.getElementById(id);
-
-    if (!el) {
-        el = document.createElement('div');
-        el.className = 'tr-item';
-        el.id = id;
-        list.insertBefore(el, list.firstChild); // newest at top
-    }
-
-    const cls = done ? (err ? 'error' : 'done') : '';
-    const showCancel = !done && statusText.includes('إرسال');
-
-    el.innerHTML = `
-      <div class="tr-header">
-        <span class="tr-name" title="${esc(meta.fileName)}">${esc(meta.fileName)}</span>
-        <span class="tr-pct">${pct}%</span>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-bar-inner ${cls}" style="width:${pct}%"></div>
-      </div>
-      <div class="tr-status ${cls}">${esc(statusText)}</div>
-      ${showCancel ? `<button class="cancel-btn" data-fid="${esc(meta.fileId)}">إلغاء</button>` : ''}
-    `;
-
-    el.querySelector('.cancel-btn')?.addEventListener('click', () => {
-        cancelFlag = true;
-        getConnected().forEach(([_, p]) => {
-            try { p.peer.send(JSON.stringify({ type: 'cancel', payload: meta })); } catch (_) {}
-        });
-        updateTransferItem(meta, pct, 'تم الإلغاء', true, true);
-        runQueue();
-    });
+    // Transfer items are now shown as file message boxes in the chat.
+    // This function is kept for compatibility but does nothing visible.
+    return;
 }
 
 // ─────────────────────────────────────────
