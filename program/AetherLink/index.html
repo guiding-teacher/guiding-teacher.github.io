@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AetherLink</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <!-- ═══════════════════════════════════════
+     SEO — الوصف ومحركات البحث
+════════════════════════════════════════ -->
+<meta name="description" content="AetherLink — نقل الملفات الفوري والآمن بين الأجهزة عبر الإنترنت. لا تثبيت، لا تسجيل، اتصال مباشر مشفر P2P.">
+<meta name="keywords" content="نقل ملفات, مشاركة ملفات, P2P, نقل آمن, AetherLink, مشاركة سريعة, بدون تثبيت, نقل فوري">
+<meta name="author" content="AetherLink">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#020a18">
+<link rel="canonical" href="https://guiding-teacher.github.io/program/AetherLink/images/og-image.svg">
+
+<!-- ═══════════════════════════════════════
+     Open Graph — المشاركة على فيسبوك وواتساب
+════════════════════════════════════════ -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://guiding-teacher.github.io/program/AetherLink/images/og-image.svg">
+<meta property="og:title" content="AetherLink — نقل الملفات الفوري والآمن">
+<meta property="og:description" content="شارك ملفاتك فوراً بين أي جهازين عبر اتصال مباشر مشفر. لا تثبيت، لا تسجيل دخول، يعمل من المتصفح مباشرة.">
+<meta property="og:image" content="https://guiding-teacher.github.io/program/AetherLink/images/og-image.svg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ar_IQ">
+<meta property="og:site_name" content="AetherLink">
+
+<!-- ═══════════════════════════════════════
+     Twitter Card — المشاركة على تويتر/X
+════════════════════════════════════════ -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://guiding-teacher.github.io/program/AetherLink/images/og-image.svg">
+<meta name="twitter:title" content="AetherLink — نقل الملفات الفوري والآمن">
+<meta name="twitter:description" content="شارك ملفاتك فوراً بين أي جهازين عبر اتصال مباشر مشفر. لا تثبيت، لا تسجيل دخول.">
+<meta name="twitter:image" content="https://guiding-teacher.github.io/program/AetherLink/images/og-image.svg">
+
+<!-- ═══════════════════════════════════════
+     PWA — دعم التطبيق على الهاتف
+════════════════════════════════════════ -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AetherLink">
+</head>
+<body>
+
+    <!-- Particle Network Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Mini Floating Widget -->
+    <div id="mini-widget" class="hidden">
+        <div class="mini-dot" id="mini-dot"></div>
+        <span id="mini-label">AetherLink</span>
+        <span id="mini-peer-count"></span>
+        <button id="mini-expand-btn" title="توسيع">⤢</button>
+    </div>
+
+    <!-- Picture-in-Picture Container -->
+    <div id="pip-container" class="hidden">
+        <div id="pip-video-container"></div>
+    </div>
+
+    <!-- Main Full-Screen Container -->
+    <main id="main-container" class="glass-container">
+        <!-- Content injected by app.js -->
+    </main>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

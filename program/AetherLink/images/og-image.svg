@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="orb1" cx="35%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#3a7bd5" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#020a18" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb2" cx="75%" cy="25%" r="45%">
+      <stop offset="0%" stop-color="#9b59b6" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#020a18" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb3" cx="85%" cy="80%" r="35%">
+      <stop offset="0%" stop-color="#00d2ff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#020a18" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#00d2ff"/>
+      <stop offset="55%"  stop-color="#3a7bd5"/>
+      <stop offset="100%" stop-color="#9b59b6"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="#00d2ff" stop-opacity="0"/>
+      <stop offset="50%"  stop-color="#3a7bd5" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#9b59b6" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#020a18"/>
+  <rect width="1200" height="630" fill="url(#orb1)"/>
+  <rect width="1200" height="630" fill="url(#orb2)"/>
+  <rect width="1200" height="630" fill="url(#orb3)"/>
+
+  <!-- Particle network — left cluster -->
+  <circle cx="80"  cy="180" r="2.5" fill="#78beff" opacity="0.7"/>
+  <circle cx="170" cy="120" r="2"   fill="#78beff" opacity="0.6"/>
+  <circle cx="240" cy="200" r="3"   fill="#78beff" opacity="0.8"/>
+  <circle cx="130" cy="280" r="2"   fill="#78beff" opacity="0.5"/>
+  <circle cx="55"  cy="340" r="2.5" fill="#78beff" opacity="0.6"/>
+  <circle cx="210" cy="350" r="2"   fill="#78beff" opacity="0.5"/>
+  <line x1="80"  y1="180" x2="170" y2="120" stroke="#3a7bd5" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="170" y1="120" x2="240" y2="200" stroke="#3a7bd5" stroke-opacity="0.35" stroke-width="1"/>
+  <line x1="80"  y1="180" x2="130" y2="280" stroke="#3a7bd5" stroke-opacity="0.25" stroke-width="1"/>
+  <line x1="240" y1="200" x2="210" y2="350" stroke="#3a7bd5" stroke-opacity="0.2"  stroke-width="1"/>
+  <line x1="55"  y1="340" x2="130" y2="280" stroke="#3a7bd5" stroke-opacity="0.25" stroke-width="1"/>
+  <line x1="55"  y1="340" x2="210" y2="350" stroke="#3a7bd5" stroke-opacity="0.2"  stroke-width="1"/>
+
+  <!-- Particle network — right cluster -->
+  <circle cx="1020" cy="150" r="2.5" fill="#78beff" opacity="0.7"/>
+  <circle cx="1110" cy="220" r="2"   fill="#78beff" opacity="0.6"/>
+  <circle cx="1060" cy="310" r="3"   fill="#78beff" opacity="0.8"/>
+  <circle cx="1150" cy="380" r="2"   fill="#78beff" opacity="0.5"/>
+  <circle cx="980"  cy="400" r="2.5" fill="#78beff" opacity="0.6"/>
+  <circle cx="1130" cy="470" r="2"   fill="#78beff" opacity="0.5"/>
+  <line x1="1020" y1="150" x2="1110" y2="220" stroke="#3a7bd5" stroke-opacity="0.3"  stroke-width="1"/>
+  <line x1="1110" y1="220" x2="1060" y2="310" stroke="#3a7bd5" stroke-opacity="0.35" stroke-width="1"/>
+  <line x1="1060" y1="310" x2="980"  y2="400" stroke="#3a7bd5" stroke-opacity="0.3"  stroke-width="1"/>
+  <line x1="1060" y1="310" x2="1150" y2="380" stroke="#3a7bd5" stroke-opacity="0.25" stroke-width="1"/>
+  <line x1="1150" y1="380" x2="1130" y2="470" stroke="#3a7bd5" stroke-opacity="0.2"  stroke-width="1"/>
+  <line x1="980"  y1="400" x2="1130" y2="470" stroke="#3a7bd5" stroke-opacity="0.2"  stroke-width="1"/>
+
+  <!-- Top + bottom subtle particles -->
+  <circle cx="450" cy="60"  r="1.8" fill="#78beff" opacity="0.4"/>
+  <circle cx="600" cy="40"  r="1.5" fill="#78beff" opacity="0.3"/>
+  <circle cx="750" cy="70"  r="2"   fill="#78beff" opacity="0.4"/>
+  <line x1="450" y1="60" x2="600" y2="40" stroke="#3a7bd5" stroke-opacity="0.15" stroke-width="0.8"/>
+  <line x1="600" y1="40" x2="750" y2="70" stroke="#3a7bd5" stroke-opacity="0.15" stroke-width="0.8"/>
+
+  <circle cx="420" cy="570" r="1.8" fill="#78beff" opacity="0.4"/>
+  <circle cx="600" cy="590" r="1.5" fill="#78beff" opacity="0.3"/>
+  <circle cx="780" cy="565" r="2"   fill="#78beff" opacity="0.4"/>
+  <line x1="420" y1="570" x2="600" y2="590" stroke="#3a7bd5" stroke-opacity="0.15" stroke-width="0.8"/>
+  <line x1="600" y1="590" x2="780" y2="565" stroke="#3a7bd5" stroke-opacity="0.15" stroke-width="0.8"/>
+
+  <!-- Horizontal divider line -->
+  <line x1="300" y1="388" x2="900" y2="388" stroke="url(#lineGrad)" stroke-width="1"/>
+
+  <!-- P2P connection illustration — two glowing nodes with arc -->
+  <circle cx="390" cy="270" r="18" fill="none" stroke="#00d2ff" stroke-opacity="0.25" stroke-width="1.5"/>
+  <circle cx="390" cy="270" r="11" fill="#0d2040" stroke="#00d2ff" stroke-opacity="0.5" stroke-width="1.2"/>
+  <circle cx="390" cy="270" r="4"  fill="#00d2ff" opacity="0.8" filter="url(#glow)"/>
+
+  <circle cx="810" cy="270" r="18" fill="none" stroke="#9b59b6" stroke-opacity="0.25" stroke-width="1.5"/>
+  <circle cx="810" cy="270" r="11" fill="#0d2040" stroke="#9b59b6" stroke-opacity="0.5" stroke-width="1.2"/>
+  <circle cx="810" cy="270" r="4"  fill="#9b59b6" opacity="0.8" filter="url(#glow)"/>
+
+  <!-- Dashed arc between nodes -->
+  <path d="M 408 270 Q 600 210 792 270" fill="none" stroke="url(#lineGrad)" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+  <!-- Arrow head on right -->
+  <polygon points="792,270 780,264 780,276" fill="#9b59b6" opacity="0.7"/>
+
+  <!-- Main title -->
+  <text x="600" y="175"
+        font-family="'Segoe UI', 'Arial', sans-serif"
+        font-size="96"
+        font-weight="800"
+        text-anchor="middle"
+        fill="url(#titleGrad)"
+        letter-spacing="-2">AetherLink</text>
+
+  <!-- Arabic subtitle -->
+  <text x="600" y="348"
+        font-family="'Segoe UI', 'Tahoma', 'Arial', sans-serif"
+        font-size="30"
+        font-weight="400"
+        text-anchor="middle"
+        fill="#dde4f0"
+        opacity="0.88">نقل الملفات الفوري والآمن بين أي جهازين</text>
+
+  <!-- Feature pills -->
+  <rect x="272" y="415" width="180" height="38" rx="19" fill="#0d2a45" stroke="#00d2ff" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="362" y="439" font-family="'Segoe UI','Arial',sans-serif" font-size="15" text-anchor="middle" fill="#00d2ff" opacity="0.9">P2P مشفر</text>
+
+  <rect x="510" y="415" width="180" height="38" rx="19" fill="#0d2a45" stroke="#3a7bd5" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="600" y="439" font-family="'Segoe UI','Arial',sans-serif" font-size="15" text-anchor="middle" fill="#7eb8ff" opacity="0.9">بدون تثبيت</text>
+
+  <rect x="748" y="415" width="180" height="38" rx="19" fill="#0d2a45" stroke="#9b59b6" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="838" y="439" font-family="'Segoe UI','Arial',sans-serif" font-size="15" text-anchor="middle" fill="#c49be8" opacity="0.9">فوري 100%</text>
+
+  <!-- Bottom domain hint -->
+  <text x="600" y="530"
+        font-family="'Segoe UI','Arial',sans-serif"
+        font-size="18"
+        text-anchor="middle"
+        fill="#445566"
+        letter-spacing="1">aetherlink.app</text>
+
+  <!-- Border frame -->
+  <rect x="1" y="1" width="1198" height="628" rx="0" fill="none" stroke="#ffffff" stroke-opacity="0.05" stroke-width="2"/>
+</svg>
