@@ -574,7 +574,8 @@ function onData(raw, fromId) {
                 recvMap.set(msg.payload.fileId, {
                     meta: msg.payload, buffer: [], received: 0, fromId,
                 });
-                updateTransferItem(msg.payload, 0, 'جاري الاستلام...');
+                // Create receiving file box in chat
+                createReceivingFileBox(msg.payload, fromId);
                 break;
             case 'cancel':
                 cancelRecv(msg.payload.fileId, 'تم إلغاء الإرسال من المرسل');
@@ -601,12 +602,12 @@ function recvChunk(chunk, fromId) {
             entry.buffer.push(chunk);
             entry.received += chunk.length;
             const pct = Math.round((entry.received / entry.meta.fileSize) * 100);
-            updateFileMessageBox(entry.meta, pct, entry.fromId);
+            updateReceivingFileBox(entry.meta, pct, entry.fromId);
             if (entry.received >= entry.meta.fileSize) {
                 const blob = new Blob(entry.buffer);
                 const pi = peers.get(fromId);
                 const senderName = pi?.name || 'مجهول';
-                createFileMessageBox(entry.meta, blob, senderName, true);
+                completeReceivingFileBox(entry.meta, blob, senderName);
                 recvMap.delete(fid);
             }
             return;
@@ -617,62 +618,61 @@ function recvChunk(chunk, fromId) {
 function cancelRecv(fileId, reason) {
     const e = recvMap.get(fileId);
     if (e) { 
-        updateFileMessageBox(e.meta, 0, e.fromId, true, reason); 
+        updateReceivingFileBox(e.meta, 0, e.fromId, true, reason); 
         recvMap.delete(fileId); 
     }
 }
 
 // ─────────────────────────────────────────
-//  File Message Box UI
+//  Receiving File Box UI (in chat)
 // ─────────────────────────────────────────
-function createFileMessageBox(meta, blob, senderName, isReceived = false) {
+function createReceivingFileBox(meta, fromId) {
     const list = document.getElementById('msg-list');
     if (!list) return;
     
     const fileId = meta.fileId;
+    const pi = peers.get(fromId);
+    const senderName = pi?.name || 'مجهول';
+    const time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
+    
     const isImage = meta.fileType?.startsWith('image/');
     const isVideo = meta.fileType?.startsWith('video/');
-    const objectUrl = URL.createObjectURL(blob);
     
-    // Store for download
-    downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
-    sessionFiles.push({ fileId, meta, sender: senderName });
-    
-    const div = document.createElement('div');
-    div.className = `msg ${isReceived ? 'received' : 'sent'}`;
-    div.id = `file-msg-${fileId}`;
-    
-    let previewHtml = '';
+    let iconHtml = '';
     if (isImage) {
-        previewHtml = `<img src="${objectUrl}" alt="${esc(meta.fileName)}">`;
+        iconHtml = `<div class="file-icon">🖼️</div>`;
     } else if (isVideo) {
-        previewHtml = `<video src="${objectUrl}" controls></video>`;
+        iconHtml = `<div class="file-icon">🎬</div>`;
+    } else if (meta.fileType?.includes('pdf')) {
+        iconHtml = `<div class="file-icon">📕</div>`;
+    } else if (meta.fileType?.includes('audio')) {
+        iconHtml = `<div class="file-icon">🎵</div>`;
+    } else if (meta.fileType?.includes('zip') || meta.fileType?.includes('rar') || meta.fileType?.includes('7z')) {
+        iconHtml = `<div class="file-icon">📦</div>`;
     } else {
-        previewHtml = `<div class="file-icon">📄</div>`;
+        iconHtml = `<div class="file-icon">📄</div>`;
     }
     
-    const timeStr = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-
+    const div = document.createElement('div');
+    div.className = 'msg received';
+    div.id = `recv-file-${fileId}`;
+    
     div.innerHTML = `
       <span class="msg-sender">${esc(senderName)}</span>
-      <div class="file-msg-box" onclick="openFullscreen('${fileId}')">
+      <div class="file-msg-box receiving" id="file-box-${fileId}">
         <div class="file-preview">
-          ${previewHtml}
-          <div class="file-preview-overlay"><span>🔍</span></div>
+          ${iconHtml}
         </div>
         <div class="file-info">
           <span class="file-name">${esc(meta.fileName)}</span>
-          <span class="file-size">${fmtBytes(meta.fileSize)} · ${timeStr}</span>
+          <span class="file-meta">${fmtBytes(meta.fileSize)} • ${time}</span>
           <div class="file-progress">
             <div class="file-progress-bar">
-              <div class="file-progress-inner done" style="width:100%"></div>
+              <div class="file-progress-inner" id="recv-progress-${fileId}" style="width:0%"></div>
             </div>
-            <span class="file-pct">✓ مكتمل</span>
+            <span class="file-pct" id="recv-pct-${fileId}">0%</span>
           </div>
-          <div class="file-actions">
-            <button class="file-action-btn download" onclick="event.stopPropagation(); downloadFileById('${fileId}')">⬇ تحميل</button>
-            <button class="file-action-btn delete" onclick="event.stopPropagation(); deleteFile('${fileId}')">🗑 حذف</button>
-          </div>
+          <div class="tr-status" id="recv-status-${fileId}" style="font-size:0.75rem;color:#8899aa;">جاري الاستلام...</div>
         </div>
       </div>
     `;
@@ -681,65 +681,88 @@ function createFileMessageBox(meta, blob, senderName, isReceived = false) {
     list.scrollTop = list.scrollHeight;
 }
 
-function updateFileMessageBox(meta, pct, fromId, done = false, errorMsg = null) {
-    const list = document.getElementById('msg-list');
-    if (!list) return;
+function updateReceivingFileBox(meta, pct, fromId, done = false, errorMsg = null) {
+    const progressEl = document.getElementById(`recv-progress-${meta.fileId}`);
+    const pctEl = document.getElementById(`recv-pct-${meta.fileId}`);
+    const statusEl = document.getElementById(`recv-status-${meta.fileId}`);
     
-    const fileId = meta.fileId;
-    let el = document.getElementById(`file-msg-${fileId}`);
-    
-    const pi = peers.get(fromId);
-    const senderName = pi?.name || 'مجهول';
-    
-    if (!el) {
-        // Create initial box with progress
-        el = document.createElement('div');
-        el.className = 'msg received';
-        el.id = `file-msg-${fileId}`;
-        
-        const isImage = meta.fileType?.startsWith('image/');
-        const isVideo = meta.fileType?.startsWith('video/');
-        let iconHtml = '';
-        if (isImage) {
-            iconHtml = `<div class="file-icon">🖼️</div>`;
-        } else if (isVideo) {
-            iconHtml = `<div class="file-icon">🎬</div>`;
-        } else {
-            iconHtml = `<div class="file-icon">📄</div>`;
+    if (progressEl) {
+        progressEl.style.width = `${pct}%`;
+        if (done) {
+            if (errorMsg) {
+                progressEl.classList.add('error');
+            } else {
+                progressEl.classList.add('done');
+            }
         }
-        
-        const cls = done ? (errorMsg ? 'error' : 'done') : '';
-        const statusText = errorMsg || (done ? 'اكتمل ✓' : 'جاري الاستلام...');
-        
-        el.innerHTML = `
-          <span class="msg-sender">${esc(senderName)}</span>
-          <div class="file-msg-box">
-            <div class="file-preview">
-              ${iconHtml}
-            </div>
-            <div class="file-info">
-              <span class="file-name">${esc(meta.fileName)}</span>
-              <span class="file-size">${fmtBytes(meta.fileSize)}</span>
-              <div class="file-progress">
-                <div class="file-progress-bar">
-                  <div class="file-progress-inner ${cls}" style="width:${pct}%"></div>
-                </div>
-                <span class="file-pct">${pct}%</span>
-              </div>
-              <div class="tr-status ${cls}" style="font-size:0.75rem;color:#8899aa;">${esc(statusText)}</div>
-            </div>
-          </div>
-        `;
-        
-        list.appendChild(el);
-        list.scrollTop = list.scrollHeight;
-    } else {
-        // Update progress
-        const progressInner = el.querySelector('.file-progress-inner');
-        const pctEl = el.querySelector('.file-pct');
-        if (progressInner) progressInner.style.width = `${pct}%`;
-        if (pctEl) pctEl.textContent = `${pct}%`;
     }
+    if (pctEl) {
+        pctEl.textContent = errorMsg || `${pct}%`;
+        if (errorMsg) pctEl.style.color = '#ff6b6b';
+    }
+    if (statusEl) {
+        statusEl.textContent = errorMsg || (done ? 'اكتمل ✓' : 'جاري الاستلام...');
+        if (errorMsg) statusEl.classList.add('error');
+    }
+}
+
+function completeReceivingFileBox(meta, blob, senderName) {
+    const fileId = meta.fileId;
+    const box = document.getElementById(`file-box-${fileId}`);
+    if (!box) return;
+    
+    // Store for download
+    const objectUrl = URL.createObjectURL(blob);
+    downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
+    sessionFiles.push({ fileId, meta, sender: senderName });
+    
+    const isImage = meta.fileType?.startsWith('image/');
+    const isVideo = meta.fileType?.startsWith('video/');
+    
+    // Update preview if image/video
+    const previewDiv = box.querySelector('.file-preview');
+    if (previewDiv && (isImage || isVideo)) {
+        if (isImage) {
+            previewDiv.innerHTML = `<img src="${objectUrl}" alt="${esc(meta.fileName)}">`;
+        } else if (isVideo) {
+            previewDiv.innerHTML = `<video src="${objectUrl}"></video>`;
+        }
+    }
+    
+    // Update progress to done
+    const progressEl = document.getElementById(`recv-progress-${fileId}`);
+    const pctEl = document.getElementById(`recv-pct-${fileId}`);
+    const statusEl = document.getElementById(`recv-status-${fileId}`);
+    
+    if (progressEl) {
+        progressEl.style.width = '100%';
+        progressEl.classList.add('done');
+    }
+    if (pctEl) {
+        pctEl.textContent = '100%';
+        pctEl.style.color = '#43e97b';
+    }
+    if (statusEl) {
+        statusEl.textContent = 'تم الاستلام ✓';
+        statusEl.classList.add('done');
+    }
+    
+    // Add action buttons
+    const infoDiv = box.querySelector('.file-info');
+    if (infoDiv) {
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'file-actions';
+        actionsDiv.innerHTML = `
+            <button class="file-action-btn download" onclick="downloadFileById('${fileId}')">⬇ تحميل</button>
+            <button class="file-action-btn delete" onclick="deleteFile('${fileId}')">🗑 حذف</button>
+        `;
+        infoDiv.appendChild(actionsDiv);
+    }
+    
+    // Make clickable for fullscreen
+    box.classList.remove('receiving');
+    box.onclick = () => openFullscreen(fileId);
+    box.style.cursor = 'pointer';
 }
 
 function downloadFileById(fileId) {
@@ -757,7 +780,7 @@ function deleteFile(fileId) {
         URL.revokeObjectURL(file.url);
         downloadedFiles.delete(fileId);
     }
-    const el = document.getElementById(`file-msg-${fileId}`);
+    const el = document.getElementById(`recv-file-${fileId}`);
     if (el) {
         el.remove();
     }
@@ -886,11 +909,11 @@ function renderJoinerUI() {
 }
 
 // ─────────────────────────────────────────
-//  UI — Connected (transfer + messages)
+//  UI — Connected (messages only - no transfer section)
 // ─────────────────────────────────────────
 function renderConnectedUI() {
     // Already rendered? Just update peers panel.
-    if (document.getElementById('msg-list') && document.getElementById('peers-panel')) { updatePeersUI(); return; }
+    if (document.getElementById('messages-section')) { updatePeersUI(); return; }
 
     mainEl.innerHTML = `
     <div class="app-layout">
@@ -901,8 +924,8 @@ function renderConnectedUI() {
         </div>
         <div class="header-right">
           <div class="header-actions">
-            <button class="header-action-btn session-link" id="session-link-btn" title="رابط الجلسة">🔗 الجلسة</button>
             <button class="header-action-btn show-users" id="show-users-btn" title="المتصلين">👥 المتصلين</button>
+            <button class="header-action-btn group-link" id="group-link-btn" title="رابط الجلسة">🔗 مشاركة</button>
             <button class="header-action-btn end-session" id="end-session-btn" title="إنهاء الجلسة">✕ إنهاء</button>
           </div>
           <div class="device-chip" id="name-chip">
@@ -918,42 +941,25 @@ function renderConnectedUI() {
       <div class="peers-panel" id="peers-panel">
         <span class="peers-count" id="peers-count">0 متصل</span>
         <div class="peer-chips" id="peer-chips"></div>
-        <button class="broadcast-btn" id="broadcast-btn">📡 إرسال للجميع</button>
       </div>
 
-      <!-- Messages — full height chat area with file support -->
-      <div class="messages-section messages-full">
+      <!-- Messages Section (full area - no transfer section) -->
+      <div class="messages-section-full" id="messages-section">
         <div class="messages-list" id="msg-list"></div>
         <div class="msg-bar">
           <input type="file" id="file-input" multiple style="display:none">
+          <button class="file-input-btn" id="file-btn" title="إرسال ملف">📎</button>
           <input type="text" class="msg-field" id="msg-field" placeholder="اكتب رسالة..." autocomplete="off">
-          <button class="file-input-btn" id="file-btn" title="إرفاق ملف">📎</button>
           <button class="send-btn" id="send-btn">↑</button>
         </div>
       </div>
     </div>`;
 
     updatePeersUI();
-    bindTransferEvents();
     bindMsgEvents();
     bindMinBtn();
     bindHeaderActions();
     restoreSessionMessages();
-
-    // Drag & drop on the chat area
-    const msgList = document.getElementById('msg-list');
-    if (msgList) {
-        ['dragenter','dragover','dragleave','drop'].forEach(ev =>
-            msgList.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
-        );
-        msgList.addEventListener('dragenter', () => msgList.classList.add('drag-over-chat'));
-        msgList.addEventListener('dragleave', () => msgList.classList.remove('drag-over-chat'));
-        msgList.addEventListener('drop', (e) => {
-            msgList.classList.remove('drag-over-chat');
-            const isBcast = document.getElementById('broadcast-btn')?.dataset.broadcast === '1';
-            queueFiles(e.dataTransfer.files, isBcast);
-        });
-    }
 }
 
 // ─────────────────────────────────────────
@@ -963,15 +969,11 @@ function updatePeersUI() {
     const panel      = document.getElementById('peers-panel');
     const countEl    = document.getElementById('peers-count');
     const chipsEl    = document.getElementById('peer-chips');
-    const bcastBtn   = document.getElementById('broadcast-btn');
     if (!panel) return;
 
     const connected = getConnected();
     if (countEl)  countEl.textContent = `${connected.length} متصل`;
     if (chipsEl)  chipsEl.innerHTML   = connected.map(([_, p]) => `<span class="peer-chip">📱 ${esc(p.name)}</span>`).join('');
-    if (bcastBtn) {
-        bcastBtn.className = `broadcast-btn${connected.length > 1 ? ' visible' : ''}`;
-    }
 }
 
 // ─────────────────────────────────────────
@@ -1050,34 +1052,15 @@ function bindHomeEvents(joinUrl) {
 }
 
 // ─────────────────────────────────────────
-//  Event binding — transfer
-// ─────────────────────────────────────────
-function bindTransferEvents() {
-    const fi    = document.getElementById('file-input');
-    const bcast = document.getElementById('broadcast-btn');
-
-    fi?.addEventListener('change', (e) => {
-        const isBcast = fi.dataset.broadcast === '1';
-        fi.removeAttribute('data-broadcast');
-        queueFiles(e.target.files, isBcast);
-        fi.value = '';
-    });
-
-    bcast?.addEventListener('click', () => {
-        if (fi) fi.dataset.broadcast = '1';
-        fi?.click();
-    });
-}
-
-// ─────────────────────────────────────────
-//  Event binding — messages
+//  Event binding — messages (with file send)
 // ─────────────────────────────────────────
 function bindMsgEvents() {
-    const field   = document.getElementById('msg-field');
-    const btn     = document.getElementById('send-btn');
+    const field = document.getElementById('msg-field');
+    const btn   = document.getElementById('send-btn');
     const fileBtn = document.getElementById('file-btn');
-    const fi      = document.getElementById('file-input');
+    const fileInput = document.getElementById('file-input');
 
+    // Send message
     const send = () => {
         const txt = field?.value.trim();
         if (!txt) return;
@@ -1091,7 +1074,31 @@ function bindMsgEvents() {
     btn?.addEventListener('click', send);
     field?.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
 
-    fileBtn?.addEventListener('click', () => fi?.click());
+    // File button - open file picker
+    fileBtn?.addEventListener('click', () => {
+        fileInput?.click();
+    });
+
+    // File selected - send to all connected
+    fileInput?.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        
+        const targets = getConnected().map(([id]) => id);
+        if (!targets.length) {
+            toast('لا يوجد أجهزة متصلة', 'error');
+            fileInput.value = '';
+            return;
+        }
+
+        // Queue files for sending
+        for (const f of files) {
+            sendQueue.push({ file: f, targets });
+        }
+        if (!currentSend) runQueue();
+        
+        fileInput.value = '';
+    });
 }
 
 // ─────────────────────────────────────────
@@ -1123,9 +1130,9 @@ function bindHeaderActions() {
 
     // Show connected users
     document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
-
-    // Session link
-    document.getElementById('session-link-btn')?.addEventListener('click', showSessionLinkModal);
+    
+    // Group link button
+    document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
 
     // End session
     document.getElementById('end-session-btn')?.addEventListener('click', endSession);
@@ -1154,56 +1161,40 @@ function showUsersModal() {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
-function showSessionLinkModal() {
-    const sessionUrl = `${location.origin}${location.pathname}?id=${roomId}`;
+function showGroupLinkModal() {
+    const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
     const overlay = document.createElement('div');
-    overlay.className = 'users-modal-overlay';
+    overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="users-modal session-modal">
-        <h3>🔗 رابط الجلسة الجماعية</h3>
-        <p class="session-modal-hint">شارك هذا الرابط ليتمكن أي شخص من الانضمام</p>
-        <div class="session-url-box">
-          <span class="session-url-text" id="session-url-text">${esc(sessionUrl)}</span>
+      <div class="modal-box">
+        <h3>🔗 رابط الجلسة</h3>
+        <p>شارك هذا الرابط لدعوة آخرين للانضمام</p>
+        <div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;word-break:break-all;font-size:0.8rem;color:#00d2ff;margin:10px 0;">
+          ${esc(joinUrl)}
         </div>
-        <div class="session-modal-qr" id="session-modal-qr"></div>
-        <div class="session-modal-actions">
-          <button class="session-copy-btn" id="scopy-btn">📋 نسخ الرابط</button>
-          <button class="session-wa-btn" id="swa-btn">💬 واتساب</button>
-          <button class="session-share-btn" id="sshare-btn">↗ مشاركة</button>
+        <div class="modal-actions">
+          <button class="action-button" id="modal-copy">📋 نسخ</button>
+          <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
+          <button class="action-button secondary" id="modal-close">إغلاق</button>
         </div>
-        <button class="users-modal-close" id="sclose-btn">إغلاق</button>
       </div>`;
     document.body.appendChild(overlay);
-
-    // Generate QR
-    try {
-        const qr = qrcode(0, 'L');
-        qr.addData(sessionUrl);
-        qr.make();
-        const qrEl = overlay.querySelector('#session-modal-qr');
-        if (qrEl) {
-            qrEl.innerHTML = qr.createImgTag(3, 6);
-            const img = qrEl.querySelector('img');
-            if (img) img.style.cssText = 'width:120px;height:120px;display:block;border-radius:10px;margin:0 auto;';
-        }
-    } catch(_) {}
-
-    overlay.querySelector('#scopy-btn')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(sessionUrl).then(() => {
-            const b = overlay.querySelector('#scopy-btn');
-            if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => { b.textContent = '📋 نسخ الرابط'; }, 2000); }
+    
+    overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(joinUrl).then(() => {
+            toast('تم نسخ الرابط!', 'success');
         });
     });
-    overlay.querySelector('#swa-btn')?.addEventListener('click', () => {
-        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + sessionUrl)}`, '_blank');
-    });
-    overlay.querySelector('#sshare-btn')?.addEventListener('click', async () => {
+    
+    overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
         if (navigator.share) {
-            try { await navigator.share({ title: 'AetherLink', url: sessionUrl }); return; } catch(_) {}
+            try { await navigator.share({ title: 'AetherLink', url: joinUrl }); } catch (_) {}
+        } else {
+            open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
         }
-        open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('AetherLink - نقل الملفات الآمن\n' + sessionUrl)}`, '_blank');
     });
-    overlay.querySelector('#sclose-btn')?.addEventListener('click', () => overlay.remove());
+    
+    overlay.querySelector('#modal-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
@@ -1314,18 +1305,6 @@ function initMiniDrag() {
 // ─────────────────────────────────────────
 //  File send queue
 // ─────────────────────────────────────────
-function queueFiles(files, broadcast) {
-    if (!files.length) return;
-    const targets = broadcast
-        ? getConnected().map(([id]) => id)
-        : (getConnected()[0] ? [getConnected()[0][0]] : []);
-
-    if (!targets.length) { toast('لا يوجد أجهزة متصلة', 'error'); return; }
-
-    for (const f of files) sendQueue.push({ file: f, targets });
-    if (!currentSend) runQueue();
-}
-
 function runQueue() {
     if (!sendQueue.length) { currentSend = null; return; }
     currentSend = sendQueue.shift();
@@ -1346,7 +1325,7 @@ function sendFileTo(file, peerIds) {
         if (pi?.connected) try { pi.peer.send(JSON.stringify({ type: 'metadata', payload: meta })); } catch (_) {}
     });
 
-    // Create sender file box
+    // Create sender file box in chat
     createSenderFileBox(file, meta);
 
     const reader = new FileReader();
@@ -1362,15 +1341,14 @@ function sendFileTo(file, peerIds) {
             offset += e.target.result.byteLength;
             const pct = Math.round((offset / file.size) * 100);
             updateSenderFileBox(meta.fileId, pct);
-            updateTransferItem(meta, pct, `جاري إرسال ${fmtBytes(file.size)}...`);
             if (offset < file.size) {
                 reader.readAsArrayBuffer(file.slice(offset, offset + CHUNK_SIZE));
             } else {
-                updateTransferItem(meta, 100, 'تم الإرسال بنجاح ✓', true);
+                finalizeSenderFileBox(meta.fileId);
                 runQueue();
             }
         } catch (err) {
-            updateTransferItem(meta, 0, 'فشل في الإرسال', true, true);
+            updateSenderFileBox(meta.fileId, 0, true, 'فشل في الإرسال');
             peerIds.forEach(id => {
                 const pi = peers.get(id);
                 if (pi?.connected) try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
@@ -1380,7 +1358,6 @@ function sendFileTo(file, peerIds) {
     };
 
     reader.onerror = () => { 
-        updateTransferItem(meta, 0, 'فشل قراءة الملف', true, true); 
         updateSenderFileBox(meta.fileId, 0, true, 'فشل قراءة الملف');
         runQueue(); 
     };
@@ -1388,7 +1365,7 @@ function sendFileTo(file, peerIds) {
 }
 
 // ─────────────────────────────────────────
-//  Sender File Box UI
+//  Sender File Box UI (in chat)
 // ─────────────────────────────────────────
 function createSenderFileBox(file, meta) {
     const list = document.getElementById('msg-list');
@@ -1396,6 +1373,7 @@ function createSenderFileBox(file, meta) {
     
     const isImage = file.type?.startsWith('image/');
     const isVideo = file.type?.startsWith('video/');
+    const time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
     
     const div = document.createElement('div');
     div.className = 'msg sent';
@@ -1409,30 +1387,29 @@ function createSenderFileBox(file, meta) {
         const url = URL.createObjectURL(file);
         previewHtml = `<video src="${url}"></video>`;
     } else {
-        previewHtml = `<div class="file-icon">📄</div>`;
+        let icon = '📄';
+        if (file.type?.includes('pdf')) icon = '📕';
+        else if (file.type?.includes('audio')) icon = '🎵';
+        else if (file.type?.includes('zip') || file.type?.includes('rar') || file.type?.includes('7z')) icon = '📦';
+        previewHtml = `<div class="file-icon">${icon}</div>`;
     }
     
-    const timeStr = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-
     div.innerHTML = `
       <span class="msg-sender">أنت</span>
-      <div class="file-msg-box" onclick="openSenderFullscreen('${meta.fileId}')">
+      <div class="file-msg-box sending" id="sender-box-${meta.fileId}">
         <div class="file-preview">
           ${previewHtml}
-          <div class="file-preview-overlay"><span>🔍</span></div>
         </div>
         <div class="file-info">
           <span class="file-name">${esc(meta.fileName)}</span>
-          <span class="file-size">${fmtBytes(meta.fileSize)} · ${timeStr}</span>
+          <span class="file-meta">${fmtBytes(meta.fileSize)} • ${time}</span>
           <div class="file-progress">
             <div class="file-progress-bar">
               <div class="file-progress-inner" id="sender-progress-${meta.fileId}" style="width:0%"></div>
             </div>
             <span class="file-pct" id="sender-pct-${meta.fileId}">0%</span>
           </div>
-          <div class="file-actions">
-            <button class="file-action-btn delete" onclick="event.stopPropagation(); deleteSenderFile('${meta.fileId}')">🗑 حذف</button>
-          </div>
+          <div class="tr-status" id="sender-status-${meta.fileId}" style="font-size:0.75rem;color:#8899aa;">جاري الإرسال...</div>
         </div>
       </div>
     `;
@@ -1444,6 +1421,7 @@ function createSenderFileBox(file, meta) {
 function updateSenderFileBox(fileId, pct, done = false, errorMsg = null) {
     const progressEl = document.getElementById(`sender-progress-${fileId}`);
     const pctEl = document.getElementById(`sender-pct-${fileId}`);
+    const statusEl = document.getElementById(`sender-status-${fileId}`);
     
     if (progressEl) {
         progressEl.style.width = `${pct}%`;
@@ -1456,9 +1434,48 @@ function updateSenderFileBox(fileId, pct, done = false, errorMsg = null) {
         }
     }
     if (pctEl) {
-        if (errorMsg) { pctEl.textContent = errorMsg; pctEl.style.color = '#ff6b6b'; }
-        else if (done && pct >= 100) { pctEl.textContent = '✓ تم الإرسال'; pctEl.style.color = '#43e97b'; }
-        else { pctEl.textContent = `${pct}%`; }
+        pctEl.textContent = errorMsg || `${pct}%`;
+        if (errorMsg) pctEl.style.color = '#ff6b6b';
+    }
+    if (statusEl) {
+        statusEl.textContent = errorMsg || (done ? 'تم الإرسال ✓' : 'جاري الإرسال...');
+        if (errorMsg) statusEl.classList.add('error');
+    }
+}
+
+function finalizeSenderFileBox(fileId) {
+    const progressEl = document.getElementById(`sender-progress-${fileId}`);
+    const pctEl = document.getElementById(`sender-pct-${fileId}`);
+    const statusEl = document.getElementById(`sender-status-${fileId}`);
+    const box = document.getElementById(`sender-box-${fileId}`);
+    
+    if (progressEl) {
+        progressEl.style.width = '100%';
+        progressEl.classList.add('done');
+    }
+    if (pctEl) {
+        pctEl.textContent = '100%';
+        pctEl.style.color = '#43e97b';
+    }
+    if (statusEl) {
+        statusEl.textContent = 'تم الإرسال ✓';
+        statusEl.classList.add('done');
+    }
+    
+    // Add delete button
+    if (box) {
+        const infoDiv = box.querySelector('.file-info');
+        if (infoDiv && !infoDiv.querySelector('.file-actions')) {
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'file-actions';
+            actionsDiv.innerHTML = `
+                <button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>
+            `;
+            infoDiv.appendChild(actionsDiv);
+        }
+        box.classList.remove('sending');
+        box.onclick = () => openSenderFullscreen(fileId);
+        box.style.cursor = 'pointer';
     }
 }
 
@@ -1505,15 +1522,6 @@ function openSenderFullscreen(fileId) {
 }
 
 // ─────────────────────────────────────────
-//  Transfer item UI (newest first)
-// ─────────────────────────────────────────
-function updateTransferItem(meta, pct, statusText, done = false, err = false) {
-    // Transfer items are now shown as file message boxes in the chat.
-    // This function is kept for compatibility but does nothing visible.
-    return;
-}
-
-// ─────────────────────────────────────────
 //  Chat messages (newest at bottom)
 // ─────────────────────────────────────────
 function appendMsg(text, sent, senderName) {
@@ -1525,13 +1533,15 @@ function appendMsg(text, sent, senderName) {
 function appendMsgToList(text, sent, senderName, scroll = true) {
     const list = document.getElementById('msg-list');
     if (!list) return;
+    const time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
     const div = document.createElement('div');
     div.className = `msg ${sent ? 'sent' : 'received'}`;
     div.innerHTML = `
       <span class="msg-sender">${esc(senderName)}</span>
       <span class="msg-bubble">${esc(text)}</span>
+      <span class="msg-time">${time}</span>
     `;
-    list.appendChild(div); // append to bottom (newest at bottom)
+    list.appendChild(div);
     if (scroll) list.scrollTop = list.scrollHeight;
 }
 
