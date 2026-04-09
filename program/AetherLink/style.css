@@ -1389,7 +1389,11 @@ body::before {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    /* ✅ Hide scrollbar — internet panel */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
+.tab-panel::-webkit-scrollbar { display: none; }
 
 .tab-panel.hidden { display: none !important; }
 
@@ -1563,6 +1567,21 @@ body::before {
 .local-device-status {
     font-size: 0.73rem;
     color: #43e97b;
+}
+
+.local-device-status.connected {
+    color: #00d2ff;
+    font-weight: 700;
+}
+
+.local-device-dot.connected {
+    background: #00d2ff;
+    box-shadow: 0 0 8px rgba(0,210,255,0.7);
+}
+
+.local-connect-btn.new-session {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #020a18;
 }
 
 .local-connect-btn {
