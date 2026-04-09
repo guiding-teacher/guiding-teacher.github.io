@@ -54,6 +54,12 @@ let pipDocument  = null;
 // Map<socketId, {peer, name, connected}>
 const peers = new Map();
 
+// ─────────────────────────────────────────
+//  Local discovery state
+// ─────────────────────────────────────────
+const localDiscovery = new Map(); // socketId → {socketId, deviceName}
+let isDiscovering    = false;
+
 // File send state
 let sendQueue             = [];
 let currentSend           = null;
@@ -499,6 +505,28 @@ function setupSocket() {
         if (reason !== 'io client disconnect')
             toast('جاري إعادة الاتصال بالخادم...', 'warning');
     });
+
+    // ── Local Discovery events ───────────────
+    socket.on('discovery-update', (devices) => {
+        localDiscovery.clear();
+        devices.forEach(d => {
+            if (d.socketId !== socket.id) localDiscovery.set(d.socketId, d);
+        });
+        updateLocalDevicesUI();
+    });
+
+    socket.on('connect-invite', ({ from, fromName, roomId: inviteRoomId }) => {
+        showLocalInviteModal(from, fromName, inviteRoomId);
+    });
+
+    socket.on('connect-invite-response', ({ accepted, roomId: inviteRoomId }) => {
+        if (accepted) {
+            toast('✅ تم قبول الاتصال!', 'success');
+            joinDiscoveredRoom(inviteRoomId);
+        } else {
+            toast('رفض الجهاز الاتصال', 'warning');
+        }
+    });
 }
 
 function updatePiPStatus() {
@@ -823,6 +851,157 @@ function openFullscreen(fileId) {
 }
 
 // ─────────────────────────────────────────
+//  Local Discovery Functions
+// ─────────────────────────────────────────
+function startDiscovery() {
+    if (isDiscovering) return;
+    isDiscovering = true;
+    socket.emit('discover-join', { deviceName });
+    // Update scan button/icon
+    const icon = document.getElementById('scan-icon');
+    const btn  = document.getElementById('btn-start-scan');
+    if (icon) icon.classList.add('scanning');
+    if (btn)  { btn.textContent = '⏹ إيقاف البحث'; btn.onclick = stopDiscovery; }
+    updateLocalDevicesUI();
+    toast('📶 جاري البحث عن الأجهزة...', 'info');
+}
+
+function stopDiscovery() {
+    if (!isDiscovering) return;
+    isDiscovering = false;
+    socket.emit('discover-leave');
+    localDiscovery.clear();
+    const icon = document.getElementById('scan-icon');
+    const btn  = document.getElementById('btn-start-scan');
+    if (icon) icon.classList.remove('scanning');
+    if (btn)  { btn.textContent = '🔍 بدء البحث'; btn.onclick = startDiscovery; }
+    updateLocalDevicesUI();
+}
+
+function updateLocalDevicesUI() {
+    const list = document.getElementById('local-devices-list');
+    if (!list) return;
+
+    if (!isDiscovering) {
+        list.innerHTML = '';
+        return;
+    }
+
+    if (localDiscovery.size === 0) {
+        list.innerHTML = `
+          <div class="local-no-devices">
+            <div class="local-pulse-ring"></div>
+            <p>جاري البحث عن الأجهزة...</p>
+            <small>تأكد من أن الأجهزة الأخرى مفتوحة على AetherLink</small>
+          </div>`;
+        return;
+    }
+
+    const devices = [...localDiscovery.values()];
+    list.innerHTML = `
+      <p class="local-found-label">● ${devices.length} جهاز متاح</p>
+      ${devices.map(d => `
+        <div class="local-device-card" data-sid="${esc(d.socketId)}">
+          <div class="local-device-dot"></div>
+          <div class="local-device-info">
+            <span class="local-device-name">📱 ${esc(d.deviceName)}</span>
+            <span class="local-device-status">متاح للاتصال المباشر</span>
+          </div>
+          <button class="local-connect-btn">اتصال</button>
+        </div>`).join('')}`;
+
+    // Bind click events
+    list.querySelectorAll('.local-device-card').forEach(card => {
+        const sid  = card.getAttribute('data-sid');
+        const d    = localDiscovery.get(sid);
+        if (!d) return;
+        card.querySelector('.local-connect-btn')
+            ?.addEventListener('click', (e) => { e.stopPropagation(); inviteLocalPeer(sid, d.deviceName); });
+        card.addEventListener('click', () => inviteLocalPeer(sid, d.deviceName));
+    });
+}
+
+function inviteLocalPeer(socketId, peerName) {
+    const newRoomId = mkId();
+    socket.emit('connect-invite', { to: socketId, roomId: newRoomId });
+
+    // We become the host of this new room
+    roomId = newRoomId;
+    isHost = true;
+    history.replaceState({}, '', `?id=${newRoomId}`);
+    socket.emit('join-room', { roomId, deviceName });
+
+    toast(`⏳ انتظار رد ${peerName}...`, 'info');
+
+    // Update UI to waiting state
+    const btn = document.querySelector(`[data-sid="${socketId}"] .local-connect-btn`);
+    if (btn) { btn.textContent = '⏳ انتظار...'; btn.disabled = true; }
+}
+
+function showLocalInviteModal(from, fromName, inviteRoomId) {
+    // Close any existing invite modal
+    document.querySelector('.local-invite-overlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay local-invite-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box local-invite-box">
+        <div class="local-invite-icon">📡</div>
+        <h3>طلب اتصال</h3>
+        <p class="local-invite-from">${esc(fromName)}</p>
+        <p class="local-invite-sub">يريد الاتصال بجهازك مباشرةً</p>
+        <div class="modal-actions">
+          <button class="action-button" id="invite-accept">✅ قبول</button>
+          <button class="action-button secondary" id="invite-decline">❌ رفض</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#invite-accept')?.addEventListener('click', () => {
+        socket.emit('connect-invite-response', { to: from, accepted: true, roomId: inviteRoomId });
+        overlay.remove();
+        joinDiscoveredRoom(inviteRoomId);
+    });
+    overlay.querySelector('#invite-decline')?.addEventListener('click', () => {
+        socket.emit('connect-invite-response', { to: from, accepted: false });
+        overlay.remove();
+        toast('تم رفض طلب الاتصال', 'info');
+    });
+}
+
+function joinDiscoveredRoom(newRoomId) {
+    roomId = newRoomId;
+    isHost = false;
+    history.replaceState({}, '', `?id=${newRoomId}`);
+    renderJoinerUI();
+    socket.emit('join-room', { roomId, deviceName });
+}
+
+function bindTabEvents() {
+    const tabInternet  = document.getElementById('tab-internet');
+    const tabLocal     = document.getElementById('tab-local');
+    const panelInternet = document.getElementById('panel-internet');
+    const panelLocal   = document.getElementById('panel-local');
+
+    tabInternet?.addEventListener('click', () => {
+        tabInternet.classList.add('active');
+        tabLocal.classList.remove('active');
+        panelInternet.classList.remove('hidden');
+        panelLocal.classList.add('hidden');
+    });
+
+    tabLocal?.addEventListener('click', () => {
+        tabLocal.classList.add('active');
+        tabInternet.classList.remove('active');
+        panelLocal.classList.remove('hidden');
+        panelInternet.classList.add('hidden');
+        if (!isDiscovering) startDiscovery();
+    });
+
+    document.getElementById('btn-start-scan')?.addEventListener('click', startDiscovery);
+}
+
+// ─────────────────────────────────────────
 //  UI — Home (host)
 // ─────────────────────────────────────────
 function renderHomeUI(joinUrl) {
@@ -845,40 +1024,67 @@ function renderHomeUI(joinUrl) {
         </div>
       </header>
 
+      <!-- Mode Tabs -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-internet">🌐 عبر الإنترنت</button>
+        <button class="mode-tab" id="tab-local">📶 الأجهزة القريبة</button>
+      </div>
+
       <div class="home-content">
-        <!-- QR -->
-        <div class="qr-section">
-          <div class="qr-box" id="qr-box"><div id="qr-inner"></div></div>
-          <p class="scan-hint">امسح الرمز أو شارك الرابط لبدء الاتصال</p>
-          <p class="wait-status" id="status-line">
-            <span class="wait-dot"></span>
-            في انتظار انضمام الطرف الآخر...
-          </p>
-          <div class="share-row">
-            <button class="share-btn btn-copy" id="btn-copy">📋 نسخ الرابط</button>
-            <button class="share-btn btn-whatsapp" id="btn-wa">💬 واتساب</button>
-            <button class="share-btn btn-share" id="btn-share">↗ مشاركة</button>
+
+        <!-- ── Internet Panel ── -->
+        <div id="panel-internet" class="tab-panel">
+          <div class="qr-section">
+            <div class="qr-box" id="qr-box"><div id="qr-inner"></div></div>
+            <p class="scan-hint">امسح الرمز أو شارك الرابط لبدء الاتصال</p>
+            <p class="wait-status" id="status-line">
+              <span class="wait-dot"></span>
+              في انتظار انضمام الطرف الآخر...
+            </p>
+            <div class="share-row">
+              <button class="share-btn btn-copy" id="btn-copy">📋 نسخ الرابط</button>
+              <button class="share-btn btn-whatsapp" id="btn-wa">💬 واتساب</button>
+              <button class="share-btn btn-share" id="btn-share">↗ مشاركة</button>
+            </div>
+          </div>
+
+          ${prev.length ? `
+          <div class="prev-section">
+            <p class="section-label">📱 الأجهزة السابقة</p>
+            <div class="prev-list" id="prev-list">
+              ${prev.map(d => `
+                <div class="prev-item">
+                  <span class="prev-icon">📡</span>
+                  <span class="prev-name">${esc(d.name)}</span>
+                  <span class="prev-time">${fmtDate(d.ts)}</span>
+                  <button class="action-button secondary small" data-pname="${esc(d.name)}">إعادة الاتصال</button>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
+        </div>
+
+        <!-- ── Local Discovery Panel ── -->
+        <div id="panel-local" class="tab-panel hidden">
+          <div class="local-discovery-panel">
+            <div class="local-scan-header">
+              <span class="local-scan-icon" id="scan-icon">📶</span>
+              <p class="local-scan-title">اكتشاف الأجهزة القريبة</p>
+              <p class="local-scan-subtitle">
+                ابحث عن أجهزة أخرى تفتح AetherLink على نفس الشبكة<br>
+                <small>يعمل تلقائياً — لا حاجة لمشاركة روابط</small>
+              </p>
+              <button class="action-button" id="btn-start-scan">🔍 بدء البحث</button>
+            </div>
+            <div class="local-devices-list" id="local-devices-list"></div>
           </div>
         </div>
 
-        ${prev.length ? `
-        <div class="prev-section">
-          <p class="section-label">📱 الأجهزة السابقة</p>
-          <div class="prev-list" id="prev-list">
-            ${prev.map(d => `
-              <div class="prev-item">
-                <span class="prev-icon">📡</span>
-                <span class="prev-name">${esc(d.name)}</span>
-                <span class="prev-time">${fmtDate(d.ts)}</span>
-                <button class="action-button secondary small" data-pname="${esc(d.name)}">إعادة الاتصال</button>
-              </div>`).join('')}
-          </div>
-        </div>` : ''}
       </div>
     </div>`;
 
     generateQR(joinUrl);
     bindHomeEvents(joinUrl);
+    bindTabEvents();
 }
 
 // ─────────────────────────────────────────

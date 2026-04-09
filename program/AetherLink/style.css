@@ -1342,3 +1342,274 @@ body::before {
         max-height: 120px;
     }
 }
+/* ══════════════════════════════════════════
+   Local Discovery — Mode Tabs & Device Cards
+   ══════════════════════════════════════════ */
+
+/* ── Mode Tabs ──────────────────────────── */
+.mode-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px 0;
+    flex-shrink: 0;
+    background: transparent;
+}
+
+.mode-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 2px solid transparent;
+    border-radius: 12px 12px 0 0;
+    color: #8899aa;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    white-space: nowrap;
+}
+
+.mode-tab:hover {
+    background: rgba(0,210,255,0.07);
+    color: #aac8e0;
+}
+
+.mode-tab.active {
+    background: rgba(0,210,255,0.1);
+    border-color: rgba(0,210,255,0.25) rgba(0,210,255,0.25) transparent;
+    color: #00d2ff;
+}
+
+/* ── Tab Panels ─────────────────────────── */
+.tab-panel {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.tab-panel.hidden { display: none !important; }
+
+/* ── Local Discovery Panel ─────────────── */
+.local-discovery-panel {
+    padding: 16px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+}
+
+.local-scan-header {
+    text-align: center;
+    padding: 20px 12px 16px;
+}
+
+.local-scan-icon {
+    font-size: 2.6rem;
+    display: block;
+    margin-bottom: 10px;
+    transition: transform 0.3s;
+}
+
+.local-scan-icon.scanning {
+    animation: scanWave 1.4s ease-in-out infinite;
+}
+
+@keyframes scanWave {
+    0%, 100% { transform: scale(1);    opacity: 1;   }
+    50%       { transform: scale(1.18); opacity: 0.65; }
+}
+
+.local-scan-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #dde4f0;
+    margin-bottom: 6px;
+}
+
+.local-scan-subtitle {
+    font-size: 0.8rem;
+    color: #8899aa;
+    line-height: 1.6;
+    margin-bottom: 18px;
+}
+
+.local-scan-subtitle small {
+    color: #43e97b;
+    font-size: 0.75rem;
+}
+
+/* ── Device List ─────────────────────────── */
+.local-devices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.local-no-devices {
+    text-align: center;
+    padding: 28px 16px;
+    color: #8899aa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.local-no-devices p  { font-size: 0.9rem; color: #aabbc8; }
+.local-no-devices small { font-size: 0.75rem; color: #667788; }
+
+/* Pulse ring animation */
+.local-pulse-ring {
+    width: 52px;
+    height: 52px;
+    border: 3px solid rgba(0,210,255,0.5);
+    border-radius: 50%;
+    position: relative;
+    animation: localRing 1.6s ease-out infinite;
+}
+
+.local-pulse-ring::after {
+    content: '📶';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.4rem;
+}
+
+@keyframes localRing {
+    0%   { transform: scale(0.75); opacity: 1;   border-color: rgba(0,210,255,0.8); }
+    100% { transform: scale(1.9);  opacity: 0;   border-color: rgba(0,210,255,0);   }
+}
+
+.local-found-label {
+    font-size: 0.78rem;
+    color: #43e97b;
+    text-align: center;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+    padding-bottom: 4px;
+}
+
+/* ── Device Card ─────────────────────────── */
+.local-device-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    background: rgba(0,210,255,0.05);
+    border: 1px solid rgba(0,210,255,0.14);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.local-device-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0,210,255,0.08) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.local-device-card:hover {
+    background: rgba(0,210,255,0.1);
+    border-color: rgba(0,210,255,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,210,255,0.12);
+}
+
+.local-device-card:hover::before { opacity: 1; }
+
+.local-device-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #43e97b;
+    flex-shrink: 0;
+    box-shadow: 0 0 8px rgba(67,233,123,0.6);
+    animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+
+.local-device-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.local-device-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #dde4f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.local-device-status {
+    font-size: 0.73rem;
+    color: #43e97b;
+}
+
+.local-connect-btn {
+    background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 8px 16px;
+    color: #fff;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.15s;
+    position: relative;
+    z-index: 1;
+}
+
+.local-connect-btn:hover  { opacity: 0.85; transform: scale(1.04); }
+.local-connect-btn:active { transform: scale(0.97); }
+.local-connect-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Incoming Invite Modal ─────────────── */
+.local-invite-box {
+    text-align: center;
+}
+
+.local-invite-icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+    animation: invitePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes invitePulse {
+    0%, 100% { transform: scale(1);    }
+    50%       { transform: scale(1.15); }
+}
+
+.local-invite-from {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #00d2ff;
+    margin: 6px 0 4px;
+}
+
+.local-invite-sub {
+    font-size: 0.82rem;
+    color: #8899aa;
+    margin-bottom: 4px;
+}

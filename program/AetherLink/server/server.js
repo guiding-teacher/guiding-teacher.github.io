@@ -18,6 +18,9 @@ const PORT = process.env.PORT || 3000;
 // rooms: Map<roomId, Array<{id, name}>>
 const rooms = new Map();
 
+// discovery: Map<socketId, {socketId, deviceName, joinedAt}>
+const discovery = new Map();
+
 io.on('connection', (socket) => {
   console.log(`✅ Connected: ${socket.id}`);
 
@@ -60,6 +63,41 @@ io.on('connection', (socket) => {
     io.to(to).emit('reconnect-accepted', { newRoomId });
   });
 
+  // ── Local Discovery ─────────────────────
+  socket.on('discover-join', ({ deviceName }) => {
+    if (deviceName) socket.data.deviceName = deviceName;
+    discovery.set(socket.id, {
+      socketId: socket.id,
+      deviceName: socket.data.deviceName || 'Unknown',
+      joinedAt: Date.now()
+    });
+    socket.join('discovery');
+    // Broadcast updated list to everyone in discovery (including newcomer)
+    io.to('discovery').emit('discovery-update', [...discovery.values()]);
+    console.log(`📶 Discovery: ${socket.data.deviceName} joined (${discovery.size} total)`);
+  });
+
+  socket.on('discover-leave', () => {
+    if (discovery.has(socket.id)) {
+      discovery.delete(socket.id);
+      socket.leave('discovery');
+      io.to('discovery').emit('discovery-update', [...discovery.values()]);
+    }
+  });
+
+  // Relay connection invitations between discovered devices
+  socket.on('connect-invite', ({ to, roomId: inviteRoomId }) => {
+    io.to(to).emit('connect-invite', {
+      from: socket.id,
+      fromName: socket.data.deviceName || 'Unknown',
+      roomId: inviteRoomId
+    });
+  });
+
+  socket.on('connect-invite-response', ({ to, accepted, roomId: inviteRoomId }) => {
+    io.to(to).emit('connect-invite-response', { accepted, roomId: inviteRoomId });
+  });
+
   socket.on('disconnecting', () => {
     const roomId = socket.data.roomId;
     if (!roomId || !rooms.has(roomId)) return;
@@ -73,6 +111,11 @@ io.on('connection', (socket) => {
     if (room.length === 0) {
       rooms.delete(roomId);
       console.log(`🧹 Deleted empty room ${roomId.slice(0,8)}…`);
+    }
+    // Clean up discovery
+    if (discovery.has(socket.id)) {
+      discovery.delete(socket.id);
+      io.to('discovery').emit('discovery-update', [...discovery.values()]);
     }
   });
 
