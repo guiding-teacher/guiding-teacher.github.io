@@ -1342,21 +1342,3 @@ body::before {
         max-height: 120px;
     }
 }
-/* ── Session usage bar ── */
-.usage-bar-wrap {
-    height: 6px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 99px;
-    overflow: hidden;
-    margin-bottom: 4px;
-}
-.usage-bar {
-    height: 100%;
-    border-radius: 99px;
-    transition: width 0.4s ease, background 0.4s ease;
-}
-.usage-label {
-    font-size: 0.72rem;
-    color: #8899aa;
-    font-family: 'Tajawal', sans-serif;
-}

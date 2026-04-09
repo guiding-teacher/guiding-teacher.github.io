@@ -37,13 +37,9 @@ function addToPrev(name) {
 }
 
 // ─────────────────────────────────────────
+//  Global state
 // ─────────────────────────────────────────
-//  Constants & Global state
-// ─────────────────────────────────────────
-const CHUNK_SIZE         = 256 * 1024;          // 256 KB per chunk
-const MAX_BUFFER_BYTES   = 8 * 1024 * 1024;     // توقف مؤقت إذا تجاوز بافر الـ WebRTC 8MB
-const SESSION_LIMIT      = 2 * 1024 * 1024 * 1024; // حد الجلسة: 2 GB
-
+const CHUNK_SIZE = 256 * 1024;
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://aetherlink-server.onrender.com';
@@ -55,22 +51,26 @@ let isMinimized  = false;
 let pipWindow    = null;
 let pipDocument  = null;
 
-// إجمالي البيانات المنقولة في الجلسة (إرسال + استقبال)
-let sessionBytesTransferred = 0;
-let sessionLimitReached     = false;
+// Map<socketId, {peer, name, connected}>
+const peers = new Map();
 
-const peers   = new Map();
-let sendQueue  = [];
-let currentSend = null;
-let cancelFlag  = false;
+// File send state
+let sendQueue             = [];
+let currentSend           = null;
+let cancelFlag            = false;
 
-const recvMap         = new Map();
+// Map<fileId, {meta, buffer, received, fromPeer}>
+const recvMap = new Map();
+
+// Map<fileId, {blob, meta, sender}> - for downloaded files
 const downloadedFiles = new Map();
 
+// Session messages and files (cleared on session end)
 let sessionMessages = [];
-let sessionFiles    = [];
+let sessionFiles = [];
 
 const mainEl = document.getElementById('main-container');
+
 // ─────────────────────────────────────────
 //  Socket
 // ─────────────────────────────────────────
@@ -499,20 +499,6 @@ function setupSocket() {
         if (reason !== 'io client disconnect')
             toast('جاري إعادة الاتصال بالخادم...', 'warning');
     });
-    
-    socket.on('room-usage', ({ used, limit, pct }) => {
-    sessionBytesTransferred = used;
-    updateSessionUsageUI();
-    if (pct >= 90 && pct < 100) {
-        toast(`⚠️ استهلكت ${pct}% من حد الجلسة`, 'warning');
-    }
-});
-
-socket.on('room-limit-reached', () => {
-    sessionLimitReached = true;
-    showLimitBanner();
-    toast('⛔ تجاوزت الجلسة حد 2 GB', 'error');
-});
 }
 
 function updatePiPStatus() {
@@ -610,27 +596,22 @@ function onData(raw, fromId) {
     }
 }
 
- function recvChunk(chunk, fromId) {
+function recvChunk(chunk, fromId) {
     for (const [fid, entry] of recvMap) {
-        if (entry.fromId !== fromId) continue;
-
-        entry.buffer.push(chunk);
-        entry.received += chunk.byteLength ?? chunk.length;
-
-        const pct = Math.min(100, Math.round((entry.received / entry.meta.fileSize) * 100));
-        updateReceivingFileBox(entry.meta, pct, entry.fromId);
-
-        if (entry.received >= entry.meta.fileSize) {
-            sessionBytesTransferred += entry.meta.fileSize;
-            updateSessionUsageUI();
-            socket.emit('data-usage', { roomId, bytes: entry.meta.fileSize });
-
-            const blob = new Blob(entry.buffer, { type: entry.meta.fileType });
-            const pi   = peers.get(fromId);
-            completeReceivingFileBox(entry.meta, blob, pi?.name || 'مجهول');
-            recvMap.delete(fid);
+        if (entry.fromId === fromId) {
+            entry.buffer.push(chunk);
+            entry.received += chunk.length;
+            const pct = Math.round((entry.received / entry.meta.fileSize) * 100);
+            updateReceivingFileBox(entry.meta, pct, entry.fromId);
+            if (entry.received >= entry.meta.fileSize) {
+                const blob = new Blob(entry.buffer);
+                const pi = peers.get(fromId);
+                const senderName = pi?.name || 'مجهول';
+                completeReceivingFileBox(entry.meta, blob, senderName);
+                recvMap.delete(fid);
+            }
+            return;
         }
-        return;
     }
 }
 
@@ -640,42 +621,6 @@ function cancelRecv(fileId, reason) {
         updateReceivingFileBox(e.meta, 0, e.fromId, true, reason); 
         recvMap.delete(fileId); 
     }
-}
-
-// ─────────────────────────────────────────
-//  Session data limit helpers
-// ─────────────────────────────────────────
-function updateSessionUsageUI() {
-    const el = document.getElementById('session-usage');
-    if (!el) return;
-    const pct  = Math.min(100, (sessionBytesTransferred / SESSION_LIMIT) * 100);
-    const used = fmtBytes(sessionBytesTransferred);
-    const cap  = fmtBytes(SESSION_LIMIT);
-    el.innerHTML = `
-      <div class="usage-bar-wrap">
-        <div class="usage-bar" style="width:${pct.toFixed(1)}%;background:${pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffc107' : '#43e97b'}"></div>
-      </div>
-      <span class="usage-label">${used} / ${cap}</span>`;
-}
-
-function showLimitBanner() {
-    if (document.getElementById('limit-banner')) return;
-    const banner = document.createElement('div');
-    banner.id = 'limit-banner';
-    banner.style.cssText = `
-        position:fixed;top:0;left:0;right:0;z-index:9999;
-        background:linear-gradient(90deg,#ff416c,#ff4b2b);
-        color:#fff;text-align:center;padding:10px 16px;
-        font-family:'Tajawal',sans-serif;font-weight:700;font-size:0.95rem;`;
-    banner.textContent = '⛔ تم الوصول إلى الحد الأقصى للجلسة (2 GB) — لا يمكن إرسال المزيد من الملفات';
-    document.body.prepend(banner);
-}
-
-function resetSessionLimit() {
-    sessionBytesTransferred = 0;
-    sessionLimitReached     = false;
-    document.getElementById('limit-banner')?.remove();
-    updateSessionUsageUI();
 }
 
 // ─────────────────────────────────────────
@@ -1216,32 +1161,17 @@ function showUsersModal() {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
- function showGroupLinkModal() {
+function showGroupLinkModal() {
     const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal-box" style="max-width:340px;text-align:center;">
-        <h3>🔗 مشاركة الجلسة</h3>
-        <p style="font-size:0.82rem;color:#8899aa;margin-bottom:12px;">امسح الرمز أو انسخ الرابط للدعوة</p>
-
-        <!-- QR Code -->
-        <div id="session-qr-inner" style="
-            width:200px;height:200px;margin:0 auto 14px;
-            background:#fff;border-radius:12px;padding:8px;
-            display:flex;align-items:center;justify-content:center;"></div>
-
-        <!-- URL chip -->
-        <div style="
-            background:rgba(0,0,0,0.3);padding:10px 12px;border-radius:8px;
-            word-break:break-all;font-size:0.75rem;color:#00d2ff;
-            margin-bottom:14px;text-align:left;direction:ltr;">
+      <div class="modal-box">
+        <h3>🔗 رابط الجلسة</h3>
+        <p>شارك هذا الرابط لدعوة آخرين للانضمام</p>
+        <div style="background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;word-break:break-all;font-size:0.8rem;color:#00d2ff;margin:10px 0;">
           ${esc(joinUrl)}
         </div>
-
-        <!-- Usage indicator -->
-        <div id="session-usage" style="margin-bottom:14px;"></div>
-
         <div class="modal-actions">
           <button class="action-button" id="modal-copy">📋 نسخ</button>
           <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
@@ -1249,43 +1179,21 @@ function showUsersModal() {
         </div>
       </div>`;
     document.body.appendChild(overlay);
-
-    // ── توليد الباركود ──
-    try {
-        const qr = qrcode(0, 'L');
-        qr.addData(joinUrl);
-        qr.make();
-        const inner = overlay.querySelector('#session-qr-inner');
-        if (inner) {
-            inner.innerHTML = qr.createImgTag(5, 6);
-            const img = inner.querySelector('img');
-            if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:8px;';
-        }
-    } catch (e) { console.warn('QR gen error', e); }
-
-    // ── تحديث مؤشر الاستخدام ──
-    updateSessionUsageUI();
-    const usageEl = document.getElementById('session-usage');
-    if (usageEl) {
-        const pct  = Math.min(100, (sessionBytesTransferred / SESSION_LIMIT) * 100);
-        const used = fmtBytes(sessionBytesTransferred);
-        const cap  = fmtBytes(SESSION_LIMIT);
-        usageEl.innerHTML = `
-          <div class="usage-bar-wrap">
-            <div class="usage-bar" style="width:${pct.toFixed(1)}%;background:${pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffc107' : '#43e97b'}"></div>
-          </div>
-          <span class="usage-label">${used} / ${cap}</span>`;
-    }
-
+    
     overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
+        navigator.clipboard.writeText(joinUrl).then(() => {
+            toast('تم نسخ الرابط!', 'success');
+        });
     });
+    
     overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
         if (navigator.share) {
-            try { await navigator.share({ title: 'AetherLink', url: joinUrl }); return; } catch (_) {}
+            try { await navigator.share({ title: 'AetherLink', url: joinUrl }); } catch (_) {}
+        } else {
+            open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
         }
-        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
     });
+    
     overlay.querySelector('#modal-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
@@ -1301,7 +1209,7 @@ function endSession() {
     sendQueue = [];
     currentSend = null;
     cancelFlag = true;
-    resetSessionLimit();
+    
     // Disconnect all peers
     peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
     peers.clear();
@@ -1403,21 +1311,8 @@ function runQueue() {
     sendFileTo(currentSend.file, currentSend.targets);
 }
 
-// ─────────────────────────────────────────
-//  File send — async pipeline with backpressure
-// ─────────────────────────────────────────
-async function sendFileTo(file, peerIds) {
+function sendFileTo(file, peerIds) {
     cancelFlag = false;
-
-    // ── تحقق من حد الجلسة ──
-    if (sessionLimitReached || sessionBytesTransferred + file.size > SESSION_LIMIT) {
-        sessionLimitReached = true;
-        toast('⛔ تجاوزت الجلسة الحد المسموح (2 GB)', 'error');
-        showLimitBanner();
-        runQueue();
-        return;
-    }
-
     const meta = {
         fileName: file.name,
         fileSize: file.size,
@@ -1425,76 +1320,48 @@ async function sendFileTo(file, peerIds) {
         fileId:   `${file.name}-${file.size}-${Date.now()}`,
     };
 
-    // أرسل الـ metadata لكل peer
     peerIds.forEach(id => {
         const pi = peers.get(id);
-        if (pi?.connected) {
-            try { pi.peer.send(JSON.stringify({ type: 'metadata', payload: meta })); } catch (_) {}
-        }
+        if (pi?.connected) try { pi.peer.send(JSON.stringify({ type: 'metadata', payload: meta })); } catch (_) {}
     });
 
+    // Create sender file box in chat
     createSenderFileBox(file, meta);
 
+    const reader = new FileReader();
     let offset = 0;
-    let lastUIUpdate = 0;
 
-    try {
-        while (offset < file.size) {
-            if (cancelFlag) return;
-
-            // ── Backpressure: انتظر إذا امتلأ البافر ──
-            let waited = false;
-            for (const id of peerIds) {
+    reader.onload = (e) => {
+        if (cancelFlag || !e.target.result) return;
+        try {
+            peerIds.forEach(id => {
                 const pi = peers.get(id);
-                if (!pi?.connected) continue;
-                while ((pi.peer._channel?.bufferedAmount ?? 0) > MAX_BUFFER_BYTES) {
-                    if (cancelFlag) return;
-                    await new Promise(r => setTimeout(r, 10));
-                    waited = true;
-                }
+                if (pi?.connected) try { pi.peer.send(e.target.result); } catch (_) {}
+            });
+            offset += e.target.result.byteLength;
+            const pct = Math.round((offset / file.size) * 100);
+            updateSenderFileBox(meta.fileId, pct);
+            if (offset < file.size) {
+                reader.readAsArrayBuffer(file.slice(offset, offset + CHUNK_SIZE));
+            } else {
+                finalizeSenderFileBox(meta.fileId);
+                runQueue();
             }
-
-            // ── قراءة الـ chunk ──
-            const end   = Math.min(offset + CHUNK_SIZE, file.size);
-            const chunk = await file.slice(offset, end).arrayBuffer();
-
-            // ── إرسال لكل peer ──
-            for (const id of peerIds) {
+        } catch (err) {
+            updateSenderFileBox(meta.fileId, 0, true, 'فشل في الإرسال');
+            peerIds.forEach(id => {
                 const pi = peers.get(id);
-                if (pi?.connected) {
-                    try { pi.peer.send(chunk); } catch (_) {}
-                }
-            }
-
-            offset += chunk.byteLength;
-
-            // ── تحديث الـ UI كل 200ms فقط لتجنب jank ──
-            const now = Date.now();
-            if (now - lastUIUpdate > 200 || offset >= file.size) {
-                updateSenderFileBox(meta.fileId, Math.round((offset / file.size) * 100));
-                lastUIUpdate = now;
-            }
+                if (pi?.connected) try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
+            });
+            runQueue();
         }
+    };
 
-        // ── اكتمل الإرسال ──
-        sessionBytesTransferred += file.size;
-        updateSessionUsageUI();
-        // أبلغ السيرفر بالاستخدام
-        socket.emit('data-usage', { roomId, bytes: file.size });
-        finalizeSenderFileBox(meta.fileId);
-
-    } catch (err) {
-        console.error('Send error:', err);
-        updateSenderFileBox(meta.fileId, 0, true, 'فشل في الإرسال');
-        peerIds.forEach(id => {
-            const pi = peers.get(id);
-            if (pi?.connected) {
-                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
-            }
-        });
-    }
-
-    runQueue();
+    reader.onerror = () => { 
+        updateSenderFileBox(meta.fileId, 0, true, 'فشل قراءة الملف');
+        runQueue(); 
+    };
+    reader.readAsArrayBuffer(file.slice(0, CHUNK_SIZE));
 }
 
 // ─────────────────────────────────────────
