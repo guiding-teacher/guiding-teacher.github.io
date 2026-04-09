@@ -1342,94 +1342,21 @@ body::before {
         max-height: 120px;
     }
 }
-/* ── Data Usage Indicator ───────────────── */
-.data-usage-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: rgba(0,0,0,0.3);
-  z-index: 1000;
+/* ── Session usage bar ── */
+.usage-bar-wrap {
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 4px;
 }
-
-.data-usage-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-  transition: width 0.3s ease, background 0.3s ease;
+.usage-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease, background 0.4s ease;
 }
-
-.data-usage-fill.warning {
-  background: linear-gradient(90deg, #ffc107, #ff9800);
-}
-
-.data-usage-fill.danger {
-  background: linear-gradient(90deg, #ff6b6b, #f44336);
-}
-
-/* ── QR Code in Modal Enhancements ───────── */
-.modal-box .qr-display {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 20px;
-  margin: 20px auto;
-  width: fit-content;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  border: 3px solid rgba(0,210,255,0.3);
-}
-
-.modal-box .qr-display img {
-  width: 220px;
-  height: 220px;
-  display: block;
-  border-radius: 12px;
-}
-
-/* ── Session Limit Warning ───────────────── */
-.session-limit-warning {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255,107,107,0.95);
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 30px;
-  font-weight: 700;
-  font-size: 0.85rem;
-  z-index: 1000;
-  animation: slideUp 0.3s ease;
-  box-shadow: 0 8px 25px rgba(255,107,107,0.4);
-}
-
-@keyframes slideUp {
-  from { transform: translateX(-50%) translateY(100px); opacity: 0; }
-  to { transform: translateX(-50%) translateY(0); opacity: 1; }
-}
-
-/* ── Optimized File Transfer UI ──────────── */
-.file-msg-box.receiving .file-progress-inner {
-  background: linear-gradient(90deg, #00d2ff, #9b59b6);
-  background-size: 200% 100%;
-  animation: progressShine 1.5s ease-in-out infinite;
-}
-
-@keyframes progressShine {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Fast transfer indicator */
-.fast-transfer-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: linear-gradient(135deg, #43e97b, #38f9d7);
-  color: #020a18;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.65rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  z-index: 5;
+.usage-label {
+    font-size: 0.72rem;
+    color: #8899aa;
+    font-family: 'Tajawal', sans-serif;
 }

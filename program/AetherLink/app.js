@@ -4,14 +4,7 @@
  *           auto-reconnect, always-visible messages, mini widget, QR share,
  *           Picture-in-Picture mode for overlay display
  */
-// ─────────────────────────────────────────
-//  NEW: Session Data Limit Variables
-// ─────────────────────────────────────────
-const MAX_SESSION_BYTES = 2 * 1024 * 1024 * 1024; // 2GB limit
-let sessionDataUsed = 0; // Track current session usage
 
-// NEW: Optimized receive state using Blob strategy (replaces old recvMap)
-const recvState = new Map(); // Map<fileId, {meta, chunks, totalReceived, fromId, startTime}>
 // ─────────────────────────────────────────
 //  Storage helpers
 // ─────────────────────────────────────────
@@ -44,9 +37,13 @@ function addToPrev(name) {
 }
 
 // ─────────────────────────────────────────
-//  Global state
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 256 * 1024;
+//  Constants & Global state
+// ─────────────────────────────────────────
+const CHUNK_SIZE         = 256 * 1024;          // 256 KB per chunk
+const MAX_BUFFER_BYTES   = 8 * 1024 * 1024;     // توقف مؤقت إذا تجاوز بافر الـ WebRTC 8MB
+const SESSION_LIMIT      = 2 * 1024 * 1024 * 1024; // حد الجلسة: 2 GB
+
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://aetherlink-server.onrender.com';
@@ -58,26 +55,22 @@ let isMinimized  = false;
 let pipWindow    = null;
 let pipDocument  = null;
 
-// Map<socketId, {peer, name, connected}>
-const peers = new Map();
+// إجمالي البيانات المنقولة في الجلسة (إرسال + استقبال)
+let sessionBytesTransferred = 0;
+let sessionLimitReached     = false;
 
-// File send state
-let sendQueue             = [];
-let currentSend           = null;
-let cancelFlag            = false;
+const peers   = new Map();
+let sendQueue  = [];
+let currentSend = null;
+let cancelFlag  = false;
 
-// Map<fileId, {meta, buffer, received, fromPeer}>
-const recvMap = new Map();
-
-// Map<fileId, {blob, meta, sender}> - for downloaded files
+const recvMap         = new Map();
 const downloadedFiles = new Map();
 
-// Session messages and files (cleared on session end)
 let sessionMessages = [];
-let sessionFiles = [];
+let sessionFiles    = [];
 
 const mainEl = document.getElementById('main-container');
-
 // ─────────────────────────────────────────
 //  Socket
 // ─────────────────────────────────────────
@@ -452,9 +445,6 @@ function hideMiniWidget() {
 // ─────────────────────────────────────────
 //  Socket listeners
 // ─────────────────────────────────────────
-// ─────────────────────────────────────────
-//  Socket listeners - MODIFIED with data limit support
-// ─────────────────────────────────────────
 function setupSocket() {
     socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
@@ -496,44 +486,6 @@ function setupSocket() {
         if (getConnected().length === 0) setBadge('warn', '● منقطع');
     });
 
-    // NEW: Data usage updates - shows current session data usage
-    socket.on('data-usage-update', ({ used, limit, remaining }) => {
-        sessionDataUsed = used;
-        const usedMB = (used / 1024 / 1024).toFixed(1);
-        const totalMB = (limit / 1024 / 1024).toFixed(0);
-        const remainingMB = (remaining / 1024 / 1024).toFixed(1);
-        
-        console.log(`Data usage: ${usedMB}MB / ${totalMB}MB (متبقي: ${remainingMB}MB)`);
-        
-        // Update data usage display in modal if open
-        const dataUsageEl = document.getElementById('modal-data-usage');
-        if (dataUsageEl) {
-            dataUsageEl.textContent = `${usedMB} ميجابايت / ${totalMB} ميجابايت`;
-        }
-    });
-
-    // NEW: Session limit reached - disables file sending
-    socket.on('session-limit-reached', ({ message }) => {
-        toast(message, 'error');
-        // Disable file sending button
-        const fileBtn = document.getElementById('file-btn');
-        if (fileBtn) {
-            fileBtn.disabled = true;
-            fileBtn.style.opacity = '0.5';
-            fileBtn.style.cursor = 'not-allowed';
-            fileBtn.title = 'تم تجاوز حد البيانات (2 جيجابايت)';
-        }
-    });
-
-    // NEW: Transfer rejected - shows why file was rejected
-    socket.on('transfer-rejected', ({ reason, message, remaining }) => {
-        toast(message, 'error');
-        if (reason === 'session_limit') {
-            const remainingMB = (remaining / 1024 / 1024).toFixed(1);
-            toast(`المساحة المتبقية: ${remainingMB} ميجابايت فقط`, 'warning');
-        }
-    });
-
     // Reconnect handshake
     socket.on('reconnect-request', ({ from, fromName }) => {
         showReconnectModal(fromName, from);
@@ -547,6 +499,20 @@ function setupSocket() {
         if (reason !== 'io client disconnect')
             toast('جاري إعادة الاتصال بالخادم...', 'warning');
     });
+    
+    socket.on('room-usage', ({ used, limit, pct }) => {
+    sessionBytesTransferred = used;
+    updateSessionUsageUI();
+    if (pct >= 90 && pct < 100) {
+        toast(`⚠️ استهلكت ${pct}% من حد الجلسة`, 'warning');
+    }
+});
+
+socket.on('room-limit-reached', () => {
+    sessionLimitReached = true;
+    showLimitBanner();
+    toast('⛔ تجاوزت الجلسة حد 2 GB', 'error');
+});
 }
 
 function updatePiPStatus() {
@@ -609,9 +575,6 @@ function getConnected() {
 // ─────────────────────────────────────────
 //  Incoming data handler
 // ─────────────────────────────────────────
- // ─────────────────────────────────────────
-//  Incoming data handler - MODIFIED for fast receiving
-// ─────────────────────────────────────────
 function onData(raw, fromId) {
     try {
         const msg = JSON.parse(raw.toString());
@@ -622,24 +585,17 @@ function onData(raw, fromId) {
                 break;
             }
             case 'metadata':
-                // Initialize optimized receive state with Blob strategy
-                recvState.set(msg.payload.fileId, {
-                    meta: msg.payload,
-                    chunks: [],
-                    totalReceived: 0,
-                    fromId: fromId,
-                    startTime: Date.now()
+                recvMap.set(msg.payload.fileId, {
+                    meta: msg.payload, buffer: [], received: 0, fromId,
                 });
-                // Notify server about transfer start for data tracking
-                socket.emit('file-transfer-start', { roomId, fileSize: msg.payload.fileSize });
                 // Create receiving file box in chat
                 createReceivingFileBox(msg.payload, fromId);
                 break;
             case 'cancel':
-                cancelRecvOptimized(msg.payload.fileId, 'تم إلغاء الإرسال من المرسل');
+                cancelRecv(msg.payload.fileId, 'تم إلغاء الإرسال من المرسل');
                 break;
             case 'error':
-                cancelRecvOptimized(msg.payload.fileId, 'فشل الإرسال من المصدر');
+                cancelRecv(msg.payload.fileId, 'فشل الإرسال من المصدر');
                 break;
             case 'chat': {
                 const pi = peers.get(fromId);
@@ -647,82 +603,36 @@ function onData(raw, fromId) {
                 break;
             }
             default:
-                // Handle binary chunks with optimized method
-                recvChunkOptimized(raw, fromId);
+                recvChunk(raw, fromId);
         }
     } catch (_) {
-        // Binary data (not JSON) - use optimized receiving
-        recvChunkOptimized(raw, fromId);
-    }
-}
-// ─────────────────────────────────────────
-//  OPTIMIZED: Fast chunk receiving using Blob assembly
-//  MUCH faster than old array concatenation method
-// ─────────────────────────────────────────
-function recvChunkOptimized(chunk, fromId) {
-    // Find the receiving file for this peer
-    for (const [fileId, state] of recvState) {
-        if (state.fromId === fromId && state.totalReceived < state.meta.fileSize) {
-            // Append chunk efficiently to array
-            state.chunks.push(chunk);
-            state.totalReceived += chunk.length || chunk.byteLength || 0;
-            
-            // Calculate percentage
-            const pct = Math.min(100, Math.round((state.totalReceived / state.meta.fileSize) * 100));
-            updateReceivingFileBox(state.meta, pct, fromId);
-            
-            // Check if file is complete
-            if (state.totalReceived >= state.meta.fileSize) {
-                // FAST: Use Blob constructor with array - much faster than manual concat
-                const blob = new Blob(state.chunks, { type: state.meta.fileType });
-                const pi = peers.get(fromId);
-                const senderName = pi?.name || 'مجهول';
-                
-                // Clean up memory immediately
-                state.chunks = [];
-                
-                // Complete the file box UI
-                completeReceivingFileBox(state.meta, blob, senderName);
-                recvState.delete(fileId);
-                
-                // Log transfer speed
-                const duration = ((Date.now() - state.startTime) / 1000).toFixed(1);
-                console.log(`✅ Received ${state.meta.fileName} (${(state.meta.fileSize/1024/1024).toFixed(1)}MB) in ${duration}s`);
-            }
-            return;
-        }
-    }
-}
-// ─────────────────────────────────────────
-//  Cancel receive - MODIFIED for new state system
-// ─────────────────────────────────────────
-function cancelRecvOptimized(fileId, reason) {
-    const state = recvState.get(fileId);
-    if (state) {
-        updateReceivingFileBox(state.meta, 0, state.fromId, true, reason);
-        recvState.delete(fileId);
+        recvChunk(raw, fromId);
     }
 }
 
-function recvChunk(chunk, fromId) {
+ function recvChunk(chunk, fromId) {
     for (const [fid, entry] of recvMap) {
-        if (entry.fromId === fromId) {
-            entry.buffer.push(chunk);
-            entry.received += chunk.length;
-            const pct = Math.round((entry.received / entry.meta.fileSize) * 100);
-            updateReceivingFileBox(entry.meta, pct, entry.fromId);
-            if (entry.received >= entry.meta.fileSize) {
-                const blob = new Blob(entry.buffer);
-                const pi = peers.get(fromId);
-                const senderName = pi?.name || 'مجهول';
-                completeReceivingFileBox(entry.meta, blob, senderName);
-                recvMap.delete(fid);
-            }
-            return;
+        if (entry.fromId !== fromId) continue;
+
+        entry.buffer.push(chunk);
+        entry.received += chunk.byteLength ?? chunk.length;
+
+        const pct = Math.min(100, Math.round((entry.received / entry.meta.fileSize) * 100));
+        updateReceivingFileBox(entry.meta, pct, entry.fromId);
+
+        if (entry.received >= entry.meta.fileSize) {
+            sessionBytesTransferred += entry.meta.fileSize;
+            updateSessionUsageUI();
+            socket.emit('data-usage', { roomId, bytes: entry.meta.fileSize });
+
+            const blob = new Blob(entry.buffer, { type: entry.meta.fileType });
+            const pi   = peers.get(fromId);
+            completeReceivingFileBox(entry.meta, blob, pi?.name || 'مجهول');
+            recvMap.delete(fid);
         }
+        return;
     }
 }
-
 
 function cancelRecv(fileId, reason) {
     const e = recvMap.get(fileId);
@@ -730,6 +640,42 @@ function cancelRecv(fileId, reason) {
         updateReceivingFileBox(e.meta, 0, e.fromId, true, reason); 
         recvMap.delete(fileId); 
     }
+}
+
+// ─────────────────────────────────────────
+//  Session data limit helpers
+// ─────────────────────────────────────────
+function updateSessionUsageUI() {
+    const el = document.getElementById('session-usage');
+    if (!el) return;
+    const pct  = Math.min(100, (sessionBytesTransferred / SESSION_LIMIT) * 100);
+    const used = fmtBytes(sessionBytesTransferred);
+    const cap  = fmtBytes(SESSION_LIMIT);
+    el.innerHTML = `
+      <div class="usage-bar-wrap">
+        <div class="usage-bar" style="width:${pct.toFixed(1)}%;background:${pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffc107' : '#43e97b'}"></div>
+      </div>
+      <span class="usage-label">${used} / ${cap}</span>`;
+}
+
+function showLimitBanner() {
+    if (document.getElementById('limit-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'limit-banner';
+    banner.style.cssText = `
+        position:fixed;top:0;left:0;right:0;z-index:9999;
+        background:linear-gradient(90deg,#ff416c,#ff4b2b);
+        color:#fff;text-align:center;padding:10px 16px;
+        font-family:'Tajawal',sans-serif;font-weight:700;font-size:0.95rem;`;
+    banner.textContent = '⛔ تم الوصول إلى الحد الأقصى للجلسة (2 GB) — لا يمكن إرسال المزيد من الملفات';
+    document.body.prepend(banner);
+}
+
+function resetSessionLimit() {
+    sessionBytesTransferred = 0;
+    sessionLimitReached     = false;
+    document.getElementById('limit-banner')?.remove();
+    updateSessionUsageUI();
 }
 
 // ─────────────────────────────────────────
@@ -1270,114 +1216,76 @@ function showUsersModal() {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
- // ─────────────────────────────────────────
-//  MODIFIED: Show QR code in share modal
-// ─────────────────────────────────────────
-function showGroupLinkModal() {
+ function showGroupLinkModal() {
     const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
-    
-    // Generate QR code
-    const qr = qrcode(0, 'L');
-    qr.addData(joinUrl);
-    qr.make();
-    const qrDataUrl = qr.createDataURL(4, 8);
-    
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-      <div class="modal-box" style="max-width: 420px;">
-        <h3>🔗 رابط الجلسة</h3>
-        <p>امسح الباركود أو شارك الرابط لدعوة آخرين</p>
-        
-        <!-- QR Code Display -->
+      <div class="modal-box" style="max-width:340px;text-align:center;">
+        <h3>🔗 مشاركة الجلسة</h3>
+        <p style="font-size:0.82rem;color:#8899aa;margin-bottom:12px;">امسح الرمز أو انسخ الرابط للدعوة</p>
+
+        <!-- QR Code -->
+        <div id="session-qr-inner" style="
+            width:200px;height:200px;margin:0 auto 14px;
+            background:#fff;border-radius:12px;padding:8px;
+            display:flex;align-items:center;justify-content:center;"></div>
+
+        <!-- URL chip -->
         <div style="
-          background: #ffffff;
-          padding: 20px;
-          border-radius: 20px;
-          margin: 20px auto;
-          width: fit-content;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-          border: 3px solid rgba(0,210,255,0.3);
-        ">
-          <img src="${qrDataUrl}" alt="QR Code" style="
-            width: 220px;
-            height: 220px;
-            display: block;
-            border-radius: 12px;
-          ">
-        </div>
-        
-        <div style="
-          background: rgba(0,0,0,0.3);
-          padding: 12px;
-          border-radius: 8px;
-          word-break: break-all;
-          font-size: 0.8rem;
-          color: #00d2ff;
-          margin: 10px 0;
-          direction: ltr;
-          text-align: left;
-        ">
+            background:rgba(0,0,0,0.3);padding:10px 12px;border-radius:8px;
+            word-break:break-all;font-size:0.75rem;color:#00d2ff;
+            margin-bottom:14px;text-align:left;direction:ltr;">
           ${esc(joinUrl)}
         </div>
-        
+
+        <!-- Usage indicator -->
+        <div id="session-usage" style="margin-bottom:14px;"></div>
+
         <div class="modal-actions">
-          <button class="action-button" id="modal-copy">📋 نسخ الرابط</button>
+          <button class="action-button" id="modal-copy">📋 نسخ</button>
           <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
           <button class="action-button secondary" id="modal-close">إغلاق</button>
         </div>
-        
-        <!-- Data Usage Display -->
-        <div style="
-          margin-top: 16px;
-          padding: 12px;
-          background: rgba(0,210,255,0.1);
-          border: 1px solid rgba(0,210,255,0.2);
-          border-radius: 12px;
-          font-size: 0.8rem;
-          color: #00d2ff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-        ">
-          <span>📊 استخدام البيانات:</span>
-          <span id="modal-data-usage" style="font-weight: 700;">جاري التحميل...</span>
-        </div>
-      </div>
-    `;
-    
+      </div>`;
     document.body.appendChild(overlay);
-    
-    // Update data usage display immediately
-    const usedMB = (sessionDataUsed / 1024 / 1024).toFixed(1);
-    const totalMB = (MAX_SESSION_BYTES / 1024 / 1024).toFixed(0);
-    const dataUsageEl = document.getElementById('modal-data-usage');
-    if (dataUsageEl) {
-        dataUsageEl.textContent = `${usedMB} / ${totalMB} ميجابايت`;
+
+    // ── توليد الباركود ──
+    try {
+        const qr = qrcode(0, 'L');
+        qr.addData(joinUrl);
+        qr.make();
+        const inner = overlay.querySelector('#session-qr-inner');
+        if (inner) {
+            inner.innerHTML = qr.createImgTag(5, 6);
+            const img = inner.querySelector('img');
+            if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:8px;';
+        }
+    } catch (e) { console.warn('QR gen error', e); }
+
+    // ── تحديث مؤشر الاستخدام ──
+    updateSessionUsageUI();
+    const usageEl = document.getElementById('session-usage');
+    if (usageEl) {
+        const pct  = Math.min(100, (sessionBytesTransferred / SESSION_LIMIT) * 100);
+        const used = fmtBytes(sessionBytesTransferred);
+        const cap  = fmtBytes(SESSION_LIMIT);
+        usageEl.innerHTML = `
+          <div class="usage-bar-wrap">
+            <div class="usage-bar" style="width:${pct.toFixed(1)}%;background:${pct > 85 ? '#ff6b6b' : pct > 60 ? '#ffc107' : '#43e97b'}"></div>
+          </div>
+          <span class="usage-label">${used} / ${cap}</span>`;
     }
-    
-    // Bind buttons
+
     overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(joinUrl).then(() => {
-            toast('✅ تم نسخ الرابط!', 'success');
-        });
+        navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
     });
-    
     overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
         if (navigator.share) {
-            try { 
-                await navigator.share({ 
-                    title: 'AetherLink', 
-                    url: joinUrl,
-                    text: 'انضم لجلستي على AetherLink'
-                }); 
-            } catch (_) {}
-        } else {
-            open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
+            try { await navigator.share({ title: 'AetherLink', url: joinUrl }); return; } catch (_) {}
         }
+        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
     });
-    
     overlay.querySelector('#modal-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
@@ -1393,7 +1301,7 @@ function endSession() {
     sendQueue = [];
     currentSend = null;
     cancelFlag = true;
-    
+    resetSessionLimit();
     // Disconnect all peers
     peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
     peers.clear();
@@ -1496,107 +1404,97 @@ function runQueue() {
 }
 
 // ─────────────────────────────────────────
-//  OPTIMIZED: Fast file sending with data limit check
+//  File send — async pipeline with backpressure
 // ─────────────────────────────────────────
 async function sendFileTo(file, peerIds) {
-    // CHECK: Verify data limit before sending
-    const fileSize = file.size;
-    if (sessionDataUsed + fileSize > MAX_SESSION_BYTES) {
-        toast('❌ لا يمكن إرسال الملف - سيتم تجاوز حد البيانات المسموح به (2 جيجابايت)', 'error');
-        const remaining = Math.max(0, MAX_SESSION_BYTES - sessionDataUsed);
-        const remainingMB = (remaining / 1024 / 1024).toFixed(1);
-        toast(`المساحة المتبقية في الجلسة: ${remainingMB} ميجابايت فقط`, 'warning');
+    cancelFlag = false;
+
+    // ── تحقق من حد الجلسة ──
+    if (sessionLimitReached || sessionBytesTransferred + file.size > SESSION_LIMIT) {
+        sessionLimitReached = true;
+        toast('⛔ تجاوزت الجلسة الحد المسموح (2 GB)', 'error');
+        showLimitBanner();
         runQueue();
         return;
     }
 
-    cancelFlag = false;
     const meta = {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        fileId: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        fileId:   `${file.name}-${file.size}-${Date.now()}`,
     };
 
-    // Notify server about this transfer for tracking
-    socket.emit('file-transfer-start', { roomId, fileSize: file.size });
-
-    // Send metadata to all peers
+    // أرسل الـ metadata لكل peer
     peerIds.forEach(id => {
         const pi = peers.get(id);
         if (pi?.connected) {
-            try {
-                pi.peer.send(JSON.stringify({ type: 'metadata', payload: meta }));
-            } catch (_) {}
+            try { pi.peer.send(JSON.stringify({ type: 'metadata', payload: meta })); } catch (_) {}
         }
     });
 
-    // Create sender file box in chat
     createSenderFileBox(file, meta);
 
-    // OPTIMIZED: Dynamic chunk sizing based on file type and size
-    const isLargeFile = file.size > 50 * 1024 * 1024; // > 50MB
-    const isHDVideo = file.type?.startsWith('video/') && file.size > 20 * 1024 * 1024;
-    const isHDImage = file.type?.startsWith('image/') && file.size > 5 * 1024 * 1024;
-    
-    // Larger chunks = faster transfer for big files
-    let chunkSize = CHUNK_SIZE; // default 256KB
-    if (isHDVideo) {
-        chunkSize = 512 * 1024; // 512KB for HD video
-    } else if (isLargeFile || isHDImage) {
-        chunkSize = 384 * 1024; // 384KB for large files
-    }
-
     let offset = 0;
-    const startTime = Date.now();
-    
+    let lastUIUpdate = 0;
+
     try {
-        while (offset < file.size && !cancelFlag) {
-            const chunk = file.slice(offset, offset + chunkSize);
-            const arrayBuffer = await chunk.arrayBuffer();
-            
-            // Send to all peers simultaneously using Promise.all
-            const sendPromises = peerIds.map(id => {
+        while (offset < file.size) {
+            if (cancelFlag) return;
+
+            // ── Backpressure: انتظر إذا امتلأ البافر ──
+            let waited = false;
+            for (const id of peerIds) {
+                const pi = peers.get(id);
+                if (!pi?.connected) continue;
+                while ((pi.peer._channel?.bufferedAmount ?? 0) > MAX_BUFFER_BYTES) {
+                    if (cancelFlag) return;
+                    await new Promise(r => setTimeout(r, 10));
+                    waited = true;
+                }
+            }
+
+            // ── قراءة الـ chunk ──
+            const end   = Math.min(offset + CHUNK_SIZE, file.size);
+            const chunk = await file.slice(offset, end).arrayBuffer();
+
+            // ── إرسال لكل peer ──
+            for (const id of peerIds) {
                 const pi = peers.get(id);
                 if (pi?.connected) {
-                    return new Promise((resolve) => {
-                        try {
-                            pi.peer.send(arrayBuffer);
-                            resolve(true);
-                        } catch (err) {
-                            console.error('Send error to peer', id, err);
-                            resolve(false);
-                        }
-                    });
+                    try { pi.peer.send(chunk); } catch (_) {}
                 }
-                return Promise.resolve(false);
-            });
-            
-            await Promise.all(sendPromises);
-            
-            offset += arrayBuffer.byteLength;
-            const pct = Math.round((offset / file.size) * 100);
-            updateSenderFileBox(meta.fileId, pct);
-            
-            // Allow UI to update for very large files (every 5 chunks)
-            if (isLargeFile && offset % (5 * chunkSize) === 0) {
-                await new Promise(r => setTimeout(r, 0));
+            }
+
+            offset += chunk.byteLength;
+
+            // ── تحديث الـ UI كل 200ms فقط لتجنب jank ──
+            const now = Date.now();
+            if (now - lastUIUpdate > 200 || offset >= file.size) {
+                updateSenderFileBox(meta.fileId, Math.round((offset / file.size) * 100));
+                lastUIUpdate = now;
             }
         }
-        
-        if (!cancelFlag) {
-            finalizeSenderFileBox(meta.fileId);
-            const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-            const speed = ((file.size / 1024 / 1024) / (duration || 1)).toFixed(1);
-            toast(`✅ تم إرسال ${file.name} في ${duration} ثانية (${speed} ميجابايت/ث)`, 'success');
-        }
-        
-        runQueue();
+
+        // ── اكتمل الإرسال ──
+        sessionBytesTransferred += file.size;
+        updateSessionUsageUI();
+        // أبلغ السيرفر بالاستخدام
+        socket.emit('data-usage', { roomId, bytes: file.size });
+        finalizeSenderFileBox(meta.fileId);
+
     } catch (err) {
         console.error('Send error:', err);
         updateSenderFileBox(meta.fileId, 0, true, 'فشل في الإرسال');
-        runQueue();
+        peerIds.forEach(id => {
+            const pi = peers.get(id);
+            if (pi?.connected) {
+                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
+            }
+        });
     }
+
+    runQueue();
 }
 
 // ─────────────────────────────────────────
