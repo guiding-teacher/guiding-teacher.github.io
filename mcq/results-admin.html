@@ -1,5 +1,6 @@
 <!-- ===================================================
-     results-admin.html  —  v3 (إصلاح ظهور الوصف والتاريخ)
+     results-admin.html  —  v3
+     الإصلاحات: ظهور الوصف والتاريخ | حد 5 كشوفات | طول الرمز 9 خانات
      =================================================== -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -64,18 +65,11 @@
     }
     .limit-badge.full { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.3); color: #fca5a5; }
 
-    /* تحسين ظهور حقلي الوصف والتاريخ في الخطوة الأولى */
-    #step-1 .res-form-group textarea.res-input {
-      background-color: #fefce8;
-      border-color: #fde68a;
-    }
-    #step-1 .res-form-group:has(input[type="date"]),
-    #step-1 .res-form-group:has(input[type="time"]) {
-      background: #f0f9ff;
-      border-radius: 10px;
-      padding: 8px 12px;
-      margin-top: 8px;
-    }
+    /* ── Sheet description in list ───────────────── */
+    .sheet-desc { color: #64748b; font-size: 0.82em; margin-top: 3px; font-style: italic; }
+
+    /* ── Time input ──────────────────────────────── */
+    input[type="time"].res-input { color-scheme: light; }
   </style>
 </head>
 <body class="results-admin-body">
@@ -140,7 +134,7 @@
         </div>
       </div>
 
-      <!-- STEP 1: Sheet Metadata (محسّن مع إظهار الوصف والتاريخ) -->
+      <!-- STEP 1: Sheet Metadata -->
       <div id="step-1" class="res-card">
         <div class="res-card-title">📝 معلومات الكشف الأساسية</div>
 
@@ -148,7 +142,7 @@
         <div class="res-form-grid" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
           <div class="res-form-group">
             <label>عنوان الكشف / المادة *</label>
-            <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الصف السادس - الرياضيات">
+            <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الصف السادس">
           </div>
           <div class="res-form-group">
             <label>اسم المدرس *</label>
@@ -160,25 +154,28 @@
           </div>
         </div>
 
-        <!-- حقل الوصف (بارز وواضح) -->
+        <!-- الصف الثاني: الوصف -->
         <div class="res-form-group" style="margin-top: 15px;">
-          <label>📄 وصف الكشف (يظهر للطالب أسفل العنوان)</label>
-          <textarea id="sheet-description" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف... (مثل: نتائج الفصل الدراسي الأول، درجات الأعمال السنة، ...)"></textarea>
+          <label>وصف الكشف (يظهر للطالب أسفل العنوان)</label>
+          <textarea id="sheet-description" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف..."></textarea>
         </div>
 
-        <!-- التاريخ والوقت (مظهر منفصل وواضح) -->
-        <div class="res-form-group" style="margin-top: 20px; background: #f8fafc; padding: 12px; border-radius: 12px;">
-          <label style="font-weight: 700;">📅 تاريخ ووقت إعلان النتيجة</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 8px;">
+        <!-- الصف الثالث: التاريخ والوقت -->
+        <div class="res-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+          <div class="res-form-group">
+            <label>تاريخ إعلان النتيجة</label>
             <input type="date" id="sheet-date" class="res-input" style="color-scheme: light;">
+          </div>
+          <div class="res-form-group">
+            <label>وقت الإعلان</label>
             <input type="time" id="sheet-time" class="res-input" style="color-scheme: light;">
           </div>
         </div>
 
-        <!-- ملاحظات إضافية -->
+        <!-- ملاحظات اختيارية -->
         <div class="res-form-group" style="margin-top: 15px;">
-          <label>📌 ملاحظات إضافية للطلاب</label>
-          <textarea id="sheet-notes" class="res-input" rows="2" placeholder="أي تنبيهات أخرى تظهر عند الاستعلام... (مثل: موعد الاعتراض، تعليمات خاصة)"></textarea>
+          <label>ملاحظات إضافية للطلاب</label>
+          <textarea id="sheet-notes" class="res-input" rows="2" placeholder="أي تنبيهات أخرى تظهر عند الاستعلام..."></textarea>
         </div>
 
         <div id="err-1" class="res-alert res-alert-error" style="display:none;"></div>
@@ -191,6 +188,7 @@
       <!-- STEP 2: Upload Excel -->
       <div id="step-2" class="res-card" style="display:none;">
         
+        <!-- نموذج تعليمي للمشرف داخل Step 2 -->
         <div class="educational-model" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
           <h4 style="color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
             💡 نموذج ترتيب ملف الإكسل المطلوب:
@@ -264,7 +262,7 @@
       <div id="step-3" class="res-card" style="display:none;">
         <div class="res-card-title">👁️ معاينة البيانات والتأكيد</div>
         <p style="color:#64748b; margin-top:0; margin-bottom:18px; font-size:0.93em;">
-          تم توليد رمز سري فريد لكل طالب. راجع البيانات قبل الحفظ.
+          تم توليد رمز سري فريد لكل طالب (9 خانات). راجع البيانات قبل الحفظ.
         </p>
 
         <div class="preview-stats" id="preview-stats"></div>
@@ -380,11 +378,26 @@
 
     let currentUser     = null;
     let parsedStudents  = [];
-    let gradeColumns    = [];
-    let gradeColsInfo   = [];
+    let gradeColumns    = [];   // column names (excluding name column)
+    let gradeColsInfo   = [];   // [{header, colIndex}]
     let savedSheetId    = null;
     let allSheetsCache  = {};
     let editingSheetId  = null;
+
+    /* ==================== Helper: generateUniqueCode (9 chars) ==================== */
+    function generateUniqueCode(usedCodesSet) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+      const length = 9;
+      let code;
+      do {
+        code = '';
+        for (let i = 0; i < length; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+      } while (usedCodesSet.has(code));
+      usedCodesSet.add(code);
+      return code;
+    }
 
     /* ==================== AUTH ==================== */
     onAuthStateChanged(auth, async (user) => {
@@ -533,6 +546,7 @@
           teacher:     document.getElementById('edit-teacher').value.trim(),
           notes:       document.getElementById('edit-notes').value.trim()
         });
+        // Update cache
         if (allSheetsCache[editingSheetId]) {
           allSheetsCache[editingSheetId].title       = title;
           allSheetsCache[editingSheetId].description = document.getElementById('edit-description').value.trim();
@@ -570,11 +584,11 @@
       const q = query(collection(db, "result_sheets"), where("adminId", "==", currentUser.uid));
       const snap = await getDocs(q);
       if (snap.size >= MAX_SHEETS) {
-        alert(`⚠️ لقد وصلت إلى الحد الأقصى (${MAX_SHEETS} كشوفات). قم بحذف كشف قديم أولاً.`);
+        alert(`⚠️ لقد وصلت إلى الحد الأقصى (${MAX_SHEETS} كشوفات).`);
         return;
       }
 
-      // تصفير كافة الحقول
+      // تصفير كافة الحقول بما فيها الوصف
       ['sheet-title','sheet-teacher','sheet-year','sheet-notes','sheet-description']
         .forEach(id => {
           const el = document.getElementById(id);
@@ -635,86 +649,158 @@
 
     /* ==================== FILE UPLOAD ==================== */
     const uploadZone = document.getElementById('upload-zone');
-    uploadZone.addEventListener('click', () => document.getElementById('excel-file-input').click());
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-    uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); const file = e.dataTransfer.files[0]; if (file) processFile(file); });
 
-    window.handleFileUpload = e => { const file = e.target.files[0]; if (file) processFile(file); };
+    uploadZone.addEventListener('click',
+      () => document.getElementById('excel-file-input').click());
 
+    uploadZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadZone.classList.add('drag-over');
+    });
+    uploadZone.addEventListener('dragleave',
+      () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) processFile(file);
+    });
+
+    window.handleFileUpload = e => {
+      const file = e.target.files[0];
+      if (file) processFile(file);
+    };
+
+    /* ── Core Excel Parser ── */
     function processFile(file) {
       hideErr('err-2');
       document.getElementById('next-2').disabled = true;
       const reader = new FileReader();
+
       reader.onload = (ev) => {
         try {
           const data = new Uint8Array(ev.target.result);
           const wb = XLSX.read(data, { type: 'array' });
           const ws = wb.Sheets[wb.SheetNames[0]];
           const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-          if (rows.length < 2) { showErr('err-2', 'الملف فارغ، يرجى التأكد من وجود بيانات.'); return; }
+
+          if (rows.length < 2) {
+            showErr('err-2', 'الملف فارغ، يرجى التأكد من وجود بيانات.');
+            return;
+          }
+
+          // 1. استخراج العناوين (كل الأعمدة ما عدا الأول من اليمين)
           const headerRow = rows[0];
           gradeColumns = [];
           for (let j = 1; j < headerRow.length; j++) {
             gradeColumns.push(String(headerRow[j] || `عمود ${j}`).trim());
           }
-          parsedStudents = [];
+
+          // 2. معالجة كافة الطلاب في مصفوفة
+          parsedStudents = []; // تصفير المصفوفة قبل البدء
           const usedCodes = new Set();
+
+          // الدوران من الصف الثاني (i=1) حتى نهاية الملف (rows.length)
           for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             const studentName = String(row[0] || "").trim();
-            if (studentName === "") continue;
+
+            if (studentName === "") continue; // تجاوز الصفوف الفارغة
+
             const studentGrades = {};
             gradeColumns.forEach((colName, index) => {
+              // جلب الدرجات من الأعمدة التالية
               let val = row[index + 1];
               studentGrades[colName] = (val !== undefined && val !== "") ? val : "---";
             });
-            parsedStudents.push({ name: studentName, code: generateUniqueCode(usedCodes), grades: studentGrades });
+
+            parsedStudents.push({
+              name: studentName,
+              code: generateUniqueCode(usedCodes),
+              grades: studentGrades
+            });
           }
+
+          // تحديث الواجهة بعد معالجة الجميع
           document.getElementById('file-name-display').textContent = file.name;
           document.getElementById('row-count-display').textContent = `${parsedStudents.length} طالب تم استيرادهم بنجاح`;
           document.getElementById('file-info-box').style.display = 'flex';
           document.getElementById('next-2').disabled = false;
-        } catch (err) { showErr('err-2', 'حدث خطأ في معالجة الملف، تأكد من الصيغة.'); }
+
+        } catch (err) {
+          showErr('err-2', 'حدث خطأ في معالجة الملف، تأكد من الصيغة.');
+        }
       };
       reader.readAsArrayBuffer(file);
     }
 
-    function generateUniqueCode(usedCodes) {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-      let code;
-      do { code = Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join(''); }
-      while (usedCodes.has(code));
-      usedCodes.add(code);
-      return code;
-    }
-
+    /* ==================== STEP 2 → 3 ==================== */
     document.getElementById('next-2').addEventListener('click', buildPreview);
 
     function buildPreview() {
       if (!parsedStudents.length) return;
+
       document.getElementById('preview-stats').innerHTML = `
-        <div class="stat-box blue"><div class="stat-num">${parsedStudents.length}</div><div class="stat-lbl">إجمالي الطلاب</div></div>
-        <div class="stat-box green"><div class="stat-num">${gradeColumns.length}</div><div class="stat-lbl">عدد الأعمدة</div></div>
-        <div class="stat-box purple"><div class="stat-num">6</div><div class="stat-lbl">طول الرمز</div></div>`;
-      document.getElementById('preview-thead').innerHTML = `<tr><th>#</th><th>اسم الطالب</th><th>الرمز السري</th>${gradeColumns.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
+        <div class="stat-box blue">
+          <div class="stat-num">${parsedStudents.length}</div>
+          <div class="stat-lbl">إجمالي الطلاب</div>
+        </div>
+        <div class="stat-box green">
+          <div class="stat-num">${gradeColumns.length}</div>
+          <div class="stat-lbl">عدد الأعمدة</div>
+        </div>
+        <div class="stat-box purple">
+          <div class="stat-num">9</div>
+          <div class="stat-lbl">طول الرمز</div>
+        </div>`;
+
+      document.getElementById('preview-thead').innerHTML = `<tr>
+        <th>#</th>
+        <th>اسم الطالب</th>
+        <th>الرمز السري</th>
+        ${gradeColumns.map(c => `<th>${escHtml(c)}</th>`).join('')}
+      </tr>`;
+
       const display = parsedStudents.slice(0, 60);
-      document.getElementById('preview-tbody').innerHTML = display.map((s, i) => `<tr><td>${i+1}</td><td>${escHtml(s.name)}</td><td><span class="code-badge">${s.code}</span></td>${gradeColumns.map(c => `<td>${escHtml(String(s.grades[c] ?? '---'))}</td>`).join('')}</tr>`).join('') + (parsedStudents.length > 60 ? `<tr><td colspan="${gradeColumns.length+3}" style="text-align:center; color:#94a3b8; padding:12px;">... و ${parsedStudents.length-60} طالب آخر</td></tr>` : '');
+      document.getElementById('preview-tbody').innerHTML =
+        display.map((s, i) => `
+          <tr>
+            <td>${i+1}</td>
+            <td>${escHtml(s.name)}</td>
+            <td><span class="code-badge">${s.code}</span></td>
+            ${gradeColumns.map(c =>
+              `<td>${escHtml(String(s.grades[c] ?? '---'))}</td>`
+            ).join('')}
+          </tr>`).join('') +
+        (parsedStudents.length > 60 ? `
+          <tr>
+            <td colspan="${gradeColumns.length + 3}"
+              style="text-align:center; color:#94a3b8; padding:12px;">
+              ... و ${parsedStudents.length - 60} طالب آخر
+            </td>
+          </tr>` : '');
+
       goToStep(3);
     }
 
     document.getElementById('prev-3').addEventListener('click', () => goToStep(2));
 
+    /* ==================== SAVE SHEET ==================== */
     document.getElementById('save-btn').addEventListener('click', async () => {
       const btn = document.getElementById('save-btn');
       btn.disabled = true;
       btn.innerHTML = `<span class="spinner"></span> جاري الحفظ...`;
       hideErr('err-3');
+
       try {
         const sheetRef = doc(collection(db, "result_sheets"));
         savedSheetId   = sheetRef.id;
+
         const studentsByCode = {};
-        parsedStudents.forEach(s => { studentsByCode[s.code] = { name: s.name, grades: s.grades }; });
+        parsedStudents.forEach(s => {
+          studentsByCode[s.code] = { name: s.name, grades: s.grades };
+        });
+
         await setDoc(sheetRef, {
           title:          document.getElementById('sheet-title').value.trim(),
           description:    document.getElementById('sheet-description').value.trim(),
@@ -729,9 +815,13 @@
           studentsByCode,
           studentCount:   parsedStudents.length
         });
+
         const base = window.location.href.replace(/results-admin\.html.*/, '');
-        document.getElementById('sheet-link-display').value = `${base}results-lookup.html?sheet=${savedSheetId}`;
+        document.getElementById('sheet-link-display').value =
+          `${base}results-lookup.html?sheet=${savedSheetId}`;
+
         goToStep(4);
+
       } catch (err) {
         showErr('err-3', `حدث خطأ أثناء الحفظ: ${err.message}`);
         btn.disabled = false;
@@ -739,47 +829,167 @@
       }
     });
 
-    document.getElementById('copy-link-btn').addEventListener('click', () => { copyToClipboard(document.getElementById('sheet-link-display').value, document.getElementById('copy-link-btn')); });
-    document.getElementById('dl-excel-btn').addEventListener('click', () => { downloadExcelWithCodes(parsedStudents, gradeColumns, document.getElementById('sheet-title').value); });
-    document.getElementById('print-barcodes-btn').addEventListener('click', () => { openBarcodeWindow(parsedStudents.map(s => ({ name: s.name, code: s.code })), document.getElementById('sheet-title').value); });
-    document.getElementById('finish-wizard-btn').addEventListener('click', () => { hideWizard(); loadSheets(); });
+    /* ==================== STEP 4 ACTIONS ==================== */
+    document.getElementById('copy-link-btn').addEventListener('click', () => {
+      copyToClipboard(
+        document.getElementById('sheet-link-display').value,
+        document.getElementById('copy-link-btn')
+      );
+    });
+    document.getElementById('dl-excel-btn').addEventListener('click', () => {
+      downloadExcelWithCodes(parsedStudents, gradeColumns,
+        document.getElementById('sheet-title').value);
+    });
+    document.getElementById('print-barcodes-btn').addEventListener('click', () => {
+      openBarcodeWindow(
+        parsedStudents.map(s => ({ name: s.name, code: s.code })),
+        document.getElementById('sheet-title').value
+      );
+    });
+    document.getElementById('finish-wizard-btn').addEventListener('click', () => {
+      hideWizard(); loadSheets();
+    });
 
-    function handleCopyLink(sheetId) { const base = window.location.href.replace(/results-admin\.html.*/, ''); copyToClipboard(`${base}results-lookup.html?sheet=${sheetId}`); }
-    function handleDownloadExcel(sheet) { const students = Object.entries(sheet.studentsByCode || {}).map(([code, s]) => ({ name: s.name, code, grades: s.grades })); downloadExcelWithCodes(students, sheet.gradeColumns || [], sheet.title); }
-    function handlePrintBarcodes(sheet) { const students = Object.entries(sheet.studentsByCode || {}).map(([code, s]) => ({ name: s.name, code })); openBarcodeWindow(students, sheet.title); }
-    async function handleDelete(sheetId, title) { if (!confirm(`هل أنت متأكد من حذف كشف:\n"${title}"\n\nلا يمكن التراجع عن هذا الإجراء.`)) return; try { await deleteDoc(doc(db, "result_sheets", sheetId)); loadSheets(); } catch (err) { alert(`حدث خطأ أثناء الحذف: ${err.message}`); } }
+    /* ==================== SHEET LIST ACTIONS ==================== */
+    function handleCopyLink(sheetId) {
+      const base = window.location.href.replace(/results-admin\.html.*/, '');
+      copyToClipboard(`${base}results-lookup.html?sheet=${sheetId}`);
+    }
 
+    function handleDownloadExcel(sheet) {
+      const students = Object.entries(sheet.studentsByCode || {})
+        .map(([code, s]) => ({ name: s.name, code, grades: s.grades }));
+      downloadExcelWithCodes(students, sheet.gradeColumns || [], sheet.title);
+    }
+
+    function handlePrintBarcodes(sheet) {
+      const students = Object.entries(sheet.studentsByCode || {})
+        .map(([code, s]) => ({ name: s.name, code }));
+      openBarcodeWindow(students, sheet.title);
+    }
+
+    async function handleDelete(sheetId, title) {
+      if (!confirm(`هل أنت متأكد من حذف كشف:\n"${title}"\n\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+      try {
+        await deleteDoc(doc(db, "result_sheets", sheetId));
+        loadSheets();
+      } catch (err) {
+        alert(`حدث خطأ أثناء الحذف: ${err.message}`);
+      }
+    }
+
+    /* ==================== EXCEL DOWNLOAD ==================== */
     function downloadExcelWithCodes(students, cols, title) {
+      // إعداد العناوين: الاسم، الرمز السري، ثم بقية أعمدة الإكسل الأصلي
       const headers = ['الاسم', 'الرمز السري', ...cols];
-      const rows = students.map(s => [ s.name, s.code, ...cols.map(c => s.grades[c] === '---' ? '' : s.grades[c]) ]);
+      
+      const rows = students.map(s => [
+        s.name, 
+        s.code,
+        ...cols.map(c => s.grades[c] === '---' ? '' : s.grades[c])
+      ]);
+
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      
+      // ضبط عرض الأعمدة تلقائياً
       ws['!cols'] = [{ wch: 25 }, { wch: 15 }, ...cols.map(() => ({ wch: 12 }))];
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'النتائج والرموز');
       XLSX.writeFile(wb, `${title} - كشف الرموز.xlsx`);
     }
 
+    /* ==================== BARCODE PRINT WINDOW ==================== */
     function openBarcodeWindow(students, title) {
       const win = window.open('', '_blank', 'width=960,height=720');
-      if (!win) { alert('الرجاء السماح بفتح النوافذ المنبثقة من إعدادات المتصفح.'); return; }
-      const cards = students.map((s, i) => `<div class="card"><div class="num">${i+1}</div><div class="name">${escHtml(s.name)}</div><div class="code">${s.code}</div><svg id="bc${i}"></svg></div>`).join('');
-      const barcodeScript = students.map((s, i) => `try{JsBarcode('#bc${i}','${s.code}',{format:'CODE128',displayValue:false,height:52,margin:2});}catch(e){}`).join('\n');
-      win.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>قائمة الرموز - ${escHtml(title)}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"><\/script><style>@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Cairo',sans-serif;background:#fff;padding:24px;}h2{text-align:center;color:#1e40af;margin-bottom:6px;font-size:1.5em;}.sub{text-align:center;color:#64748b;font-size:0.9em;margin-bottom:22px;}.print-btn{display:block;margin:0 auto 22px;padding:11px 36px;background:#1d4ed8;color:white;border:none;border-radius:8px;font-size:1em;font-family:'Cairo',sans-serif;cursor:pointer;font-weight:700;}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}.card{border:2px solid #1e40af;border-radius:10px;padding:13px;text-align:center;page-break-inside:avoid;}.num{font-size:0.72em;color:#94a3b8;margin-bottom:3px;}.name{font-size:0.92em;font-weight:700;color:#1e293b;margin-bottom:5px;word-break:break-word;min-height:40px;display:flex;align-items:center;justify-content:center;}.code{font-family:monospace;font-size:1.05em;letter-spacing:4px;color:#1d4ed8;font-weight:700;margin-bottom:8px;}svg{max-width:100%;height:52px;}@media print{.print-btn{display:none;}body{padding:10px;}.grid{gap:10px;}}</style></head><body><h2>📋 قائمة الرموز السرية</h2><p class="sub">${escHtml(title)} &nbsp;|&nbsp; عدد الطلاب: ${students.length}</p><button class="print-btn" onclick="window.print()">🖨️ طباعة القائمة</button><div class="grid">${cards}</div><script>window.onload=function(){${barcodeScript}};<\/script></body></html>`);
+      if (!win) {
+        alert('الرجاء السماح بفتح النوافذ المنبثقة من إعدادات المتصفح.');
+        return;
+      }
+      const cards = students.map((s, i) => `
+        <div class="card">
+          <div class="num">${i+1}</div>
+          <div class="name">${escHtml(s.name)}</div>
+          <div class="code">${s.code}</div>
+          <svg id="bc${i}"></svg>
+        </div>`).join('');
+
+      const barcodeScript = students.map((s, i) =>
+        `try{JsBarcode('#bc${i}','${s.code}',{format:'CODE128',displayValue:false,height:52,margin:2});}catch(e){}`
+      ).join('\n');
+
+      win.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>قائمة الرموز - ${escHtml(title)}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"><\/script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Cairo',sans-serif;background:#fff;padding:24px;}
+    h2{text-align:center;color:#1e40af;margin-bottom:6px;font-size:1.5em;}
+    .sub{text-align:center;color:#64748b;font-size:0.9em;margin-bottom:22px;}
+    .print-btn{display:block;margin:0 auto 22px;padding:11px 36px;
+      background:#1d4ed8;color:white;border:none;border-radius:8px;
+      font-size:1em;font-family:'Cairo',sans-serif;cursor:pointer;font-weight:700;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    .card{border:2px solid #1e40af;border-radius:10px;padding:13px;
+      text-align:center;page-break-inside:avoid;}
+    .num{font-size:0.72em;color:#94a3b8;margin-bottom:3px;}
+    .name{font-size:0.92em;font-weight:700;color:#1e293b;
+      margin-bottom:5px;word-break:break-word;min-height:40px;
+      display:flex;align-items:center;justify-content:center;}
+    .code{font-family:monospace;font-size:1.05em;letter-spacing:4px;
+      color:#1d4ed8;font-weight:700;margin-bottom:8px;}
+    svg{max-width:100%;height:52px;}
+    @media print{.print-btn{display:none;}body{padding:10px;}.grid{gap:10px;}}
+  </style>
+</head>
+<body>
+  <h2>📋 قائمة الرموز السرية</h2>
+  <p class="sub">${escHtml(title)} &nbsp;|&nbsp; عدد الطلاب: ${students.length}</p>
+  <button class="print-btn" onclick="window.print()">🖨️ طباعة القائمة</button>
+  <div class="grid">${cards}</div>
+  <script>window.onload=function(){${barcodeScript}};<\/script>
+</body>
+</html>`);
       win.document.close();
     }
 
+    /* ==================== HELPERS ==================== */
     function copyToClipboard(text, btn) {
-      if (navigator.clipboard) { navigator.clipboard.writeText(text).then(() => { if (btn) { const o = btn.textContent; btn.textContent = '✅ تم!'; setTimeout(() => btn.textContent = o, 2000); } else alert('✅ تم نسخ الرابط!'); }).catch(() => fallbackCopy(text, btn)); }
-      else { fallbackCopy(text, btn); }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => {
+          if (btn) { const o = btn.textContent; btn.textContent = '✅ تم!'; setTimeout(() => btn.textContent = o, 2000); }
+          else alert('✅ تم نسخ الرابط!');
+        }).catch(() => fallbackCopy(text, btn));
+      } else {
+        fallbackCopy(text, btn);
+      }
     }
     function fallbackCopy(text, btn) {
-      const el = document.createElement('textarea'); el.value = text; el.style.cssText = 'position:fixed;opacity:0;'; document.body.appendChild(el); el.focus(); el.select(); try { document.execCommand('copy'); } catch {} document.body.removeChild(el);
-      if (btn) { const o = btn.textContent; btn.textContent = '✅ تم!'; setTimeout(() => btn.textContent = o, 2000); } else alert('✅ تم نسخ الرابط!');
+      const el = document.createElement('textarea');
+      el.value = text; el.style.cssText = 'position:fixed;opacity:0;';
+      document.body.appendChild(el);
+      el.focus(); el.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(el);
+      if (btn) { const o = btn.textContent; btn.textContent = '✅ تم!'; setTimeout(() => btn.textContent = o, 2000); }
+      else alert('✅ تم نسخ الرابط!');
     }
-    function showErr(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'flex'; }
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg; el.style.display = 'flex';
+    }
     function hideErr(id) { document.getElementById(id).style.display = 'none'; }
-    function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
+    /* ==================== INIT ==================== */
     document.getElementById('create-new-btn').addEventListener('click', showWizard);
   </script>
   <script type="module" src="js/admin.js"></script>
