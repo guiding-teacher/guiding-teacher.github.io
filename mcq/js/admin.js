@@ -1035,7 +1035,8 @@ function ensureEducationalModelInStep2() {
 }
 
 
- function handleResultFileUpload(file) {
+// استبدل دالة handleResultFileUpload بالكود التالي
+function handleResultFileUpload(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1050,8 +1051,16 @@ function ensureEducationalModelInStep2() {
             gradeColumns = headers.slice(1);
             parsedStudents = [];
             const usedCodes = new Set();
-            const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            const genCode = () => { let c; do { c = Array.from({ length: 6 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join(''); } while (usedCodes.has(c)); usedCodes.add(c); return c; };
+            // ✅ تم تغيير الأحرف المسموحة وتحديد الطول 9
+            const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+            const genCode = () => {
+                let c;
+                do {
+                    c = Array.from({ length: 9 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
+                } while (usedCodes.has(c));
+                usedCodes.add(c);
+                return c;
+            };
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 const name = String(row[0] ?? '').trim();
@@ -1062,7 +1071,7 @@ function ensureEducationalModelInStep2() {
             }
             if (parsedStudents.length === 0) { alert("لم يتم العثور على أي اسم طالب."); return; }
             const infoBox = document.getElementById('file-info-box-res');
-            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود`; }
+            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود | رمز من 9 خانات`; }
             const next2 = document.getElementById('next-2-res');
             if (next2) next2.disabled = false;
         } catch (err) { alert(`خطأ في قراءة الملف: ${err.message}`); }
