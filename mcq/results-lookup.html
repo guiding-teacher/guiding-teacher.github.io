@@ -493,12 +493,20 @@
 }
 
     /* ===================== PRINT OVERLAY ===================== */
-    function showPrintOverlay() {
+   function showPrintOverlay() {
   if (!foundStudent || !sheetData) return;
+
+  // حقن البيانات في placeholders الطباعة
+  document.getElementById('pr-title').textContent = sheetData.title || 'كشف نتائج';
+  document.getElementById('pr-description').textContent = sheetData.description || '';
+  document.getElementById('pr-student-name').textContent = foundStudent.name;
+  document.getElementById('pr-teacher').textContent = `المدرس: ${sheetData.teacher || '---'}`;
+  document.getElementById('pr-date').textContent = `تاريخ الإصدار: ${sheetData.date || '---'} | ${sheetData.time || ''}`;
+  document.getElementById('pr-gen-date').textContent = `تاريخ الطباعة: ${new Date().toLocaleDateString('ar-IQ')}`;
 
   const cols = sheetData.gradeColumns || [];
   
-  // بناء الجدول المخصص للطباعة
+  // بناء جدول الدرجات للطباعة
   document.getElementById('pr-grades-thead').innerHTML = `
     <tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>
   `;
@@ -510,8 +518,9 @@
 
   document.getElementById('pr-grades-tbody').innerHTML = `<tr>${printCells}</tr>`;
 
-  // إظهار نافذة الطباعة
+  // إظهار النافذة
   document.getElementById('printable-result').style.display = 'block';
+  window.scrollTo(0, 0);
 }
 
     /* ===================== RESET ===================== */

@@ -136,60 +136,87 @@
       </div>
 
       <!-- STEP 1: Sheet Metadata -->
-      <div id="step-1" class="res-card">
-        <div class="res-card-title">📝 معلومات الكشف</div>
+       <!-- استبدل محتوى الخطوة الأولى (step-1) بهذا الكود -->
+<div id="step-1" class="res-card">
+  <div class="res-card-title">📝 معلومات الكشف الأساسية</div>
 
-        <!-- Row 1: Title + Teacher -->
-        <div class="res-form-grid">
-          <div class="res-form-group">
-            <label>عنوان الكشف / المادة *</label>
-            <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الفصل الأول – الرياضيات">
-          </div>
-          <div class="res-form-group">
-            <label>اسم المدرس *</label>
-            <input type="text" id="sheet-teacher" class="res-input" placeholder="مثال: أستاذ أحمد محمد">
-          </div>
-        </div>
+  <!-- الصف الأول: العنوان + المعلم + العام -->
+  <div class="res-form-grid" style="grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+    <div class="res-form-group">
+      <label>عنوان الكشف / المادة *</label>
+      <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الصف السادس">
+    </div>
+    <div class="res-form-group">
+      <label>اسم المدرس *</label>
+      <input type="text" id="sheet-teacher" class="res-input" placeholder="الاسم الرباعي">
+    </div>
+    <div class="res-form-group">
+      <label>العام الدراسي</label>
+      <input type="text" id="sheet-year" class="res-input" placeholder="2024-2025">
+    </div>
+  </div>
 
-        <!-- Row 2: Description (full width) -->
-        <div class="res-form-group">
-          <label>وصف المادة / الكشف</label>
-          <textarea id="sheet-description" class="res-input" rows="2"
-            placeholder="وصف مختصر يظهر للطلاب أسفل عنوان الكشف... (اختياري)"></textarea>
-        </div>
+  <!-- الصف الثاني: الوصف (حقل جديد) -->
+  <div class="res-form-group" style="margin-top: 15px;">
+    <label>وصف الكشف (يظهر للطالب أسفل العنوان)</label>
+    <textarea id="sheet-description" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف..."></textarea>
+  </div>
 
-        <!-- Row 3: Date + Time + Year -->
-        <div class="res-form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
-          <div class="res-form-group">
-            <label>التاريخ</label>
-            <input type="date" id="sheet-date" class="res-input" style="color-scheme: light;">
-          </div>
-          <div class="res-form-group">
-            <label>الوقت</label>
-            <input type="time" id="sheet-time" class="res-input">
-          </div>
-          <div class="res-form-group">
-            <label>العام الدراسي</label>
-            <input type="text" id="sheet-year" class="res-input" placeholder="مثال: 2024-2025">
-          </div>
-        </div>
+  <!-- الصف الثالث: التاريخ والوقت -->
+  <div class="res-form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+    <div class="res-form-group">
+      <label>تاريخ إعلان النتيجة</label>
+      <input type="date" id="sheet-date" class="res-input">
+    </div>
+    <div class="res-form-group">
+      <label>وقت الإعلان</label>
+      <input type="time" id="sheet-time" class="res-input">
+    </div>
+  </div>
 
-        <!-- Row 4: Notes -->
-        <div class="res-form-group">
-          <label>ملاحظات للطلاب (اختياري)</label>
-          <textarea id="sheet-notes" class="res-input" rows="3"
-            placeholder="أي تعليمات أو إشعارات تريد عرضها للطلاب عند الاستعلام..."></textarea>
-        </div>
-
-        <div id="err-1" class="res-alert res-alert-error" style="display:none;"></div>
-        <div class="res-footer-actions">
-          <button class="res-btn res-btn-gray" id="cancel-1">إلغاء</button>
-          <button class="res-btn res-btn-primary" id="next-1">التالي ←</button>
-        </div>
-      </div>
+  <div id="err-1" class="res-alert res-alert-error" style="display:none;"></div>
+  <div class="res-footer-actions">
+    <button class="res-btn res-btn-gray" id="cancel-1">إلغاء</button>
+    <button class="res-btn res-btn-primary" id="next-1">التالي (رفع الملف) ←</button>
+  </div>
+</div>
 
       <!-- STEP 2: Upload Excel -->
       <div id="step-2" class="res-card" style="display:none;">
+        
+        <!-- نموذج تعليمي للمشرف داخل Step 2 -->
+<div class="educational-model" style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+  <h4 style="color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+    💡 نموذج ترتيب ملف الإكسل المطلوب:
+  </h4>
+  <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: center; background: white;">
+    <tr style="background: #fee2e2;">
+      <th style="border: 1px solid #ddd; padding: 5px;">الاحياء</th>
+      <th style="border: 1px solid #ddd; padding: 5px;">العلوم</th>
+      <th style="border: 1px solid #ddd; padding: 5px;">الانكليزي</th>
+      <th style="border: 1px solid #ddd; padding: 5px;">الرياضيات</th>
+      <th style="background: #ef4444; color: white; border: 1px solid #ddd; padding: 5px;">الاسم</th>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ddd; padding: 5px;">33</td>
+      <td style="border: 1px solid #ddd; padding: 5px;">77</td>
+      <td style="border: 1px solid #ddd; padding: 5px;">66</td>
+      <td style="border: 1px solid #ddd; padding: 5px;">44</td>
+      <td style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">علي</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ddd; padding: 5px;">32</td>
+      <td style="border: 1px solid #ddd; padding: 5px;">89</td>
+      <td style="border: 1px solid #ddd; padding: 5px;">77</td>
+      <td style="border: 1px solid #ddd; padding: 5px;">55</td>
+      <td style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">احمد</td>
+    </tr>
+  </table>
+  <p style="font-size: 0.8em; color: #64748b; margin-top: 8px;">* ملاحظة: يجب أن يكون اسم الطالب في أول عمود من جهة اليمين.</p>
+</div>
+        
+        
+        
         <div class="res-card-title">📊 رفع ملف الإكسل</div>
 
         <div class="res-alert res-alert-info" style="margin-bottom:20px;">
@@ -636,66 +663,63 @@
     };
 
     /* ── Core Excel Parser ── */
-    function processFile(file) {
+     function processFile(file) {
   hideErr('err-2');
   document.getElementById('next-2').disabled = true;
-
   const reader = new FileReader();
+
   reader.onload = (ev) => {
     try {
       const data = new Uint8Array(ev.target.result);
       const wb = XLSX.read(data, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-
-      // تحويل الشيت إلى مصفوفة صفوف (Array of Arrays) لضمان الدقة
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
       if (rows.length < 2) {
-        showErr('err-2', 'الملف فارغ أو لا يحتوي على بيانات كافية.');
+        showErr('err-2', 'الملف فارغ، يرجى التأكد من وجود بيانات.');
         return;
       }
 
-      // 1. استخراج العناوين من الصف الأول (بدءاً من العمود الثاني)
+      // 1. استخراج العناوين (كل الأعمدة ما عدا الأول من اليمين)
       const headerRow = rows[0];
       gradeColumns = [];
       for (let j = 1; j < headerRow.length; j++) {
-        let colName = String(headerRow[j] || "").trim();
-        if (colName) gradeColumns.push(colName);
-        else gradeColumns.push(`حقل ${j}`); // تسمية افتراضية إذا كان العنوان فارغاً
+        gradeColumns.push(String(headerRow[j] || `عمود ${j}`).trim());
       }
 
-      // 2. معالجة الطلاب (الاسم في العمود الأول - index 0)
-      parsedStudents = [];
+      // 2. معالجة كافة الطلاب في مصفوفة
+      parsedStudents = []; // تصفير المصفوفة قبل البدء
       const usedCodes = new Set();
-      
+
+      // الدوران من الصف الثاني (i=1) حتى نهاية الملف (rows.length)
       for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        const name = String(row[0] || "").trim();
-        
-        if (!name) continue; // تخطي الصفوف التي لا تحتوي على اسم
+        const studentName = String(row[0] || "").trim();
 
-        const grades = {};
+        if (studentName === "") continue; // تجاوز الصفوف الفارغة
+
+        const studentGrades = {};
         gradeColumns.forEach((colName, index) => {
-          // القيمة تبدأ من العمود الثاني (index + 1)
+          // جلب الدرجات من الأعمدة التالية
           let val = row[index + 1];
-          grades[colName] = (val !== undefined && val !== "") ? val : "---";
+          studentGrades[colName] = (val !== undefined && val !== "") ? val : "---";
         });
 
         parsedStudents.push({
-          name: name,
-          code: generateUniqueCode(usedCodes), // دالة توليد الرموز
-          grades: grades
+          name: studentName,
+          code: generateUniqueCode(usedCodes),
+          grades: studentGrades
         });
       }
 
-      // تحديث واجهة الإدارة بالنتائج
+      // تحديث الواجهة بعد معالجة الجميع
       document.getElementById('file-name-display').textContent = file.name;
-      document.getElementById('row-count-display').textContent = `${parsedStudents.length} طالب | ${gradeColumns.length} عمود بيانات`;
+      document.getElementById('row-count-display').textContent = `${parsedStudents.length} طالب تم استيرادهم بنجاح`;
       document.getElementById('file-info-box').style.display = 'flex';
       document.getElementById('next-2').disabled = false;
 
     } catch (err) {
-      showErr('err-2', 'حدث خطأ أثناء قراءة الملف، تأكد من صيغة الإكسل.');
+      showErr('err-2', 'حدث خطأ في معالجة الملف، تأكد من الصيغة.');
     }
   };
   reader.readAsArrayBuffer(file);
