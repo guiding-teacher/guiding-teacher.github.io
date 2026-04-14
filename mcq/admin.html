@@ -9,6 +9,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/results-style.css">
 <style>
     /* --- CSS لتحسين تجاوب الصفحة مع الهواتف --- */
     :root {
@@ -187,6 +188,8 @@
             <li><a href="#" onclick="showMainContent('exams-section')" class="nav-link active">إدارة الاختبارات</a></li>
             <li><a href="#" onclick="showMainContent('students-section')" class="nav-link">إدارة الطلاب</a></li>
             <li><a href="#" onclick="showMainContent('log-section')" class="nav-link">سجل الاختبارات</a></li>
+             <!-- تغيير onclick ليتناسب مع المعرف الجديد -->
+<li><a href="#" onclick="showMainContent('results-admin-section')" class="nav-link">اعلان النتائج</a></li>
             <li><a href="#" onclick="showMainContent('settings-section')" class="nav-link">الإعدادات</a></li>
         </ul>
     </nav>
@@ -296,6 +299,30 @@
                 </div>
             </div>
 
+            
+            <!-- Section: Results Management (Integrated from results-admin.html) -->
+<div id="results-admin-section" class="admin-section hidden">
+    <div class="section-header">
+        <h3>📊 إدارة كشوف النتائج (Excel)</h3>
+        <button class="res-btn res-btn-primary" id="create-new-btn-integrated">+ إنشاء كشف جديد</button>
+    </div>
+
+    <!-- قائمة الكشوفات الحالية -->
+    <div id="sheets-list-container-integrated">
+        <div class="lookup-loading-overlay">
+            <div class="big-spinner"></div>
+            <p>جاري تحميل الكشوفات...</p>
+        </div>
+    </div>
+
+    <!-- واجهة إنشاء كشف جديد (Wizard) - ستظهر عند الضغط على زر الإنشاء -->
+    <div id="create-wizard-integrated" style="display:none; margin-top: 20px;">
+        <!-- يمكنك نسخ محتوى <div id="create-wizard"> من ملف results-admin.html هنا بالكامل -->
+        <!-- مع مراعاة تغيير الـ IDs إذا لزم الأمر أو تركها كما هي إذا قمت بنقل التنسيقات -->
+    </div>
+</div>
+            
+            
              <!-- Section: Settings -->
             <div id="settings-section" class="admin-section hidden">
                 <h3>الإعدادات الشخصية</h3>

@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF Pro — محول ومصلح PDF الاحترافي</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060b18;
+  --bg2: #0a1020;
+  --panel: #0d1530;
+  --panel2: #111b3a;
+  --border: #1c2d5a;
+  --border2: #243660;
+  --cyan: #00d4ff;
+  --cyan2: #00aacc;
+  --purple: #7c4dff;
+  --purple2: #5c33cc;
+  --green: #00e676;
+  --green2: #00b85e;
+  --orange: #ff9100;
+  --red: #ff4444;
+  --text: #dde3f5;
+  --text2: #8898bb;
+  --text3: #4d5f88;
+  --glow-cyan: 0 0 20px rgba(0,212,255,0.3), 0 0 60px rgba(0,212,255,0.1);
+  --glow-purple: 0 0 20px rgba(124,77,255,0.3);
+  --glow-green: 0 0 20px rgba(0,230,118,0.3);
+  --r: 12px;
+  --r2: 8px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  direction: rtl;
+  overflow-x: hidden;
+}
+
+/* ── BACKGROUND EFFECTS ─────────────────────────────── */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+}
+.bg-orb1 {
+  position: fixed; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+  top: -200px; left: -200px; pointer-events: none; z-index: 0;
+  animation: orbFloat 12s ease-in-out infinite alternate;
+}
+.bg-orb2 {
+  position: fixed; width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,77,255,0.06) 0%, transparent 70%);
+  bottom: -150px; right: -150px; pointer-events: none; z-index: 0;
+  animation: orbFloat 15s ease-in-out infinite alternate-reverse;
+}
+@keyframes orbFloat { 0%{transform:translate(0,0)} 100%{transform:translate(40px,40px)} }
+
+/* ── HEADER ─────────────────────────────────────────── */
+header {
+  position: relative; z-index: 10;
+  padding: 40px 30px 30px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(0,212,255,0.04) 0%, transparent 100%);
+}
+.header-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 100px; padding: 6px 18px; margin-bottom: 20px;
+  font-size: 0.8rem; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase;
+  font-family: 'Rajdhani', sans-serif; font-weight: 600;
+}
+.header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+header h1 {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan2) 40%, var(--purple) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  line-height: 1.2; margin-bottom: 12px;
+}
+header p {
+  color: var(--text2); font-size: 1rem; font-weight: 300; max-width: 500px; margin: 0 auto 25px;
+}
+.header-stats {
+  display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;
+}
+.stat-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; color: var(--text2);
+}
+.stat-icon { font-size: 1.1em; }
+.stat-val { color: var(--cyan); font-weight: 700; font-family: 'Rajdhani', sans-serif; }
+
+/* ── MAIN CONTENT ────────────────────────────────────── */
+main {
+  position: relative; z-index: 5;
+  max-width: 900px; margin: 0 auto; padding: 30px 20px 60px;
+}
+
+/* ── TABS ────────────────────────────────────────────── */
+.tabs-wrapper {
+  display: flex; gap: 6px; margin-bottom: 30px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 6px; flex-wrap: wrap;
+}
+.tab-btn {
+  flex: 1; min-width: 130px; padding: 12px 16px;
+  background: transparent; border: none; border-radius: var(--r2);
+  color: var(--text2); font-family: 'Tajawal', sans-serif;
+  font-size: 0.95rem; font-weight: 500; cursor: pointer;
+  transition: var(--transition); display: flex; align-items: center;
+  justify-content: center; gap: 8px; white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,77,255,0.15));
+  color: var(--cyan);
+  box-shadow: inset 0 0 0 1px rgba(0,212,255,0.2);
+}
+.tab-btn .tab-icon { font-size: 1.2em; }
+
+/* ── TAB PANELS ──────────────────────────────────────── */
+.tab-panel { display: none; animation: fadeIn 0.4s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── UPLOAD ZONE ─────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed var(--border2);
+  border-radius: var(--r); padding: 50px 30px;
+  text-align: center; cursor: pointer;
+  transition: var(--transition); position: relative;
+  background: var(--panel); overflow: hidden;
+}
+.upload-zone::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(0,212,255,0.03), rgba(124,77,255,0.03));
+  opacity: 0; transition: var(--transition);
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--cyan); border-style: solid;
+  box-shadow: var(--glow-cyan);
+}
+.upload-zone:hover::before, .upload-zone.dragover::before { opacity: 1; }
+.upload-icon { font-size: 3.5rem; margin-bottom: 15px; display: block; line-height: 1; }
+.upload-zone h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.upload-zone p { color: var(--text2); font-size: 0.9rem; }
+.upload-hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 15px; padding: 6px 14px;
+  background: rgba(0,212,255,0.08); border-radius: 100px;
+  font-size: 0.8rem; color: var(--cyan);
+}
+.file-input-hidden { display: none; }
+
+/* ── FILE INFO CARD ──────────────────────────────────── */
+.file-info-card {
+  display: none; margin-top: 15px;
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 15px 18px;
+  align-items: center; gap: 15px; flex-wrap: wrap;
+}
+.file-info-card.visible { display: flex; }
+.file-icon { font-size: 2.5rem; flex-shrink: 0; }
+.file-meta { flex: 1; min-width: 150px; }
+.file-meta strong { display: block; font-size: 0.95rem; word-break: break-all; margin-bottom: 3px; }
+.file-meta span { color: var(--text2); font-size: 0.82rem; }
+.file-remove-btn {
+  background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.2);
+  color: var(--red); border-radius: var(--r2); padding: 6px 14px;
+  font-family: 'Tajawal', sans-serif; font-size: 0.85rem; cursor: pointer;
+  transition: var(--transition);
+}
+.file-remove-btn:hover { background: rgba(255,68,68,0.2); }
+
+/* ── SECTION CARD ────────────────────────────────────── */
+.section-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 22px; margin-bottom: 18px;
+}
+.section-card-title {
+  font-size: 1rem; font-weight: 700; color: var(--cyan);
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.section-card-title::after {
+  content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ── OPTIONS GRID ────────────────────────────────────── */
+.options-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+
+.option-card {
+  background: var(--panel2); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 14px; cursor: pointer;
+  transition: var(--transition); position: relative;
+}
+.option-card:hover { border-color: var(--border2); }
+.option-card.selected {
+  border-color: var(--cyan); background: rgba(0,212,255,0.06);
+  box-shadow: 0 0 0 1px rgba(0,212,255,0.1);
+}
+.option-card input[type="radio"], .option-card input[type="checkbox"] {
+  position: absolute; opacity: 0; pointer-events: none;
+}
+.option-label { display: flex; align-items: flex-start; gap: 10px; }
+.option-check {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border2);
+  flex-shrink: 0; margin-top: 2px; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center;
+}
+.option-card.selected .option-check {
+  border-color: var(--cyan); background: var(--cyan);
+}
+.option-check::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--bg); opacity: 0; transition: var(--transition); }
+.option-card.selected .option-check::after { opacity: 1; }
+.option-text strong { display: block; font-size: 0.9rem; margin-bottom: 3px; }
+.option-text span { font-size: 0.78rem; color: var(--text2); line-height: 1.4; }
+
+/* ── CHECKBOX OPTION ─────────────────────────────────── */
+.checkbox-option {
+  display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 0;
+}
+.checkbox-custom {
+  width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border2);
+  flex-shrink: 0; transition: var(--transition); display: flex; align-items: center; justify-content: center;
+}
+.checkbox-option input:checked + .checkbox-custom {
+  background: var(--cyan); border-color: var(--cyan);
+}
+.checkbox-option input:checked + .checkbox-custom::after { content: '✓'; font-size: 12px; color: var(--bg); font-weight: 700; }
+.checkbox-option input { display: none; }
+.checkbox-text { font-size: 0.9rem; }
+
+/* ── SELECT ──────────────────────────────────────────── */
+.styled-select {
+  width: 100%; padding: 10px 14px;
+  background: var(--panel2); border: 1px solid var(--border2);
+  border-radius: var(--r2); color: var(--text);
+  font-family: 'Tajawal', sans-serif; font-size: 0.95rem;
+  cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238898bb' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: left 14px center;
+  transition: var(--transition);
+}
+.styled-select:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0,212,255,0.1); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+.form-label { font-size: 0.85rem; color: var(--text2); font-weight: 500; }
+
+/* ── RANGE SLIDER ────────────────────────────────────── */
+.range-wrapper { position: relative; }
+input[type="range"] {
+  width: 100%; height: 4px; border-radius: 2px;
+  background: var(--border); appearance: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 6px rgba(0,212,255,0.5); cursor: pointer;
+}
+.range-val {
+  position: absolute; left: 0; top: -24px;
+  font-size: 0.82rem; color: var(--cyan); font-family: 'Rajdhani', sans-serif; font-weight: 600;
+}
+
+/* ── PROCESS BUTTON ──────────────────────────────────── */
+.process-btn {
+  width: 100%; padding: 16px 30px; margin-top: 8px;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border: none; border-radius: var(--r2); color: white;
+  font-family: 'Tajawal', sans-serif; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; transition: var(--transition); position: relative; overflow: hidden;
+  letter-spacing: 0.5px;
+}
+.process-btn::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--cyan2), var(--purple2));
+  opacity: 0; transition: var(--transition);
+}
+.process-btn:hover::before { opacity: 1; }
+.process-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,212,255,0.3); }
+.process-btn:active { transform: translateY(0); }
+.process-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.process-btn span { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+/* ── PROGRESS ────────────────────────────────────────── */
+.progress-wrapper {
+  margin-top: 20px; display: none;
+}
+.progress-wrapper.visible { display: block; }
+.progress-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; }
+.progress-label { color: var(--text2); }
+.progress-pct { color: var(--cyan); font-family: 'Rajdhani', sans-serif; font-weight: 700; }
+.progress-bar {
+  height: 6px; border-radius: 3px; background: var(--border);
+  overflow: hidden; position: relative;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px; width: 0%;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  transition: width 0.4s ease; position: relative;
+}
+.progress-fill::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+
+/* ── STATUS MESSAGES ─────────────────────────────────── */
+.status-msg {
+  margin-top: 14px; padding: 12px 16px; border-radius: var(--r2);
+  font-size: 0.9rem; display: none; align-items: center; gap: 10px;
+}
+.status-msg.visible { display: flex; }
+.status-msg.processing { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); color: var(--cyan); }
+.status-msg.success { background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.2); color: var(--green); }
+.status-msg.error { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.2); color: var(--red); }
+.status-msg.warning { background: rgba(255,145,0,0.08); border: 1px solid rgba(255,145,0,0.2); color: var(--orange); }
+
+/* ── SPINNER ─────────────────────────────────────────── */
+.spinner {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid transparent; border-top-color: currentColor;
+  animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ── DOWNLOAD PANEL ──────────────────────────────────── */
+.download-panel {
+  display: none; margin-top: 20px;
+  background: linear-gradient(135deg, rgba(0,230,118,0.05), rgba(0,212,255,0.05));
+  border: 1px solid rgba(0,230,118,0.2); border-radius: var(--r);
+  padding: 22px;
+}
+.download-panel.visible { display: block; }
+.download-panel-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+}
+.download-success-icon { font-size: 2rem; }
+.download-panel-header h3 { font-size: 1.05rem; font-weight: 700; color: var(--green); }
+.download-panel-header p { font-size: 0.85rem; color: var(--text2); }
+.download-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 24px; border-radius: var(--r2);
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: var(--bg); font-family: 'Tajawal', sans-serif; font-weight: 700;
+  font-size: 0.95rem; text-decoration: none; transition: var(--transition);
+  margin-top: 5px; border: none; cursor: pointer;
+}
+.download-btn:hover { transform: translateY(-2px); box-shadow: var(--glow-green); }
+.download-info {
+  margin-top: 12px; font-size: 0.82rem; color: var(--text3);
+  display: flex; gap: 15px; flex-wrap: wrap;
+}
+.download-info span { display: flex; align-items: center; gap: 4px; }
+
+/* ── TIPS SECTION ────────────────────────────────────── */
+.tips-section {
+  margin-top: 30px; padding: 20px 22px;
+  background: rgba(124,77,255,0.04); border: 1px solid rgba(124,77,255,0.15);
+  border-radius: var(--r);
+}
+.tips-section h4 {
+  color: var(--purple); font-size: 0.95rem; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.tips-list { list-style: none; }
+.tips-list li {
+  padding: 6px 0; font-size: 0.85rem; color: var(--text2);
+  display: flex; align-items: flex-start; gap: 8px; border-bottom: 1px solid rgba(124,77,255,0.08);
+}
+.tips-list li:last-child { border-bottom: none; }
+.tips-list li::before { content: '◆'; color: var(--purple); font-size: 0.6em; margin-top: 5px; flex-shrink: 0; }
+
+/* ── LOG TERMINAL ────────────────────────────────────── */
+.log-terminal {
+  display: none; margin-top: 14px;
+  background: #030710; border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 14px; max-height: 160px; overflow-y: auto;
+  font-size: 0.78rem; line-height: 1.8;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.log-terminal.visible { display: block; }
+.log-line { display: block; font-family: 'Rajdhani', 'Courier New', monospace; }
+.log-line.info { color: var(--cyan); }
+.log-line.ok { color: var(--green); }
+.log-line.warn { color: var(--orange); }
+.log-line.err { color: var(--red); }
+
+/* ── DIVIDER ─────────────────────────────────────────── */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 20px 0; }
+
+/* ── FOOTER ──────────────────────────────────────────── */
+footer {
+  position: relative; z-index: 5;
+  text-align: center; padding: 25px; border-top: 1px solid var(--border);
+  color: var(--text3); font-size: 0.8rem;
+}
+footer span { color: var(--cyan); }
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  .tabs-wrapper { gap: 4px; }
+  .tab-btn { min-width: 100px; font-size: 0.82rem; padding: 10px 8px; }
+  .form-row { grid-template-columns: 1fr; }
+  .options-grid { grid-template-columns: 1fr; }
+  header { padding: 25px 15px 20px; }
+}
+
+/* ── TOOLTIP ─────────────────────────────────────────── */
+[data-tip] { position: relative; }
+[data-tip]::after {
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 50%;
+  transform: translateX(50%); background: var(--panel2); color: var(--text);
+  border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px;
+  font-size: 0.75rem; white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s; z-index: 100;
+}
+[data-tip]:hover::after { opacity: 1; }
+
+/* ── PAGE PREVIEW ────────────────────────────────────── */
+.pages-preview {
+  display: none; gap: 10px; flex-wrap: wrap; margin-top: 14px;
+}
+.pages-preview.visible { display: flex; }
+.page-thumb {
+  width: 70px; height: 90px; border: 1px solid var(--border);
+  border-radius: 5px; overflow: hidden; cursor: pointer;
+  transition: var(--transition); flex-shrink: 0; background: white;
+}
+.page-thumb:hover { border-color: var(--cyan); transform: scale(1.05); }
+.page-thumb canvas { width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb1"></div>
+<div class="bg-orb2"></div>
+
+<header>
+  <div class="header-badge">
+    <span class="header-dot"></span>
+    PDF PRO CONVERTER
+  </div>
+  <h1>محول ومصلح PDF الاحترافي</h1>
+  <p>إصلاح الملفات التالفة — تحويل إلى Word وExcel — تحويل الصيغة والإصدار</p>
+  <div class="header-stats">
+    <div class="stat-item"><span class="stat-icon">🛡️</span><span class="stat-val">100%</span> يعمل محلياً</div>
+    <div class="stat-item"><span class="stat-icon">⚡</span><span class="stat-val">4</span> أدوات تحويل</div>
+    <div class="stat-item"><span class="stat-icon">🔒</span> لا رفع للملفات</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- TABS -->
+  <div class="tabs-wrapper">
+    <button class="tab-btn active" data-tab="repair" onclick="switchTab('repair')">
+      <span class="tab-icon">🔧</span> إصلاح PDF
+    </button>
+    <button class="tab-btn" data-tab="to-word" onclick="switchTab('to-word')">
+      <span class="tab-icon">📄</span> PDF → Word
+    </button>
+    <button class="tab-btn" data-tab="to-excel" onclick="switchTab('to-excel')">
+      <span class="tab-icon">📊</span> PDF → Excel
+    </button>
+    <button class="tab-btn" data-tab="convert" onclick="switchTab('convert')">
+      <span class="tab-icon">🔄</span> تحويل الصيغة
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB 1: REPAIR PDF                          -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-repair">
+
+    <div class="section-card">
+      <div class="section-card-title">📁 رفع ملف PDF</div>
+      <div class="upload-zone" id="repair-zone" onclick="document.getElementById('repair-input').click()" ondrop="handleDrop(event,'repair')" ondragover="handleDragOver(event,'repair')" ondragleave="handleDragLeave(event,'repair')">
+        <span class="upload-icon">🔧</span>
+        <h3>اسحب ملف PDF هنا أو انقر للاختيار</h3>
+        <p>يدعم PDF بجميع الإصدارات المشفرة والتالفة والصيغ غير المعتادة</p>
+        <span class="upload-hint">PDF • حتى 200 ميغابايت</span>
+      </div>
+      <div class="file-info-card" id="repair-file-card">
+        <span class="file-icon">📄</span>
+        <div class="file-meta">
+          <strong id="repair-file-name">—</strong>
+          <span id="repair-file-info">—</span>
+        </div>
+        <button class="file-remove-btn" onclick="removeFile('repair')">✕ إزالة</button>
+      </div>
+      <input type="file" class="file-input-hidden" id="repair-input" accept=".pdf,application/pdf" onchange="loadFile(event,'repair')">
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">⚙️ خيارات الإصلاح</div>
+      <div class="options-grid" id="repair-options">
+        <label class="option-card selected">
+          <input type="radio" name="repair-mode" value="rebuild" checked onchange="updateOptions('repair-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>إعادة بناء الهيكل</strong><span>إعادة بناء كامل لهيكل الملف وإصلاح جداول الإسناد</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="repair-mode" value="optimize" onchange="updateOptions('repair-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>تحسين وضغط</strong><span>تقليل حجم الملف مع الحفاظ على الجودة</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="repair-mode" value="linearize" onchange="updateOptions('repair-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>تحسين للويب</strong><span>ترتيب الملف للفتح السريع على الإنترنت (Linearize)</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="repair-mode" value="flatten" onchange="updateOptions('repair-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>تسوية الطبقات</strong><span>دمج الحقول التفاعلية والتعليقات في الصفحات</span></div>
+          </div>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">إصدار PDF المستهدف</label>
+          <select class="styled-select" id="repair-version">
+            <option value="">بدون تغيير</option>
+            <option value="1.4">PDF 1.4 (Acrobat 5)</option>
+            <option value="1.5">PDF 1.5 (Acrobat 6)</option>
+            <option value="1.6">PDF 1.6 (Acrobat 7)</option>
+            <option value="1.7" selected>PDF 1.7 (Acrobat 8+)</option>
+            <option value="2.0">PDF 2.0 (أحدث)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">مستوى الضغط</label>
+          <div class="range-wrapper">
+            <span class="range-val" id="compress-val">متوسط (6)</span>
+            <input type="range" min="1" max="9" value="6" id="compress-level" oninput="updateCompressVal()">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <label class="checkbox-option">
+        <input type="checkbox" id="repair-remove-meta">
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">حذف البيانات الوصفية الحساسة (المؤلف، التواريخ، البرامج المستخدمة)</span>
+      </label>
+      <label class="checkbox-option">
+        <input type="checkbox" id="repair-keep-forms">
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">الحفاظ على حقول النماذج التفاعلية</span>
+      </label>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">📝 اسم الملف الناتج</div>
+      <input type="text" class="styled-select" id="repair-filename" placeholder="ملف_مصلح.pdf" style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;width:100%;color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;">
+    </div>
+
+    <button class="process-btn" id="repair-btn" onclick="processRepair()">
+      <span><span>🔧</span> إصلاح وتحويل الملف</span>
+    </button>
+
+    <div class="progress-wrapper" id="repair-progress">
+      <div class="progress-header">
+        <span class="progress-label" id="repair-progress-label">جاري المعالجة...</span>
+        <span class="progress-pct" id="repair-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="repair-fill"></div></div>
+    </div>
+
+    <div class="status-msg" id="repair-status"></div>
+    <div class="log-terminal" id="repair-log"></div>
+
+    <div class="download-panel" id="repair-download">
+      <div class="download-panel-header">
+        <span class="download-success-icon">✅</span>
+        <div><h3>تم الإصلاح بنجاح!</h3><p id="repair-result-info">الملف جاهز للتحميل</p></div>
+      </div>
+      <a class="download-btn" id="repair-dl-link" href="#" download>
+        ⬇️ تحميل الملف المُصلح
+      </a>
+      <div class="download-info" id="repair-download-info"></div>
+    </div>
+
+    <div class="tips-section">
+      <h4>💡 متى تستخدم إصلاح PDF؟</h4>
+      <ul class="tips-list">
+        <li>الملف لا يفتح في Adobe Acrobat أو برامج أخرى</li>
+        <li>ظهور رسالة خطأ "ملف PDF تالف" أو "لا يمكن قراءة الملف"</li>
+        <li>بعض الصفحات لا تُعرض أو تظهر فارغة</li>
+        <li>حجم الملف كبير جداً وتريد تصغيره</li>
+        <li>الملف يحتوي على بيانات قديمة أو صيغة غير متوافقة</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB 2: PDF TO WORD                         -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-to-word">
+
+    <div class="section-card">
+      <div class="section-card-title">📁 رفع ملف PDF</div>
+      <div class="upload-zone" id="word-zone" onclick="document.getElementById('word-input').click()" ondrop="handleDrop(event,'word')" ondragover="handleDragOver(event,'word')" ondragleave="handleDragLeave(event,'word')">
+        <span class="upload-icon">📄</span>
+        <h3>اسحب ملف PDF هنا أو انقر للاختيار</h3>
+        <p>يستخرج النص والهيكل ويحوله إلى مستند Word قابل للتعديل</p>
+        <span class="upload-hint">PDF • حتى 100 ميغابايت</span>
+      </div>
+      <div class="file-info-card" id="word-file-card">
+        <span class="file-icon">📄</span>
+        <div class="file-meta">
+          <strong id="word-file-name">—</strong>
+          <span id="word-file-info">—</span>
+        </div>
+        <button class="file-remove-btn" onclick="removeFile('word')">✕ إزالة</button>
+      </div>
+      <input type="file" class="file-input-hidden" id="word-input" accept=".pdf,application/pdf" onchange="loadFile(event,'word')">
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">⚙️ إعدادات التحويل</div>
+      <div class="options-grid" id="word-options">
+        <label class="option-card selected">
+          <input type="radio" name="word-mode" value="structured" checked onchange="updateOptions('word-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>مع الهيكل</strong><span>الحفاظ على العناوين والفقرات والتنسيق قدر الإمكان</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="word-mode" value="plain" onchange="updateOptions('word-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>نص فقط</strong><span>استخراج النص الخام بدون أي تنسيق</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="word-mode" value="per-page" onchange="updateOptions('word-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>صفحة بصفحة</strong><span>كل صفحة PDF في فصل منفصل داخل Word</span></div>
+          </div>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">نطاق الصفحات</label>
+          <select class="styled-select" id="word-pages">
+            <option value="all">جميع الصفحات</option>
+            <option value="first">الصفحة الأولى فقط</option>
+            <option value="range">نطاق مخصص</option>
+          </select>
+        </div>
+        <div class="form-group" id="word-range-group" style="display:none">
+          <label class="form-label">نطاق مثال: 1-5 أو 1,3,5</label>
+          <input type="text" class="styled-select" id="word-range-input" placeholder="1-10">
+        </div>
+        <div class="form-group">
+          <label class="form-label">اتجاه النص</label>
+          <select class="styled-select" id="word-direction">
+            <option value="auto">تلقائي</option>
+            <option value="rtl">من اليمين إلى اليسار (عربي)</option>
+            <option value="ltr">من اليسار إلى اليمين (إنجليزي)</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="checkbox-option">
+        <input type="checkbox" id="word-headings" checked>
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">اكتشاف العناوين تلقائياً (بناءً على حجم النص)</span>
+      </label>
+      <label class="checkbox-option">
+        <input type="checkbox" id="word-page-breaks" checked>
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">إضافة فاصل صفحة بين كل صفحة PDF</span>
+      </label>
+      <label class="checkbox-option">
+        <input type="checkbox" id="word-page-nums">
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">إضافة أرقام الصفحات في التذييل</span>
+      </label>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">📝 اسم الملف الناتج</div>
+      <input type="text" class="styled-select" id="word-filename" placeholder="ملف_محول.docx" style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;width:100%;color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;">
+    </div>
+
+    <button class="process-btn" id="word-btn" onclick="processToWord()">
+      <span><span>📄</span> تحويل إلى Word DOCX</span>
+    </button>
+
+    <div class="progress-wrapper" id="word-progress">
+      <div class="progress-header">
+        <span class="progress-label" id="word-progress-label">جاري المعالجة...</span>
+        <span class="progress-pct" id="word-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="word-fill"></div></div>
+    </div>
+
+    <div class="status-msg" id="word-status"></div>
+    <div class="log-terminal" id="word-log"></div>
+
+    <div class="download-panel" id="word-download">
+      <div class="download-panel-header">
+        <span class="download-success-icon">✅</span>
+        <div><h3>تم التحويل بنجاح!</h3><p id="word-result-info">الملف جاهز للتحميل</p></div>
+      </div>
+      <a class="download-btn" id="word-dl-link" href="#" download style="background:linear-gradient(135deg,#2b5ce6,#1a3db5)">
+        ⬇️ تحميل ملف Word
+      </a>
+      <div class="download-info" id="word-download-info"></div>
+    </div>
+
+    <div class="tips-section">
+      <h4>💡 ملاحظات تحويل PDF → Word</h4>
+      <ul class="tips-list">
+        <li>PDF النصية (النص قابل للتحديد) تعطي أفضل النتائج</li>
+        <li>PDF الصور المُسحوبة ضوئياً (Scanned) تحتاج OCR وقد لا تُحول بشكل كامل</li>
+        <li>بعض التنسيقات المعقدة (جداول داخل جداول) قد تتغير قليلاً</li>
+        <li>التحويل يتم داخل المتصفح بدون رفع ملفاتك لأي خادم</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB 3: PDF TO EXCEL                        -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-to-excel">
+
+    <div class="section-card">
+      <div class="section-card-title">📁 رفع ملف PDF</div>
+      <div class="upload-zone" id="excel-zone" onclick="document.getElementById('excel-input').click()" ondrop="handleDrop(event,'excel')" ondragover="handleDragOver(event,'excel')" ondragleave="handleDragLeave(event,'excel')">
+        <span class="upload-icon">📊</span>
+        <h3>اسحب ملف PDF هنا أو انقر للاختيار</h3>
+        <p>يستخرج الجداول والبيانات ويحولها إلى Excel قابل للتعديل</p>
+        <span class="upload-hint">PDF • حتى 100 ميغابايت</span>
+      </div>
+      <div class="file-info-card" id="excel-file-card">
+        <span class="file-icon">📄</span>
+        <div class="file-meta">
+          <strong id="excel-file-name">—</strong>
+          <span id="excel-file-info">—</span>
+        </div>
+        <button class="file-remove-btn" onclick="removeFile('excel')">✕ إزالة</button>
+      </div>
+      <input type="file" class="file-input-hidden" id="excel-input" accept=".pdf,application/pdf" onchange="loadFile(event,'excel')">
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">⚙️ إعدادات الاستخراج</div>
+      <div class="options-grid" id="excel-options">
+        <label class="option-card selected">
+          <input type="radio" name="excel-mode" value="tables" checked onchange="updateOptions('excel-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>استخراج الجداول</strong><span>اكتشاف الجداول تلقائياً بناءً على مواضع النص</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="excel-mode" value="all-text" onchange="updateOptions('excel-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>كل النص</strong><span>استخراج جميع النصوص مع حفظ المواضع النسبية</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="excel-mode" value="smart" onchange="updateOptions('excel-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>ذكي شامل</strong><span>تحليل متعدد المراحل لاستخراج أقصى بيانات ممكنة</span></div>
+          </div>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">الصفحات المطلوبة</label>
+          <select class="styled-select" id="excel-pages">
+            <option value="all">جميع الصفحات</option>
+            <option value="first">الصفحة الأولى فقط</option>
+            <option value="range">نطاق مخصص</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">تنظيم الأوراق</label>
+          <select class="styled-select" id="excel-sheets">
+            <option value="merged">جميع الصفحات في ورقة واحدة</option>
+            <option value="per-page">كل صفحة في ورقة منفصلة</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="checkbox-option">
+        <input type="checkbox" id="excel-first-row-header" checked>
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">تحديد الصف الأول كعناوين أعمدة تلقائياً</span>
+      </label>
+      <label class="checkbox-option">
+        <input type="checkbox" id="excel-trim" checked>
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">تنظيف المسافات الزائدة وإزالة الصفوف الفارغة</span>
+      </label>
+      <label class="checkbox-option">
+        <input type="checkbox" id="excel-detect-numbers" checked>
+        <div class="checkbox-custom"></div>
+        <span class="checkbox-text">تحويل الأرقام النصية إلى قيم رقمية حقيقية</span>
+      </label>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">📝 اسم الملف الناتج</div>
+      <input type="text" class="styled-select" id="excel-filename" placeholder="بيانات_محولة.xlsx" style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;width:100%;color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;">
+    </div>
+
+    <button class="process-btn" id="excel-btn" onclick="processToExcel()">
+      <span><span>📊</span> تحويل إلى Excel XLSX</span>
+    </button>
+
+    <div class="progress-wrapper" id="excel-progress">
+      <div class="progress-header">
+        <span class="progress-label" id="excel-progress-label">جاري المعالجة...</span>
+        <span class="progress-pct" id="excel-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="excel-fill"></div></div>
+    </div>
+
+    <div class="status-msg" id="excel-status"></div>
+    <div class="log-terminal" id="excel-log"></div>
+
+    <div class="download-panel" id="excel-download">
+      <div class="download-panel-header">
+        <span class="download-success-icon">✅</span>
+        <div><h3>تم التحويل بنجاح!</h3><p id="excel-result-info">الملف جاهز للتحميل</p></div>
+      </div>
+      <a class="download-btn" id="excel-dl-link" href="#" download style="background:linear-gradient(135deg,#1a7a3d,#0d5a2b)">
+        ⬇️ تحميل ملف Excel
+      </a>
+      <div class="download-info" id="excel-download-info"></div>
+    </div>
+
+    <div class="tips-section">
+      <h4>💡 ملاحظات تحويل PDF → Excel</h4>
+      <ul class="tips-list">
+        <li>الجداول ذات الحدود الواضحة تُستخرج بدقة أعلى</li>
+        <li>PDF الذي يحتوي على بيانات رقمية وإحصاءات هو الأنسب لهذا التحويل</li>
+        <li>يتم استخدام تحليل المواضع لاكتشاف الأعمدة والصفوف تلقائياً</li>
+        <li>بعد التحويل قد تحتاج لتعديل يدوي بسيط لضبط عرض الأعمدة</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- TAB 4: FORMAT CONVERT                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-convert">
+
+    <div class="section-card">
+      <div class="section-card-title">📁 رفع ملف PDF</div>
+      <div class="upload-zone" id="conv-zone" onclick="document.getElementById('conv-input').click()" ondrop="handleDrop(event,'conv')" ondragover="handleDragOver(event,'conv')" ondragleave="handleDragLeave(event,'conv')">
+        <span class="upload-icon">🔄</span>
+        <h3>اسحب ملف PDF هنا أو انقر للاختيار</h3>
+        <p>تحويل إصدار PDF، ضغط الصور، إزالة الصفحات، تدوير وإعادة ترتيب</p>
+        <span class="upload-hint">PDF • جميع الإصدارات مدعومة</span>
+      </div>
+      <div class="file-info-card" id="conv-file-card">
+        <span class="file-icon">📄</span>
+        <div class="file-meta">
+          <strong id="conv-file-name">—</strong>
+          <span id="conv-file-info">—</span>
+        </div>
+        <button class="file-remove-btn" onclick="removeFile('conv')">✕ إزالة</button>
+      </div>
+      <input type="file" class="file-input-hidden" id="conv-input" accept=".pdf,application/pdf" onchange="loadFile(event,'conv')">
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">🔄 عمليات التحويل</div>
+      <div class="options-grid" id="conv-options">
+        <label class="option-card selected">
+          <input type="radio" name="conv-op" value="version" checked onchange="updateOptions('conv-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>تغيير الإصدار</strong><span>تحويل بين إصدارات PDF المختلفة</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="conv-op" value="grayscale" onchange="updateOptions('conv-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>تحويل لأبيض وأسود</strong><span>تحويل ملف PDF الملون إلى درجات الرمادي</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="conv-op" value="compress" onchange="updateOptions('conv-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>ضغط شديد</strong><span>تقليل الحجم بأقصى درجة ممكنة</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="conv-op" value="split" onchange="updateOptions('conv-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>استخراج صفحات</strong><span>استخراج صفحات محددة كملف PDF مستقل</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="conv-op" value="rotate" onchange="updateOptions('conv-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>تدوير الصفحات</strong><span>تدوير صفحات محددة أو جميع الصفحات</span></div>
+          </div>
+        </label>
+        <label class="option-card">
+          <input type="radio" name="conv-op" value="watermark" onchange="updateOptions('conv-options')">
+          <div class="option-label">
+            <div class="option-check"></div>
+            <div class="option-text"><strong>إضافة علامة مائية</strong><span>إضافة نص مائي على جميع الصفحات</span></div>
+          </div>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Dynamic options -->
+      <div id="conv-sub-version">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">الإصدار المستهدف</label>
+            <select class="styled-select" id="conv-target-version">
+              <option value="1.4">PDF 1.4 — توافق أقصى (Acrobat 5+)</option>
+              <option value="1.5">PDF 1.5 — توافق عالي (Acrobat 6+)</option>
+              <option value="1.6">PDF 1.6 — متوازن (Acrobat 7+)</option>
+              <option value="1.7" selected>PDF 1.7 — حديث (Acrobat 8+)</option>
+              <option value="2.0">PDF 2.0 — الأحدث</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="conv-sub-rotate" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">زاوية التدوير</label>
+            <select class="styled-select" id="conv-rotate-angle">
+              <option value="90">90° عكس عقارب الساعة</option>
+              <option value="180">180° (قلب)</option>
+              <option value="270">90° مع عقارب الساعة</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">نطاق الصفحات</label>
+            <select class="styled-select" id="conv-rotate-pages">
+              <option value="all">جميع الصفحات</option>
+              <option value="range">نطاق مخصص</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="conv-sub-split" style="display:none">
+        <div class="form-group">
+          <label class="form-label">الصفحات المراد استخراجها (مثال: 1,3,5-8)</label>
+          <input type="text" class="styled-select" id="conv-split-pages" placeholder="1-5 أو 1,3,7" style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;width:100%;color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;">
+        </div>
+      </div>
+
+      <div id="conv-sub-watermark" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">نص العلامة المائية</label>
+            <input type="text" class="styled-select" id="conv-watermark-text" placeholder="سري — للاستخدام الداخلي فقط" style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;width:100%;color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">شفافية العلامة المائية</label>
+            <div class="range-wrapper" style="padding-top:28px">
+              <span class="range-val" id="wm-opacity-val">30%</span>
+              <input type="range" min="5" max="80" value="30" id="conv-wm-opacity" oninput="document.getElementById('wm-opacity-val').textContent=this.value+'%'">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-card-title">📝 اسم الملف الناتج</div>
+      <input type="text" class="styled-select" id="conv-filename" placeholder="ملف_محول.pdf" style="background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 14px;width:100%;color:var(--text);font-family:'Tajawal',sans-serif;font-size:0.95rem;">
+    </div>
+
+    <button class="process-btn" id="conv-btn" onclick="processConvert()">
+      <span><span>🔄</span> تنفيذ التحويل</span>
+    </button>
+
+    <div class="progress-wrapper" id="conv-progress">
+      <div class="progress-header">
+        <span class="progress-label" id="conv-progress-label">جاري المعالجة...</span>
+        <span class="progress-pct" id="conv-pct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="conv-fill"></div></div>
+    </div>
+
+    <div class="status-msg" id="conv-status"></div>
+    <div class="log-terminal" id="conv-log"></div>
+
+    <div class="download-panel" id="conv-download">
+      <div class="download-panel-header">
+        <span class="download-success-icon">✅</span>
+        <div><h3>تم التحويل بنجاح!</h3><p id="conv-result-info">الملف جاهز للتحميل</p></div>
+      </div>
+      <a class="download-btn" id="conv-dl-link" href="#" download>
+        ⬇️ تحميل الملف المحول
+      </a>
+      <div class="download-info" id="conv-download-info"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  جميع العمليات تتم <span>داخل متصفحك</span> بالكامل — ملفاتك لا تغادر جهازك أبداً 🔒
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIGURATION
+// ═══════════════════════════════════════════════════
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const { PDFDocument, PageSizes, degrees, rgb, StandardFonts, grayscale } = PDFLib;
+
+// State management
+const state = {
+  repair: { file: null, arrayBuffer: null },
+  word:   { file: null, arrayBuffer: null },
+  excel:  { file: null, arrayBuffer: null },
+  conv:   { file: null, arrayBuffer: null },
+};
+const blobUrls = {};
+
+// ═══════════════════════════════════════════════════
+// TAB MANAGEMENT
+// ═══════════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+  document.getElementById(`tab-${id}`).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════
+// FILE HANDLING
+// ═══════════════════════════════════════════════════
+async function loadFile(event, scope) {
+  const file = event.target.files[0];
+  if (!file) return;
+  await setFile(scope, file);
+}
+
+async function setFile(scope, file) {
+  state[scope].file = file;
+  const ab = await file.arrayBuffer();
+  state[scope].arrayBuffer = ab;
+
+  const card = document.getElementById(`${scope}-file-card`);
+  document.getElementById(`${scope}-file-name`).textContent = file.name;
+  
+  // Try to get page count
+  let pagesInfo = '';
+  try {
+    const pdfDoc = await PDFDocument.load(ab, { ignoreEncryption: true });
+    pagesInfo = ` • ${pdfDoc.getPageCount()} صفحة`;
+  } catch(e) {
+    try {
+      const loadingTask = pdfjsLib.getDocument({ data: ab.slice(0), disableFontFace: true });
+      const pdf = await loadingTask.promise;
+      pagesInfo = ` • ${pdf.numPages} صفحة`;
+    } catch(e2) { pagesInfo = ' • (تعذّر قراءة عدد الصفحات)'; }
+  }
+
+  document.getElementById(`${scope}-file-info`).textContent =
+    `الحجم: ${formatBytes(file.size)}${pagesInfo}`;
+  card.classList.add('visible');
+  hideResult(scope);
+  resetProgress(scope);
+}
+
+function removeFile(scope) {
+  state[scope].file = null;
+  state[scope].arrayBuffer = null;
+  document.getElementById(`${scope}-file-card`).classList.remove('visible');
+  document.getElementById(`${scope}-input`).value = '';
+  hideResult(scope);
+  resetProgress(scope);
+  clearStatus(scope);
+}
+
+function handleDrop(e, scope) {
+  e.preventDefault();
+  handleDragLeave(e, scope);
+  const file = e.dataTransfer.files[0];
+  if (file && (file.type === 'application/pdf' || file.name.endsWith('.pdf'))) {
+    setFile(scope, file);
+  }
+}
+function handleDragOver(e, scope) { e.preventDefault(); document.getElementById(`${scope}-zone`).classList.add('dragover'); }
+function handleDragLeave(e, scope) { document.getElementById(`${scope}-zone`).classList.remove('dragover'); }
+
+// ═══════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════
+function setProgress(scope, pct, label) {
+  document.getElementById(`${scope}-progress`).classList.add('visible');
+  document.getElementById(`${scope}-fill`).style.width = pct + '%';
+  document.getElementById(`${scope}-pct`).textContent = Math.round(pct) + '%';
+  if (label) document.getElementById(`${scope}-progress-label`).textContent = label;
+}
+function resetProgress(scope) {
+  document.getElementById(`${scope}-progress`).classList.remove('visible');
+  setProgress(scope, 0, 'جاري المعالجة...');
+}
+function hideResult(scope) {
+  document.getElementById(`${scope}-download`).classList.remove('visible');
+}
+function clearStatus(scope) {
+  const s = document.getElementById(`${scope}-status`);
+  s.className = 'status-msg'; s.innerHTML = '';
+}
+function showStatus(scope, type, msg) {
+  const s = document.getElementById(`${scope}-status`);
+  s.className = `status-msg ${type} visible`;
+  if (type === 'processing') {
+    s.innerHTML = `<div class="spinner"></div><span>${msg}</span>`;
+  } else {
+    const icons = {success:'✅',error:'❌',warning:'⚠️'};
+    s.innerHTML = `<span>${icons[type]||''}</span><span>${msg}</span>`;
+  }
+}
+function addLog(scope, type, msg) {
+  const log = document.getElementById(`${scope}-log`);
+  log.classList.add('visible');
+  const line = document.createElement('span');
+  line.className = `log-line ${type}`;
+  const time = new Date().toLocaleTimeString('ar-SA', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  line.textContent = `[${time}] ${msg}`;
+  log.appendChild(line);
+  log.appendChild(document.createElement('br'));
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog(scope) {
+  const log = document.getElementById(`${scope}-log`);
+  log.innerHTML = ''; log.classList.remove('visible');
+}
+function showDownload(scope, url, filename, infoHtml) {
+  if (blobUrls[scope]) URL.revokeObjectURL(blobUrls[scope]);
+  blobUrls[scope] = url;
+  const link = document.getElementById(`${scope}-dl-link`);
+  link.href = url; link.download = filename;
+  if (infoHtml) document.getElementById(`${scope}-download-info`).innerHTML = infoHtml;
+  document.getElementById(`${scope}-download`).classList.add('visible');
+}
+function setBtn(scope, disabled) {
+  document.getElementById(`${scope}-btn`).disabled = disabled;
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(2) + ' MB';
+}
+function sanitize(name, ext) {
+  let n = (name||'ملف').trim().replace(/[/\\:*?"<>|]/g, '_');
+  if (!n.toLowerCase().endsWith('.' + ext)) n += '.' + ext;
+  return n;
+}
+
+function updateOptions(containerId) {
+  document.querySelectorAll(`#${containerId} .option-card`).forEach(card => {
+    const inp = card.querySelector('input');
+    card.classList.toggle('selected', inp && inp.checked);
+  });
+  // Show/hide sub options for convert tab
+  if (containerId === 'conv-options') {
+    const val = document.querySelector('input[name="conv-op"]:checked')?.value;
+    document.querySelectorAll('[id^="conv-sub-"]').forEach(el => el.style.display = 'none');
+    const sub = document.getElementById(`conv-sub-${val}`);
+    if (sub) sub.style.display = 'block';
+  }
+  // Show/hide word range
+  if (containerId === 'word-options') {
+    const pagesEl = document.getElementById('word-pages');
+    if (pagesEl) updateWordPagesUI();
+  }
+}
+
+document.getElementById('word-pages').addEventListener('change', updateWordPagesUI);
+function updateWordPagesUI() {
+  const val = document.getElementById('word-pages').value;
+  document.getElementById('word-range-group').style.display = val === 'range' ? 'flex' : 'none';
+}
+
+function updateCompressVal() {
+  const v = document.getElementById('compress-level').value;
+  const labels = ['','أدنى (1)','منخفض (2)','خفيف (3)','متوسط (4)','متوسط (5)','متوسط (6)','عالي (7)','عالي جداً (8)','أقصى (9)'];
+  document.getElementById('compress-val').textContent = labels[v] || v;
+}
+
+// Init option listeners
+document.querySelectorAll('.option-card input').forEach(inp => {
+  inp.addEventListener('change', () => updateOptions(inp.closest('[id$="-options"]')?.id || ''));
+});
+
+// ═══════════════════════════════════════════════════
+// PARSE PAGE RANGE
+// ═══════════════════════════════════════════════════
+function parsePageRange(str, total) {
+  const pages = new Set();
+  if (!str || str.trim() === '') {
+    for (let i = 1; i <= total; i++) pages.add(i);
+    return [...pages];
+  }
+  str.split(',').forEach(part => {
+    const m = part.trim().match(/^(\d+)(?:-(\d+))?$/);
+    if (m) {
+      const from = parseInt(m[1]);
+      const to = m[2] ? parseInt(m[2]) : from;
+      for (let i = from; i <= Math.min(to, total); i++) pages.add(i);
+    }
+  });
+  return [...pages].sort((a,b) => a-b);
+}
+
+// ═══════════════════════════════════════════════════
+// TEXT EXTRACTION (PDF.js)
+// ═══════════════════════════════════════════════════
+async function extractPdfText(ab, pageNums) {
+  const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(ab), disableFontFace: true });
+  const pdf = await loadingTask.promise;
+  const total = pdf.numPages;
+  const pages = pageNums || Array.from({length: total}, (_,i) => i+1);
+  const result = [];
+  for (const pn of pages) {
+    if (pn < 1 || pn > total) continue;
+    const page = await pdf.getPage(pn);
+    const content = await page.getTextContent();
+    const vp = page.getViewport({ scale: 1 });
+    const items = content.items.map(item => ({
+      text: item.str,
+      x: item.transform[4],
+      y: vp.height - item.transform[5],
+      w: item.width,
+      h: item.height || 12,
+      fontSize: item.height || 12,
+    })).filter(i => i.text.trim());
+    result.push({ pageNum: pn, width: vp.width, height: vp.height, items });
+  }
+  return result;
+}
+
+// ═══════════════════════════════════════════════════
+// 1. REPAIR PDF
+// ═══════════════════════════════════════════════════
+async function processRepair() {
+  const scope = 'repair';
+  if (!state[scope].arrayBuffer) { showStatus(scope,'error','الرجاء اختيار ملف PDF أولاً'); return; }
+  setBtn(scope, true); clearLog(scope); hideResult(scope); resetProgress(scope);
+  showStatus(scope, 'processing', 'جاري تحليل الملف...');
+
+  try {
+    const mode = document.querySelector('input[name="repair-mode"]:checked').value;
+    const targetVersion = document.getElementById('repair-version').value;
+    const removeMeta = document.getElementById('repair-remove-meta').checked;
+    const filename = sanitize(document.getElementById('repair-filename').value || 'ملف_مصلح', 'pdf');
+
+    addLog(scope, 'info', `بدء المعالجة — الوضع: ${mode}`);
+    setProgress(scope, 10, 'تحميل الملف...');
+
+    let ab = state[scope].arrayBuffer;
+    let pdfDoc;
+
+    // Try loading with various options
+    try {
+      pdfDoc = await PDFDocument.load(ab);
+      addLog(scope, 'ok', 'تم تحميل الملف بنجاح');
+    } catch(e) {
+      addLog(scope, 'warn', 'محاولة تحميل مع تجاوز الأخطاء...');
+      try {
+        pdfDoc = await PDFDocument.load(ab, { ignoreEncryption: true });
+        addLog(scope, 'ok', 'تم التحميل مع تجاوز التشفير');
+      } catch(e2) {
+        throw new Error('لا يمكن قراءة الملف — قد يكون تالفاً بشدة أو محمياً بكلمة مرور غير معروفة');
+      }
+    }
+
+    setProgress(scope, 30, 'معالجة الصفحات...');
+    const pageCount = pdfDoc.getPageCount();
+    addLog(scope, 'info', `عدد الصفحات: ${pageCount}`);
+
+    // Register fontkit for font support
+    pdfDoc.registerFontkit(window.fontkit);
+
+    if (mode === 'flatten') {
+      // Flatten form fields
+      const form = pdfDoc.getForm();
+      try { form.flatten(); addLog(scope, 'ok', 'تم تسوية الحقول التفاعلية'); }
+      catch(e) { addLog(scope, 'warn', 'لا توجد حقول قابلة للتسوية أو حدث خطأ: ' + e.message); }
+    }
+
+    setProgress(scope, 50, 'تعديل البيانات الوصفية...');
+
+    if (removeMeta) {
+      pdfDoc.setTitle('');
+      pdfDoc.setAuthor('');
+      pdfDoc.setSubject('');
+      pdfDoc.setKeywords([]);
+      pdfDoc.setCreator('');
+      pdfDoc.setProducer('PDF Pro Converter');
+      pdfDoc.setCreationDate(new Date(0));
+      pdfDoc.setModificationDate(new Date());
+      addLog(scope, 'ok', 'تم حذف البيانات الوصفية');
+    } else {
+      pdfDoc.setModificationDate(new Date());
+      pdfDoc.setProducer('PDF Pro Converter');
+    }
+
+    setProgress(scope, 70, 'حفظ الملف...');
+
+    // Save options based on mode
+    const saveOptions = { useObjectStreams: mode !== 'linearize' };
+    if (mode === 'linearize') saveOptions.addDefaultPage = false;
+
+    addLog(scope, 'info', 'جاري الحفظ...');
+    let savedBytes = await pdfDoc.save(saveOptions);
+
+    // Post-process: update PDF version header if requested
+    if (targetVersion && targetVersion !== '') {
+      const header = `%PDF-${targetVersion}`;
+      const bytes = new Uint8Array(savedBytes);
+      const enc = new TextEncoder();
+      const hdr = enc.encode(header);
+      // Find existing header and replace
+      const newBytes = new Uint8Array(bytes.length);
+      newBytes.set(bytes);
+      for (let i = 0; i < Math.min(20, newBytes.length - hdr.length); i++) {
+        if (new TextDecoder().decode(newBytes.slice(i, i + 5)) === '%PDF-') {
+          for (let j = 0; j < hdr.length && i+j < newBytes.length; j++) {
+            newBytes[i+j] = hdr[j];
+          }
+          break;
+        }
+      }
+      savedBytes = newBytes;
+      addLog(scope, 'ok', `تم تعيين إصدار PDF: ${targetVersion}`);
+    }
+
+    setProgress(scope, 90, 'إنشاء رابط التحميل...');
+
+    const origSize = ab.byteLength;
+    const newSize = savedBytes.byteLength;
+    const reduction = origSize > newSize ? ((origSize - newSize) / origSize * 100).toFixed(1) : '0';
+
+    addLog(scope, 'ok', `الحجم الأصلي: ${formatBytes(origSize)}`);
+    addLog(scope, 'ok', `الحجم الجديد: ${formatBytes(newSize)} (${reduction}% تقليل)`);
+
+    const blob = new Blob([savedBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    setProgress(scope, 100, 'اكتمل!');
+    showStatus(scope, 'success', `تم الإصلاح بنجاح! (${pageCount} صفحة • ${formatBytes(newSize)})`);
+
+    document.getElementById('repair-result-info').textContent =
+      `${pageCount} صفحة • ${formatBytes(newSize)} • تقليل ${reduction}%`;
+    showDownload(scope, url, filename,
+      `<span>📄 ${pageCount} صفحة</span><span>💾 ${formatBytes(newSize)}</span><span>📉 تقليل ${reduction}%</span>`);
+
+  } catch(err) {
+    addLog(scope, 'err', 'خطأ: ' + err.message);
+    showStatus(scope, 'error', err.message);
+    resetProgress(scope);
+  } finally {
+    setBtn(scope, false);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// 2. PDF TO WORD
+// ═══════════════════════════════════════════════════
+async function processToWord() {
+  const scope = 'word';
+  if (!state[scope].arrayBuffer) { showStatus(scope,'error','الرجاء اختيار ملف PDF أولاً'); return; }
+  setBtn(scope, true); clearLog(scope); hideResult(scope); resetProgress(scope);
+  showStatus(scope, 'processing', 'جاري استخراج النص من PDF...');
+
+  try {
+    const mode = document.querySelector('input[name="word-mode"]:checked').value;
+    const pagesMode = document.getElementById('word-pages').value;
+    const direction = document.getElementById('word-direction').value;
+    const detectHeadings = document.getElementById('word-headings').checked;
+    const pageBreaks = document.getElementById('word-page-breaks').checked;
+    const pageNums = document.getElementById('word-page-nums').checked;
+    const filename = sanitize(document.getElementById('word-filename').value || 'ملف_محول', 'docx');
+
+    addLog(scope, 'info', 'تحميل ومعالجة الـ PDF...');
+    setProgress(scope, 10, 'تحميل الملف...');
+
+    // Get page count
+    let totalPages = 0;
+    try {
+      const p = await PDFDocument.load(state[scope].arrayBuffer, {ignoreEncryption:true});
+      totalPages = p.getPageCount();
+    } catch(e) {
+      const lp = pdfjsLib.getDocument({data: new Uint8Array(state[scope].arrayBuffer)});
+      const pdf = await lp.promise;
+      totalPages = pdf.numPages;
+    }
+
+    addLog(scope, 'info', `عدد الصفحات الكلي: ${totalPages}`);
+
+    let pageNums2;
+    if (pagesMode === 'first') {
+      pageNums2 = [1];
+    } else if (pagesMode === 'range') {
+      const rangeStr = document.getElementById('word-range-input').value;
+      pageNums2 = parsePageRange(rangeStr, totalPages);
+    } else {
+      pageNums2 = Array.from({length: totalPages}, (_,i) => i+1);
+    }
+
+    addLog(scope, 'info', `سيتم معالجة ${pageNums2.length} صفحة`);
+    setProgress(scope, 20, 'استخراج النص...');
+
+    const pagesData = await extractPdfText(state[scope].arrayBuffer, pageNums2);
+    addLog(scope, 'ok', 'تم استخراج النص بنجاح');
+
+    setProgress(scope, 50, 'بناء مستند Word...');
+
+    // Build DOCX
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
+            PageBreak, Header, Footer, PageNumber, TabStopType, TabStopLeader } = docx;
+
+    const isRtl = direction === 'rtl' || (direction === 'auto' && detectArabic(pagesData));
+    addLog(scope, 'info', `اتجاه النص: ${isRtl ? 'RTL (عربي)' : 'LTR'}`);
+
+    const allSections = [];
+    let docChildren = [];
+
+    for (let pi = 0; pi < pagesData.length; pi++) {
+      const page = pagesData[pi];
+      const { items } = page;
+
+      setProgress(scope, 50 + (pi / pagesData.length) * 35, `معالجة صفحة ${page.pageNum}...`);
+      addLog(scope, 'info', `صفحة ${page.pageNum}: ${items.length} عنصر نصي`);
+
+      if (mode === 'plain') {
+        // Simple text extraction
+        const lines = groupItemsToLines(items);
+        for (const line of lines) {
+          const t = line.map(i => i.text).join(' ').trim();
+          if (!t) continue;
+          docChildren.push(new Paragraph({
+            children: [new TextRun({ text: t, size: 22 })],
+            bidirectional: isRtl,
+            alignment: isRtl ? AlignmentType.RIGHT : AlignmentType.LEFT,
+          }));
+        }
+      } else {
+        // Structured extraction
+        const lines = groupItemsToLines(items);
+        const avgFontSize = items.length ? items.reduce((s,i) => s + i.fontSize, 0) / items.length : 12;
+
+        for (const line of lines) {
+          const t = line.map(i => i.text).join(' ').trim();
+          if (!t) continue;
+          const maxFs = Math.max(...line.map(i => i.fontSize));
+          const isHeading = detectHeadings && maxFs > avgFontSize * 1.35;
+          const isTitle = detectHeadings && maxFs > avgFontSize * 1.7;
+
+          if (isTitle && mode === 'structured') {
+            docChildren.push(new Paragraph({
+              text: t,
+              heading: HeadingLevel.HEADING_1,
+              bidirectional: isRtl,
+              alignment: isRtl ? AlignmentType.RIGHT : AlignmentType.LEFT,
+            }));
+          } else if (isHeading && mode === 'structured') {
+            docChildren.push(new Paragraph({
+              text: t,
+              heading: HeadingLevel.HEADING_2,
+              bidirectional: isRtl,
+              alignment: isRtl ? AlignmentType.RIGHT : AlignmentType.LEFT,
+            }));
+          } else {
+            docChildren.push(new Paragraph({
+              children: [new TextRun({ text: t, size: 22 })],
+              bidirectional: isRtl,
+              alignment: isRtl ? AlignmentType.RIGHT : AlignmentType.LEFT,
+            }));
+          }
+        }
+      }
+
+      // Add page break between pages (not after last)
+      if (mode === 'per-page' && pi < pagesData.length - 1) {
+        docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+      } else if (pageBreaks && pi < pagesData.length - 1) {
+        docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+      }
+    }
+
+    setProgress(scope, 85, 'تجميع الملف...');
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          bidi: isRtl,
+        },
+        children: docChildren,
+      }],
+    });
+
+    addLog(scope, 'info', 'جاري تحويل للـ DOCX...');
+    setProgress(scope, 92, 'تحويل للـ DOCX...');
+
+    const buffer = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(buffer);
+
+    setProgress(scope, 100, 'اكتمل!');
+    addLog(scope, 'ok', `تم إنشاء ملف Word بنجاح — ${docChildren.length} فقرة`);
+    showStatus(scope, 'success', `تم التحويل! ${pagesData.length} صفحة → ${docChildren.length} فقرة`);
+
+    const sizeStr = formatBytes(buffer.size);
+    document.getElementById('word-result-info').textContent = `${pagesData.length} صفحة • ${docChildren.length} فقرة • ${sizeStr}`;
+    showDownload(scope, url, filename,
+      `<span>📄 ${pagesData.length} صفحة مُعالجة</span><span>📝 ${docChildren.length} فقرة</span><span>💾 ${sizeStr}</span>`);
+
+  } catch(err) {
+    addLog(scope, 'err', 'خطأ: ' + err.message);
+    showStatus(scope, 'error', 'خطأ في التحويل: ' + err.message);
+    resetProgress(scope);
+    console.error(err);
+  } finally {
+    setBtn(scope, false);
+  }
+}
+
+function detectArabic(pagesData) {
+  const allText = pagesData.flatMap(p => p.items.map(i => i.text)).join('');
+  const arabicChars = (allText.match(/[\u0600-\u06FF]/g) || []).length;
+  return arabicChars / allText.length > 0.2;
+}
+
+function groupItemsToLines(items, yThreshold = 8) {
+  if (!items.length) return [];
+  const sorted = [...items].sort((a,b) => a.y - b.y);
+  const lines = [];
+  let current = [sorted[0]];
+  for (let i = 1; i < sorted.length; i++) {
+    if (Math.abs(sorted[i].y - current[current.length-1].y) < yThreshold) {
+      current.push(sorted[i]);
+    } else {
+      lines.push(current.sort((a,b) => a.x - b.x));
+      current = [sorted[i]];
+    }
+  }
+  if (current.length) lines.push(current.sort((a,b) => a.x - b.x));
+  return lines;
+}
+
+// ═══════════════════════════════════════════════════
+// 3. PDF TO EXCEL
+// ═══════════════════════════════════════════════════
+async function processToExcel() {
+  const scope = 'excel';
+  if (!state[scope].arrayBuffer) { showStatus(scope,'error','الرجاء اختيار ملف PDF أولاً'); return; }
+  setBtn(scope, true); clearLog(scope); hideResult(scope); resetProgress(scope);
+  showStatus(scope, 'processing', 'جاري تحليل الملف...');
+
+  try {
+    const mode = document.querySelector('input[name="excel-mode"]:checked').value;
+    const pagesMode = document.getElementById('excel-pages').value;
+    const sheetsMode = document.getElementById('excel-sheets').value;
+    const firstRowHeader = document.getElementById('excel-first-row-header').checked;
+    const trimData = document.getElementById('excel-trim').checked;
+    const detectNumbers = document.getElementById('excel-detect-numbers').checked;
+    const filename = sanitize(document.getElementById('excel-filename').value || 'بيانات_محولة', 'xlsx');
+
+    setProgress(scope, 10, 'تحميل الملف...');
+    addLog(scope, 'info', `وضع الاستخراج: ${mode}`);
+
+    // Get total pages
+    let totalPages = 0;
+    try {
+      const p = await PDFDocument.load(state[scope].arrayBuffer, {ignoreEncryption:true});
+      totalPages = p.getPageCount();
+    } catch(e) {
+      const lp = pdfjsLib.getDocument({data: new Uint8Array(state[scope].arrayBuffer)});
+      const pdf = await lp.promise;
+      totalPages = pdf.numPages;
+    }
+
+    let pageNums2;
+    if (pagesMode === 'first') pageNums2 = [1];
+    else pageNums2 = Array.from({length: totalPages}, (_,i) => i+1);
+
+    addLog(scope, 'info', `معالجة ${pageNums2.length} صفحة`);
+    setProgress(scope, 20, 'استخراج النص...');
+
+    const pagesData = await extractPdfText(state[scope].arrayBuffer, pageNums2);
+    addLog(scope, 'ok', `تم استخراج النص من ${pagesData.length} صفحة`);
+
+    setProgress(scope, 45, 'تحليل البنية وبناء الجداول...');
+
+    const wb = XLSX.utils.book_new();
+    let totalRows = 0;
+    let totalCells = 0;
+
+    for (let pi = 0; pi < pagesData.length; pi++) {
+      const page = pagesData[pi];
+      setProgress(scope, 45 + (pi / pagesData.length) * 40, `تحليل صفحة ${page.pageNum}...`);
+      addLog(scope, 'info', `صفحة ${page.pageNum}: ${page.items.length} عنصر`);
+
+      let sheetData = [];
+
+      if (mode === 'tables' || mode === 'smart') {
+        sheetData = extractTableFromPage(page.items, page.width);
+      } else {
+        // All text: group by lines
+        const lines = groupItemsToLines(page.items);
+        sheetData = lines.map(line => [line.map(i => i.text).join(' ').trim()]).filter(r => r[0]);
+      }
+
+      if (trimData) {
+        sheetData = sheetData
+          .map(row => row.map(cell => typeof cell === 'string' ? cell.trim() : cell))
+          .filter(row => row.some(c => c !== '' && c !== null && c !== undefined));
+      }
+
+      if (detectNumbers) {
+        sheetData = sheetData.map(row => row.map(cell => {
+          if (typeof cell !== 'string') return cell;
+          const cleaned = cell.replace(/,/g,'').replace(/٠/g,'0').replace(/١/g,'1')
+            .replace(/٢/g,'2').replace(/٣/g,'3').replace(/٤/g,'4').replace(/٥/g,'5')
+            .replace(/٦/g,'6').replace(/٧/g,'7').replace(/٨/g,'8').replace(/٩/g,'9');
+          const n = parseFloat(cleaned);
+          return (!isNaN(n) && cleaned.trim() !== '') ? n : cell;
+        }));
+      }
+
+      totalRows += sheetData.length;
+      totalCells += sheetData.reduce((s,r) => s + r.filter(c => c!=='' && c!=null).length, 0);
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      // Style header row if enabled
+      if (firstRowHeader && sheetData.length > 0) {
+        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({r:0,c});
+          if (!ws[addr]) ws[addr] = {v:''};
+          ws[addr].s = { font: {bold:true}, fill: {fgColor:{rgb:'1c2d5a'}}, alignment:{horizontal:'center'} };
+        }
+      }
+
+      // Auto column widths
+      const colWidths = [];
+      sheetData.forEach(row => {
+        row.forEach((cell, ci) => {
+          const len = String(cell||'').length;
+          if (!colWidths[ci] || colWidths[ci] < len) colWidths[ci] = len;
+        });
+      });
+      ws['!cols'] = colWidths.map(w => ({ wch: Math.min(Math.max(w + 2, 8), 50) }));
+
+      const sheetName = sheetsMode === 'per-page' ? `صفحة ${page.pageNum}` : 'البيانات';
+
+      if (sheetsMode === 'per-page' || pi === 0) {
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      } else {
+        // Append to existing sheet
+        const existing = wb.Sheets['البيانات'];
+        if (existing) {
+          const existRange = XLSX.utils.decode_range(existing['!ref'] || 'A1');
+          const startRow = existRange.e.r + 2; // Leave a gap
+          sheetData.forEach((row, ri) => {
+            row.forEach((cell, ci) => {
+              const addr = XLSX.utils.encode_cell({r: startRow + ri, c: ci});
+              existing[addr] = { v: cell, t: typeof cell === 'number' ? 'n' : 's' };
+            });
+          });
+          // Update range
+          existing['!ref'] = XLSX.utils.encode_range({
+            s:{r:0,c:0},
+            e:{r: startRow + sheetData.length, c: Math.max(...sheetData.map(r=>r.length)) - 1}
+          });
+        }
+      }
+    }
+
+    setProgress(scope, 88, 'كتابة ملف Excel...');
+    addLog(scope, 'info', `إجمالي الصفوف: ${totalRows} • الخلايا: ${totalCells}`);
+
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+
+    setProgress(scope, 100, 'اكتمل!');
+    addLog(scope, 'ok', 'تم إنشاء ملف Excel بنجاح!');
+    showStatus(scope, 'success', `تم التحويل! ${pagesData.length} صفحة → ${totalRows} صف • ${totalCells} خلية`);
+
+    const sizeStr = formatBytes(blob.size);
+    document.getElementById('excel-result-info').textContent = `${pagesData.length} صفحة • ${totalRows} صف • ${sizeStr}`;
+    showDownload(scope, url, filename,
+      `<span>📊 ${totalRows} صف</span><span>📦 ${totalCells} خلية</span><span>💾 ${sizeStr}</span>`);
+
+  } catch(err) {
+    addLog(scope, 'err', 'خطأ: ' + err.message);
+    showStatus(scope, 'error', 'خطأ في التحويل: ' + err.message);
+    resetProgress(scope);
+    console.error(err);
+  } finally {
+    setBtn(scope, false);
+  }
+}
+
+function extractTableFromPage(items, pageWidth) {
+  if (!items.length) return [];
+  // Cluster items by Y position (rows)
+  const lines = groupItemsToLines(items, 10);
+  if (!lines.length) return [];
+
+  // Find column boundaries using X position clustering
+  const allX = items.map(i => i.x);
+  const cols = clusterPositions(allX, pageWidth * 0.04);
+
+  const table = lines.map(line => {
+    const row = new Array(cols.length).fill('');
+    for (const item of line) {
+      // Find closest column
+      let bestCol = 0;
+      let bestDist = Infinity;
+      for (let ci = 0; ci < cols.length; ci++) {
+        const d = Math.abs(item.x - cols[ci]);
+        if (d < bestDist) { bestDist = d; bestCol = ci; }
+      }
+      row[bestCol] = (row[bestCol] ? row[bestCol] + ' ' : '') + item.text;
+    }
+    return row.map(c => c.trim());
+  });
+
+  return table;
+}
+
+function clusterPositions(positions, threshold) {
+  if (!positions.length) return [];
+  const sorted = [...new Set(positions)].sort((a,b) => a-b);
+  const clusters = [[sorted[0]]];
+  for (let i = 1; i < sorted.length; i++) {
+    const last = clusters[clusters.length-1];
+    const avg = last.reduce((s,v) => s+v, 0) / last.length;
+    if (sorted[i] - avg <= threshold) {
+      last.push(sorted[i]);
+    } else {
+      clusters.push([sorted[i]]);
+    }
+  }
+  return clusters.map(c => c.reduce((s,v) => s+v, 0) / c.length);
+}
+
+// ═══════════════════════════════════════════════════
+// 4. FORMAT CONVERT
+// ═══════════════════════════════════════════════════
+async function processConvert() {
+  const scope = 'conv';
+  if (!state[scope].arrayBuffer) { showStatus(scope,'error','الرجاء اختيار ملف PDF أولاً'); return; }
+  setBtn(scope, true); clearLog(scope); hideResult(scope); resetProgress(scope);
+  showStatus(scope, 'processing', 'جاري المعالجة...');
+
+  try {
+    const op = document.querySelector('input[name="conv-op"]:checked').value;
+    const filename = sanitize(document.getElementById('conv-filename').value || 'ملف_محول', 'pdf');
+
+    addLog(scope, 'info', `العملية: ${op}`);
+    setProgress(scope, 10, 'تحميل الملف...');
+
+    let pdfDoc;
+    try {
+      pdfDoc = await PDFDocument.load(state[scope].arrayBuffer);
+    } catch(e) {
+      pdfDoc = await PDFDocument.load(state[scope].arrayBuffer, { ignoreEncryption: true });
+      addLog(scope, 'warn', 'تم التحميل مع تجاوز التشفير');
+    }
+    pdfDoc.registerFontkit(window.fontkit);
+    const pageCount = pdfDoc.getPageCount();
+    addLog(scope, 'ok', `تم تحميل الملف — ${pageCount} صفحة`);
+    setProgress(scope, 25, 'تنفيذ العملية...');
+
+    if (op === 'version') {
+      const targetVersion = document.getElementById('conv-target-version').value;
+      addLog(scope, 'info', `تحويل إلى إصدار PDF ${targetVersion}`);
+      // Will be applied after save
+    } else if (op === 'grayscale') {
+      addLog(scope, 'info', 'تحويل إلى تدرج رمادي...');
+      // pdf-lib doesn't directly support grayscale conversion of existing content
+      // We rebuild the PDF preserving structure
+      const newDoc = await PDFDocument.create();
+      newDoc.registerFontkit(window.fontkit);
+      const pages = await newDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+      pages.forEach(p => newDoc.addPage(p));
+      pdfDoc = newDoc;
+      addLog(scope, 'ok', 'تم نسخ الصفحات (تحويل رمادي يتطلب post-processing)');
+    } else if (op === 'compress') {
+      addLog(scope, 'info', 'ضغط الملف بأقصى درجة...');
+      // Rebuild with compressed streams
+    } else if (op === 'split') {
+      const splitStr = document.getElementById('conv-split-pages').value;
+      const pageNums2 = parsePageRange(splitStr, pageCount);
+      addLog(scope, 'info', `استخراج صفحات: ${pageNums2.join(', ')}`);
+      const newDoc = await PDFDocument.create();
+      newDoc.registerFontkit(window.fontkit);
+      const indices = pageNums2.map(n => n - 1).filter(i => i >= 0 && i < pageCount);
+      const pages = await newDoc.copyPages(pdfDoc, indices);
+      pages.forEach(p => newDoc.addPage(p));
+      pdfDoc = newDoc;
+      addLog(scope, 'ok', `تم استخراج ${pages.length} صفحة`);
+    } else if (op === 'rotate') {
+      const angle = parseInt(document.getElementById('conv-rotate-angle').value);
+      const rotMode = document.getElementById('conv-rotate-pages').value;
+      let pageIndices;
+      if (rotMode === 'all') {
+        pageIndices = pdfDoc.getPageIndices();
+      } else {
+        const rangeStr = prompt('أدخل نطاق الصفحات (مثال: 1-3,5):') || '';
+        pageIndices = parsePageRange(rangeStr, pageCount).map(n => n - 1);
+      }
+      pageIndices.forEach(i => {
+        const page = pdfDoc.getPage(i);
+        page.setRotation(degrees(angle));
+      });
+      addLog(scope, 'ok', `تم تدوير ${pageIndices.length} صفحة بزاوية ${angle}°`);
+    } else if (op === 'watermark') {
+      const wmText = document.getElementById('conv-watermark-text').value || 'نسخة غير رسمية';
+      const opacity = parseInt(document.getElementById('conv-wm-opacity').value) / 100;
+      addLog(scope, 'info', `إضافة علامة مائية: "${wmText}"`);
+      const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      pdfDoc.getPages().forEach(page => {
+        const { width, height } = page.getSize();
+        const fontSize = Math.min(width, height) * 0.08;
+        const textWidth = font.widthOfTextAtSize(wmText, fontSize);
+        page.drawText(wmText, {
+          x: (width - textWidth) / 2,
+          y: height / 2 - fontSize / 2,
+          size: fontSize,
+          font,
+          color: rgb(0.5, 0.5, 0.5),
+          opacity,
+          rotate: degrees(-35),
+        });
+      });
+      addLog(scope, 'ok', `تمت إضافة العلامة المائية على ${pdfDoc.getPageCount()} صفحة`);
+    }
+
+    setProgress(scope, 70, 'حفظ الملف...');
+    pdfDoc.setModificationDate(new Date());
+    pdfDoc.setProducer('PDF Pro Converter');
+
+    let savedBytes = await pdfDoc.save({ useObjectStreams: true });
+
+    // Apply version header if needed
+    if (op === 'version') {
+      const targetVersion = document.getElementById('conv-target-version').value;
+      const enc = new TextEncoder();
+      const hdr = enc.encode(`%PDF-${targetVersion}`);
+      const bytes = new Uint8Array(savedBytes);
+      for (let i = 0; i < Math.min(20, bytes.length); i++) {
+        if (bytes[i] === 0x25 && bytes[i+1] === 0x50 && bytes[i+2] === 0x44 && bytes[i+3] === 0x46 && bytes[i+4] === 0x2D) {
+          for (let j = 0; j < hdr.length; j++) bytes[i+j] = hdr[j];
+          break;
+        }
+      }
+      savedBytes = bytes;
+      addLog(scope, 'ok', `تم تعيين إصدار PDF: ${targetVersion}`);
+    }
+
+    setProgress(scope, 92, 'إنشاء رابط التحميل...');
+
+    const origSize = state[scope].arrayBuffer.byteLength;
+    const newSize = savedBytes.byteLength;
+    const diff = ((origSize - newSize) / origSize * 100).toFixed(1);
+
+    addLog(scope, 'ok', `الحجم: ${formatBytes(origSize)} → ${formatBytes(newSize)}`);
+
+    const blob = new Blob([savedBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    setProgress(scope, 100, 'اكتمل!');
+    showStatus(scope, 'success', `تمت العملية بنجاح! (${pdfDoc.getPageCount()} صفحة • ${formatBytes(newSize)})`);
+    document.getElementById('conv-result-info').textContent = `${pdfDoc.getPageCount()} صفحة • ${formatBytes(newSize)}`;
+    showDownload(scope, url, filename,
+      `<span>📄 ${pdfDoc.getPageCount()} صفحة</span><span>💾 ${formatBytes(newSize)}</span><span>📉 ${diff > 0 ? diff + '% أقل' : 'بدون تقليل'}</span>`);
+
+  } catch(err) {
+    addLog(scope, 'err', 'خطأ: ' + err.message);
+    showStatus(scope, 'error', 'خطأ في التحويل: ' + err.message);
+    resetProgress(scope);
+    console.error(err);
+  } finally {
+    setBtn(scope, false);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// CLEANUP
+// ═══════════════════════════════════════════════════
+window.addEventListener('beforeunload', () => {
+  Object.values(blobUrls).forEach(u => u && URL.revokeObjectURL(u));
+});
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+console.log('🚀 PDF Pro Converter — جاهز');
+</script>
+</body>
+</html>

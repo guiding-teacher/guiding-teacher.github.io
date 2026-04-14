@@ -761,15 +761,24 @@ function showMainContent(sectionIdToShow) {
     if (targetSection) {
         targetSection.classList.remove('hidden');
     }
-    const isMainSection = ['exams-section', 'students-section', 'log-section', 'settings-section'].includes(sectionIdToShow);
+
+    // إضافة results-admin-section للقائمة لضمان تفعيل الرابط في القائمة الجانبية
+    const isMainSection = ['exams-section', 'students-section', 'log-section', 'settings-section', 'results-admin-section'].includes(sectionIdToShow);
+    
     if (isMainSection) {
         document.querySelectorAll('.sidebar .nav-link').forEach(link => {
             link.classList.remove('active');
         });
+        // البحث عن الرابط الذي يحتوي على المعرف الصحيح وتنشيطه
         const activeLink = document.querySelector(`.sidebar .nav-link[onclick*="'${sectionIdToShow}'"]`);
         if (activeLink) activeLink.classList.add('active');
     }
     document.querySelector('.sidebar').classList.remove('sidebar-visible');
+
+    // تشغيل دالة تحميل الكشوفات فور فتح القسم
+    if(sectionIdToShow === 'results-admin-section') {
+        if (typeof loadResultsSheets === 'function') loadResultsSheets();
+    }
 }
 
 function translateStatus(status) {
