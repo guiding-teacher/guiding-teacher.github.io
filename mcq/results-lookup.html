@@ -455,96 +455,64 @@
 
     /* ===================== DISPLAY RESULTS (horizontal table) ===================== */
     function displayResults() {
-      if (!foundStudent || !sheetData) return;
+  if (!foundStudent || !sheetData) return;
 
-      document.getElementById('res-student-name').textContent = foundStudent.name;
-      document.getElementById('res-sheet-title').textContent  = sheetData.title;
+  // تعبئة النصوص الأساسية
+  document.getElementById('res-student-name').textContent = foundStudent.name;
+  document.getElementById('res-sheet-title').textContent  = sheetData.title;
 
-      const cols = sheetData.gradeColumns || [];
+  const cols = sheetData.gradeColumns || [];
+  const thead = document.getElementById('grades-thead');
+  const tbody = document.getElementById('grades-tbody');
 
-      // ── Build horizontal table: one header row + one data row ──
-      const thead = document.getElementById('grades-thead');
-      const tbody = document.getElementById('grades-tbody');
+  // 1. بناء رؤوس الجدول (العناوين الأفقية)
+  thead.innerHTML = `<tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
 
-      // Headers
-      thead.innerHTML = `<tr>
-        ${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}
-      </tr>`;
-
-      // Data row with colour coding
-      const dataCells = cols.map((col, i) => {
-        const raw = foundStudent.grades[col];
-        const val = (raw === undefined || raw === null || raw === '') ? '---' : raw;
-        const num = parseFloat(val);
-        let cls = '';
-        if (!isNaN(num)) cls = num >= 75 ? 'high' : num >= 50 ? 'mid' : 'low';
-        return `<td class="grade-cell ${cls}" style="animation-delay:${i*0.04}s">
-          ${escHtml(String(val))}</td>`;
-      }).join('');
-
-      tbody.innerHTML = `<tr>${dataCells}</tr>`;
-
-      const resSection = document.getElementById('results-section');
-      resSection.classList.add('visible');
-      setTimeout(() => resSection.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+  // 2. بناء صف الدرجات مع تلوين الدرجة حسب القيمة
+  const dataCells = cols.map(col => {
+    const val = foundStudent.grades[col] ?? '---';
+    const num = parseFloat(val);
+    let cls = '';
+    
+    // تصنيف الألوان (ممتاز، متوسط، ضعيف)
+    if (!isNaN(num)) {
+      if (num >= 75) cls = 'high';
+      else if (num >= 50) cls = 'mid';
+      else cls = 'low';
     }
+    
+    return `<td class="grade-cell ${cls}">${escHtml(String(val))}</td>`;
+  }).join('');
+
+  tbody.innerHTML = `<tr>${dataCells}</tr>`;
+
+  // إظهار النتائج بسلاسة
+  const resSection = document.getElementById('results-section');
+  resSection.classList.add('visible');
+  resSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
     /* ===================== PRINT OVERLAY ===================== */
     function showPrintOverlay() {
-      if (!foundStudent || !sheetData) return;
+  if (!foundStudent || !sheetData) return;
 
-      document.getElementById('pr-title').textContent        = sheetData.title;
-      document.getElementById('pr-student-name').textContent = foundStudent.name;
-      document.getElementById('pr-gen-date').textContent     =
-        `تاريخ الطباعة: ${new Date().toLocaleDateString('ar-IQ')}`;
+  const cols = sheetData.gradeColumns || [];
+  
+  // بناء الجدول المخصص للطباعة
+  document.getElementById('pr-grades-thead').innerHTML = `
+    <tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>
+  `;
 
-      // Description
-      const prDesc = document.getElementById('pr-description');
-      if (sheetData.description) {
-        prDesc.textContent = sheetData.description;
-        prDesc.style.display = 'block';
-      } else {
-        prDesc.style.display = 'none';
-      }
+  const printCells = cols.map(col => {
+    const val = foundStudent.grades[col] ?? '---';
+    return `<td>${escHtml(String(val))}</td>`;
+  }).join('');
 
-      // Teacher + date/time
-      const timeText = sheetData.time ? ` — ${sheetData.time}` : '';
-      document.getElementById('pr-teacher').textContent = `المدرس: ${sheetData.teacher}`;
-      if (sheetData.date) {
-        document.getElementById('pr-date').textContent = `التاريخ: ${sheetData.date}${timeText}`;
-      }
+  document.getElementById('pr-grades-tbody').innerHTML = `<tr>${printCells}</tr>`;
 
-      const cols = sheetData.gradeColumns || [];
-
-      // Horizontal print table
-      document.getElementById('pr-grades-thead').innerHTML = `<tr>
-        ${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}
-      </tr>`;
-
-      const printCells = cols.map((col, i) => {
-        const raw = foundStudent.grades[col];
-        const val = (raw === undefined || raw === null || raw === '') ? '---' : raw;
-        const num = parseFloat(val);
-        const color = !isNaN(num)
-          ? (num >= 75 ? '#059669' : num >= 50 ? '#d97706' : '#dc2626')
-          : '#334155';
-        return `<td style="background:${i%2===0?'#f8fafc':'white'};color:${color};font-weight:700;">
-          ${escHtml(String(val))}</td>`;
-      }).join('');
-      document.getElementById('pr-grades-tbody').innerHTML = `<tr>${printCells}</tr>`;
-
-      // Notes
-      if (sheetData.notes) {
-        const notesEl = document.getElementById('pr-notes');
-        notesEl.textContent = `ملاحظات المشرف: ${sheetData.notes}`;
-        notesEl.style.display = 'block';
-      } else {
-        document.getElementById('pr-notes').style.display = 'none';
-      }
-
-      document.getElementById('printable-result').style.display = 'block';
-      window.scrollTo({ top: 0 });
-    }
+  // إظهار نافذة الطباعة
+  document.getElementById('printable-result').style.display = 'block';
+}
 
     /* ===================== RESET ===================== */
     function resetLookup() {

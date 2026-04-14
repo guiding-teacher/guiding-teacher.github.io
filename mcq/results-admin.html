@@ -637,104 +637,69 @@
 
     /* ── Core Excel Parser ── */
     function processFile(file) {
-      hideErr('err-2');
-      document.getElementById('next-2').disabled = true;
-      document.getElementById('file-info-box').style.display = 'none';
+  hideErr('err-2');
+  document.getElementById('next-2').disabled = true;
 
-      const ext = file.name.split('.').pop().toLowerCase();
-      if (!['xlsx','xls','csv'].includes(ext)) {
-        showErr('err-2', 'نوع الملف غير مدعوم. يرجى رفع ملف .xlsx أو .xls أو .csv');
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+
+      // تحويل الشيت إلى مصفوفة صفوف (Array of Arrays) لضمان الدقة
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+      if (rows.length < 2) {
+        showErr('err-2', 'الملف فارغ أو لا يحتوي على بيانات كافية.');
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try {
-          const data = new Uint8Array(ev.target.result);
-          const wb   = XLSX.read(data, { type: 'array' });
-          const ws   = wb.Sheets[wb.SheetNames[0]];
+      // 1. استخراج العناوين من الصف الأول (بدءاً من العمود الثاني)
+      const headerRow = rows[0];
+      gradeColumns = [];
+      for (let j = 1; j < headerRow.length; j++) {
+        let colName = String(headerRow[j] || "").trim();
+        if (colName) gradeColumns.push(colName);
+        else gradeColumns.push(`حقل ${j}`); // تسمية افتراضية إذا كان العنوان فارغاً
+      }
 
-          // ── Get all rows as raw arrays ──
-          const rows = XLSX.utils.sheet_to_json(ws, {
-            header: 1,
-            defval: '',
-            blankrows: false   // skip fully blank rows
-          });
+      // 2. معالجة الطلاب (الاسم في العمود الأول - index 0)
+      parsedStudents = [];
+      const usedCodes = new Set();
+      
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const name = String(row[0] || "").trim();
+        
+        if (!name) continue; // تخطي الصفوف التي لا تحتوي على اسم
 
-          if (!rows || rows.length < 2) {
-            showErr('err-2', 'الملف فارغ أو يحتوي على صف عناوين فقط دون بيانات.');
-            return;
-          }
+        const grades = {};
+        gradeColumns.forEach((colName, index) => {
+          // القيمة تبدأ من العمود الثاني (index + 1)
+          let val = row[index + 1];
+          grades[colName] = (val !== undefined && val !== "") ? val : "---";
+        });
 
-          // ── Row 0 = header row (أسماء الحقول الأفقية) ──
-          const headerRow = rows[0];
+        parsedStudents.push({
+          name: name,
+          code: generateUniqueCode(usedCodes), // دالة توليد الرموز
+          grades: grades
+        });
+      }
 
-          // ── Column 0 = names (العمود الأول من اليمين) ──
-          // Build gradeColsInfo using actual indices to avoid misalignment
-          gradeColsInfo = [];
-          for (let j = 1; j < headerRow.length; j++) {
-            const h = String(headerRow[j] ?? '').trim();
-            gradeColsInfo.push({ header: h || `عمود ${j}`, colIndex: j });
-          }
+      // تحديث واجهة الإدارة بالنتائج
+      document.getElementById('file-name-display').textContent = file.name;
+      document.getElementById('row-count-display').textContent = `${parsedStudents.length} طالب | ${gradeColumns.length} عمود بيانات`;
+      document.getElementById('file-info-box').style.display = 'flex';
+      document.getElementById('next-2').disabled = false;
 
-          if (gradeColsInfo.length === 0) {
-            showErr('err-2', 'يجب أن يحتوي الملف على عمود الاسم + عمود واحد آخر على الأقل.');
-            return;
-          }
-
-          gradeColumns = gradeColsInfo.map(c => c.header);
-
-          // ── Generate unique codes ──
-          const usedCodes = new Set();
-          const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-          function genCode() {
-            let c;
-            do {
-              c = Array.from({length:6},
-                () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
-            } while (usedCodes.has(c));
-            usedCodes.add(c);
-            return c;
-          }
-
-          // ── Parse student rows (rows 1..N) ──
-          parsedStudents = [];
-          let skipped = 0;
-          for (let i = 1; i < rows.length; i++) {
-            const row  = rows[i];
-            const name = String(row[0] ?? '').trim();
-            if (!name) { skipped++; continue; }
-
-            // Use actual column indices for accurate extraction
-            const grades = {};
-            gradeColsInfo.forEach(({ header, colIndex }) => {
-              const val = row[colIndex];
-              grades[header] = (val !== undefined && val !== null && val !== '')
-                ? val : '---';
-            });
-
-            parsedStudents.push({ name, code: genCode(), grades });
-          }
-
-          if (parsedStudents.length === 0) {
-            showErr('err-2', 'لم يتم العثور على أي اسم طالب. تأكد أن العمود الأول يحتوي أسماء الطلاب.');
-            return;
-          }
-
-          // ── Show file info ──
-          document.getElementById('file-name-display').textContent = file.name;
-          document.getElementById('row-count-display').textContent =
-            `${parsedStudents.length} طالب | ${gradeColumns.length} عمود` +
-            (skipped > 0 ? ` | تم تجاوز ${skipped} صف فارغ` : '');
-          document.getElementById('file-info-box').style.display = 'flex';
-          document.getElementById('next-2').disabled = false;
-
-        } catch (err) {
-          showErr('err-2', `خطأ في قراءة الملف: ${err.message}`);
-        }
-      };
-      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      showErr('err-2', 'حدث خطأ أثناء قراءة الملف، تأكد من صيغة الإكسل.');
     }
+  };
+  reader.readAsArrayBuffer(file);
+}
 
     /* ==================== STEP 2 → 3 ==================== */
     document.getElementById('next-2').addEventListener('click', buildPreview);
@@ -881,24 +846,25 @@
     }
 
     /* ==================== EXCEL DOWNLOAD ==================== */
-    function downloadExcelWithCodes(students, cols, title) {
-      const headers = ['الاسم', 'الرمز السري', ...cols];
-      const rows = students.map(s => [
-        s.name, s.code,
-        ...cols.map(c => {
-          const v = s.grades?.[c];
-          return (v === undefined || v === null || v === '---') ? '' : v;
-        })
-      ]);
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      ws['!cols'] = [
-        { wch: 30 }, { wch: 14 },
-        ...cols.map(() => ({ wch: 16 }))
-      ];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'النتائج مع الرموز');
-      XLSX.writeFile(wb, `${title || 'كشف النتائج'} - مع الرموز.xlsx`);
-    }
+   function downloadExcelWithCodes(students, cols, title) {
+  // إعداد العناوين: الاسم، الرمز السري، ثم بقية أعمدة الإكسل الأصلي
+  const headers = ['الاسم', 'الرمز السري', ...cols];
+  
+  const rows = students.map(s => [
+    s.name, 
+    s.code,
+    ...cols.map(c => s.grades[c] === '---' ? '' : s.grades[c])
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  
+  // ضبط عرض الأعمدة تلقائياً
+  ws['!cols'] = [{ wch: 25 }, { wch: 15 }, ...cols.map(() => ({ wch: 12 }))];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'النتائج والرموز');
+  XLSX.writeFile(wb, `${title} - كشف الرموز.xlsx`);
+}
 
     /* ==================== BARCODE PRINT WINDOW ==================== */
     function openBarcodeWindow(students, title) {
