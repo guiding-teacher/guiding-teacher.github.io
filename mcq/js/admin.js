@@ -898,24 +898,94 @@ async function loadResultsSheets() {
 }
 
 // دالة البدء في إنشاء كشف جديد
-function showResultWizard() {
+ // استبدال دالة showResultWizard لإنشاء الحقول المفقودة ديناميكياً
+window.showResultWizard = function() {
     parsedStudents = [];
     gradeColumns = [];
 
-    // إعادة تعيين الحقول
+    // التأكد من وجود عناصر الحقول الإضافية في step-1-res
+    const step1 = document.getElementById('step-1-res');
+    if (step1) {
+        // التحقق من وجود حقل الوصف
+        if (!document.getElementById('sheet-description-res')) {
+            const descGroup = document.createElement('div');
+            descGroup.className = 'res-form-group';
+            descGroup.innerHTML = `
+                <label>وصف الكشف (يظهر للطالب أسفل العنوان)</label>
+                <textarea id="sheet-description-res" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف..."></textarea>
+            `;
+            // إدراجه بعد حقل العام الدراسي
+            const yearGroup = document.getElementById('sheet-year-res')?.closest('.res-form-group');
+            if (yearGroup && yearGroup.parentNode) {
+                yearGroup.parentNode.insertBefore(descGroup, yearGroup.nextSibling);
+            } else {
+                step1.appendChild(descGroup);
+            }
+        }
+
+        // التحقق من وجود حقل التاريخ والوقت
+        if (!document.getElementById('sheet-date-res')) {
+            const dateTimeGroup = document.createElement('div');
+            dateTimeGroup.className = 'res-form-grid';
+            dateTimeGroup.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;';
+            dateTimeGroup.innerHTML = `
+                <div class="res-form-group">
+                    <label>تاريخ إعلان النتيجة</label>
+                    <input type="date" id="sheet-date-res" class="res-input" style="color-scheme: light;">
+                </div>
+                <div class="res-form-group">
+                    <label>وقت الإعلان</label>
+                    <input type="time" id="sheet-time-res" class="res-input" style="color-scheme: light;">
+                </div>
+            `;
+            step1.appendChild(dateTimeGroup);
+        }
+
+        // التحقق من وجود حقل الملاحظات
+        if (!document.getElementById('sheet-notes-res')) {
+            const notesGroup = document.createElement('div');
+            notesGroup.className = 'res-form-group';
+            notesGroup.style.marginTop = '15px';
+            notesGroup.innerHTML = `
+                <label>ملاحظات إضافية للطلاب</label>
+                <textarea id="sheet-notes-res" class="res-input" rows="2" placeholder="أي تنبيهات أخرى تظهر عند الاستعلام..."></textarea>
+            `;
+            step1.appendChild(notesGroup);
+        }
+    }
+
+    // إعادة تعيين القيم (تصفير)
     const titleEl = document.getElementById('sheet-title-res');
     const teacherEl = document.getElementById('sheet-teacher-res');
+    const yearEl = document.getElementById('sheet-year-res');
+    const descEl = document.getElementById('sheet-description-res');
+    const dateEl = document.getElementById('sheet-date-res');
+    const timeEl = document.getElementById('sheet-time-res');
+    const notesEl = document.getElementById('sheet-notes-res');
+
     if (titleEl) titleEl.value = '';
     if (teacherEl) teacherEl.value = '';
+    if (yearEl) yearEl.value = '';
+    if (descEl) descEl.value = '';
+    if (notesEl) notesEl.value = '';
+
+    const now = new Date();
+    if (dateEl) dateEl.value = now.toISOString().split('T')[0];
+    if (timeEl) timeEl.value = now.toTimeString().slice(0, 5);
+
     const infoBox = document.getElementById('file-info-box-res');
     if (infoBox) infoBox.style.display = 'none';
     const next2 = document.getElementById('next-2-res');
     if (next2) next2.disabled = true;
 
-    document.getElementById('sheets-list-container-integrated').style.display = 'none';
-    document.getElementById('create-wizard-integrated').style.display = 'block';
+    const sheetsContainer = document.getElementById('sheets-list-container-integrated');
+    const wizardContainer = document.getElementById('create-wizard-integrated');
+    if (sheetsContainer) sheetsContainer.style.display = 'none';
+    if (wizardContainer) wizardContainer.style.display = 'block';
+
     goToResultStep(1);
-}
+};
+
 
 function goToResultStep(n) {
     [1, 2, 3, 4].forEach(i => {
@@ -1001,11 +1071,23 @@ function handleResultFileUpload(file) {
 }
 
 // ✅ FIX 3: حفظ شامل مع التحقق والتعامل مع الأخطاء
-async function saveResultSheet() {
+ // استبدال دالة saveResultSheet لاستخدام الحقول الجديدة
+window.saveResultSheet = async function() {
     const titleEl = document.getElementById('sheet-title-res');
     const teacherEl = document.getElementById('sheet-teacher-res');
+    const yearEl = document.getElementById('sheet-year-res');
+    const descEl = document.getElementById('sheet-description-res');
+    const dateEl = document.getElementById('sheet-date-res');
+    const timeEl = document.getElementById('sheet-time-res');
+    const notesEl = document.getElementById('sheet-notes-res');
+
     const title = titleEl ? titleEl.value.trim() : '';
     const teacher = teacherEl ? teacherEl.value.trim() : '';
+    const year = yearEl ? yearEl.value.trim() : '';
+    const description = descEl ? descEl.value.trim() : '';
+    const date = dateEl ? dateEl.value : '';
+    const time = timeEl ? timeEl.value : '';
+    const notes = notesEl ? notesEl.value.trim() : '';
 
     if (!title || !teacher) {
         alert("يرجى إدخال عنوان الكشف واسم المدرس قبل الحفظ.");
@@ -1029,6 +1111,11 @@ async function saveResultSheet() {
         await setDoc(sheetRef, {
             title,
             teacher,
+            year,
+            description,
+            date,
+            time,
+            notes,
             adminId: currentAdminId,
             studentCount: parsedStudents.length,
             gradeColumns,
@@ -1041,7 +1128,6 @@ async function saveResultSheet() {
         const linkInput = document.getElementById('sheet-link-display-res');
         if (linkInput) linkInput.value = link;
 
-        // حفظ البيانات لاستخدامها في أزرار التنزيل بالخطوة 4
         window._lastSavedSheetData = {
             id: sheetRef.id, title, teacher,
             students: parsedStudents,
@@ -1055,7 +1141,7 @@ async function saveResultSheet() {
     } finally {
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 حفظ وإنشاء الرابط'; }
     }
-}
+};
 
 // ✅ FIX 4: ربط الأزرار مع إصلاح الأزرار المفقودة (prev-3-res, copy-link-btn-res)
 function setupResultEventListeners() {
@@ -1237,6 +1323,109 @@ window.deleteResultSheet = async (id) => {
         }
     }
 };
+
+function setupResultEventListeners() {
+    const createBtn = document.getElementById('create-new-btn-integrated');
+    if (createBtn) createBtn.onclick = window.showResultWizard;
+
+    const backBtn = document.getElementById('back-to-list-btn-integrated');
+    if (backBtn) backBtn.onclick = () => {
+        const sheetsContainer = document.getElementById('sheets-list-container-integrated');
+        const wizardContainer = document.getElementById('create-wizard-integrated');
+        if (sheetsContainer) sheetsContainer.style.display = 'block';
+        if (wizardContainer) wizardContainer.style.display = 'none';
+        loadResultsSheets();
+    };
+
+    const next1 = document.getElementById('next-1-res');
+    if (next1) next1.onclick = () => {
+        const title = document.getElementById('sheet-title-res')?.value.trim();
+        const teacher = document.getElementById('sheet-teacher-res')?.value.trim();
+        if (!title || !teacher) {
+            alert('الرجاء ملء عنوان الكشف واسم المدرس قبل المتابعة.');
+            return;
+        }
+        goToResultStep(2);
+    };
+
+    const prev2 = document.getElementById('prev-2-res');
+    if (prev2) prev2.onclick = () => goToResultStep(1);
+
+    const next2 = document.getElementById('next-2-res');
+    if (next2) next2.onclick = () => {
+        if (parsedStudents.length === 0) {
+            alert('يرجى رفع ملف إكسل أولاً.');
+            return;
+        }
+        const thead = document.getElementById('preview-thead-res');
+        if (thead) {
+            thead.innerHTML = `<tr>
+                <th>#</th><th>اسم الطالب</th><th>الرمز السري</th>
+                ${gradeColumns.map(c => `<th>${escHtmlRes(c)}</th>`).join('')}
+            </tr>`;
+        }
+        const tbody = document.getElementById('preview-tbody-res');
+        if (tbody) {
+            const previewRows = parsedStudents.slice(0, 10).map((s, i) =>
+                `<tr>
+                    <td>${i + 1}</td>
+                    <td>${escHtmlRes(s.name)}</td>
+                    <td><span style="font-family:monospace;letter-spacing:3px;font-weight:700;color:#1d4ed8;">${s.code}</span></td>
+                    ${gradeColumns.map(c => `<td>${escHtmlRes(String(s.grades[c] ?? '---'))}</td>`).join('')}
+                </tr>`
+            ).join('');
+            const extraRow = parsedStudents.length > 10
+                ? `<tr><td colspan="${gradeColumns.length + 3}" style="text-align:center;color:#94a3b8;padding:10px;">... و ${parsedStudents.length - 10} طالب آخر غير معروض</td></tr>`
+                : '';
+            tbody.innerHTML = previewRows + extraRow;
+        }
+        goToResultStep(3);
+    };
+
+    const prev3 = document.getElementById('prev-3-res');
+    if (prev3) prev3.onclick = () => goToResultStep(2);
+
+    const saveBtn = document.getElementById('save-btn-res');
+    if (saveBtn) saveBtn.onclick = window.saveResultSheet;
+
+    const copyLinkBtn = document.getElementById('copy-link-btn-res');
+    if (copyLinkBtn) {
+        copyLinkBtn.onclick = () => {
+            const val = document.getElementById('sheet-link-display-res')?.value;
+            if (!val) return;
+            navigator.clipboard.writeText(val)
+                .then(() => alert('✅ تم نسخ الرابط!'))
+                .catch(() => {
+                    const ta = document.createElement('textarea');
+                    ta.value = val;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    alert('✅ تم نسخ الرابط!');
+                });
+        };
+    }
+
+    const finishBtn = document.getElementById('finish-wizard-btn-res');
+    if (finishBtn) finishBtn.onclick = () => {
+        const sheetsContainer = document.getElementById('sheets-list-container-integrated');
+        const wizardContainer = document.getElementById('create-wizard-integrated');
+        if (sheetsContainer) sheetsContainer.style.display = 'block';
+        if (wizardContainer) wizardContainer.style.display = 'none';
+        loadResultsSheets();
+    };
+
+    const uploadZone = document.getElementById('upload-zone-res');
+    const fileInput = document.getElementById('excel-file-input-res');
+    if (uploadZone && fileInput) {
+        uploadZone.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => handleResultFileUpload(e.target.files[0]);
+    }
+}
+
 
 // =================================================================
 // --- Global Window Functions ---
