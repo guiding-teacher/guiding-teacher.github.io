@@ -1,7 +1,5 @@
 <!-- ===================================================
-     results-lookup.html  —  v2
-     إصلاحات: جدول أفقي كامل | إزالة عدد الأعمدة |
-     عرض الملاحظات | وصف الكشف | الوقت في البيانات
+     results-lookup.html  —  v3 (إظهار الوصف والتاريخ والوقت)
      =================================================== -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -11,582 +9,170 @@
   <title>الاستعلام عن النتيجة</title>
   <link rel="stylesheet" href="css/results-style.css">
   <style>
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50%       { transform: translateY(-6px); }
-    }
-    .hero-icon {
-      font-size: 3em; display: block;
-      margin-bottom: 12px;
-      animation: float 3s ease-in-out infinite;
-    }
-
-    /* Stars */
-    .stars-bg { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-    .star {
-      position:absolute; width:2px; height:2px;
-      background:rgba(255,255,255,0.4); border-radius:50%;
-      animation:twinkle 3s infinite;
-    }
-    @keyframes twinkle {
-      0%,100% { opacity:0.3; transform:scale(1); }
-      50%     { opacity:1;   transform:scale(1.4); }
-    }
-
-    /* Loading overlay */
-    .page-loading {
-      position:fixed; inset:0; background:#080d1a;
-      display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      z-index:500; transition:opacity .5s,visibility .5s;
-    }
-    .page-loading.hidden { opacity:0; visibility:hidden; }
-    .page-loading .big-spinner {
-      width:52px; height:52px;
-      border:5px solid rgba(96,165,250,.2);
-      border-top-color:#60a5fa; border-radius:50%;
-      animation:spin .85s linear infinite; margin-bottom:20px;
-    }
-    .page-loading p { color:#64748b; font-family:'Cairo',sans-serif; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-
-    /* Error page */
-    .error-page {
-      min-height:100vh; display:flex; flex-direction:column;
-      align-items:center; justify-content:center;
-      text-align:center; padding:40px 24px;
-      font-family:'Cairo',sans-serif; background:#080d1a; color:#64748b;
-    }
-    .error-page .err-icon { font-size:4em; margin-bottom:16px; }
-    .error-page h2 { color:#f87171; margin-bottom:10px; }
-
-    @keyframes shake {
-      0%,100% { transform:translateX(0); }
-      20%     { transform:translateX(-8px); }
-      40%     { transform:translateX(8px); }
-      60%     { transform:translateX(-6px); }
-      80%     { transform:translateX(6px); }
-    }
-
-    /* ── Hero description ───────────────────────── */
+    /* نفس الأنماط السابقة مع التأكد من ظهور hero-description */
     .hero-description {
-      color: #94a3b8;
-      font-size: 0.9em;
-      margin: 6px 0 0;
+      color: #cbd5e1;
+      font-size: 0.95em;
+      margin: 8px 0 0;
       font-style: italic;
+      background: rgba(0,0,0,0.2);
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
     }
-
-    /* ── Horizontal grades table ────────────────── */
-    .grades-h-wrap {
-      width: 100%;
-      overflow-x: auto;
-      border-radius: 12px;
-      -webkit-overflow-scrolling: touch;
+    .hero-meta-item .meta-value.time-value {
+      direction: ltr;
+      font-family: monospace;
     }
-    .grades-h-table {
-      width: 100%;
-      min-width: max-content;
-      border-collapse: collapse;
-      font-family: 'Cairo', sans-serif;
-      font-size: 0.92em;
-    }
-    .grades-h-table thead tr {
-      background: rgba(30,64,175,0.4);
-    }
-    .grades-h-table thead th {
-      padding: 11px 16px;
-      color: #93c5fd;
-      font-weight: 700;
-      text-align: center;
-      border-bottom: 2px solid rgba(96,165,250,0.3);
-      white-space: nowrap;
-    }
-    .grades-h-table tbody tr {
-      animation: rowIn 0.4s ease both;
-    }
-    .grades-h-table tbody td {
-      padding: 11px 16px;
-      text-align: center;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      color: #e2e8f0;
-      white-space: nowrap;
-    }
-    .grades-h-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-    .grade-cell.high  { color: #34d399; font-weight: 800; }
-    .grade-cell.mid   { color: #fbbf24; font-weight: 700; }
-    .grade-cell.low   { color: #f87171; font-weight: 700; }
-
-    @keyframes rowIn {
-      from { opacity:0; transform:translateX(20px); }
-      to   { opacity:1; transform:translateX(0); }
-    }
-
-    /* Print */
-    @media print {
-      .lookup-body > *:not(#printable-result) { display:none !important; }
-      #printable-result { position:static !important; overflow:visible !important; padding:0 !important; }
-      .print-actions { display:none !important; }
-    }
-
-    /* Print horizontal table */
-    .print-h-wrap { width:100%; overflow:visible; }
-    .print-h-table {
-      width:100%; border-collapse:collapse;
-      font-size:0.9em; font-family:'Cairo',sans-serif;
-    }
-    .print-h-table th {
-      background:#1e40af; color:white;
-      padding:9px 12px; text-align:center;
-      font-weight:700; border:1px solid #1e40af;
-    }
-    .print-h-table td {
-      padding:9px 12px; text-align:center;
-      border:1px solid #e2e8f0;
-    }
-    .print-h-table tbody tr:nth-child(even) td { background:#f8fafc; }
   </style>
 </head>
 <body class="lookup-body">
 
   <div class="stars-bg" id="stars-bg"></div>
+  <div class="page-loading" id="page-loading"><div class="big-spinner"></div><p>جاري تحميل بيانات الكشف...</p></div>
+  <div class="error-page" id="error-page" style="display:none;"><div class="err-icon">⚠️</div><h2>تعذّر تحميل الكشف</h2><p id="error-page-msg"></p></div>
 
-  <div class="page-loading" id="page-loading">
-    <div class="big-spinner"></div>
-    <p>جاري تحميل بيانات الكشف...</p>
-  </div>
-
-  <div class="error-page" id="error-page" style="display:none;">
-    <div class="err-icon">⚠️</div>
-    <h2>تعذّر تحميل الكشف</h2>
-    <p id="error-page-msg">هذا الرابط غير صالح أو تم حذف الكشف.</p>
-  </div>
-
-  <!-- ===== HERO ===== -->
-  <div class="lookup-hero" id="lookup-hero" style="display:none; position:relative; z-index:1;">
+  <div class="lookup-hero" id="lookup-hero" style="display:none;">
     <div class="lookup-hero-content">
       <span class="hero-icon">📊</span>
       <h1 id="hero-title">---</h1>
       <p class="hero-description" id="hero-description" style="display:none;"></p>
       <p class="lookup-hero-sub" id="hero-sub"></p>
-
       <div class="hero-meta" id="hero-meta"></div>
-
-      <div class="lookup-notes-banner" id="notes-banner" style="display:none;">
-        <span>📌</span>
-        <span id="notes-text"></span>
-      </div>
+      <div class="lookup-notes-banner" id="notes-banner" style="display:none;"><span>📌</span><span id="notes-text"></span></div>
     </div>
   </div>
 
-  <!-- ===== MAIN ===== -->
-  <div class="lookup-main" id="lookup-main" style="display:none; position:relative; z-index:1;">
-
-    <!-- Lookup Form -->
+  <div class="lookup-main" id="lookup-main" style="display:none;">
     <div class="lookup-card" id="lookup-form-card">
       <div class="lookup-card-title">🔍 الاستعلام عن نتيجتك</div>
-
-      <div class="lookup-input-group">
-        <label>الاسم الكامل</label>
-        <input type="text" class="lookup-input" id="inp-name"
-          placeholder="اكتب اسمك كما هو في الكشف..."
-          autocomplete="off" spellcheck="false">
-      </div>
-
-      <div class="lookup-input-group">
-        <label>الرمز السري</label>
-        <input type="text" class="lookup-input code-input" id="inp-code"
-          placeholder="XXXXXX" maxlength="6"
-          autocomplete="off" spellcheck="false">
-      </div>
-
+      <div class="lookup-input-group"><label>الاسم الكامل</label><input type="text" class="lookup-input" id="inp-name" placeholder="اكتب اسمك كما هو في الكشف..." autocomplete="off"></div>
+      <div class="lookup-input-group"><label>الرمز السري</label><input type="text" class="lookup-input code-input" id="inp-code" placeholder="XXXXXX" maxlength="6" autocomplete="off"></div>
       <div class="lookup-error" id="lookup-error"></div>
-
-      <button class="lookup-btn" id="lookup-btn">
-        🔍 &nbsp;استعلام عن نتيجتي
-      </button>
-
+      <button class="lookup-btn" id="lookup-btn">🔍 &nbsp;استعلام عن نتيجتي</button>
       <div class="lookup-divider"></div>
-
-      <p style="text-align:center; font-size:0.82em; color:#334155; margin:0;">
-        الرمز السري مكوّن من 6 أحرف وأرقام — تجده في البطاقة التي وزّعها عليك المشرف.
-      </p>
+      <p style="text-align:center; font-size:0.82em; color:#334155;">الرمز السري مكوّن من 6 أحرف وأرقام — تجده في البطاقة التي وزّعها عليك المشرف.</p>
     </div>
 
-    <!-- Results Section -->
     <div class="results-section" id="results-section">
-      <div class="lookup-card" style="padding:0; overflow:hidden; border-radius:18px;">
-
-        <div class="result-header-card">
-          <h3 id="res-student-name">---</h3>
-          <p>نتائج كشف: <strong id="res-sheet-title">---</strong></p>
-        </div>
-
+      <div class="lookup-card" style="padding:0; overflow:hidden;">
+        <div class="result-header-card"><h3 id="res-student-name">---</h3><p>نتائج كشف: <strong id="res-sheet-title">---</strong></p></div>
         <div class="result-body-card">
-
-          <!-- ── Horizontal table (all Excel columns) ── -->
-          <div class="grades-h-wrap">
-            <table class="grades-h-table">
-              <thead id="grades-thead"></thead>
-              <tbody id="grades-tbody"></tbody>
-            </table>
-          </div>
-
-          <button class="result-action-btn result-download-btn" id="download-btn" style="margin-top:18px;">
-            ⬇️ &nbsp;تنزيل / طباعة نتيجتي
-          </button>
-
-          <button class="result-action-btn result-reset-btn" id="reset-btn"
-            style="border:1px solid rgba(255,255,255,0.1);">
-            🔄 &nbsp;استعلام آخر
-          </button>
-
+          <div class="grades-h-wrap"><table class="grades-h-table"><thead id="grades-thead"></thead><tbody id="grades-tbody"></tbody></table></div>
+          <button class="result-action-btn result-download-btn" id="download-btn">⬇️ &nbsp;تنزيل / طباعة نتيجتي</button>
+          <button class="result-action-btn result-reset-btn" id="reset-btn" style="border:1px solid rgba(255,255,255,0.1);">🔄 &nbsp;استعلام آخر</button>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- ===== PRINTABLE OVERLAY ===== -->
-  <div id="printable-result">
-    <div class="print-result-inner">
-
-      <div class="print-result-header">
-        <h2 id="pr-title">---</h2>
-        <p id="pr-description" style="opacity:0.75; font-size:0.85em; margin:4px 0 0; font-style:italic;"></p>
-        <p id="pr-teacher">---</p>
-        <p id="pr-date" style="opacity:0.7; font-size:0.85em; margin-top:4px;"></p>
-      </div>
-
-      <div class="print-result-body">
-
-        <div class="print-student-box">
-          <div class="label">اسم الطالب</div>
-          <div class="name" id="pr-student-name">---</div>
-        </div>
-
-        <!-- Horizontal print table -->
-        <div class="print-h-wrap">
-          <table class="print-h-table">
-            <thead id="pr-grades-thead"></thead>
-            <tbody id="pr-grades-tbody"></tbody>
-          </table>
-        </div>
-
-        <div class="print-notes-box" id="pr-notes" style="display:none;"></div>
-
-        <div class="print-footer">
-          <span>تم إنشاؤه إلكترونياً — للتحقق راجع المشرف</span>
-          <span id="pr-gen-date"></span>
-        </div>
-      </div>
-
-      <div class="print-actions">
-        <button style="background:#1d4ed8; color:white;" onclick="window.print()">
-          🖨️ طباعة
-        </button>
-        <button style="background:#6b7280; color:white;"
-          onclick="document.getElementById('printable-result').style.display='none'">
-          ✕ إغلاق
-        </button>
-      </div>
-
-    </div>
-  </div>
+  <div id="printable-result"><div class="print-result-inner"><div class="print-result-header"><h2 id="pr-title">---</h2><p id="pr-description" style="opacity:0.75; font-size:0.85em; margin:4px 0 0; font-style:italic;"></p><p id="pr-teacher">---</p><p id="pr-date" style="opacity:0.7; font-size:0.85em; margin-top:4px;"></p></div><div class="print-result-body"><div class="print-student-box"><div class="label">اسم الطالب</div><div class="name" id="pr-student-name">---</div></div><div class="print-h-wrap"><table class="print-h-table"><thead id="pr-grades-thead"></thead><tbody id="pr-grades-tbody"></tbody></table></div><div class="print-notes-box" id="pr-notes" style="display:none;"></div><div class="print-footer"><span>تم إنشاؤه إلكترونياً — للتحقق راجع المشرف</span><span id="pr-gen-date"></span></div></div><div class="print-actions"><button style="background:#1d4ed8; color:white;" onclick="window.print()">🖨️ طباعة</button><button style="background:#6b7280; color:white;" onclick="document.getElementById('printable-result').style.display='none'">✕ إغلاق</button></div></div></div>
 
   <script type="module">
     import { db } from './js/firebase-config.js';
-    import { doc, getDoc }
-      from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    /* ===================== STATE ===================== */
-    let sheetData    = null;
-    let foundStudent = null;
+    let sheetData = null, foundStudent = null;
 
-    /* ===================== STARS ===================== */
-    (function buildStars() {
-      const bg = document.getElementById('stars-bg');
-      for (let i = 0; i < 80; i++) {
-        const s = document.createElement('div');
-        s.className = 'star';
-        s.style.cssText = `
-          left:${Math.random()*100}%;top:${Math.random()*100}%;
-          animation-delay:${Math.random()*4}s;
-          animation-duration:${2+Math.random()*4}s;
-          width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;
-          opacity:${0.2+Math.random()*0.5};`;
-        bg.appendChild(s);
-      }
-    })();
+    (function buildStars() { const bg = document.getElementById('stars-bg'); for (let i = 0; i < 80; i++) { const s = document.createElement('div'); s.className = 'star'; s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*4}s;width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;opacity:${0.2+Math.random()*0.5};`; bg.appendChild(s); } })();
 
-    /* ===================== LOAD SHEET ===================== */
     const urlParams = new URLSearchParams(window.location.search);
-    const sheetId   = urlParams.get('sheet');
+    const sheetId = urlParams.get('sheet');
 
     async function loadSheet() {
       const loadOverlay = document.getElementById('page-loading');
-      const errPage     = document.getElementById('error-page');
-      const hero        = document.getElementById('lookup-hero');
-      const main        = document.getElementById('lookup-main');
-
-      if (!sheetId) {
-        loadOverlay.classList.add('hidden');
-        setTimeout(() => { errPage.style.display = 'flex'; }, 500);
-        document.getElementById('error-page-msg').textContent =
-          'رابط غير صالح — لا يحتوي على معرّف كشف.';
-        return;
-      }
-
+      const errPage = document.getElementById('error-page');
+      const hero = document.getElementById('lookup-hero');
+      const main = document.getElementById('lookup-main');
+      if (!sheetId) { loadOverlay.classList.add('hidden'); setTimeout(() => { errPage.style.display = 'flex'; }, 500); document.getElementById('error-page-msg').textContent = 'رابط غير صالح — لا يحتوي على معرّف كشف.'; return; }
       try {
         const snap = await getDoc(doc(db, "result_sheets", sheetId));
-
-        if (!snap.exists()) {
-          loadOverlay.classList.add('hidden');
-          setTimeout(() => { errPage.style.display = 'flex'; }, 500);
-          document.getElementById('error-page-msg').textContent =
-            'هذا الكشف غير موجود أو تم حذفه من قِبل المشرف.';
-          return;
-        }
-
+        if (!snap.exists()) { loadOverlay.classList.add('hidden'); setTimeout(() => { errPage.style.display = 'flex'; }, 500); document.getElementById('error-page-msg').textContent = 'هذا الكشف غير موجود أو تم حذفه من قِبل المشرف.'; return; }
         sheetData = snap.data();
-
-        // ── Populate hero ──
-        // ابحث عن الجزء الخاص بـ Populate hero داخل دالة loadSheet واستبدله بهذا:
-document.getElementById('hero-title').textContent = sheetData.title;
-document.title = `الاستعلام عن النتيجة — ${sheetData.title}`;
-
-const descEl = document.getElementById('hero-description');
-if (sheetData.description) {
-  descEl.textContent = sheetData.description;
-  descEl.style.display = 'block'; // تأكد من أنه سيظهر
-} else {
-  descEl.style.display = 'none';
-}
-
+        document.getElementById('hero-title').textContent = sheetData.title;
+        document.title = `الاستعلام عن النتيجة — ${sheetData.title}`;
+        const descEl = document.getElementById('hero-description');
+        if (sheetData.description) { descEl.textContent = sheetData.description; descEl.style.display = 'block'; } else { descEl.style.display = 'none'; }
         const yearText = sheetData.year ? ` | ${sheetData.year}` : '';
         document.getElementById('hero-sub').textContent = `كشف نتائج رسمي${yearText}`;
-
-        // ── Meta items (بدون عدد الأعمدة) ──
         const timeText = sheetData.time ? ` ${sheetData.time}` : '';
         const metaItems = [
-          { emoji: '👨‍🏫', label: 'المدرس',     value: sheetData.teacher },
-          { emoji: '📅', label: 'التاريخ',    value: (sheetData.date || '---') + timeText },
+          { emoji: '👨‍🏫', label: 'المدرس', value: sheetData.teacher },
+          { emoji: '📅', label: 'التاريخ', value: (sheetData.date || '---') + timeText },
           { emoji: '👥', label: 'عدد الطلاب', value: sheetData.studentCount || '---' }
         ];
-
-        document.getElementById('hero-meta').innerHTML = metaItems.map(m => `
-          <div class="hero-meta-item">
-            <span class="meta-emoji">${m.emoji}</span>
-            <div>
-              <div class="meta-label">${m.label}</div>
-              <div class="meta-value">${escHtml(String(m.value))}</div>
-            </div>
-          </div>`).join('');
-
-        // ── Notes banner ──
-        if (sheetData.notes) {
-          document.getElementById('notes-text').textContent = sheetData.notes;
-          document.getElementById('notes-banner').style.display = 'inline-flex';
-        }
-
+        document.getElementById('hero-meta').innerHTML = metaItems.map(m => `<div class="hero-meta-item"><span class="meta-emoji">${m.emoji}</span><div><div class="meta-label">${m.label}</div><div class="meta-value ${m.label === 'التاريخ' ? 'time-value' : ''}">${escHtml(String(m.value))}</div></div></div>`).join('');
+        if (sheetData.notes) { document.getElementById('notes-text').textContent = sheetData.notes; document.getElementById('notes-banner').style.display = 'inline-flex'; }
         loadOverlay.classList.add('hidden');
-        setTimeout(() => {
-          hero.style.display = 'block';
-          main.style.display = 'block';
-        }, 400);
-
-      } catch (err) {
-        loadOverlay.classList.add('hidden');
-        setTimeout(() => { errPage.style.display = 'flex'; }, 500);
-        document.getElementById('error-page-msg').textContent =
-          `حدث خطأ أثناء تحميل البيانات: ${err.message}`;
-      }
+        setTimeout(() => { hero.style.display = 'block'; main.style.display = 'block'; }, 400);
+      } catch (err) { loadOverlay.classList.add('hidden'); setTimeout(() => { errPage.style.display = 'flex'; }, 500); document.getElementById('error-page-msg').textContent = `حدث خطأ أثناء تحميل البيانات: ${err.message}`; }
     }
-
     loadSheet();
 
-    /* ===================== LOOKUP ===================== */
     function lookup() {
       if (!sheetData) return;
-
       const nameInput = document.getElementById('inp-name').value.trim();
       const codeInput = document.getElementById('inp-code').value.trim().toUpperCase();
-      const errEl     = document.getElementById('lookup-error');
-      const btn       = document.getElementById('lookup-btn');
-
+      const errEl = document.getElementById('lookup-error');
+      const btn = document.getElementById('lookup-btn');
       errEl.textContent = '';
-
-      if (!nameInput) {
-        errEl.textContent = '⚠️ الرجاء إدخال الاسم الكامل.';
-        document.getElementById('inp-name').focus();
-        return;
-      }
-      if (!codeInput || codeInput.length < 4) {
-        errEl.textContent = '⚠️ الرجاء إدخال الرمز السري.';
-        document.getElementById('inp-code').focus();
-        return;
-      }
-
-      btn.disabled  = true;
-      btn.innerHTML = `<span class="spinner"></span> جاري البحث...`;
-
+      if (!nameInput) { errEl.textContent = '⚠️ الرجاء إدخال الاسم الكامل.'; document.getElementById('inp-name').focus(); return; }
+      if (!codeInput || codeInput.length < 4) { errEl.textContent = '⚠️ الرجاء إدخال الرمز السري.'; document.getElementById('inp-code').focus(); return; }
+      btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> جاري البحث...`;
       setTimeout(() => {
-        btn.disabled  = false;
-        btn.innerHTML = '🔍 &nbsp;استعلام عن نتيجتي';
-
+        btn.disabled = false; btn.innerHTML = '🔍 &nbsp;استعلام عن نتيجتي';
         const studentRecord = (sheetData.studentsByCode || {})[codeInput];
-
-        if (!studentRecord) {
-          errEl.textContent = '❌ الرمز السري غير صحيح. تأكد من الرمز الموجود على بطاقتك.';
-          shakeInput('inp-code');
-          return;
-        }
-
+        if (!studentRecord) { errEl.textContent = '❌ الرمز السري غير صحيح. تأكد من الرمز الموجود على بطاقتك.'; shakeInput('inp-code'); return; }
         const normalize = s => s.toLowerCase().replace(/\s+/g,' ').trim();
-        if (normalize(nameInput) !== normalize(studentRecord.name)) {
-          errEl.textContent = '❌ الاسم لا يتطابق مع الرمز السري. تأكد من كتابة اسمك كما هو في الكشف.';
-          shakeInput('inp-name');
-          return;
-        }
-
+        if (normalize(nameInput) !== normalize(studentRecord.name)) { errEl.textContent = '❌ الاسم لا يتطابق مع الرمز السري. تأكد من كتابة اسمك كما هو في الكشف.'; shakeInput('inp-name'); return; }
         foundStudent = { name: studentRecord.name, code: codeInput, grades: studentRecord.grades };
         displayResults();
-
       }, 600);
     }
 
-    /* ===================== DISPLAY RESULTS (horizontal table) ===================== */
     function displayResults() {
-  if (!foundStudent || !sheetData) return;
-
-  // تعبئة النصوص الأساسية
-  document.getElementById('res-student-name').textContent = foundStudent.name;
-  document.getElementById('res-sheet-title').textContent  = sheetData.title;
-
-  const cols = sheetData.gradeColumns || [];
-  const thead = document.getElementById('grades-thead');
-  const tbody = document.getElementById('grades-tbody');
-
-  // 1. بناء رؤوس الجدول (العناوين الأفقية)
-  thead.innerHTML = `<tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
-
-  // 2. بناء صف الدرجات مع تلوين الدرجة حسب القيمة
-  const dataCells = cols.map(col => {
-    const val = foundStudent.grades[col] ?? '---';
-    const num = parseFloat(val);
-    let cls = '';
-    
-    // تصنيف الألوان (ممتاز، متوسط، ضعيف)
-    if (!isNaN(num)) {
-      if (num >= 75) cls = 'high';
-      else if (num >= 50) cls = 'mid';
-      else cls = 'low';
-    }
-    
-    return `<td class="grade-cell ${cls}">${escHtml(String(val))}</td>`;
-  }).join('');
-
-  tbody.innerHTML = `<tr>${dataCells}</tr>`;
-
-  // إظهار النتائج بسلاسة
-  const resSection = document.getElementById('results-section');
-  resSection.classList.add('visible');
-  resSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-    /* ===================== PRINT OVERLAY ===================== */
-  function showPrintOverlay() {
-  if (!foundStudent || !sheetData) return;
-
-  // 1. العنوان والوصف
-  document.getElementById('pr-title').textContent = sheetData.title || 'كشف نتائج رسمي';
-  const prDesc = document.getElementById('pr-description');
-  if (sheetData.description) {
-    prDesc.textContent = sheetData.description;
-    prDesc.style.display = 'block';
-  } else {
-    prDesc.style.display = 'none';
-  }
-
-  // 2. اسم الطالب (المربع الذي كان يظهر فيه ---)
-  document.getElementById('pr-student-name').textContent = foundStudent.name;
-
-  // 3. المدرس والتاريخ
-  document.getElementById('pr-teacher').textContent = `المدرس: ${sheetData.teacher || '---'}`;
-  const dateStr = sheetData.date ? `بتاريخ: ${sheetData.date}` : '';
-  const timeStr = sheetData.time ? ` الوقت: ${sheetData.time}` : '';
-  document.getElementById('pr-date').textContent = `${dateStr} ${timeStr}`;
-  
-  document.getElementById('pr-gen-date').textContent = `تاريخ الاستعلام: ${new Date().toLocaleDateString('ar-IQ')}`;
-
-  // 4. بناء الجدول الأفقي للدرجات في الطباعة
-  const cols = sheetData.gradeColumns || [];
-  document.getElementById('pr-grades-thead').innerHTML = `
-    <tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>
-  `;
-
-  const printCells = cols.map(col => {
-    const val = foundStudent.grades[col] ?? '---';
-    return `<td>${escHtml(String(val))}</td>`;
-  }).join('');
-  document.getElementById('pr-grades-tbody').innerHTML = `<tr>${printCells}</tr>`;
-
-  // 5. الملاحظات
-  const prNotes = document.getElementById('pr-notes');
-  if (sheetData.notes) {
-    prNotes.textContent = `ملاحظات إضافية: ${sheetData.notes}`;
-    prNotes.style.display = 'block';
-  } else {
-    prNotes.style.display = 'none';
-  }
-
-  // إظهار نافذة الطباعة
-  document.getElementById('printable-result').style.display = 'block';
-}
-
-    /* ===================== RESET ===================== */
-    function resetLookup() {
-      document.getElementById('results-section').classList.remove('visible');
-      document.getElementById('inp-name').value  = '';
-      document.getElementById('inp-code').value  = '';
-      document.getElementById('lookup-error').textContent = '';
-      foundStudent = null;
-      window.scrollTo({ top:0, behavior:'smooth' });
+      if (!foundStudent || !sheetData) return;
+      document.getElementById('res-student-name').textContent = foundStudent.name;
+      document.getElementById('res-sheet-title').textContent = sheetData.title;
+      const cols = sheetData.gradeColumns || [];
+      document.getElementById('grades-thead').innerHTML = `<tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
+      const tbody = document.getElementById('grades-tbody');
+      const dataCells = cols.map(col => { const val = foundStudent.grades[col] ?? '---'; const num = parseFloat(val); let cls = ''; if (!isNaN(num)) { if (num >= 75) cls = 'high'; else if (num >= 50) cls = 'mid'; else cls = 'low'; } return `<td class="grade-cell ${cls}">${escHtml(String(val))}</td>`; }).join('');
+      tbody.innerHTML = `<tr>${dataCells}</tr>`;
+      const resSection = document.getElementById('results-section');
+      resSection.classList.add('visible');
+      resSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    /* ===================== HELPERS ===================== */
-    function shakeInput(id) {
-      const el = document.getElementById(id);
-      el.style.borderColor = '#f87171';
-      el.style.animation   = 'none';
-      setTimeout(() => { el.style.animation = 'shake 0.4s ease'; el.focus(); }, 10);
-      setTimeout(() => { el.style.animation = ''; el.style.borderColor = ''; }, 800);
+    function showPrintOverlay() {
+      if (!foundStudent || !sheetData) return;
+      document.getElementById('pr-title').textContent = sheetData.title || 'كشف نتائج رسمي';
+      const prDesc = document.getElementById('pr-description');
+      if (sheetData.description) { prDesc.textContent = sheetData.description; prDesc.style.display = 'block'; } else { prDesc.style.display = 'none'; }
+      document.getElementById('pr-student-name').textContent = foundStudent.name;
+      document.getElementById('pr-teacher').textContent = `المدرس: ${sheetData.teacher || '---'}`;
+      const dateStr = sheetData.date ? `بتاريخ: ${sheetData.date}` : '';
+      const timeStr = sheetData.time ? ` الوقت: ${sheetData.time}` : '';
+      document.getElementById('pr-date').textContent = `${dateStr} ${timeStr}`;
+      document.getElementById('pr-gen-date').textContent = `تاريخ الاستعلام: ${new Date().toLocaleDateString('ar-IQ')}`;
+      const cols = sheetData.gradeColumns || [];
+      document.getElementById('pr-grades-thead').innerHTML = `<tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>`;
+      const printCells = cols.map(col => { const val = foundStudent.grades[col] ?? '---'; return `<td>${escHtml(String(val))}</td>`; }).join('');
+      document.getElementById('pr-grades-tbody').innerHTML = `<tr>${printCells}</tr>`;
+      const prNotes = document.getElementById('pr-notes');
+      if (sheetData.notes) { prNotes.textContent = `ملاحظات إضافية: ${sheetData.notes}`; prNotes.style.display = 'block'; } else { prNotes.style.display = 'none'; }
+      document.getElementById('printable-result').style.display = 'block';
     }
 
-    function escHtml(str) {
-      return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
+    function resetLookup() { document.getElementById('results-section').classList.remove('visible'); document.getElementById('inp-name').value = ''; document.getElementById('inp-code').value = ''; document.getElementById('lookup-error').textContent = ''; foundStudent = null; window.scrollTo({ top:0, behavior:'smooth' }); }
+    function shakeInput(id) { const el = document.getElementById(id); el.style.borderColor = '#f87171'; el.style.animation = 'none'; setTimeout(() => { el.style.animation = 'shake 0.4s ease'; el.focus(); }, 10); setTimeout(() => { el.style.animation = ''; el.style.borderColor = ''; }, 800); }
+    function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    /* ===================== EVENT LISTENERS ===================== */
     document.getElementById('lookup-btn').addEventListener('click', lookup);
     document.getElementById('download-btn').addEventListener('click', showPrintOverlay);
     document.getElementById('reset-btn').addEventListener('click', resetLookup);
-
-    ['inp-name','inp-code'].forEach(id => {
-      document.getElementById(id).addEventListener('keydown', e => {
-        if (e.key === 'Enter') lookup();
-      });
-    });
-
-    document.getElementById('inp-code').addEventListener('input', e => {
-      const pos = e.target.selectionStart;
-      e.target.value = e.target.value.toUpperCase();
-      e.target.setSelectionRange(pos, pos);
-    });
+    ['inp-name','inp-code'].forEach(id => { document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') lookup(); }); });
+    document.getElementById('inp-code').addEventListener('input', e => { const pos = e.target.selectionStart; e.target.value = e.target.value.toUpperCase(); e.target.setSelectionRange(pos, pos); });
   </script>
-
 </body>
 </html>
