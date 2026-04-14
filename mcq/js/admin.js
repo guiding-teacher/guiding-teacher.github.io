@@ -811,10 +811,8 @@ let gradeColumns = [];
 let allSheetsCache = {};
 
 // دالة مساعدة لتشفير HTML
-function escHtmlRes(str) {
-    return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+ function escHtmlRes(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ✅ FIX 1: الدالة الآن تستبدل محتوى الحاوية دائماً - لا تترك الـ spinner الثابت
@@ -899,62 +897,50 @@ async function loadResultsSheets() {
 
 // دالة البدء في إنشاء كشف جديد
  // استبدال دالة showResultWizard لإنشاء الحقول المفقودة ديناميكياً
-window.showResultWizard = function() {
+window.showResultWizard = async function() {
+    // التحقق من الحد الأقصى للكشوفات (5)
+    if (!currentAdminId) {
+        alert("لم يتم التعرف على المشرف.");
+        return;
+    }
+    const q = query(collection(db, "result_sheets"), where("adminId", "==", currentAdminId));
+    const snap = await getDocs(q);
+    if (snap.size >= 5) {
+        alert(`⚠️ لقد وصلت إلى الحد الأقصى (5 كشوفات). لا يمكنك إنشاء كشف جديد.`);
+        return;
+    }
+
     parsedStudents = [];
     gradeColumns = [];
 
-    // التأكد من وجود عناصر الحقول الإضافية في step-1-res
+    // التأكد من وجود جميع الحقول في الخطوة 1
     const step1 = document.getElementById('step-1-res');
     if (step1) {
-        // التحقق من وجود حقل الوصف
         if (!document.getElementById('sheet-description-res')) {
             const descGroup = document.createElement('div');
             descGroup.className = 'res-form-group';
-            descGroup.innerHTML = `
-                <label>وصف الكشف (يظهر للطالب أسفل العنوان)</label>
-                <textarea id="sheet-description-res" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف..."></textarea>
-            `;
-            // إدراجه بعد حقل العام الدراسي
+            descGroup.innerHTML = `<label>وصف الكشف (يظهر للطالب أسفل العنوان)</label><textarea id="sheet-description-res" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف..."></textarea>`;
             const yearGroup = document.getElementById('sheet-year-res')?.closest('.res-form-group');
-            if (yearGroup && yearGroup.parentNode) {
-                yearGroup.parentNode.insertBefore(descGroup, yearGroup.nextSibling);
-            } else {
-                step1.appendChild(descGroup);
-            }
+            if (yearGroup && yearGroup.parentNode) yearGroup.parentNode.insertBefore(descGroup, yearGroup.nextSibling);
+            else step1.appendChild(descGroup);
         }
-
-        // التحقق من وجود حقل التاريخ والوقت
         if (!document.getElementById('sheet-date-res')) {
             const dateTimeGroup = document.createElement('div');
             dateTimeGroup.className = 'res-form-grid';
             dateTimeGroup.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;';
-            dateTimeGroup.innerHTML = `
-                <div class="res-form-group">
-                    <label>تاريخ إعلان النتيجة</label>
-                    <input type="date" id="sheet-date-res" class="res-input" style="color-scheme: light;">
-                </div>
-                <div class="res-form-group">
-                    <label>وقت الإعلان</label>
-                    <input type="time" id="sheet-time-res" class="res-input" style="color-scheme: light;">
-                </div>
-            `;
+            dateTimeGroup.innerHTML = `<div class="res-form-group"><label>تاريخ إعلان النتيجة</label><input type="date" id="sheet-date-res" class="res-input"></div><div class="res-form-group"><label>وقت الإعلان</label><input type="time" id="sheet-time-res" class="res-input"></div>`;
             step1.appendChild(dateTimeGroup);
         }
-
-        // التحقق من وجود حقل الملاحظات
         if (!document.getElementById('sheet-notes-res')) {
             const notesGroup = document.createElement('div');
             notesGroup.className = 'res-form-group';
             notesGroup.style.marginTop = '15px';
-            notesGroup.innerHTML = `
-                <label>ملاحظات إضافية للطلاب</label>
-                <textarea id="sheet-notes-res" class="res-input" rows="2" placeholder="أي تنبيهات أخرى تظهر عند الاستعلام..."></textarea>
-            `;
+            notesGroup.innerHTML = `<label>ملاحظات إضافية للطلاب</label><textarea id="sheet-notes-res" class="res-input" rows="2" placeholder="أي تنبيهات أخرى تظهر عند الاستعلام..."></textarea>`;
             step1.appendChild(notesGroup);
         }
     }
 
-    // إعادة تعيين القيم (تصفير)
+    // إعادة تعيين القيم
     const titleEl = document.getElementById('sheet-title-res');
     const teacherEl = document.getElementById('sheet-teacher-res');
     const yearEl = document.getElementById('sheet-year-res');
@@ -962,16 +948,14 @@ window.showResultWizard = function() {
     const dateEl = document.getElementById('sheet-date-res');
     const timeEl = document.getElementById('sheet-time-res');
     const notesEl = document.getElementById('sheet-notes-res');
-
     if (titleEl) titleEl.value = '';
     if (teacherEl) teacherEl.value = '';
     if (yearEl) yearEl.value = '';
     if (descEl) descEl.value = '';
     if (notesEl) notesEl.value = '';
-
     const now = new Date();
     if (dateEl) dateEl.value = now.toISOString().split('T')[0];
-    if (timeEl) timeEl.value = now.toTimeString().slice(0, 5);
+    if (timeEl) timeEl.value = now.toTimeString().slice(0,5);
 
     const infoBox = document.getElementById('file-info-box-res');
     if (infoBox) infoBox.style.display = 'none';
@@ -982,27 +966,76 @@ window.showResultWizard = function() {
     const wizardContainer = document.getElementById('create-wizard-integrated');
     if (sheetsContainer) sheetsContainer.style.display = 'none';
     if (wizardContainer) wizardContainer.style.display = 'block';
-
     goToResultStep(1);
 };
 
 
 function goToResultStep(n) {
-    [1, 2, 3, 4].forEach(i => {
-        const stepEl = document.getElementById(`step-${i}-res`);
-        if (stepEl) stepEl.style.display = (i === n) ? 'block' : 'none';
-
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`step-${i}-res`);
+        if (step) step.style.display = (i === n) ? 'block' : 'none';
         const item = document.getElementById(`si-${i}`);
         if (item) {
             item.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
             const circle = item.querySelector('.step-circle');
             if (circle) circle.textContent = i < n ? '✓' : String(i);
         }
-    });
+    }
+    // إضافة النموذج التعليمي عند الوصول للخطوة 2
+    if (n === 2) {
+        ensureEducationalModelInStep2();
+    }
 }
 
-// ✅ FIX 2: تحسين دالة رفع الملف - رموز أقوى وتحقق أفضل
-function handleResultFileUpload(file) {
+function ensureEducationalModelInStep2() {
+    const step2 = document.getElementById('step-2-res');
+    if (!step2) return;
+    // تجنب الإضافة المكررة
+    if (document.getElementById('educational-model-res')) return;
+    
+    const modelDiv = document.createElement('div');
+    modelDiv.id = 'educational-model-res';
+    modelDiv.style.cssText = 'background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 15px; margin-bottom: 20px;';
+    modelDiv.innerHTML = `
+        <h4 style="color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            💡 نموذج ترتيب ملف الإكسل المطلوب:
+        </h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: center; background: white;">
+            <tr style="background: #fee2e2;">
+                <th style="border: 1px solid #ddd; padding: 5px;">الأحياء</th>
+                <th style="border: 1px solid #ddd; padding: 5px;">العلوم</th>
+                <th style="border: 1px solid #ddd; padding: 5px;">الانكليزي</th>
+                <th style="border: 1px solid #ddd; padding: 5px;">الرياضيات</th>
+                <th style="background: #ef4444; color: white; border: 1px solid #ddd; padding: 5px;">الاسم</th>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 5px;">33</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">77</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">66</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">44</td>
+                <td style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">علي</td>
+            </tr>
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 5px;">32</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">89</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">77</td>
+                <td style="border: 1px solid #ddd; padding: 5px;">55</td>
+                <td style="border: 1px solid #ddd; padding: 5px; font-weight: bold;">احمد</td>
+            </tr>
+        </table>
+        <p style="font-size: 0.8em; color: #64748b; margin-top: 8px;">* ملاحظة: يجب أن يكون اسم الطالب في أول عمود من جهة اليمين.</p>
+    `;
+    // إدراج النموذج قبل محتوى رفع الملف
+    const uploadZone = document.getElementById('upload-zone-res');
+    if (uploadZone) {
+        step2.insertBefore(modelDiv, uploadZone);
+    } else {
+        step2.prepend(modelDiv);
+    }
+}
+
+
+ function handleResultFileUpload(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1011,136 +1044,61 @@ function handleResultFileUpload(file) {
             const wb = XLSX.read(data, { type: 'array' });
             const ws = wb.Sheets[wb.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
-            if (!rows || rows.length < 2) {
-                alert("الملف فارغ أو يحتوي على صف العناوين فقط. يجب أن يحتوي على بيانات طلاب.");
-                return;
-            }
-
+            if (!rows || rows.length < 2) { alert("الملف فارغ أو يحتوي على صف عناوين فقط."); return; }
             const headers = rows[0].map(h => String(h).trim()).filter(h => h);
-            if (headers.length < 2) {
-                alert("يجب أن يحتوي الملف على عمودين على الأقل:\nالعمود الأول: اسم الطالب\nالعمود الثاني: درجة أو بيانات");
-                return;
-            }
-
+            if (headers.length < 2) { alert("يجب أن يحتوي الملف على عمودين على الأقل."); return; }
             gradeColumns = headers.slice(1);
             parsedStudents = [];
-
-            // توليد رموز فريدة وقوية
             const usedCodes = new Set();
             const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            function genCode() {
-                let c;
-                do {
-                    c = Array.from({ length: 6 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
-                } while (usedCodes.has(c));
-                usedCodes.add(c);
-                return c;
-            }
-
+            const genCode = () => { let c; do { c = Array.from({ length: 6 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join(''); } while (usedCodes.has(c)); usedCodes.add(c); return c; };
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 const name = String(row[0] ?? '').trim();
                 if (!name) continue;
                 const grades = {};
-                gradeColumns.forEach((col, idx) => {
-                    const val = row[idx + 1];
-                    grades[col] = (val !== '' && val !== undefined && val !== null) ? val : '---';
-                });
+                gradeColumns.forEach((col, idx) => { const val = row[idx+1]; grades[col] = (val !== '' && val !== undefined && val !== null) ? val : '---'; });
                 parsedStudents.push({ name, code: genCode(), grades });
             }
-
-            if (parsedStudents.length === 0) {
-                alert("لم يتم العثور على أي اسم طالب في الملف.\nتأكد من أن البيانات تبدأ من الصف الثاني.");
-                return;
-            }
-
+            if (parsedStudents.length === 0) { alert("لم يتم العثور على أي اسم طالب."); return; }
             const infoBox = document.getElementById('file-info-box-res');
-            if (infoBox) {
-                infoBox.style.display = 'block';
-                infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود`;
-            }
+            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود`; }
             const next2 = document.getElementById('next-2-res');
             if (next2) next2.disabled = false;
-
-        } catch (err) {
-            alert(`خطأ في قراءة الملف: ${err.message}`);
-        }
+        } catch (err) { alert(`خطأ في قراءة الملف: ${err.message}`); }
     };
     reader.readAsArrayBuffer(file);
 }
 
 // ✅ FIX 3: حفظ شامل مع التحقق والتعامل مع الأخطاء
  // استبدال دالة saveResultSheet لاستخدام الحقول الجديدة
-window.saveResultSheet = async function() {
-    const titleEl = document.getElementById('sheet-title-res');
-    const teacherEl = document.getElementById('sheet-teacher-res');
-    const yearEl = document.getElementById('sheet-year-res');
-    const descEl = document.getElementById('sheet-description-res');
-    const dateEl = document.getElementById('sheet-date-res');
-    const timeEl = document.getElementById('sheet-time-res');
-    const notesEl = document.getElementById('sheet-notes-res');
+ window.saveResultSheet = async function() {
+    const title = document.getElementById('sheet-title-res')?.value.trim() || '';
+    const teacher = document.getElementById('sheet-teacher-res')?.value.trim() || '';
+    const year = document.getElementById('sheet-year-res')?.value.trim() || '';
+    const description = document.getElementById('sheet-description-res')?.value.trim() || '';
+    const date = document.getElementById('sheet-date-res')?.value || '';
+    const time = document.getElementById('sheet-time-res')?.value || '';
+    const notes = document.getElementById('sheet-notes-res')?.value.trim() || '';
 
-    const title = titleEl ? titleEl.value.trim() : '';
-    const teacher = teacherEl ? teacherEl.value.trim() : '';
-    const year = yearEl ? yearEl.value.trim() : '';
-    const description = descEl ? descEl.value.trim() : '';
-    const date = dateEl ? dateEl.value : '';
-    const time = timeEl ? timeEl.value : '';
-    const notes = notesEl ? notesEl.value.trim() : '';
-
-    if (!title || !teacher) {
-        alert("يرجى إدخال عنوان الكشف واسم المدرس قبل الحفظ.");
-        return;
-    }
-    if (parsedStudents.length === 0) {
-        alert("لم يتم رفع أي بيانات طلاب. يرجى العودة للخطوة السابقة.");
-        return;
-    }
+    if (!title || !teacher) { alert("يرجى إدخال عنوان الكشف واسم المدرس."); return; }
+    if (parsedStudents.length === 0) { alert("لم يتم رفع أي بيانات طلاب."); return; }
 
     const saveBtn = document.getElementById('save-btn-res');
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ جاري الحفظ...'; }
-
     const studentsByCode = {};
-    parsedStudents.forEach(s => {
-        studentsByCode[s.code] = { name: s.name, grades: s.grades };
-    });
-
+    parsedStudents.forEach(s => { studentsByCode[s.code] = { name: s.name, grades: s.grades }; });
     try {
         const sheetRef = doc(collection(db, "result_sheets"));
-        await setDoc(sheetRef, {
-            title,
-            teacher,
-            year,
-            description,
-            date,
-            time,
-            notes,
-            adminId: currentAdminId,
-            studentCount: parsedStudents.length,
-            gradeColumns,
-            studentsByCode,
-            createdAt: Timestamp.now()
-        });
-
+        await setDoc(sheetRef, { title, teacher, year, description, date, time, notes, adminId: currentAdminId, studentCount: parsedStudents.length, gradeColumns, studentsByCode, createdAt: Timestamp.now() });
         const baseUrl = window.location.href.split('admin.html')[0];
         const link = `${baseUrl}results-lookup.html?sheet=${sheetRef.id}`;
         const linkInput = document.getElementById('sheet-link-display-res');
         if (linkInput) linkInput.value = link;
-
-        window._lastSavedSheetData = {
-            id: sheetRef.id, title, teacher,
-            students: parsedStudents,
-            columns: gradeColumns
-        };
-
+        window._lastSavedSheetData = { id: sheetRef.id, title, teacher, students: parsedStudents, columns: gradeColumns };
         goToResultStep(4);
-    } catch (err) {
-        console.error('Save error:', err);
-        alert(`خطأ في الحفظ: ${err.message || 'تحقق من الاتصال بالإنترنت'}`);
-    } finally {
-        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 حفظ وإنشاء الرابط'; }
-    }
+    } catch (err) { alert(`خطأ في الحفظ: ${err.message}`); }
+    finally { if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 حفظ وإنشاء الرابط'; } }
 };
 
 // ✅ FIX 4: ربط الأزرار مع إصلاح الأزرار المفقودة (prev-3-res, copy-link-btn-res)
@@ -1250,7 +1208,7 @@ window.deleteResultSheet = async (id) => {
     }
 };
 
- function setupResultEventListeners() {
+  function setupResultEventListeners() {
     const createBtn = document.getElementById('create-new-btn-integrated');
     if (createBtn) createBtn.onclick = window.showResultWizard;
     const backBtn = document.getElementById('back-to-list-btn-integrated');
