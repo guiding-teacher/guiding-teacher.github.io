@@ -299,8 +299,7 @@
                 </div>
             </div>
 
-            
-            <!-- Section: Results Management (Integrated from results-admin.html) -->
+            <!-- Section: Results Management -->
 <div id="results-admin-section" class="admin-section hidden">
     <div class="section-header">
         <h3>📊 إدارة كشوف النتائج (Excel)</h3>
@@ -315,13 +314,87 @@
         </div>
     </div>
 
-    <!-- واجهة إنشاء كشف جديد (Wizard) - ستظهر عند الضغط على زر الإنشاء -->
+    <!-- واجهة إنشاء كشف جديد (Wizard) -->
     <div id="create-wizard-integrated" style="display:none; margin-top: 20px;">
-        <!-- يمكنك نسخ محتوى <div id="create-wizard"> من ملف results-admin.html هنا بالكامل -->
-        <!-- مع مراعاة تغيير الـ IDs إذا لزم الأمر أو تركها كما هي إذا قمت بنقل التنسيقات -->
+        <div style="margin-bottom:16px;">
+            <button class="res-btn res-btn-gray" id="back-to-list-btn-integrated">← العودة للقائمة</button>
+        </div>
+
+        <!-- Step Wizard Indicator -->
+        <div class="step-wizard">
+            <div class="step-item active" id="si-1">
+                <div class="step-circle" id="sc-1">1</div>
+                <span class="step-label">معلومات الكشف</span>
+            </div>
+            <div class="step-connector" id="conn-1"></div>
+            <div class="step-item" id="si-2">
+                <div class="step-circle" id="sc-2">2</div>
+                <span class="step-label">رفع إكسل</span>
+            </div>
+            <div class="step-connector" id="conn-2"></div>
+            <div class="step-item" id="si-3">
+                <div class="step-circle" id="sc-3">3</div>
+                <span class="step-label">المعاينة</span>
+            </div>
+            <div class="step-connector" id="conn-3"></div>
+            <div class="step-item" id="si-4">
+                <div class="step-circle" id="sc-4">4</div>
+                <span class="step-label">الرابط والتنزيل</span>
+            </div>
+        </div>
+
+        <!-- STEP 1: Metadata -->
+        <div id="step-1-res" class="res-card">
+            <div class="res-card-title">📝 معلومات الكشف</div>
+            <div class="res-form-grid">
+                <div class="res-form-group"><label>عنوان المادة *</label><input type="text" id="sheet-title-res" class="res-input"></div>
+                <div class="res-form-group"><label>اسم المدرس *</label><input type="text" id="sheet-teacher-res" class="res-input"></div>
+            </div>
+            <div class="res-footer-actions">
+                <button class="res-btn res-btn-primary" id="next-1-res">التالي ←</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Upload -->
+        <div id="step-2-res" class="res-card" style="display:none;">
+            <div class="upload-zone" id="upload-zone-res">
+                <p>انقر لاختيار ملف إكسل أو اسحبه هنا</p>
+                <input type="file" id="excel-file-input-res" accept=".xlsx,.xls,.csv" style="display:none;">
+            </div>
+            <div id="file-info-box-res" class="file-info-box" style="display:none;"></div>
+            <div class="res-footer-actions">
+                <button class="res-btn res-btn-gray" id="prev-2-res">← السابق</button>
+                <button class="res-btn res-btn-primary" id="next-2-res" disabled>التالي ←</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Preview -->
+        <div id="step-3-res" class="res-card" style="display:none;">
+            <div class="preview-table-wrap">
+                <table class="preview-table">
+                    <thead id="preview-thead-res"></thead>
+                    <tbody id="preview-tbody-res"></tbody>
+                </table>
+            </div>
+            <div class="res-footer-actions">
+                <button class="res-btn res-btn-gray" id="prev-3-res">← السابق</button>
+                <button class="res-btn res-btn-success" id="save-btn-res">💾 حفظ وإنشاء الرابط</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Success -->
+        <div id="step-4-res" class="res-card" style="display:none;">
+            <div class="success-banner"><h3>✅ تم الإنشاء بنجاح!</h3></div>
+            <div class="link-box">
+                <input type="text" id="sheet-link-display-res" readonly>
+                <button class="res-btn res-btn-primary" id="copy-link-btn-res">نسخ</button>
+            </div>
+            <div class="res-footer-actions">
+                <button class="res-btn res-btn-outline" id="finish-wizard-btn-res">إنهاء</button>
+            </div>
+        </div>
     </div>
 </div>
-            
             
              <!-- Section: Settings -->
             <div id="settings-section" class="admin-section hidden">

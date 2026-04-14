@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await loadAdminData(user); // Load data first
                 initializeDOMReferences();
+                
                 addEventListeners();
                 updateAdminInfoDisplay(); // Then update UI
                 setupActivityMonitoring();
@@ -226,6 +227,7 @@ function initializeDOMReferences() {
     confirmNewPasswordInput = document.getElementById('confirm-new-password-input');
     changePasswordBtn = document.getElementById('change-password-btn');
     passwordChangeFeedback = document.getElementById('password-change-feedback');
+    setupResultEventListeners();
 }
 
 function addEventListeners() {
@@ -799,6 +801,176 @@ function handleFirebaseError(error, context) {
     alert(userMessage);
     return userMessage;
 }
+
+// =================================================================
+// --- Results Announcement Logic (INTEGRATED) ---
+// =================================================================
+
+let parsedStudents = [];
+let gradeColumns = [];
+let allSheetsCache = {};
+
+async function loadResultsSheets() {
+    if (!currentAdminId) return;
+    const container = document.getElementById('sheets-list-container-integrated');
+    const sheetsSection = document.getElementById('sheets-list-container-integrated');
+    const wizardSection = document.getElementById('create-wizard-integrated');
+
+    // تأكد من عرض القائمة وإخفاء المعالج عند التحميل
+    sheetsSection.style.display = 'block';
+    wizardSection.style.display = 'none';
+
+    try {
+        const q = query(collection(db, "result_sheets"), where("adminId", "==", currentAdminId));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            container.innerHTML = '<div class="empty-state"><h4>لا توجد كشوفات بعد</h4></div>';
+            return;
+        }
+
+        allSheetsCache = {};
+        let html = '<div class="sheets-list">';
+        snap.forEach(d => {
+            const s = { id: d.id, ...d.data() };
+            allSheetsCache[d.id] = s;
+            html += `
+                <div class="sheet-item">
+                    <div class="sheet-item-info">
+                        <h4>${s.title}</h4>
+                        <p>👨‍🏫 ${s.teacher} | 👥 ${s.studentCount} طالب</p>
+                    </div>
+                    <div class="sheet-item-actions">
+                        <button class="res-btn res-btn-primary" onclick="copyResultLink('${s.id}')">🔗 رابط</button>
+                        <button class="res-btn res-btn-danger" onclick="deleteResultSheet('${s.id}')">🗑️</button>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = 'خطأ في تحميل الكشوفات.';
+    }
+}
+
+// دالة البدء في إنشاء كشف جديد
+function showResultWizard() {
+    parsedStudents = [];
+    document.getElementById('sheets-list-container-integrated').style.display = 'none';
+    document.getElementById('create-wizard-integrated').style.display = 'block';
+    goToResultStep(1);
+}
+
+function goToResultStep(n) {
+    [1, 2, 3, 4].forEach(i => {
+        const stepEl = document.getElementById(`step-${i}-res`);
+        if (stepEl) stepEl.style.display = (i === n) ? 'block' : 'none';
+        
+        const item = document.getElementById(`si-${i}`);
+        if(item) item.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+    });
+}
+
+// التعامل مع رفع الملف
+async function handleResultFileUpload(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        if (rows.length < 2) return alert("الملف فارغ");
+
+        const headers = rows[0].map(h => String(h).trim());
+        gradeColumns = headers.slice(1);
+        parsedStudents = [];
+
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row[0]) continue;
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const grades = {};
+            gradeColumns.forEach((col, idx) => {
+                grades[col] = row[idx + 1] || '---';
+            });
+            parsedStudents.push({ name: row[0], code, grades });
+        }
+
+        document.getElementById('file-info-box-res').style.display = 'block';
+        document.getElementById('file-info-box-res').textContent = `تم تحميل ${parsedStudents.length} طالب`;
+        document.getElementById('next-2-res').disabled = false;
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+async function saveResultSheet() {
+    const title = document.getElementById('sheet-title-res').value;
+    const teacher = document.getElementById('sheet-teacher-res').value;
+
+    const studentsByCode = {};
+    parsedStudents.forEach(s => {
+        studentsByCode[s.code] = { name: s.name, grades: s.grades };
+    });
+
+    try {
+        const sheetRef = doc(collection(db, "result_sheets"));
+        await setDoc(sheetRef, {
+            title, teacher, adminId: currentAdminId,
+            studentCount: parsedStudents.length,
+            gradeColumns, studentsByCode,
+            createdAt: Timestamp.now()
+        });
+
+        const baseUrl = window.location.href.split('admin.html')[0];
+        document.getElementById('sheet-link-display-res').value = `${baseUrl}results-lookup.html?sheet=${sheetRef.id}`;
+        goToResultStep(4);
+    } catch (err) {
+        alert("خطأ في الحفظ");
+    }
+}
+
+// ربط الأزرار بالأحداث (أضفها داخل addEventListeners)
+function setupResultEventListeners() {
+    document.getElementById('create-new-btn-integrated').onclick = showResultWizard;
+    document.getElementById('back-to-list-btn-integrated').onclick = loadResultsSheets;
+    document.getElementById('next-1-res').onclick = () => goToResultStep(2);
+    document.getElementById('prev-2-res').onclick = () => goToResultStep(1);
+    document.getElementById('next-2-res').onclick = () => {
+        // بناء المعاينة
+        const thead = document.getElementById('preview-thead-res');
+        thead.innerHTML = `<tr><th>الاسم</th><th>الرمز</th>${gradeColumns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+        const tbody = document.getElementById('preview-tbody-res');
+        tbody.innerHTML = parsedStudents.slice(0, 5).map(s => `
+            <tr><td>${s.name}</td><td>${s.code}</td>${gradeColumns.map(c => `<td>${s.grades[c]}</td>`).join('')}</tr>
+        `).join('') + '<tr><td colspan="10">... معاينة لأول 5 طلاب فقط</td></tr>';
+        goToResultStep(3);
+    };
+    document.getElementById('save-btn-res').onclick = saveResultSheet;
+    document.getElementById('finish-wizard-btn-res').onclick = loadResultsSheets;
+    
+    document.getElementById('upload-zone-res').onclick = () => document.getElementById('excel-file-input-res').click();
+    document.getElementById('excel-file-input-res').onchange = (e) => handleResultFileUpload(e.target.files[0]);
+}
+
+// إتاحة الدوال عالمياً
+window.loadResultsSheets = loadResultsSheets;
+window.copyResultLink = (id) => {
+    const baseUrl = window.location.href.split('admin.html')[0];
+    const link = `${baseUrl}results-lookup.html?sheet=${id}`;
+    navigator.clipboard.writeText(link).then(() => alert("تم نسخ الرابط"));
+};
+window.deleteResultSheet = async (id) => {
+    if(confirm("حذف الكشف؟")) {
+        await deleteDoc(doc(db, "result_sheets", id));
+        loadResultsSheets();
+    }
+};
+
+// استدعاء تهيئة الأحداث في دالة DOMContentLoaded الأصلية
+// ابحث عن initializeDOMReferences() وأضف بعدها:
+// setupResultEventListeners();
 
 // =================================================================
 // --- Global Window Functions ---
