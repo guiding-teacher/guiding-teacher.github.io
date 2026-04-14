@@ -1250,106 +1250,34 @@ window.deleteResultSheet = async (id) => {
     }
 };
 
-function setupResultEventListeners() {
+ function setupResultEventListeners() {
     const createBtn = document.getElementById('create-new-btn-integrated');
     if (createBtn) createBtn.onclick = window.showResultWizard;
-
     const backBtn = document.getElementById('back-to-list-btn-integrated');
-    if (backBtn) backBtn.onclick = () => {
-        const sheetsContainer = document.getElementById('sheets-list-container-integrated');
-        const wizardContainer = document.getElementById('create-wizard-integrated');
-        if (sheetsContainer) sheetsContainer.style.display = 'block';
-        if (wizardContainer) wizardContainer.style.display = 'none';
-        loadResultsSheets();
-    };
-
+    if (backBtn) backBtn.onclick = () => { document.getElementById('sheets-list-container-integrated').style.display = 'block'; document.getElementById('create-wizard-integrated').style.display = 'none'; loadResultsSheets(); };
     const next1 = document.getElementById('next-1-res');
-    if (next1) next1.onclick = () => {
-        const title = document.getElementById('sheet-title-res')?.value.trim();
-        const teacher = document.getElementById('sheet-teacher-res')?.value.trim();
-        if (!title || !teacher) {
-            alert('الرجاء ملء عنوان الكشف واسم المدرس قبل المتابعة.');
-            return;
-        }
-        goToResultStep(2);
-    };
-
-    const prev2 = document.getElementById('prev-2-res');
-    if (prev2) prev2.onclick = () => goToResultStep(1);
-
+    if (next1) next1.onclick = () => { const title = document.getElementById('sheet-title-res')?.value.trim(); const teacher = document.getElementById('sheet-teacher-res')?.value.trim(); if (!title || !teacher) { alert('الرجاء ملء عنوان الكشف واسم المدرس.'); return; } goToResultStep(2); };
+    const prev2 = document.getElementById('prev-2-res'); if (prev2) prev2.onclick = () => goToResultStep(1);
     const next2 = document.getElementById('next-2-res');
     if (next2) next2.onclick = () => {
-        if (parsedStudents.length === 0) {
-            alert('يرجى رفع ملف إكسل أولاً.');
-            return;
-        }
+        if (parsedStudents.length === 0) { alert('يرجى رفع ملف إكسل أولاً.'); return; }
         const thead = document.getElementById('preview-thead-res');
-        if (thead) {
-            thead.innerHTML = `<tr>
-                <th>#</th><th>اسم الطالب</th><th>الرمز السري</th>
-                ${gradeColumns.map(c => `<th>${escHtmlRes(c)}</th>`).join('')}
-            </tr>`;
-        }
+        if (thead) thead.innerHTML = `<tr><th>#</th><th>اسم الطالب</th><th>الرمز السري</th>${gradeColumns.map(c => `<th>${escHtmlRes(c)}</th>`).join('')}</tr>`;
         const tbody = document.getElementById('preview-tbody-res');
         if (tbody) {
-            const previewRows = parsedStudents.slice(0, 10).map((s, i) =>
-                `<tr>
-                    <td>${i + 1}</td>
-                    <td>${escHtmlRes(s.name)}</td>
-                    <td><span style="font-family:monospace;letter-spacing:3px;font-weight:700;color:#1d4ed8;">${s.code}</span></td>
-                    ${gradeColumns.map(c => `<td>${escHtmlRes(String(s.grades[c] ?? '---'))}</td>`).join('')}
-                </tr>`
-            ).join('');
-            const extraRow = parsedStudents.length > 10
-                ? `<tr><td colspan="${gradeColumns.length + 3}" style="text-align:center;color:#94a3b8;padding:10px;">... و ${parsedStudents.length - 10} طالب آخر غير معروض</td></tr>`
-                : '';
+            const previewRows = parsedStudents.slice(0,10).map((s,i) => `<tr><td>${i+1}</td><td>${escHtmlRes(s.name)}</td><td><span style="font-family:monospace;letter-spacing:3px;font-weight:700;color:#1d4ed8;">${s.code}</span></td>${gradeColumns.map(c => `<td>${escHtmlRes(String(s.grades[c] ?? '---'))}</td>`).join('')}</tr>`).join('');
+            const extraRow = parsedStudents.length > 10 ? `<tr><td colspan="${gradeColumns.length+3}" style="text-align:center;color:#94a3b8;padding:10px;">... و ${parsedStudents.length-10} طالب آخر</td></tr>` : '';
             tbody.innerHTML = previewRows + extraRow;
         }
         goToResultStep(3);
     };
-
-    const prev3 = document.getElementById('prev-3-res');
-    if (prev3) prev3.onclick = () => goToResultStep(2);
-
-    const saveBtn = document.getElementById('save-btn-res');
-    if (saveBtn) saveBtn.onclick = window.saveResultSheet;
-
+    const prev3 = document.getElementById('prev-3-res'); if (prev3) prev3.onclick = () => goToResultStep(2);
+    const saveBtn = document.getElementById('save-btn-res'); if (saveBtn) saveBtn.onclick = window.saveResultSheet;
     const copyLinkBtn = document.getElementById('copy-link-btn-res');
-    if (copyLinkBtn) {
-        copyLinkBtn.onclick = () => {
-            const val = document.getElementById('sheet-link-display-res')?.value;
-            if (!val) return;
-            navigator.clipboard.writeText(val)
-                .then(() => alert('✅ تم نسخ الرابط!'))
-                .catch(() => {
-                    const ta = document.createElement('textarea');
-                    ta.value = val;
-                    ta.style.position = 'fixed';
-                    ta.style.opacity = '0';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    alert('✅ تم نسخ الرابط!');
-                });
-        };
-    }
-
-    const finishBtn = document.getElementById('finish-wizard-btn-res');
-    if (finishBtn) finishBtn.onclick = () => {
-        const sheetsContainer = document.getElementById('sheets-list-container-integrated');
-        const wizardContainer = document.getElementById('create-wizard-integrated');
-        if (sheetsContainer) sheetsContainer.style.display = 'block';
-        if (wizardContainer) wizardContainer.style.display = 'none';
-        loadResultsSheets();
-    };
-
-    const uploadZone = document.getElementById('upload-zone-res');
-    const fileInput = document.getElementById('excel-file-input-res');
-    if (uploadZone && fileInput) {
-        uploadZone.onclick = () => fileInput.click();
-        fileInput.onchange = (e) => handleResultFileUpload(e.target.files[0]);
-    }
+    if (copyLinkBtn) copyLinkBtn.onclick = () => { const val = document.getElementById('sheet-link-display-res')?.value; if(val) navigator.clipboard.writeText(val).then(()=>alert('✅ تم نسخ الرابط!')).catch(()=>alert('✅ تم نسخ الرابط!')); };
+    const finishBtn = document.getElementById('finish-wizard-btn-res'); if (finishBtn) finishBtn.onclick = () => { document.getElementById('sheets-list-container-integrated').style.display = 'block'; document.getElementById('create-wizard-integrated').style.display = 'none'; loadResultsSheets(); };
+    const uploadZone = document.getElementById('upload-zone-res'); const fileInput = document.getElementById('excel-file-input-res');
+    if (uploadZone && fileInput) { uploadZone.onclick = () => fileInput.click(); fileInput.onchange = (e) => handleResultFileUpload(e.target.files[0]); }
 }
 
 
