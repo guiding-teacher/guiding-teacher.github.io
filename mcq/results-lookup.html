@@ -108,6 +108,26 @@
     .error-page .err-icon { font-size: 4em; margin-bottom: 16px; }
     .error-page h2 { color: #f87171; margin-bottom: 10px; }
     .error-page p  { font-size: 0.95em; }
+    
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%       { transform: translateX(-8px); }
+      40%       { transform: translateX(8px); }
+      60%       { transform: translateX(-6px); }
+      80%       { transform: translateX(6px); }
+    }
+
+    @media print {
+      .lookup-body > *:not(#printable-result) { display: none !important; }
+      #printable-result {
+        position: static !important;
+        overflow: visible !important;
+        padding: 0 !important;
+      }
+      .print-actions { display: none !important; }
+    }
+    
   </style>
 </head>
 <body class="lookup-body">
@@ -568,24 +588,6 @@
     });
   </script>
 
-  <style>
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%       { transform: translateX(-8px); }
-      40%       { transform: translateX(8px); }
-      60%       { transform: translateX(-6px); }
-      80%       { transform: translateX(6px); }
-    }
-
-    @media print {
-      .lookup-body > *:not(#printable-result) { display: none !important; }
-      #printable-result {
-        position: static !important;
-        overflow: visible !important;
-        padding: 0 !important;
-      }
-      .print-actions { display: none !important; }
-    }
-  </style>
+   
 </body>
 </html>
