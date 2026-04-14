@@ -352,14 +352,17 @@
         sheetData = snap.data();
 
         // ── Populate hero ──
-        document.getElementById('hero-title').textContent = sheetData.title;
-        document.title = `الاستعلام عن النتيجة — ${sheetData.title}`;
+        // ابحث عن الجزء الخاص بـ Populate hero داخل دالة loadSheet واستبدله بهذا:
+document.getElementById('hero-title').textContent = sheetData.title;
+document.title = `الاستعلام عن النتيجة — ${sheetData.title}`;
 
-        if (sheetData.description) {
-          const descEl = document.getElementById('hero-description');
-          descEl.textContent = sheetData.description;
-          descEl.style.display = 'block';
-        }
+const descEl = document.getElementById('hero-description');
+if (sheetData.description) {
+  descEl.textContent = sheetData.description;
+  descEl.style.display = 'block'; // تأكد من أنه سيظهر
+} else {
+  descEl.style.display = 'none';
+}
 
         const yearText = sheetData.year ? ` | ${sheetData.year}` : '';
         document.getElementById('hero-sub').textContent = `كشف نتائج رسمي${yearText}`;
@@ -493,20 +496,32 @@
 }
 
     /* ===================== PRINT OVERLAY ===================== */
-   function showPrintOverlay() {
+  function showPrintOverlay() {
   if (!foundStudent || !sheetData) return;
 
-  // حقن البيانات في placeholders الطباعة
-  document.getElementById('pr-title').textContent = sheetData.title || 'كشف نتائج';
-  document.getElementById('pr-description').textContent = sheetData.description || '';
-  document.getElementById('pr-student-name').textContent = foundStudent.name;
-  document.getElementById('pr-teacher').textContent = `المدرس: ${sheetData.teacher || '---'}`;
-  document.getElementById('pr-date').textContent = `تاريخ الإصدار: ${sheetData.date || '---'} | ${sheetData.time || ''}`;
-  document.getElementById('pr-gen-date').textContent = `تاريخ الطباعة: ${new Date().toLocaleDateString('ar-IQ')}`;
+  // 1. العنوان والوصف
+  document.getElementById('pr-title').textContent = sheetData.title || 'كشف نتائج رسمي';
+  const prDesc = document.getElementById('pr-description');
+  if (sheetData.description) {
+    prDesc.textContent = sheetData.description;
+    prDesc.style.display = 'block';
+  } else {
+    prDesc.style.display = 'none';
+  }
 
-  const cols = sheetData.gradeColumns || [];
+  // 2. اسم الطالب (المربع الذي كان يظهر فيه ---)
+  document.getElementById('pr-student-name').textContent = foundStudent.name;
+
+  // 3. المدرس والتاريخ
+  document.getElementById('pr-teacher').textContent = `المدرس: ${sheetData.teacher || '---'}`;
+  const dateStr = sheetData.date ? `بتاريخ: ${sheetData.date}` : '';
+  const timeStr = sheetData.time ? ` الوقت: ${sheetData.time}` : '';
+  document.getElementById('pr-date').textContent = `${dateStr} ${timeStr}`;
   
-  // بناء جدول الدرجات للطباعة
+  document.getElementById('pr-gen-date').textContent = `تاريخ الاستعلام: ${new Date().toLocaleDateString('ar-IQ')}`;
+
+  // 4. بناء الجدول الأفقي للدرجات في الطباعة
+  const cols = sheetData.gradeColumns || [];
   document.getElementById('pr-grades-thead').innerHTML = `
     <tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr>
   `;
@@ -515,12 +530,19 @@
     const val = foundStudent.grades[col] ?? '---';
     return `<td>${escHtml(String(val))}</td>`;
   }).join('');
-
   document.getElementById('pr-grades-tbody').innerHTML = `<tr>${printCells}</tr>`;
 
-  // إظهار النافذة
+  // 5. الملاحظات
+  const prNotes = document.getElementById('pr-notes');
+  if (sheetData.notes) {
+    prNotes.textContent = `ملاحظات إضافية: ${sheetData.notes}`;
+    prNotes.style.display = 'block';
+  } else {
+    prNotes.style.display = 'none';
+  }
+
+  // إظهار نافذة الطباعة
   document.getElementById('printable-result').style.display = 'block';
-  window.scrollTo(0, 0);
 }
 
     /* ===================== RESET ===================== */

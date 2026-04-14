@@ -137,11 +137,12 @@
 
       <!-- STEP 1: Sheet Metadata -->
        <!-- استبدل محتوى الخطوة الأولى (step-1) بهذا الكود -->
+ <!-- STEP 1: Sheet Metadata -->
 <div id="step-1" class="res-card">
   <div class="res-card-title">📝 معلومات الكشف الأساسية</div>
 
   <!-- الصف الأول: العنوان + المعلم + العام -->
-  <div class="res-form-grid" style="grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+  <div class="res-form-grid" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px;">
     <div class="res-form-group">
       <label>عنوان الكشف / المادة *</label>
       <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الصف السادس">
@@ -156,22 +157,28 @@
     </div>
   </div>
 
-  <!-- الصف الثاني: الوصف (حقل جديد) -->
+  <!-- الصف الثاني: الوصف -->
   <div class="res-form-group" style="margin-top: 15px;">
     <label>وصف الكشف (يظهر للطالب أسفل العنوان)</label>
     <textarea id="sheet-description" class="res-input" rows="2" placeholder="اكتب وصفاً مختصراً للكشف..."></textarea>
   </div>
 
   <!-- الصف الثالث: التاريخ والوقت -->
-  <div class="res-form-grid" style="grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+  <div class="res-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
     <div class="res-form-group">
       <label>تاريخ إعلان النتيجة</label>
-      <input type="date" id="sheet-date" class="res-input">
+      <input type="date" id="sheet-date" class="res-input" style="color-scheme: light;">
     </div>
     <div class="res-form-group">
       <label>وقت الإعلان</label>
-      <input type="time" id="sheet-time" class="res-input">
+      <input type="time" id="sheet-time" class="res-input" style="color-scheme: light;">
     </div>
+  </div>
+
+  <!-- ملاحظات اختيارية -->
+  <div class="res-form-group" style="margin-top: 15px;">
+    <label>ملاحظات إضافية للطلاب</label>
+    <textarea id="sheet-notes" class="res-input" rows="2" placeholder="أي تنبيهات أخرى تظهر عند الاستعلام..."></textarea>
   </div>
 
   <div id="err-1" class="res-alert res-alert-error" style="display:none;"></div>
@@ -561,44 +568,36 @@
     });
 
     /* ==================== WIZARD NAVIGATION ==================== */
-    async function showWizard() {
-      if (!currentUser) return;
+     async function showWizard() {
+  if (!currentUser) return;
 
-      // ── Check 5-sheet limit ──
-      const q = query(
-        collection(db, "result_sheets"),
-        where("adminId", "==", currentUser.uid)
-      );
-      const snap = await getDocs(q);
-      if (snap.size >= MAX_SHEETS) {
-        alert(`⚠️ لقد وصلت إلى الحد الأقصى (${MAX_SHEETS} كشوفات).\nيرجى حذف كشف موجود لتتمكن من إنشاء كشف جديد.`);
-        return;
-      }
+  const q = query(collection(db, "result_sheets"), where("adminId", "==", currentUser.uid));
+  const snap = await getDocs(q);
+  if (snap.size >= MAX_SHEETS) {
+    alert(`⚠️ لقد وصلت إلى الحد الأقصى (${MAX_SHEETS} كشوفات).`);
+    return;
+  }
 
-      // Reset state
-      parsedStudents = [];
-      gradeColumns   = [];
-      gradeColsInfo  = [];
-      savedSheetId   = null;
+  // تصفير كافة الحقول بما فيها الوصف
+  ['sheet-title','sheet-teacher','sheet-year','sheet-notes','sheet-description']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.value = '';
+    });
 
-      ['sheet-title','sheet-teacher','sheet-year','sheet-notes','sheet-description']
-        .forEach(id => document.getElementById(id).value = '');
+  const now = new Date();
+  document.getElementById('sheet-date').value = now.toISOString().split('T')[0];
+  document.getElementById('sheet-time').value = now.toTimeString().slice(0, 5);
 
-      const now = new Date();
-      document.getElementById('sheet-date').value =
-        now.toISOString().split('T')[0];
-      document.getElementById('sheet-time').value =
-        now.toTimeString().slice(0, 5);  // HH:MM
-
-      document.getElementById('excel-file-input').value = '';
-      document.getElementById('file-info-box').style.display = 'none';
-      document.getElementById('next-2').disabled = true;
-      hideErr('err-1'); hideErr('err-2'); hideErr('err-3');
-
-      document.getElementById('sheets-section').style.display = 'none';
-      document.getElementById('create-wizard').style.display  = 'block';
-      goToStep(1);
-    }
+  document.getElementById('excel-file-input').value = '';
+  document.getElementById('file-info-box').style.display = 'none';
+  document.getElementById('next-2').disabled = true;
+  
+  hideErr('err-1'); hideErr('err-2'); hideErr('err-3');
+  document.getElementById('sheets-section').style.display = 'none';
+  document.getElementById('create-wizard').style.display  = 'block';
+  goToStep(1);
+}
 
     function hideWizard() {
       document.getElementById('create-wizard').style.display  = 'none';
