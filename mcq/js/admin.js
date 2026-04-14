@@ -1036,7 +1036,7 @@ function ensureEducationalModelInStep2() {
 
 
 // استبدل دالة handleResultFileUpload بالكود التالي
-function handleResultFileUpload(file) {
+ function handleResultFileUpload(file) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1051,16 +1051,27 @@ function handleResultFileUpload(file) {
             gradeColumns = headers.slice(1);
             parsedStudents = [];
             const usedCodes = new Set();
-            // ✅ تم تغيير الأحرف المسموحة وتحديد الطول 9
-            const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+
+            // ✅ توليد رمز بطول 9: 6 حروف (كبيرة) + 3 أرقام
+            const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            const numbers = '0123456789';
             const genCode = () => {
-                let c;
+                let code;
                 do {
-                    c = Array.from({ length: 9 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
-                } while (usedCodes.has(c));
-                usedCodes.add(c);
-                return c;
+                    let part1 = '';
+                    for (let i = 0; i < 6; i++) {
+                        part1 += letters.charAt(Math.floor(Math.random() * letters.length));
+                    }
+                    let part2 = '';
+                    for (let i = 0; i < 3; i++) {
+                        part2 += numbers.charAt(Math.floor(Math.random() * numbers.length));
+                    }
+                    code = part1 + part2;  // 6 حروف + 3 أرقام = 9 خانات
+                } while (usedCodes.has(code));
+                usedCodes.add(code);
+                return code;
             };
+
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 const name = String(row[0] ?? '').trim();
@@ -1071,7 +1082,7 @@ function handleResultFileUpload(file) {
             }
             if (parsedStudents.length === 0) { alert("لم يتم العثور على أي اسم طالب."); return; }
             const infoBox = document.getElementById('file-info-box-res');
-            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود | رمز من 9 خانات`; }
+            if (infoBox) { infoBox.style.display = 'block'; infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود | رمز: 6 حروف + 3 أرقام (9 خانات)`; }
             const next2 = document.getElementById('next-2-res');
             if (next2) next2.disabled = false;
         } catch (err) { alert(`خطأ في قراءة الملف: ${err.message}`); }

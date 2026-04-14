@@ -385,19 +385,24 @@
     let editingSheetId  = null;
 
     /* ==================== Helper: generateUniqueCode (9 chars) ==================== */
-    function generateUniqueCode(usedCodesSet) {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-      const length = 9;
-      let code;
-      do {
-        code = '';
-        for (let i = 0; i < length; i++) {
-          code += chars.charAt(Math.floor(Math.random() * chars.length));
+     function generateUniqueCode(usedCodesSet) {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    let code;
+    do {
+        let letterPart = '';
+        for (let i = 0; i < 6; i++) {
+            letterPart += letters.charAt(Math.floor(Math.random() * letters.length));
         }
-      } while (usedCodesSet.has(code));
-      usedCodesSet.add(code);
-      return code;
-    }
+        let numberPart = '';
+        for (let i = 0; i < 3; i++) {
+            numberPart += numbers.charAt(Math.floor(Math.random() * numbers.length));
+        }
+        code = letterPart + numberPart;  // 6 حروف + 3 أرقام
+    } while (usedCodesSet.has(code));
+    usedCodesSet.add(code);
+    return code;
+}
 
     /* ==================== AUTH ==================== */
     onAuthStateChanged(auth, async (user) => {
