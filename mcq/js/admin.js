@@ -803,60 +803,115 @@ function handleFirebaseError(error, context) {
 }
 
 // =================================================================
-// --- Results Announcement Logic (INTEGRATED) ---
+// --- Results Announcement Logic (INTEGRATED) - FIXED ---
 // =================================================================
 
 let parsedStudents = [];
 let gradeColumns = [];
 let allSheetsCache = {};
 
-async function loadResultsSheets() {
-    if (!currentAdminId) return;
-    const container = document.getElementById('sheets-list-container-integrated');
-    const sheetsSection = document.getElementById('sheets-list-container-integrated');
-    const wizardSection = document.getElementById('create-wizard-integrated');
+// دالة مساعدة لتشفير HTML
+function escHtmlRes(str) {
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-    // تأكد من عرض القائمة وإخفاء المعالج عند التحميل
-    sheetsSection.style.display = 'block';
-    wizardSection.style.display = 'none';
+// ✅ FIX 1: الدالة الآن تستبدل محتوى الحاوية دائماً - لا تترك الـ spinner الثابت
+async function loadResultsSheets() {
+    const container = document.getElementById('sheets-list-container-integrated');
+    const wizardSection = document.getElementById('create-wizard-integrated');
+    if (!container) return;
+
+    // إخفاء المعالج وعرض القائمة
+    container.style.display = 'block';
+    if (wizardSection) wizardSection.style.display = 'none';
+
+    // ✅ استبدال الـ spinner الثابت فوراً بمؤشر تحميل ديناميكي
+    container.innerHTML = `
+        <div style="text-align:center;padding:50px 20px;color:#64748b;">
+            <div style="font-size:2.5em;margin-bottom:14px;animation:spin 1s linear infinite;display:inline-block;">⏳</div>
+            <p style="font-size:1.05em;">جاري تحميل الكشوفات...</p>
+        </div>`;
+
+    // ✅ التحقق من هوية المشرف بعد إعادة رسم الحاوية
+    if (!currentAdminId) {
+        container.innerHTML = `
+            <div style="text-align:center;padding:50px 20px;color:#ef4444;">
+                <p style="font-size:1.1em;">❌ خطأ: لم يتم التعرف على هوية المشرف</p>
+                <p style="font-size:0.85em;color:#94a3b8;margin-top:8px;">حاول تسجيل الخروج وإعادة الدخول</p>
+            </div>`;
+        return;
+    }
 
     try {
         const q = query(collection(db, "result_sheets"), where("adminId", "==", currentAdminId));
         const snap = await getDocs(q);
 
         if (snap.empty) {
-            container.innerHTML = '<div class="empty-state"><h4>لا توجد كشوفات بعد</h4></div>';
+            container.innerHTML = `
+                <div style="text-align:center;padding:60px 20px;color:#64748b;">
+                    <div style="font-size:3.5em;margin-bottom:14px;">📋</div>
+                    <h4 style="margin-bottom:10px;font-size:1.2em;color:#475569;">لا توجد كشوفات بعد</h4>
+                    <p>انقر على "+ إنشاء كشف جديد" للبدء في رفع نتائج طلابك</p>
+                </div>`;
             return;
         }
 
         allSheetsCache = {};
-        let html = '<div class="sheets-list">';
+        const sheets = [];
         snap.forEach(d => {
             const s = { id: d.id, ...d.data() };
             allSheetsCache[d.id] = s;
+            sheets.push(s);
+        });
+        // ترتيب من الأحدث للأقدم
+        sheets.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+        let html = '<div class="sheets-list">';
+        sheets.forEach(s => {
             html += `
                 <div class="sheet-item">
                     <div class="sheet-item-info">
-                        <h4>${s.title}</h4>
-                        <p>👨‍🏫 ${s.teacher} | 👥 ${s.studentCount} طالب</p>
+                        <h4>${escHtmlRes(s.title || '')}</h4>
+                        <p>👨‍🏫 ${escHtmlRes(s.teacher || '')} &nbsp;|&nbsp; 👥 ${s.studentCount || 0} طالب${s.date ? ` &nbsp;|&nbsp; 📅 ${escHtmlRes(s.date)}` : ''}</p>
                     </div>
                     <div class="sheet-item-actions">
                         <button class="res-btn res-btn-primary" onclick="copyResultLink('${s.id}')">🔗 رابط</button>
+                        <button class="res-btn res-btn-success" style="font-size:0.83em;" onclick="downloadResultExcel('${s.id}')">📊 إكسل</button>
+                        <button class="res-btn res-btn-warning" style="font-size:0.83em;" onclick="printResultBarcodes('${s.id}')">🖨️ الرموز</button>
                         <button class="res-btn res-btn-danger" onclick="deleteResultSheet('${s.id}')">🗑️</button>
                     </div>
                 </div>`;
         });
         html += '</div>';
         container.innerHTML = html;
+
     } catch (err) {
-        console.error(err);
-        container.innerHTML = 'خطأ في تحميل الكشوفات.';
+        console.error('Error loading result sheets:', err);
+        container.innerHTML = `
+            <div style="text-align:center;padding:50px 20px;color:#ef4444;">
+                <p style="font-size:1.1em;">❌ خطأ في تحميل الكشوفات</p>
+                <p style="font-size:0.85em;color:#94a3b8;margin-top:8px;">${err.message || 'تحقق من صلاحيات قاعدة البيانات'}</p>
+            </div>`;
     }
 }
 
 // دالة البدء في إنشاء كشف جديد
 function showResultWizard() {
     parsedStudents = [];
+    gradeColumns = [];
+
+    // إعادة تعيين الحقول
+    const titleEl = document.getElementById('sheet-title-res');
+    const teacherEl = document.getElementById('sheet-teacher-res');
+    if (titleEl) titleEl.value = '';
+    if (teacherEl) teacherEl.value = '';
+    const infoBox = document.getElementById('file-info-box-res');
+    if (infoBox) infoBox.style.display = 'none';
+    const next2 = document.getElementById('next-2-res');
+    if (next2) next2.disabled = true;
+
     document.getElementById('sheets-list-container-integrated').style.display = 'none';
     document.getElementById('create-wizard-integrated').style.display = 'block';
     goToResultStep(1);
@@ -866,48 +921,103 @@ function goToResultStep(n) {
     [1, 2, 3, 4].forEach(i => {
         const stepEl = document.getElementById(`step-${i}-res`);
         if (stepEl) stepEl.style.display = (i === n) ? 'block' : 'none';
-        
+
         const item = document.getElementById(`si-${i}`);
-        if(item) item.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+        if (item) {
+            item.className = 'step-item' + (i < n ? ' done' : i === n ? ' active' : '');
+            const circle = item.querySelector('.step-circle');
+            if (circle) circle.textContent = i < n ? '✓' : String(i);
+        }
     });
 }
 
-// التعامل مع رفع الملف
-async function handleResultFileUpload(file) {
+// ✅ FIX 2: تحسين دالة رفع الملف - رموز أقوى وتحقق أفضل
+function handleResultFileUpload(file) {
+    if (!file) return;
     const reader = new FileReader();
     reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        try {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        if (rows.length < 2) return alert("الملف فارغ");
+            if (!rows || rows.length < 2) {
+                alert("الملف فارغ أو يحتوي على صف العناوين فقط. يجب أن يحتوي على بيانات طلاب.");
+                return;
+            }
 
-        const headers = rows[0].map(h => String(h).trim());
-        gradeColumns = headers.slice(1);
-        parsedStudents = [];
+            const headers = rows[0].map(h => String(h).trim()).filter(h => h);
+            if (headers.length < 2) {
+                alert("يجب أن يحتوي الملف على عمودين على الأقل:\nالعمود الأول: اسم الطالب\nالعمود الثاني: درجة أو بيانات");
+                return;
+            }
 
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row[0]) continue;
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const grades = {};
-            gradeColumns.forEach((col, idx) => {
-                grades[col] = row[idx + 1] || '---';
-            });
-            parsedStudents.push({ name: row[0], code, grades });
+            gradeColumns = headers.slice(1);
+            parsedStudents = [];
+
+            // توليد رموز فريدة وقوية
+            const usedCodes = new Set();
+            const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            function genCode() {
+                let c;
+                do {
+                    c = Array.from({ length: 6 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
+                } while (usedCodes.has(c));
+                usedCodes.add(c);
+                return c;
+            }
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const name = String(row[0] ?? '').trim();
+                if (!name) continue;
+                const grades = {};
+                gradeColumns.forEach((col, idx) => {
+                    const val = row[idx + 1];
+                    grades[col] = (val !== '' && val !== undefined && val !== null) ? val : '---';
+                });
+                parsedStudents.push({ name, code: genCode(), grades });
+            }
+
+            if (parsedStudents.length === 0) {
+                alert("لم يتم العثور على أي اسم طالب في الملف.\nتأكد من أن البيانات تبدأ من الصف الثاني.");
+                return;
+            }
+
+            const infoBox = document.getElementById('file-info-box-res');
+            if (infoBox) {
+                infoBox.style.display = 'block';
+                infoBox.innerHTML = `✅ تم تحميل <strong>${parsedStudents.length}</strong> طالب | <strong>${gradeColumns.length}</strong> عمود`;
+            }
+            const next2 = document.getElementById('next-2-res');
+            if (next2) next2.disabled = false;
+
+        } catch (err) {
+            alert(`خطأ في قراءة الملف: ${err.message}`);
         }
-
-        document.getElementById('file-info-box-res').style.display = 'block';
-        document.getElementById('file-info-box-res').textContent = `تم تحميل ${parsedStudents.length} طالب`;
-        document.getElementById('next-2-res').disabled = false;
     };
     reader.readAsArrayBuffer(file);
 }
 
+// ✅ FIX 3: حفظ شامل مع التحقق والتعامل مع الأخطاء
 async function saveResultSheet() {
-    const title = document.getElementById('sheet-title-res').value;
-    const teacher = document.getElementById('sheet-teacher-res').value;
+    const titleEl = document.getElementById('sheet-title-res');
+    const teacherEl = document.getElementById('sheet-teacher-res');
+    const title = titleEl ? titleEl.value.trim() : '';
+    const teacher = teacherEl ? teacherEl.value.trim() : '';
+
+    if (!title || !teacher) {
+        alert("يرجى إدخال عنوان الكشف واسم المدرس قبل الحفظ.");
+        return;
+    }
+    if (parsedStudents.length === 0) {
+        alert("لم يتم رفع أي بيانات طلاب. يرجى العودة للخطوة السابقة.");
+        return;
+    }
+
+    const saveBtn = document.getElementById('save-btn-res');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ جاري الحفظ...'; }
 
     const studentsByCode = {};
     parsedStudents.forEach(s => {
@@ -917,60 +1027,216 @@ async function saveResultSheet() {
     try {
         const sheetRef = doc(collection(db, "result_sheets"));
         await setDoc(sheetRef, {
-            title, teacher, adminId: currentAdminId,
+            title,
+            teacher,
+            adminId: currentAdminId,
             studentCount: parsedStudents.length,
-            gradeColumns, studentsByCode,
+            gradeColumns,
+            studentsByCode,
             createdAt: Timestamp.now()
         });
 
         const baseUrl = window.location.href.split('admin.html')[0];
-        document.getElementById('sheet-link-display-res').value = `${baseUrl}results-lookup.html?sheet=${sheetRef.id}`;
+        const link = `${baseUrl}results-lookup.html?sheet=${sheetRef.id}`;
+        const linkInput = document.getElementById('sheet-link-display-res');
+        if (linkInput) linkInput.value = link;
+
+        // حفظ البيانات لاستخدامها في أزرار التنزيل بالخطوة 4
+        window._lastSavedSheetData = {
+            id: sheetRef.id, title, teacher,
+            students: parsedStudents,
+            columns: gradeColumns
+        };
+
         goToResultStep(4);
     } catch (err) {
-        alert("خطأ في الحفظ");
+        console.error('Save error:', err);
+        alert(`خطأ في الحفظ: ${err.message || 'تحقق من الاتصال بالإنترنت'}`);
+    } finally {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 حفظ وإنشاء الرابط'; }
     }
 }
 
-// ربط الأزرار بالأحداث (أضفها داخل addEventListeners)
+// ✅ FIX 4: ربط الأزرار مع إصلاح الأزرار المفقودة (prev-3-res, copy-link-btn-res)
 function setupResultEventListeners() {
     document.getElementById('create-new-btn-integrated').onclick = showResultWizard;
     document.getElementById('back-to-list-btn-integrated').onclick = loadResultsSheets;
-    document.getElementById('next-1-res').onclick = () => goToResultStep(2);
+
+    // ✅ الخطوة 1: التحقق من الحقول قبل المتابعة
+    document.getElementById('next-1-res').onclick = () => {
+        const title   = document.getElementById('sheet-title-res')?.value.trim();
+        const teacher = document.getElementById('sheet-teacher-res')?.value.trim();
+        if (!title || !teacher) {
+            alert('الرجاء ملء عنوان الكشف واسم المدرس قبل المتابعة.');
+            return;
+        }
+        goToResultStep(2);
+    };
+
+    // الخطوة 2: التنقل
     document.getElementById('prev-2-res').onclick = () => goToResultStep(1);
     document.getElementById('next-2-res').onclick = () => {
-        // بناء المعاينة
+        if (parsedStudents.length === 0) { alert('يرجى رفع ملف إكسل أولاً.'); return; }
+
         const thead = document.getElementById('preview-thead-res');
-        thead.innerHTML = `<tr><th>الاسم</th><th>الرمز</th>${gradeColumns.map(c => `<th>${c}</th>`).join('')}</tr>`;
+        if (thead) {
+            thead.innerHTML = `<tr>
+                <th>#</th><th>اسم الطالب</th><th>الرمز السري</th>
+                ${gradeColumns.map(c => `<th>${escHtmlRes(c)}</th>`).join('')}
+            </tr>`;
+        }
         const tbody = document.getElementById('preview-tbody-res');
-        tbody.innerHTML = parsedStudents.slice(0, 5).map(s => `
-            <tr><td>${s.name}</td><td>${s.code}</td>${gradeColumns.map(c => `<td>${s.grades[c]}</td>`).join('')}</tr>
-        `).join('') + '<tr><td colspan="10">... معاينة لأول 5 طلاب فقط</td></tr>';
+        if (tbody) {
+            const previewRows = parsedStudents.slice(0, 10).map((s, i) =>
+                `<tr>
+                    <td>${i + 1}</td>
+                    <td>${escHtmlRes(s.name)}</td>
+                    <td><span style="font-family:monospace;letter-spacing:3px;font-weight:700;color:#1d4ed8;">${s.code}</span></td>
+                    ${gradeColumns.map(c => `<td>${escHtmlRes(String(s.grades[c] ?? '---'))}</td>`).join('')}
+                </tr>`
+            ).join('');
+            const extraRow = parsedStudents.length > 10
+                ? `<tr><td colspan="${gradeColumns.length + 3}" style="text-align:center;color:#94a3b8;padding:10px;">... و ${parsedStudents.length - 10} طالب آخر غير معروض</td></tr>`
+                : '';
+            tbody.innerHTML = previewRows + extraRow;
+        }
         goToResultStep(3);
     };
+
+    // ✅ FIX: زر "السابق" في الخطوة 3 كان مفقوداً
+    const prev3 = document.getElementById('prev-3-res');
+    if (prev3) prev3.onclick = () => goToResultStep(2);
+
     document.getElementById('save-btn-res').onclick = saveResultSheet;
+
+    // ✅ FIX: زر نسخ الرابط في الخطوة 4 كان مفقوداً
+    const copyLinkBtn = document.getElementById('copy-link-btn-res');
+    if (copyLinkBtn) {
+        copyLinkBtn.onclick = () => {
+            const val = document.getElementById('sheet-link-display-res')?.value;
+            if (!val) return;
+            navigator.clipboard.writeText(val)
+                .then(() => alert('✅ تم نسخ الرابط!'))
+                .catch(() => {
+                    const ta = document.createElement('textarea');
+                    ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    alert('✅ تم نسخ الرابط!');
+                });
+        };
+    }
+
     document.getElementById('finish-wizard-btn-res').onclick = loadResultsSheets;
-    
+
     document.getElementById('upload-zone-res').onclick = () => document.getElementById('excel-file-input-res').click();
     document.getElementById('excel-file-input-res').onchange = (e) => handleResultFileUpload(e.target.files[0]);
 }
 
 // إتاحة الدوال عالمياً
 window.loadResultsSheets = loadResultsSheets;
+
 window.copyResultLink = (id) => {
     const baseUrl = window.location.href.split('admin.html')[0];
     const link = `${baseUrl}results-lookup.html?sheet=${id}`;
-    navigator.clipboard.writeText(link).then(() => alert("تم نسخ الرابط"));
-};
-window.deleteResultSheet = async (id) => {
-    if(confirm("حذف الكشف؟")) {
-        await deleteDoc(doc(db, "result_sheets", id));
-        loadResultsSheets();
-    }
+    navigator.clipboard.writeText(link)
+        .then(() => alert('✅ تم نسخ الرابط!'))
+        .catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = link; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('✅ تم نسخ الرابط!');
+        });
 };
 
-// استدعاء تهيئة الأحداث في دالة DOMContentLoaded الأصلية
-// ابحث عن initializeDOMReferences() وأضف بعدها:
-// setupResultEventListeners();
+// ✅ FIX 5: إضافة تنزيل الإكسل مع الرموز (كانت مفقودة في النسخة المدمجة)
+window.downloadResultExcel = (id) => {
+    const sheet = allSheetsCache[id];
+    if (!sheet) return alert('الكشف غير موجود في الذاكرة. أعد تحميل الصفحة.');
+    const cols = sheet.gradeColumns || [];
+    const students = Object.entries(sheet.studentsByCode || {}).map(([code, s]) => ({
+        name: s.name, code, grades: s.grades || {}
+    }));
+    const headers = ['الاسم', 'الرمز السري', ...cols];
+    const rows = students.map(s => [
+        s.name, s.code,
+        ...cols.map(c => {
+            const v = s.grades[c];
+            return (v === undefined || v === null || v === '---') ? '' : v;
+        })
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = [{ wch: 30 }, { wch: 14 }, ...cols.map(() => ({ wch: 16 }))];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'النتائج مع الرموز');
+    XLSX.writeFile(wb, `${sheet.title || 'كشف النتائج'} - مع الرموز.xlsx`);
+};
+
+// ✅ FIX 6: إضافة طباعة قائمة الباركود (كانت مفقودة في النسخة المدمجة)
+window.printResultBarcodes = (id) => {
+    const sheet = allSheetsCache[id];
+    if (!sheet) return alert('الكشف غير موجود في الذاكرة. أعد تحميل الصفحة.');
+    const students = Object.entries(sheet.studentsByCode || {})
+        .map(([code, s]) => ({ name: s.name, code }));
+    const escH = str => String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const win = window.open('', '_blank', 'width=960,height=720');
+    if (!win) { alert('الرجاء السماح بفتح النوافذ المنبثقة من إعدادات المتصفح.'); return; }
+    const cards = students.map((s, i) =>
+        `<div class="card">
+            <div class="num">${i + 1}</div>
+            <div class="name">${escH(s.name)}</div>
+            <div class="code">${s.code}</div>
+            <svg id="bc${i}"></svg>
+        </div>`
+    ).join('');
+    const barcodeScript = students.map((s, i) =>
+        `try{JsBarcode('#bc${i}','${s.code}',{format:'CODE128',displayValue:false,height:52,margin:2});}catch(e){}`
+    ).join('\n');
+    win.document.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>قائمة الرموز - ${escH(sheet.title || '')}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"><\/script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:Arial,sans-serif;background:#fff;padding:24px;}
+    h2{text-align:center;color:#1e40af;margin-bottom:6px;font-size:1.4em;}
+    .sub{text-align:center;color:#64748b;font-size:0.9em;margin-bottom:22px;}
+    .print-btn{display:block;margin:0 auto 22px;padding:11px 36px;background:#1d4ed8;color:white;border:none;border-radius:8px;font-size:1em;cursor:pointer;font-weight:700;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    .card{border:2px solid #1e40af;border-radius:10px;padding:13px;text-align:center;page-break-inside:avoid;}
+    .num{font-size:0.72em;color:#94a3b8;margin-bottom:3px;}
+    .name{font-size:0.9em;font-weight:700;color:#1e293b;margin-bottom:5px;min-height:38px;display:flex;align-items:center;justify-content:center;word-break:break-word;}
+    .code{font-family:monospace;font-size:1.05em;letter-spacing:4px;color:#1d4ed8;font-weight:700;margin-bottom:8px;}
+    svg{max-width:100%;height:52px;}
+    @media print{.print-btn{display:none;}body{padding:10px;}.grid{gap:10px;}}
+  </style>
+</head>
+<body>
+  <h2>📋 قائمة الرموز السرية</h2>
+  <p class="sub">${escH(sheet.title || '')} &nbsp;|&nbsp; عدد الطلاب: ${students.length}</p>
+  <button class="print-btn" onclick="window.print()">🖨️ طباعة القائمة</button>
+  <div class="grid">${cards}</div>
+  <script>window.onload=function(){${barcodeScript}};<\/script>
+</body>
+</html>`);
+    win.document.close();
+};
+
+window.deleteResultSheet = async (id) => {
+    if (confirm("هل أنت متأكد من حذف هذا الكشف نهائياً؟\nلا يمكن التراجع عن هذا الإجراء.")) {
+        try {
+            await deleteDoc(doc(db, "result_sheets", id));
+            loadResultsSheets();
+        } catch (err) {
+            alert(`خطأ في الحذف: ${err.message}`);
+        }
+    }
+};
 
 // =================================================================
 // --- Global Window Functions ---

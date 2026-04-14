@@ -1,7 +1,7 @@
 <!-- ===================================================
-     results-admin.html
-     Admin page: Create & manage student result sheets
-     Place at root of project (same level as admin.html)
+     results-admin.html  —  v2
+     إصلاحات: قراءة Excel بدقة | وصف قابل للتعديل |
+     التاريخ+الوقت تلقائياً | زر تعديل | ملاحظات | حد 5 كشوفات
      =================================================== -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -10,13 +10,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>إدارة كشوف النتائج</title>
   <link rel="stylesheet" href="css/results-style.css">
-  <!-- SheetJS: Parse & write Excel files -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- JsBarcode: Generate barcodes in print window -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
   <style>
-    /* Hidden until auth check completes */
     body { display: none; }
+
+    /* ── Edit Modal ─────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 900; padding: 16px;
+    }
+    .modal-box {
+      background: #1e293b;
+      border: 1px solid rgba(96,165,250,0.25);
+      border-radius: 18px;
+      width: 100%; max-width: 620px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+      font-family: 'Cairo', sans-serif;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid rgba(96,165,250,0.15);
+    }
+    .modal-header h3 { margin: 0; color: #e2e8f0; font-size: 1.1em; }
+    .modal-close-btn {
+      background: rgba(255,255,255,0.08);
+      border: none; border-radius: 8px;
+      color: #94a3b8; cursor: pointer;
+      width: 32px; height: 32px;
+      font-size: 1em; transition: background 0.2s;
+    }
+    .modal-close-btn:hover { background: rgba(248,113,113,0.2); color: #f87171; }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 16px 24px 20px;
+      border-top: 1px solid rgba(96,165,250,0.15);
+      display: flex; gap: 10px; flex-wrap: wrap;
+      align-items: center; justify-content: space-between;
+    }
+    .modal-footer .modal-footer-left  { display: flex; gap: 8px; flex-wrap: wrap; }
+    .modal-footer .modal-footer-right { display: flex; gap: 8px; }
+
+    /* ── Limit badge ─────────────────────────────── */
+    .limit-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(96,165,250,0.12);
+      border: 1px solid rgba(96,165,250,0.3);
+      color: #93c5fd; border-radius: 20px;
+      padding: 4px 12px; font-size: 0.82em;
+      font-family: 'Cairo', sans-serif;
+    }
+    .limit-badge.full { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.3); color: #fca5a5; }
+
+    /* ── Sheet description in list ───────────────── */
+    .sheet-desc { color: #64748b; font-size: 0.82em; margin-top: 3px; font-style: italic; }
+
+    /* ── Time input ──────────────────────────────── */
+    input[type="time"].res-input { color-scheme: light; }
   </style>
 </head>
 <body class="results-admin-body">
@@ -28,7 +82,10 @@
       <span class="res-header-sep">|</span>
       <h2>📊 كشوف النتائج</h2>
     </div>
-    <div id="header-admin-name" class="res-header-user"></div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span class="limit-badge" id="limit-badge" style="display:none;"></span>
+      <div id="header-admin-name" class="res-header-user"></div>
+    </div>
   </div>
 
   <!-- ========== MAIN CONTENT ========== -->
@@ -51,7 +108,6 @@
     <!-- ===== CREATE WIZARD SECTION ===== -->
     <div id="create-wizard" style="display:none;">
 
-      <!-- Back button -->
       <div style="margin-bottom:16px;">
         <button class="res-btn res-btn-gray" id="back-to-list-btn">← العودة للقائمة</button>
       </div>
@@ -82,31 +138,49 @@
       <!-- STEP 1: Sheet Metadata -->
       <div id="step-1" class="res-card">
         <div class="res-card-title">📝 معلومات الكشف</div>
+
+        <!-- Row 1: Title + Teacher -->
         <div class="res-form-grid">
           <div class="res-form-group">
             <label>عنوان الكشف / المادة *</label>
-            <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الفصل الأول - الرياضيات">
+            <input type="text" id="sheet-title" class="res-input" placeholder="مثال: نتائج الفصل الأول – الرياضيات">
           </div>
           <div class="res-form-group">
             <label>اسم المدرس *</label>
             <input type="text" id="sheet-teacher" class="res-input" placeholder="مثال: أستاذ أحمد محمد">
           </div>
         </div>
-        <div class="res-form-grid">
+
+        <!-- Row 2: Description (full width) -->
+        <div class="res-form-group">
+          <label>وصف المادة / الكشف</label>
+          <textarea id="sheet-description" class="res-input" rows="2"
+            placeholder="وصف مختصر يظهر للطلاب أسفل عنوان الكشف... (اختياري)"></textarea>
+        </div>
+
+        <!-- Row 3: Date + Time + Year -->
+        <div class="res-form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
           <div class="res-form-group">
             <label>التاريخ</label>
             <input type="date" id="sheet-date" class="res-input" style="color-scheme: light;">
+          </div>
+          <div class="res-form-group">
+            <label>الوقت</label>
+            <input type="time" id="sheet-time" class="res-input">
           </div>
           <div class="res-form-group">
             <label>العام الدراسي</label>
             <input type="text" id="sheet-year" class="res-input" placeholder="مثال: 2024-2025">
           </div>
         </div>
+
+        <!-- Row 4: Notes -->
         <div class="res-form-group">
           <label>ملاحظات للطلاب (اختياري)</label>
           <textarea id="sheet-notes" class="res-input" rows="3"
             placeholder="أي تعليمات أو إشعارات تريد عرضها للطلاب عند الاستعلام..."></textarea>
         </div>
+
         <div id="err-1" class="res-alert res-alert-error" style="display:none;"></div>
         <div class="res-footer-actions">
           <button class="res-btn res-btn-gray" id="cancel-1">إلغاء</button>
@@ -121,9 +195,10 @@
         <div class="res-alert res-alert-info" style="margin-bottom:20px;">
           <div>
             <strong>تعليمات تنسيق الملف:</strong><br>
-            • <strong>العمود الأول</strong> يجب أن يكون اسم الطالب (الاسم، Name، اسم الطالب...) <br>
-            • الأعمدة التالية هي درجات المواد أو أي بيانات تريد عرضها<br>
-            • الصف الأول يجب أن يكون عناوين الأعمدة
+            • <strong>الصف الأول</strong> هو عناوين الأعمدة (الحقول الأفقية)<br>
+            • <strong>العمود الأول من اليمين</strong> يجب أن يكون اسم الطالب<br>
+            • بقية الأعمدة هي درجات المواد أو أي بيانات تريد عرضها<br>
+            • تُحفظ جميع الأعمدة كما هي بدون تغيير
           </div>
         </div>
 
@@ -141,7 +216,7 @@
           <div>
             <strong id="file-name-display">---</strong>
             <div style="font-size:0.88em; color:#1d4ed8; margin-top:2px;">
-              تم التحقق من الملف: <strong id="row-count-display">---</strong>
+              تم التحقق: <strong id="row-count-display">---</strong>
             </div>
           </div>
         </div>
@@ -217,21 +292,68 @@
   </div>
   <!-- END res-main -->
 
+  <!-- ========== EDIT MODAL ========== -->
+  <div class="modal-overlay" id="edit-modal" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✏️ تعديل الكشف</h3>
+        <button class="modal-close-btn" id="close-edit-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="res-form-group" style="margin-bottom:14px;">
+          <label style="color:#94a3b8; font-size:0.88em;">عنوان الكشف / المادة</label>
+          <input type="text" id="edit-title" class="res-input">
+        </div>
+        <div class="res-form-group" style="margin-bottom:14px;">
+          <label style="color:#94a3b8; font-size:0.88em;">وصف المادة</label>
+          <textarea id="edit-description" class="res-input" rows="2"
+            placeholder="وصف مختصر يظهر أسفل عنوان الكشف..."></textarea>
+        </div>
+        <div class="res-form-group" style="margin-bottom:14px;">
+          <label style="color:#94a3b8; font-size:0.88em;">اسم المدرس</label>
+          <input type="text" id="edit-teacher" class="res-input">
+        </div>
+        <div class="res-form-group" style="margin-bottom:14px;">
+          <label style="color:#94a3b8; font-size:0.88em;">ملاحظات للطلاب</label>
+          <textarea id="edit-notes" class="res-input" rows="3"
+            placeholder="ملاحظات تظهر للطلاب عند الاستعلام..."></textarea>
+        </div>
+        <div id="edit-err" class="res-alert res-alert-error" style="display:none; margin-top:8px;"></div>
+        <div id="edit-success" class="res-alert res-alert-success" style="display:none; margin-top:8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="modal-footer-left">
+          <button class="res-btn res-btn-success" id="edit-dl-excel" style="font-size:0.84em;">📊 إكسل مع الرموز</button>
+          <button class="res-btn res-btn-warning" id="edit-print-barcodes" style="font-size:0.84em;">🖨️ الرموز</button>
+          <button class="res-btn res-btn-primary" id="edit-copy-link" style="font-size:0.84em;">🔗 نسخ الرابط</button>
+        </div>
+        <div class="modal-footer-right">
+          <button class="res-btn res-btn-gray" id="edit-cancel">إلغاء</button>
+          <button class="res-btn res-btn-primary" id="edit-save">💾 حفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { auth, db } from './js/firebase-config.js';
-    import { onAuthStateChanged } from
-      "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import {
-      collection, doc, setDoc, getDocs, deleteDoc,
+      collection, doc, setDoc, getDocs, deleteDoc, updateDoc,
       query, where, Timestamp
     } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     /* ==================== STATE ==================== */
-    let currentUser   = null;
-    let parsedStudents = [];   // [{name, code, grades:{col:val}}]
-    let gradeColumns   = [];   // column names (excluding name column)
-    let savedSheetId   = null;
-    let allSheetsCache = {};   // id → sheetData (for action buttons)
+    const MAX_SHEETS = 5;
+
+    let currentUser     = null;
+    let parsedStudents  = [];
+    let gradeColumns    = [];   // column names (excluding name column)
+    let gradeColsInfo   = [];   // [{header, colIndex}]
+    let savedSheetId    = null;
+    let allSheetsCache  = {};
+    let editingSheetId  = null;
 
     /* ==================== AUTH ==================== */
     onAuthStateChanged(auth, async (user) => {
@@ -253,6 +375,13 @@
           where("adminId", "==", currentUser.uid)
         );
         const snap = await getDocs(q);
+
+        // Update limit badge
+        const badge = document.getElementById('limit-badge');
+        const count = snap.size;
+        badge.style.display = 'inline-flex';
+        badge.className = 'limit-badge' + (count >= MAX_SHEETS ? ' full' : '');
+        badge.textContent = `${count} / ${MAX_SHEETS} كشوفات`;
 
         if (snap.empty) {
           container.innerHTML = `
@@ -279,19 +408,23 @@
               <div class="sheet-item-badge">📊</div>
               <div class="sheet-item-info">
                 <h4>${escHtml(s.title)}</h4>
+                ${s.description ? `<div class="sheet-desc">${escHtml(s.description)}</div>` : ''}
                 <p>
                   👨‍🏫 ${escHtml(s.teacher)}
                   &nbsp;|&nbsp;
                   👥 ${s.studentCount || 0} طالب
                   &nbsp;|&nbsp;
-                  📅 ${s.date || '---'}
+                  📅 ${s.date || '---'}${s.time ? ' ' + s.time : ''}
                   ${s.year ? `&nbsp;|&nbsp; 📚 ${escHtml(s.year)}` : ''}
                 </p>
               </div>
               <div class="sheet-item-actions">
+                <button class="res-btn res-btn-outline"
+                  style="font-size:0.83em; padding:8px 13px;"
+                  data-id="${s.id}" data-action="edit">✏️ تعديل</button>
                 <button class="res-btn res-btn-primary"
                   style="font-size:0.83em; padding:8px 13px;"
-                  data-id="${s.id}" data-action="copy-link">🔗 نسخ الرابط</button>
+                  data-id="${s.id}" data-action="copy-link">🔗 الرابط</button>
                 <button class="res-btn res-btn-success"
                   style="font-size:0.83em; padding:8px 13px;"
                   data-id="${s.id}" data-action="dl-excel">📊 إكسل</button>
@@ -306,18 +439,17 @@
           `).join('')
         }</div>`;
 
-        // Delegate events on the list
         container.querySelectorAll('button[data-action]').forEach(btn => {
           btn.addEventListener('click', () => {
             const id     = btn.dataset.id;
             const action = btn.dataset.action;
             const sheet  = allSheetsCache[id];
             if (!sheet) return;
-
-            if (action === 'copy-link')     handleCopyLink(id);
-            else if (action === 'dl-excel') handleDownloadExcel(sheet);
+            if      (action === 'edit')          openEditModal(id, sheet);
+            else if (action === 'copy-link')     handleCopyLink(id);
+            else if (action === 'dl-excel')      handleDownloadExcel(sheet);
             else if (action === 'print-barcodes') handlePrintBarcodes(sheet);
-            else if (action === 'delete')   handleDelete(id, sheet.title);
+            else if (action === 'delete')        handleDelete(id, sheet.title);
           });
         });
 
@@ -329,17 +461,108 @@
       }
     }
 
+    /* ==================== EDIT MODAL ==================== */
+    function openEditModal(sheetId, sheet) {
+      editingSheetId = sheetId;
+      document.getElementById('edit-title').value       = sheet.title       || '';
+      document.getElementById('edit-description').value = sheet.description || '';
+      document.getElementById('edit-teacher').value     = sheet.teacher     || '';
+      document.getElementById('edit-notes').value       = sheet.notes       || '';
+      document.getElementById('edit-err').style.display     = 'none';
+      document.getElementById('edit-success').style.display = 'none';
+      document.getElementById('edit-modal').style.display   = 'flex';
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').style.display = 'none';
+      editingSheetId = null;
+    }
+
+    document.getElementById('close-edit-modal').addEventListener('click', closeEditModal);
+    document.getElementById('edit-cancel').addEventListener('click', closeEditModal);
+
+    document.getElementById('edit-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('edit-modal')) closeEditModal();
+    });
+
+    document.getElementById('edit-save').addEventListener('click', async () => {
+      if (!editingSheetId) return;
+      const title = document.getElementById('edit-title').value.trim();
+      if (!title) {
+        document.getElementById('edit-err').textContent = 'عنوان الكشف مطلوب.';
+        document.getElementById('edit-err').style.display = 'flex';
+        return;
+      }
+      const btn = document.getElementById('edit-save');
+      btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+      try {
+        await updateDoc(doc(db, "result_sheets", editingSheetId), {
+          title:       title,
+          description: document.getElementById('edit-description').value.trim(),
+          teacher:     document.getElementById('edit-teacher').value.trim(),
+          notes:       document.getElementById('edit-notes').value.trim()
+        });
+        // Update cache
+        if (allSheetsCache[editingSheetId]) {
+          allSheetsCache[editingSheetId].title       = title;
+          allSheetsCache[editingSheetId].description = document.getElementById('edit-description').value.trim();
+          allSheetsCache[editingSheetId].teacher     = document.getElementById('edit-teacher').value.trim();
+          allSheetsCache[editingSheetId].notes       = document.getElementById('edit-notes').value.trim();
+        }
+        document.getElementById('edit-err').style.display = 'none';
+        document.getElementById('edit-success').textContent = '✅ تم حفظ التعديلات بنجاح.';
+        document.getElementById('edit-success').style.display = 'flex';
+        setTimeout(() => { closeEditModal(); loadSheets(); }, 1200);
+      } catch (err) {
+        document.getElementById('edit-err').textContent = `خطأ: ${err.message}`;
+        document.getElementById('edit-err').style.display = 'flex';
+      } finally {
+        btn.disabled = false; btn.textContent = '💾 حفظ';
+      }
+    });
+
+    document.getElementById('edit-dl-excel').addEventListener('click', () => {
+      const sheet = editingSheetId && allSheetsCache[editingSheetId];
+      if (sheet) handleDownloadExcel(sheet);
+    });
+    document.getElementById('edit-print-barcodes').addEventListener('click', () => {
+      const sheet = editingSheetId && allSheetsCache[editingSheetId];
+      if (sheet) handlePrintBarcodes(sheet);
+    });
+    document.getElementById('edit-copy-link').addEventListener('click', () => {
+      if (editingSheetId) handleCopyLink(editingSheetId);
+    });
+
     /* ==================== WIZARD NAVIGATION ==================== */
-    function showWizard() {
+    async function showWizard() {
+      if (!currentUser) return;
+
+      // ── Check 5-sheet limit ──
+      const q = query(
+        collection(db, "result_sheets"),
+        where("adminId", "==", currentUser.uid)
+      );
+      const snap = await getDocs(q);
+      if (snap.size >= MAX_SHEETS) {
+        alert(`⚠️ لقد وصلت إلى الحد الأقصى (${MAX_SHEETS} كشوفات).\nيرجى حذف كشف موجود لتتمكن من إنشاء كشف جديد.`);
+        return;
+      }
+
       // Reset state
       parsedStudents = [];
       gradeColumns   = [];
+      gradeColsInfo  = [];
       savedSheetId   = null;
 
-      ['sheet-title','sheet-teacher','sheet-year','sheet-notes']
+      ['sheet-title','sheet-teacher','sheet-year','sheet-notes','sheet-description']
         .forEach(id => document.getElementById(id).value = '');
+
+      const now = new Date();
       document.getElementById('sheet-date').value =
-        new Date().toISOString().split('T')[0];
+        now.toISOString().split('T')[0];
+      document.getElementById('sheet-time').value =
+        now.toTimeString().slice(0, 5);  // HH:MM
+
       document.getElementById('excel-file-input').value = '';
       document.getElementById('file-info-box').style.display = 'none';
       document.getElementById('next-2').disabled = true;
@@ -357,15 +580,12 @@
 
     function goToStep(n) {
       [1,2,3,4].forEach(i => {
-        const panel = document.getElementById(`step-${i}`);
-        panel.style.display = i === n ? 'block' : 'none';
-
+        document.getElementById(`step-${i}`).style.display = i === n ? 'block' : 'none';
         const circle = document.getElementById(`sc-${i}`);
         const item   = document.getElementById(`si-${i}`);
         item.className = 'step-item' +
           (i < n ? ' done' : i === n ? ' active' : '');
         circle.textContent = i < n ? '✓' : i;
-
         if (i < 4) {
           const conn = document.getElementById(`conn-${i}`);
           if (conn) conn.className = 'step-connector' + (i < n ? ' done' : '');
@@ -388,8 +608,7 @@
     document.getElementById('cancel-1').addEventListener('click', hideWizard);
     document.getElementById('prev-2').addEventListener('click', () => goToStep(1));
     document.getElementById('back-to-list-btn').addEventListener('click', () => {
-      hideWizard();
-      loadSheets();
+      hideWizard(); loadSheets();
     });
 
     /* ==================== FILE UPLOAD ==================== */
@@ -402,10 +621,8 @@
       e.preventDefault();
       uploadZone.classList.add('drag-over');
     });
-
     uploadZone.addEventListener('dragleave',
       () => uploadZone.classList.remove('drag-over'));
-
     uploadZone.addEventListener('drop', e => {
       e.preventDefault();
       uploadZone.classList.remove('drag-over');
@@ -418,16 +635,12 @@
       if (file) processFile(file);
     };
 
+    /* ── Core Excel Parser ── */
     function processFile(file) {
       hideErr('err-2');
       document.getElementById('next-2').disabled = true;
       document.getElementById('file-info-box').style.display = 'none';
 
-      const allowed = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-excel',
-        'text/csv'
-      ];
       const ext = file.name.split('.').pop().toLowerCase();
       if (!['xlsx','xls','csv'].includes(ext)) {
         showErr('err-2', 'نوع الملف غير مدعوم. يرجى رفع ملف .xlsx أو .xls أو .csv');
@@ -435,60 +648,84 @@
       }
 
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = ev => {
         try {
-          const data = new Uint8Array(e.target.result);
+          const data = new Uint8Array(ev.target.result);
           const wb   = XLSX.read(data, { type: 'array' });
           const ws   = wb.Sheets[wb.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+          // ── Get all rows as raw arrays ──
+          const rows = XLSX.utils.sheet_to_json(ws, {
+            header: 1,
+            defval: '',
+            blankrows: false   // skip fully blank rows
+          });
 
           if (!rows || rows.length < 2) {
-            showErr('err-2', 'الملف فارغ أو يحتوي على صف عناوين فقط. يجب أن يحتوي على بيانات طلاب.');
+            showErr('err-2', 'الملف فارغ أو يحتوي على صف عناوين فقط دون بيانات.');
             return;
           }
 
-          const headers = rows[0].map(h => String(h).trim()).filter(h => h);
-          if (headers.length < 2) {
-            showErr('err-2', 'يجب أن يحتوي الملف على عمودين على الأقل: عمود الاسم + عمود درجة واحدة.');
+          // ── Row 0 = header row (أسماء الحقول الأفقية) ──
+          const headerRow = rows[0];
+
+          // ── Column 0 = names (العمود الأول من اليمين) ──
+          // Build gradeColsInfo using actual indices to avoid misalignment
+          gradeColsInfo = [];
+          for (let j = 1; j < headerRow.length; j++) {
+            const h = String(headerRow[j] ?? '').trim();
+            gradeColsInfo.push({ header: h || `عمود ${j}`, colIndex: j });
+          }
+
+          if (gradeColsInfo.length === 0) {
+            showErr('err-2', 'يجب أن يحتوي الملف على عمود الاسم + عمود واحد آخر على الأقل.');
             return;
           }
 
-          gradeColumns = headers.slice(1); // everything after the first column
+          gradeColumns = gradeColsInfo.map(c => c.header);
 
-          // Generate unique codes
+          // ── Generate unique codes ──
           const usedCodes = new Set();
           const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
           function genCode() {
             let c;
-            do { c = Array.from({length:6}, () => CHARS[Math.floor(Math.random()*CHARS.length)]).join(''); }
-            while (usedCodes.has(c));
+            do {
+              c = Array.from({length:6},
+                () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
+            } while (usedCodes.has(c));
             usedCodes.add(c);
             return c;
           }
 
+          // ── Parse student rows (rows 1..N) ──
           parsedStudents = [];
+          let skipped = 0;
           for (let i = 1; i < rows.length; i++) {
             const row  = rows[i];
             const name = String(row[0] ?? '').trim();
-            if (!name) continue;
+            if (!name) { skipped++; continue; }
 
+            // Use actual column indices for accurate extraction
             const grades = {};
-            gradeColumns.forEach((col, idx) => {
-              const val = row[idx + 1];
-              grades[col] = (val !== '' && val !== undefined && val !== null) ? val : '---';
+            gradeColsInfo.forEach(({ header, colIndex }) => {
+              const val = row[colIndex];
+              grades[header] = (val !== undefined && val !== null && val !== '')
+                ? val : '---';
             });
+
             parsedStudents.push({ name, code: genCode(), grades });
           }
 
           if (parsedStudents.length === 0) {
-            showErr('err-2', 'لم يتم العثور على أي اسم طالب في الملف. تأكد من أن البيانات تبدأ من الصف الثاني.');
+            showErr('err-2', 'لم يتم العثور على أي اسم طالب. تأكد أن العمود الأول يحتوي أسماء الطلاب.');
             return;
           }
 
-          // Show file info
+          // ── Show file info ──
           document.getElementById('file-name-display').textContent = file.name;
           document.getElementById('row-count-display').textContent =
-            `${parsedStudents.length} طالب | ${gradeColumns.length} عمود`;
+            `${parsedStudents.length} طالب | ${gradeColumns.length} عمود` +
+            (skipped > 0 ? ` | تم تجاوز ${skipped} صف فارغ` : '');
           document.getElementById('file-info-box').style.display = 'flex';
           document.getElementById('next-2').disabled = false;
 
@@ -505,7 +742,6 @@
     function buildPreview() {
       if (!parsedStudents.length) return;
 
-      // Stats
       document.getElementById('preview-stats').innerHTML = `
         <div class="stat-box blue">
           <div class="stat-num">${parsedStudents.length}</div>
@@ -517,10 +753,9 @@
         </div>
         <div class="stat-box purple">
           <div class="stat-num">6</div>
-          <div class="stat-lbl">طول الرمز السري</div>
+          <div class="stat-lbl">طول الرمز</div>
         </div>`;
 
-      // Table headers
       document.getElementById('preview-thead').innerHTML = `<tr>
         <th>#</th>
         <th>اسم الطالب</th>
@@ -528,7 +763,6 @@
         ${gradeColumns.map(c => `<th>${escHtml(c)}</th>`).join('')}
       </tr>`;
 
-      // Table rows (show max 60)
       const display = parsedStudents.slice(0, 60);
       document.getElementById('preview-tbody').innerHTML =
         display.map((s, i) => `
@@ -536,13 +770,15 @@
             <td>${i+1}</td>
             <td>${escHtml(s.name)}</td>
             <td><span class="code-badge">${s.code}</span></td>
-            ${gradeColumns.map(c => `<td>${escHtml(String(s.grades[c] ?? '---'))}</td>`).join('')}
+            ${gradeColumns.map(c =>
+              `<td>${escHtml(String(s.grades[c] ?? '---'))}</td>`
+            ).join('')}
           </tr>`).join('') +
         (parsedStudents.length > 60 ? `
           <tr>
             <td colspan="${gradeColumns.length + 3}"
               style="text-align:center; color:#94a3b8; padding:12px;">
-              ... و ${parsedStudents.length - 60} طالب آخر لم يُعرض
+              ... و ${parsedStudents.length - 60} طالب آخر
             </td>
           </tr>` : '');
 
@@ -562,16 +798,17 @@
         const sheetRef = doc(collection(db, "result_sheets"));
         savedSheetId   = sheetRef.id;
 
-        // Build lookup structures
         const studentsByCode = {};
         parsedStudents.forEach(s => {
           studentsByCode[s.code] = { name: s.name, grades: s.grades };
         });
 
-        const sheetDoc = {
+        await setDoc(sheetRef, {
           title:          document.getElementById('sheet-title').value.trim(),
+          description:    document.getElementById('sheet-description').value.trim(),
           teacher:        document.getElementById('sheet-teacher').value.trim(),
           date:           document.getElementById('sheet-date').value,
+          time:           document.getElementById('sheet-time').value,
           year:           document.getElementById('sheet-year').value.trim(),
           notes:          document.getElementById('sheet-notes').value.trim(),
           adminId:        currentUser.uid,
@@ -579,14 +816,11 @@
           gradeColumns,
           studentsByCode,
           studentCount:   parsedStudents.length
-        };
+        });
 
-        await setDoc(sheetRef, sheetDoc);
-
-        // Build and display share link
         const base = window.location.href.replace(/results-admin\.html.*/, '');
-        const link = `${base}results-lookup.html?sheet=${savedSheetId}`;
-        document.getElementById('sheet-link-display').value = link;
+        document.getElementById('sheet-link-display').value =
+          `${base}results-lookup.html?sheet=${savedSheetId}`;
 
         goToStep(4);
 
@@ -599,30 +833,29 @@
 
     /* ==================== STEP 4 ACTIONS ==================== */
     document.getElementById('copy-link-btn').addEventListener('click', () => {
-      const val = document.getElementById('sheet-link-display').value;
-      copyToClipboard(val, document.getElementById('copy-link-btn'));
+      copyToClipboard(
+        document.getElementById('sheet-link-display').value,
+        document.getElementById('copy-link-btn')
+      );
     });
-
     document.getElementById('dl-excel-btn').addEventListener('click', () => {
       downloadExcelWithCodes(parsedStudents, gradeColumns,
         document.getElementById('sheet-title').value);
     });
-
     document.getElementById('print-barcodes-btn').addEventListener('click', () => {
-      openBarcodeWindow(parsedStudents.map(s => ({ name: s.name, code: s.code })),
-        document.getElementById('sheet-title').value);
+      openBarcodeWindow(
+        parsedStudents.map(s => ({ name: s.name, code: s.code })),
+        document.getElementById('sheet-title').value
+      );
     });
-
     document.getElementById('finish-wizard-btn').addEventListener('click', () => {
-      hideWizard();
-      loadSheets();
+      hideWizard(); loadSheets();
     });
 
     /* ==================== SHEET LIST ACTIONS ==================== */
     function handleCopyLink(sheetId) {
       const base = window.location.href.replace(/results-admin\.html.*/, '');
-      const link = `${base}results-lookup.html?sheet=${sheetId}`;
-      copyToClipboard(link);
+      copyToClipboard(`${base}results-lookup.html?sheet=${sheetId}`);
     }
 
     function handleDownloadExcel(sheet) {
@@ -651,22 +884,17 @@
     function downloadExcelWithCodes(students, cols, title) {
       const headers = ['الاسم', 'الرمز السري', ...cols];
       const rows = students.map(s => [
-        s.name,
-        s.code,
+        s.name, s.code,
         ...cols.map(c => {
           const v = s.grades?.[c];
           return (v === undefined || v === null || v === '---') ? '' : v;
         })
       ]);
-
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-      // Column widths
       ws['!cols'] = [
         { wch: 30 }, { wch: 14 },
         ...cols.map(() => ({ wch: 16 }))
       ];
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'النتائج مع الرموز');
       XLSX.writeFile(wb, `${title || 'كشف النتائج'} - مع الرموز.xlsx`);
@@ -679,7 +907,6 @@
         alert('الرجاء السماح بفتح النوافذ المنبثقة من إعدادات المتصفح.');
         return;
       }
-
       const cards = students.map((s, i) => `
         <div class="card">
           <div class="num">${i+1}</div>
@@ -689,7 +916,7 @@
         </div>`).join('');
 
       const barcodeScript = students.map((s, i) =>
-        `try{ JsBarcode('#bc${i}','${s.code}',{format:'CODE128',displayValue:false,height:52,margin:2}); }catch(e){}`
+        `try{JsBarcode('#bc${i}','${s.code}',{format:'CODE128',displayValue:false,height:52,margin:2});}catch(e){}`
       ).join('\n');
 
       win.document.write(`<!DOCTYPE html>
@@ -717,9 +944,7 @@
     .code{font-family:monospace;font-size:1.05em;letter-spacing:4px;
       color:#1d4ed8;font-weight:700;margin-bottom:8px;}
     svg{max-width:100%;height:52px;}
-    @media print{.print-btn{display:none;}
-      body{padding:10px;}
-      .grid{gap:10px;}}
+    @media print{.print-btn{display:none;}body{padding:10px;}.grid{gap:10px;}}
   </style>
 </head>
 <body>
@@ -727,9 +952,7 @@
   <p class="sub">${escHtml(title)} &nbsp;|&nbsp; عدد الطلاب: ${students.length}</p>
   <button class="print-btn" onclick="window.print()">🖨️ طباعة القائمة</button>
   <div class="grid">${cards}</div>
-  <script>
-    window.onload=function(){${barcodeScript}};
-  <\/script>
+  <script>window.onload=function(){${barcodeScript}};<\/script>
 </body>
 </html>`);
       win.document.close();
@@ -739,37 +962,28 @@
     function copyToClipboard(text, btn) {
       if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(() => {
-          if (btn) { const old = btn.textContent; btn.textContent = '✅ تم النسخ!'; setTimeout(() => btn.textContent = old, 2000); }
+          if (btn) { const o = btn.textContent; btn.textContent = '✅ تم!'; setTimeout(() => btn.textContent = o, 2000); }
           else alert('✅ تم نسخ الرابط!');
         }).catch(() => fallbackCopy(text, btn));
       } else {
         fallbackCopy(text, btn);
       }
     }
-
     function fallbackCopy(text, btn) {
       const el = document.createElement('textarea');
-      el.value = text;
-      el.style.position = 'fixed';
-      el.style.opacity  = '0';
+      el.value = text; el.style.cssText = 'position:fixed;opacity:0;';
       document.body.appendChild(el);
       el.focus(); el.select();
       try { document.execCommand('copy'); } catch {}
       document.body.removeChild(el);
-      if (btn) { const old = btn.textContent; btn.textContent = '✅ تم النسخ!'; setTimeout(() => btn.textContent = old, 2000); }
+      if (btn) { const o = btn.textContent; btn.textContent = '✅ تم!'; setTimeout(() => btn.textContent = o, 2000); }
       else alert('✅ تم نسخ الرابط!');
     }
-
     function showErr(id, msg) {
       const el = document.getElementById(id);
-      el.textContent = msg;
-      el.style.display = 'flex';
+      el.textContent = msg; el.style.display = 'flex';
     }
-
-    function hideErr(id) {
-      document.getElementById(id).style.display = 'none';
-    }
-
+    function hideErr(id) { document.getElementById(id).style.display = 'none'; }
     function escHtml(str) {
       return String(str)
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
