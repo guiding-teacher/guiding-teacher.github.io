@@ -49,15 +49,6 @@ io.on('connection', (socket) => {
       room.splice(existingIndex, 1);
     }
 
-    // ✅ إزالة أي جهاز بنفس الاسم إذا كان قد غادر (socket قديم انقطع دون تنظيف)
-    const staleByName = room.findIndex(u => u.name === deviceName);
-    if (staleByName !== -1) {
-      const staleId = room[staleByName].id;
-      console.log(`🧹 Removing stale same-name entry ${staleId} for device "${deviceName}"`);
-      room.splice(staleByName, 1);
-      joinedSockets.delete(staleId);
-    }
-
     // Send existing peers to the newcomer (مرة واحدة فقط)
     const existingPeers = room.map(u => ({ id: u.id, name: u.name }));
     socket.emit('room-peers', existingPeers);

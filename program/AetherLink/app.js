@@ -1,6 +1,7 @@
 /**
  * AetherLink Web — Multi-Peer P2P File Transfer
  * v2: parallel transfers · auto-save · fast local · instant session
+ * FIXED: Initiator logic for proper host-guest connection
  */
 
 // ─────────────────────────────────────────
@@ -298,12 +299,9 @@ function hideMiniWidget() {
 // ─────────────────────────────────────────
 //  Socket listeners
 // ─────────────────────────────────────────
- // ─────────────────────────────────────────
-//  Socket listeners
-// ─────────────────────────────────────────
 function setupSocket() {
     
-    socket.on('connect', () => {
+     socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
         
         // ✅ لا تدمر الـ peers النشطة عند إعادة الاتصال بالـ socket
@@ -320,13 +318,10 @@ function setupSocket() {
             });
         }
  
-        // ✅ إعادة الانضمام للغرفة فقط إذا لم يكن هناك اتصال WebRTC نشط بالفعل
-        // peers.size === 0 لا يكفي — يجب التحقق من حالة الاتصال الفعلي
-        const hasActivePeer = [...peers.values()].some(p => p.connected === true);
-        if (roomId && !hasActivePeer && !isJoiningRoom) {
+        // إعادة الانضمام للغرفة فقط إذا لم نكن متصلين بالفعل
+        if (roomId && peers.size === 0 && !isJoiningRoom) {
             isJoiningRoom = true;
             socket.emit('join-room', { roomId, deviceName });
-            // إعادة تعيين العلم بعد ثانية لتجنب التكرار
             setTimeout(() => { isJoiningRoom = false; }, 1000);
         }
     });
@@ -337,36 +332,26 @@ function setupSocket() {
     socket.on('room-peers', (list) => {
         if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
         
-        // ✅ لا تنشئ اتصالات جديدة إذا كان هناك WebRTC نشط فعلاً (ليس فقط peers.size)
-        const hasActivePeer = [...peers.values()].some(p => p.connected === true);
-        if (hasActivePeer) {
-            console.log('⚠️ Already have active WebRTC connections, skipping duplicate room-peers');
+        // ✅ لا تنشئ اتصالات جديدة إذا كنا متصلين بالفعل
+        if (peers.size > 0) {
+            console.log('⚠️ Already have peers, skipping duplicate connections');
             return;
         }
         
         list.forEach(({ id, name }) => {
-            // تحقق من عدم وجود اتصال مسبق بهذا الـ peer أو بنفس الاسم
-            const connectedByName = [...peers.values()].some(p => p.name === name && p.connected === true);
-            if (!peers.has(id) && !connectedByName) {
-                makePeer(id, name, true);
+            // تحقق من عدم وجود اتصال مسبق بهذا الـ peer
+            if (!peers.has(id)) {
+                // ✅ الضيف (joiner) لا يجب أن يكون مبادراً
+                // المضيف هو من يرسل الإشارة أولاً
+                // نحن هنا في وضع الضيف (لأننا تلقينا room-peers)
+                // لذا ننتظر الإشارة من المضيف (initiator=false)
+                makePeer(id, name, false);
             }
         });
     });
 
-    socket.on('new-peer', ({ id, name }) => {
-        // ✅ منع إنشاء peer مكرر بالمعرف
-        if (peers.has(id)) {
-            console.log(`⚠️ Peer ${id} already exists, skipping duplicate`);
-            return;
-        }
-        // ✅ منع إنشاء peer مكرر بالاسم — يحدث عند reconnect للـ socket بـ ID جديد
-        const connectedByName = [...peers.values()].some(p => p.name === name && p.connected === true);
-        if (connectedByName) {
-            console.log(`⚠️ Already connected to device "${name}", skipping duplicate from new socket ID`);
-            return;
-        }
-        makePeer(id, name, false);
-    });
+    // ✅ المضيف يستقبل new-peer ويبدأ الاتصال (initiator=true)
+    socket.on('new-peer', ({ id, name }) => makePeer(id, name, true));
 
     socket.on('receive-signal', ({ signal, from }) => {
         const pi = peers.get(from);
@@ -385,7 +370,7 @@ function setupSocket() {
         updatePeersUI(); updatePiPStatus();
         toast(`${name} غادر الجلسة - سيتم إنهاء الجلسة`, 'warning');
         
-        // ✅ إنهاء الجلسة فوراً للطرف الآخر عند مغادرة أي طرف
+        // إنهاء الجلسة فوراً للطرف الآخر عند مغادرة أي طرف
         setTimeout(() => {
             goHome();
             toast('تم إنهاء الجلسة بسبب مغادرة الطرف الآخر', 'info');
@@ -457,11 +442,11 @@ function makePeer(peerId, peerName, initiator) {
         reconnectTimers.delete(peerId);
     }
     
-    console.log(`🔌 Creating peer connection to ${peerName} (initiator: ${initiator}, local: ${isLocalConnection})`);
+    console.log(`🔌 Creating peer connection to ${peerName} (initiator: ${initiator}, isHost: ${isHost})`);
  
     const peer = new SimplePeer({
         initiator,
-        trickle: true, // ✅ أسرع بكثير على الإنترنت — يرسل ICE candidates فور اكتشافها
+        trickle: false,
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -484,8 +469,6 @@ function makePeer(peerId, peerName, initiator) {
         const pi = peers.get(peerId);
         if (!pi || pi.connected === 'destroyed') return;
         
-        // ✅ تحقق هل كان هناك اتصال نشط قبل هذا (لمنع تكرار التنبيه)
-        const wasAlreadyConnected = getConnected().length > 0;
         pi.connected = true;
         addToPrev(peerName);
  
@@ -495,10 +478,7 @@ function makePeer(peerId, peerName, initiator) {
         updatePiPStatus();
         renderConnectedUI();
         setBadge('ok', '● متصل');
-        // ✅ لا تُظهر تنبيه "متصل" مكرر إذا كان الاتصال موجوداً أصلاً
-        if (!wasAlreadyConnected) {
-            toast(`✅ متصل بـ ${peerName}`, 'success');
-        }
+        toast(`✅ متصل بـ ${peerName}`, 'success');
  
         if (isLocalConnection) localConnected.add(peerId);
  
@@ -619,9 +599,10 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
             return;
         }
  
-        // أعد بناء الـ peer
-        const initiator = socket.id < peerId;
-        makePeer(peerId, peerName, initiator);
+        // ✅ إعادة بناء الـ peer بناءً على الدور (مضيف/ضيف)
+        // المضيف هو دائماً المبادر، الضيف هو المستقبل
+        const shouldInitiate = isHost;
+        makePeer(peerId, peerName, shouldInitiate);
     }, delay);
  
     reconnectTimers.set(peerId, { timer, attempt });
@@ -1431,6 +1412,7 @@ function goHome() {
 
     socket.emit('leave-room');
     isLocalConnection = false;
+    isHost = true; // ✅ نحن الآن مضيفون لجلسة جديدة
     roomId = mkId();
     history.replaceState({}, '', `?id=${roomId}`);
     renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
@@ -1485,7 +1467,7 @@ function initMiniDrag() {
 // ─────────────────────────────────────────
 //  Parallel file send — async, no queue
 // ─────────────────────────────────────────
-  // ─────────────────────────────────────────
+// ─────────────────────────────────────────
 //  Parallel file send — async, no queue
 // ─────────────────────────────────────────
 async function sendFileParallel(file, peerIds) {
@@ -1494,108 +1476,135 @@ async function sendFileParallel(file, peerIds) {
  
     sendingFiles.set(fileId, { cancelled: false });
  
-    // أرسل الـ metadata لكل الـ peers
+    // أرسل الـ metadata لكل الـ peers المتصلين
     const metaMsg = JSON.stringify({ type: 'metadata', payload: meta });
     peerIds.forEach(id => {
         const pi = peers.get(id);
-        if (pi?.connected) try { pi.peer.send(metaMsg); } catch (_) {}
+        if (pi?.connected) {
+            try { 
+                pi.peer.send(metaMsg); 
+            } catch (_) {}
+        }
     });
  
     createSenderFileBox(file, meta);
  
     let offset = 0;
+    let lastProgress = 0;
+    
     try {
         while (offset < file.size) {
             const sf = sendingFiles.get(fileId);
-            if (!sf || sf.cancelled) break;
+            if (!sf || sf.cancelled) {
+                console.log(`📤 File ${fileId} cancelled`);
+                break;
+            }
  
             const end      = Math.min(offset + CHUNK_SIZE, file.size);
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
             const tagged   = makeChunkWithId(fileId, chunkBuf);
  
+            // إرسال لكل الـ peers المتصلين
             for (const id of peerIds) {
                 const pi = peers.get(id);
-                if (!pi?.connected) continue;
+                if (!pi?.connected) {
+                    console.warn(`⚠️ Peer ${id} not connected, skipping chunk`);
+                    continue;
+                }
  
-                // Backpressure: انتظر إذا كان Buffer ممتلئاً
+                // ✅ Backpressure: انتظر إذا كان Buffer ممتلئاً (16MB)
                 let waits = 0;
+                const MAX_WAITS = 500;
+                const BUFFER_LIMIT = 16 * 1024 * 1024; // 16MB
+                
                 while (
                     pi.peer._channel &&
-                    pi.peer._channel.bufferedAmount > 8 * 1024 * 1024 &&
-                    waits < 400
+                    pi.peer._channel.bufferedAmount > BUFFER_LIMIT &&
+                    waits < MAX_WAITS
                 ) {
-                    await new Promise(r => setTimeout(r, 30));
+                    await new Promise(r => setTimeout(r, 20));
                     waits++;
  
-                    // إذا انقطع الاتصال أثناء الانتظار — انتظر إعادة الاتصال
+                    // تحقق من الاتصال أثناء الانتظار
                     const current = peers.get(id);
                     if (!current?.connected) {
-                        // انتظر حتى 20 ثانية لإعادة الاتصال
-                        let waitReconn = 0;
-                        while (waitReconn < 200) {
-                            await new Promise(r => setTimeout(r, 100));
-                            const reconnected = peers.get(id);
-                            if (reconnected?.connected) break;
-                            waitReconn++;
-                        }
-                        // أعد إرسال الـ metadata بعد إعادة الاتصال
-                        const reconn = peers.get(id);
-                        if (reconn?.connected) {
-                            try { reconn.peer.send(metaMsg); } catch (_) {}
-                        }
+                        console.warn(`⚠️ Peer ${id} disconnected during backpressure wait`);
                         break;
                     }
                 }
  
-                // محاولة الإرسال مع retry عند الفشل
+                if (waits >= MAX_WAITS) {
+                    console.warn(`⏱️ Backpressure timeout for peer ${id}`);
+                }
+ 
+                // ✅ محاولة الإرسال مع retry
                 let sent = false;
-                for (let retry = 0; retry < 5; retry++) {
+                const MAX_RETRIES = 3;
+                
+                for (let retry = 0; retry < MAX_RETRIES; retry++) {
                     const currentPi = peers.get(id);
+                    
                     if (!currentPi?.connected) {
-                        // انتظر إعادة الاتصال (حتى 15 ثانية)
-                        let w = 0;
-                        while (w < 150) {
+                        // انتظر إعادة الاتصال (حتى 5 ثواني)
+                        let waitConn = 0;
+                        while (waitConn < 50) {
                             await new Promise(r => setTimeout(r, 100));
                             if (peers.get(id)?.connected) break;
-                            w++;
+                            waitConn++;
                         }
                         continue;
                     }
+                    
                     try {
                         currentPi.peer.send(tagged);
                         sent = true;
                         break;
                     } catch (sendErr) {
-                        console.warn(`send retry ${retry + 1} for ${fileId}`, sendErr);
-                        await new Promise(r => setTimeout(r, 500 * (retry + 1)));
+                        console.warn(`❌ Send retry ${retry + 1}/${MAX_RETRIES} failed for ${fileId}:`, sendErr.message);
+                        if (retry < MAX_RETRIES - 1) {
+                            await new Promise(r => setTimeout(r, 300 * (retry + 1)));
+                        }
                     }
                 }
  
                 if (!sent) {
-                    // بعد 5 محاولات — أخبر المستخدم لكن لا توقف باقي الإرسال
-                    console.error(`فشل إرسال chunk للـ peer ${id}`);
-                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
-                    // استمر مع باقي الـ peers
+                    console.error(`🚫 Failed to send chunk to peer ${id} after ${MAX_RETRIES} retries`);
+                    // لا توقف الإرسال، استمر مع باقي الـ peers
                 }
             }
  
             offset = end;
-            updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
+            const progress = Math.round((offset / file.size) * 100);
+            
+            // تحديث UI فقط إذا تغير التقدم
+            if (progress !== lastProgress) {
+                updateSenderFileBox(fileId, progress);
+                lastProgress = progress;
+            }
  
-            // أعطِ للمتصفح فرصة لمعالجة الأحداث
-            await new Promise(r => setTimeout(r, 0));
+            // ✅ أعطِ للمتصفح فرصة لمعالجة الأحداث (كل 10 chunks)
+            if (offset % (CHUNK_SIZE * 10) === 0) {
+                await new Promise(r => setTimeout(r, 0));
+            }
         }
  
         const sf = sendingFiles.get(fileId);
-        if (sf && !sf.cancelled) finalizeSenderFileBox(fileId);
+        if (sf && !sf.cancelled) {
+            finalizeSenderFileBox(fileId);
+            console.log(`✅ File ${file.name} sent successfully`);
+        }
  
     } catch (err) {
-        console.error('sendFileParallel error', err);
-        updateSenderFileBox(fileId, 0, true, 'فشل قراءة الملف');
+        console.error('💥 sendFileParallel error:', err);
+        updateSenderFileBox(fileId, lastProgress, true, 'فشل إرسال الملف');
+        
+        // أبلغ الـ peers بالخطأ
         peerIds.forEach(id => {
             const pi = peers.get(id);
             if (pi?.connected) {
-                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
+                try { 
+                    pi.peer.send(JSON.stringify({ type: 'error', payload: { fileId } })); 
+                } catch (_) {}
             }
         });
     }
