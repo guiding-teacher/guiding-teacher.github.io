@@ -1,6 +1,6 @@
 /**
  * AetherLink Web — Multi-Peer P2P File Transfer
- * v2: parallel transfers · auto-save · fast local · instant session
+ * v2.5: Parallel transfers · Auto-save · Full Reset · Instant Session Exit
  */
 
 // ─────────────────────────────────────────
@@ -70,7 +70,7 @@ let sessionMessages = [];
 let sessionFiles    = [];
 
 const mainEl = document.getElementById('main-container');
-
+let connectionTimer = null; // لتخزين عداد الـ 30 ثانية
 // ─────────────────────────────────────────
 //  Socket
 // ─────────────────────────────────────────
@@ -83,7 +83,6 @@ const socket = io(SIG_URL, {
 
 // ─────────────────────────────────────────
 //  Chunk protocol — fileId-prefixed binary
-//  Format: [4 bytes: idLen LE][idLen bytes: fileId][chunk data]
 // ─────────────────────────────────────────
 function makeChunkWithId(fileId, chunkArrayBuffer) {
     const idBytes = new TextEncoder().encode(fileId);
@@ -95,7 +94,6 @@ function makeChunkWithId(fileId, chunkArrayBuffer) {
 }
 
 function parseChunkWithId(raw) {
-    // raw is Buffer/Uint8Array from SimplePeer
     const ab = (raw.buffer && raw.byteOffset !== undefined)
         ? raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
         : (raw instanceof ArrayBuffer ? raw : raw.buffer);
@@ -130,13 +128,11 @@ function initCanvas() {
 
     resize();
     window.addEventListener('resize', resize);
-
     const D = 155;
 
     (function frame() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const W = canvas.width, H = canvas.height;
-
         for (const p of pts) {
             p.x += p.vx; p.y += p.vy;
             if (p.x < 0)  { p.x = 0;  p.vx *= -1; }
@@ -148,7 +144,6 @@ function initCanvas() {
             ctx.fillStyle = 'rgba(120,190,255,0.75)';
             ctx.fill();
         }
-
         for (let i = 0; i < pts.length - 1; i++) {
             for (let j = i + 1; j < pts.length; j++) {
                 const dx = pts[i].x - pts[j].x;
@@ -167,6 +162,28 @@ function initCanvas() {
         requestAnimationFrame(frame);
     })();
 }
+
+function startConnectionCountdown() {
+    let secondsLeft = 30;
+    const timerStatus = document.getElementById('status-line');
+    
+    // مسح أي مؤقت سابق
+    if (connectionTimer) clearInterval(connectionTimer);
+
+    connectionTimer = setInterval(() => {
+        secondsLeft--;
+        if (timerStatus) {
+            timerStatus.innerHTML = `<span class="wait-dot"></span> جاري الانتظار... سيتم الإلغاء خلال ${secondsLeft} ثانية`;
+        }
+
+        if (secondsLeft <= 0) {
+            clearInterval(connectionTimer);
+            resetToHome();
+            toast('انتهى الوقت، لم ينضم أحد للجلسة', 'warning');
+        }
+    }, 1000);
+}
+
 
 // ─────────────────────────────────────────
 //  Picture-in-Picture
@@ -295,11 +312,8 @@ function hideMiniWidget() {
 //  Socket listeners
 // ─────────────────────────────────────────
 function setupSocket() {
-    
-     socket.on('connect', () => {
+    socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
- 
-        // دمّر فقط الـ peers غير المتصلة (لا تدمر الاتصالات النشطة)
         const toDestroy = [];
         peers.forEach(({ peer, connected }, id) => {
             if (!connected) toDestroy.push({ id, peer });
@@ -308,13 +322,14 @@ function setupSocket() {
             try { peer.destroy(); } catch (_) {}
             peers.delete(id);
         });
- 
-        // إعادة الانضمام للغرفة (ليُرسل الخادم room-peers من جديد)
         if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
 
     socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
-    socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام الطرف الآخر...'));
+   socket.on('waiting-for-peer', () => {
+        setStatus('في انتظار انضمام الطرف الآخر...');
+        startConnectionCountdown(); // <--- أضف هذا السطر لبدء العد التنازلي للمنشئ (Host)
+    });
 
     socket.on('room-peers', (list) => {
         if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
@@ -348,7 +363,6 @@ function setupSocket() {
             toast('جاري إعادة الاتصال بالخادم...', 'warning');
     });
 
-    // ── Local Discovery events ───────────────
     socket.on('discovery-update', (devices) => {
         localDiscovery.clear();
         devices.forEach(d => {
@@ -361,14 +375,11 @@ function setupSocket() {
         showLocalInviteModal(from, fromName, inviteRoomId);
     });
 
-    // ✅ FIX: Inviter already in room — do NOT call joinDiscoveredRoom
     socket.on('connect-invite-response', ({ accepted, roomId: inviteRoomId }) => {
         if (accepted) {
             toast('✅ تم قبول الاتصال! جاري إنشاء الاتصال...', 'success');
-            // The server will send 'new-peer' which triggers makePeer → renderConnectedUI
         } else {
             toast('رفض الجهاز الاتصال', 'warning');
-            // Re-enable connect button
             const btn = document.querySelector('[data-sid] .local-connect-btn');
             if (btn) { btn.textContent = 'اتصال'; btn.disabled = false; }
         }
@@ -407,6 +418,12 @@ function makePeer(peerId, peerName, initiator) {
     peer.on('signal', (data) => socket.emit('send-signal', { to: peerId, signal: data }));
  
     peer.on('connect', () => {
+        // ✅ إيقاف مؤقت الـ 30 ثانية فور نجاح الاتصال
+        if (connectionTimer) {
+            clearInterval(connectionTimer);
+            connectionTimer = null;
+        }
+
         const pi = peers.get(peerId);
         if (pi) pi.connected = true;
         addToPrev(peerName);
@@ -421,8 +438,7 @@ function makePeer(peerId, peerName, initiator) {
  
         if (isLocalConnection) localConnected.add(peerId);
  
-        // ── Keepalive ping كل 15 ثانية ──────────────
-        // يمنع إغلاق الـ DataChannel من قِبل الشبكة عند عدم النشاط
+        // Keepalive ping كل 15 ثانية
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
             if (!p || !p.connected) { clearInterval(kTimer); return; }
@@ -433,7 +449,6 @@ function makePeer(peerId, peerName, initiator) {
             }
         }, 15000);
  
-        // احتفظ بمرجع الـ timer حتى نتمكن من إلغائه عند الإغلاق
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
  
@@ -466,76 +481,47 @@ function makePeer(peerId, peerName, initiator) {
         updatePeersUI();
         updatePiPStatus();
  
-        // أعد المحاولة دائماً — سواء كان متصلاً أو لا
         scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
     });
 }
- 
 
 function getConnected() {
     return [...peers.entries()].filter(([_, p]) => p.connected);
 }
 
 function scheduleReconnect(peerId, peerName, attempt = 1) {
-    // إذا عاد الاتصال مسبقاً — لا تفعل شيئاً
     const existing = peers.get(peerId);
     if (existing && existing.connected) return;
- 
-    // امسح أي مؤقت سابق لنفس الـ peer
-    if (reconnectTimers.has(peerId)) {
-        clearTimeout(reconnectTimers.get(peerId).timer);
-    }
- 
+    if (reconnectTimers.has(peerId)) clearTimeout(reconnectTimers.get(peerId).timer);
     const delay = Math.min(2000 * attempt, 30000);
-    console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt})`);
- 
     const timer = setTimeout(() => {
         reconnectTimers.delete(peerId);
- 
-        // إذا كان الـ socket غير متصل، أعد المحاولة لاحقاً
-        if (!socket.connected) {
-            scheduleReconnect(peerId, peerName, attempt + 1);
-            return;
-        }
- 
-        // إذا تم الاتصال بالفعل عبر مسار آخر (مثل socket reconnect) — توقف
+        if (!socket.connected) { scheduleReconnect(peerId, peerName, attempt + 1); return; }
         const current = peers.get(peerId);
         if (current && current.connected) return;
- 
-        // أعد بناء الـ peer
-        // الاتفاقية: من socket.id الأصغر نصاً هو المُبادر (initiator)
         const initiator = socket.id < peerId;
         makePeer(peerId, peerName, initiator);
     }, delay);
- 
     reconnectTimers.set(peerId, { timer, attempt });
     setBadge('warn', `● إعادة الاتصال... (${attempt})`);
 }
+
 // ─────────────────────────────────────────
 //  Incoming data handler
 // ─────────────────────────────────────────
 function onData(raw, fromId) {
-    // SimplePeer: strings stay strings, binary arrives as Buffer/Uint8Array
     if (typeof raw === 'string') {
-        try {
-            const msg = JSON.parse(raw);
-            handleJsonMsg(msg, fromId);
-        } catch (_) {}
+        try { const msg = JSON.parse(raw); handleJsonMsg(msg, fromId); } catch (_) {}
         return;
     }
-    // Binary: might be old-style JSON (first byte = '{' = 0x7B) or new chunk protocol
     const firstByte = raw[0];
-    if (firstByte === 0x7B) { // '{'
-        try {
-            const msg = JSON.parse(raw.toString());
-            handleJsonMsg(msg, fromId);
-            return;
-        } catch (_) {}
+    if (firstByte === 0x7B) {
+        try { const msg = JSON.parse(raw.toString()); handleJsonMsg(msg, fromId); return; } catch (_) {}
     }
     recvChunk(raw, fromId);
 }
 
- function handleJsonMsg(msg, fromId) {
+function handleJsonMsg(msg, fromId) {
     switch (msg.type) {
         case 'hello': {
             const pi = peers.get(fromId);
@@ -543,20 +529,12 @@ function onData(raw, fromId) {
             break;
         }
         case 'ping': {
-            // رد على الـ ping بـ pong لإبقاء الاتصال حياً
             const pi = peers.get(fromId);
-            if (pi?.connected) {
-                try { pi.peer.send(JSON.stringify({ type: 'pong' })); } catch (_) {}
-            }
+            if (pi?.connected) { try { pi.peer.send(JSON.stringify({ type: 'pong' })); } catch (_) {} }
             break;
         }
-        case 'pong':
-            // الاتصال لا يزال حياً — لا إجراء مطلوب
-            break;
         case 'metadata':
-            recvMap.set(msg.payload.fileId, {
-                meta: msg.payload, buffer: [], received: 0, fromId,
-            });
+            recvMap.set(msg.payload.fileId, { meta: msg.payload, buffer: [], received: 0, fromId });
             createReceivingFileBox(msg.payload, fromId);
             break;
         case 'cancel':
@@ -572,7 +550,6 @@ function onData(raw, fromId) {
         }
     }
 }
- 
 
 // ─────────────────────────────────────────
 //  Receive chunks — fileId-routed
@@ -582,21 +559,17 @@ function recvChunk(raw, fromId) {
         const { fileId, chunk } = parseChunkWithId(raw);
         const entry = recvMap.get(fileId);
         if (!entry) return;
-
         entry.buffer.push(chunk);
         entry.received += chunk.byteLength;
         const pct = Math.round((entry.received / entry.meta.fileSize) * 100);
         updateReceivingFileBox(entry.meta, pct, entry.fromId);
-
         if (entry.received >= entry.meta.fileSize) {
             const blob = new Blob(entry.buffer);
             const pi   = peers.get(fromId);
             completeReceivingFileBox(entry.meta, blob, pi?.name || 'مجهول');
             recvMap.delete(fileId);
         }
-    } catch (e) {
-        console.error('recvChunk error', e);
-    }
+    } catch (e) { console.error('recvChunk error', e); }
 }
 
 function cancelRecv(fileId, reason) {
@@ -610,22 +583,18 @@ function cancelRecv(fileId, reason) {
 function createReceivingFileBox(meta, fromId) {
     const list = document.getElementById('msg-list');
     if (!list) return;
-
     const { fileId } = meta;
     const pi = peers.get(fromId);
     const senderName = pi?.name || 'مجهول';
     const time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-
     const isImage = meta.fileType?.startsWith('image/');
     const isVideo = meta.fileType?.startsWith('video/');
-
     let iconHtml = '<div class="file-icon">📄</div>';
-    if (isImage)                             iconHtml = '<div class="file-icon">🖼️</div>';
-    else if (isVideo)                        iconHtml = '<div class="file-icon">🎬</div>';
+    if (isImage) iconHtml = '<div class="file-icon">🖼️</div>';
+    else if (isVideo) iconHtml = '<div class="file-icon">🎬</div>';
     else if (meta.fileType?.includes('pdf')) iconHtml = '<div class="file-icon">📕</div>';
     else if (meta.fileType?.includes('audio')) iconHtml = '<div class="file-icon">🎵</div>';
     else if (/zip|rar|7z/.test(meta.fileType || '')) iconHtml = '<div class="file-icon">📦</div>';
-
     const div = document.createElement('div');
     div.className = 'msg received';
     div.id = `recv-file-${fileId}`;
@@ -645,7 +614,6 @@ function createReceivingFileBox(meta, fromId) {
           <div class="tr-status" id="recv-status-${fileId}" style="font-size:.75rem;color:#8899aa;">جاري الاستلام...</div>
         </div>
       </div>`;
-
     list.appendChild(div);
     list.scrollTop = list.scrollHeight;
 }
@@ -654,12 +622,8 @@ function updateReceivingFileBox(meta, pct, fromId, done = false, errorMsg = null
     const progressEl = document.getElementById(`recv-progress-${meta.fileId}`);
     const pctEl      = document.getElementById(`recv-pct-${meta.fileId}`);
     const statusEl   = document.getElementById(`recv-status-${meta.fileId}`);
-
-    if (progressEl) {
-        progressEl.style.width = `${pct}%`;
-        if (done) progressEl.classList.add(errorMsg ? 'error' : 'done');
-    }
-    if (pctEl)    { pctEl.textContent = errorMsg || `${pct}%`; if (errorMsg) pctEl.style.color = '#ff6b6b'; }
+    if (progressEl) { progressEl.style.width = `${pct}%`; if (done) progressEl.classList.add(errorMsg ? 'error' : 'done'); }
+    if (pctEl) { pctEl.textContent = errorMsg || `${pct}%`; if (errorMsg) pctEl.style.color = '#ff6b6b'; }
     if (statusEl) { statusEl.textContent = errorMsg || (done ? 'اكتمل ✓' : 'جاري الاستلام...'); if (errorMsg) statusEl.classList.add('error'); }
 }
 
@@ -667,57 +631,31 @@ function completeReceivingFileBox(meta, blob, senderName) {
     const { fileId } = meta;
     const box = document.getElementById(`file-box-${fileId}`);
     if (!box) return;
-
     const objectUrl = URL.createObjectURL(blob);
     downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
     sessionFiles.push({ fileId, meta, sender: senderName });
-
-    // ✅ AUTO-SAVE: trigger download immediately
     downloadBlob(blob, meta.fileName);
-
     const isImage = meta.fileType?.startsWith('image/');
     const isVideo = meta.fileType?.startsWith('video/');
-
-    // Update preview for image/video
     const previewDiv = box.querySelector('.file-preview');
-    if (previewDiv && isImage) {
-        previewDiv.innerHTML = `<img src="${objectUrl}" alt="${esc(meta.fileName)}">`;
-    } else if (previewDiv && isVideo) {
-        previewDiv.innerHTML = `
-            <video src="${objectUrl}" style="width:100%;height:100%;object-fit:cover;" preload="metadata"></video>
-            <div class="file-preview-overlay"><span>▶</span></div>`;
-    }
-
-    // Update progress
+    if (previewDiv && isImage) { previewDiv.innerHTML = `<img src="${objectUrl}" alt="${esc(meta.fileName)}">`; }
+    else if (previewDiv && isVideo) { previewDiv.innerHTML = `<video src="${objectUrl}" style="width:100%;height:100%;object-fit:cover;" preload="metadata"></video><div class="file-preview-overlay"><span>▶</span></div>`; }
     const progressEl = document.getElementById(`recv-progress-${fileId}`);
     const pctEl      = document.getElementById(`recv-pct-${fileId}`);
     const statusEl   = document.getElementById(`recv-status-${fileId}`);
     if (progressEl) { progressEl.style.width = '100%'; progressEl.classList.add('done'); }
-    if (pctEl)    { pctEl.textContent = '100%'; pctEl.style.color = '#43e97b'; }
+    if (pctEl) { pctEl.textContent = '100%'; pctEl.style.color = '#43e97b'; }
     if (statusEl) { statusEl.textContent = 'تم الحفظ تلقائياً ✓'; statusEl.classList.add('done'); }
-
-    // Action buttons
     const infoDiv = box.querySelector('.file-info');
     if (infoDiv) {
         const actDiv = document.createElement('div');
         actDiv.className = 'file-actions';
-        if (isImage || isVideo) {
-            actDiv.innerHTML = `
-                <button class="file-action-btn download" onclick="openFullscreen('${fileId}')">👁 فتح</button>
-                <button class="file-action-btn delete" onclick="deleteFile('${fileId}')">🗑 حذف</button>`;
-        } else {
-            actDiv.innerHTML = `
-                <button class="file-action-btn download" onclick="downloadFileById('${fileId}')">⬇ تحميل</button>
-                <button class="file-action-btn delete" onclick="deleteFile('${fileId}')">🗑 حذف</button>`;
-        }
+        if (isImage || isVideo) { actDiv.innerHTML = `<button class="file-action-btn download" onclick="openFullscreen('${fileId}')">👁 فتح</button><button class="file-action-btn delete" onclick="deleteFile('${fileId}')">🗑 حذف</button>`; }
+        else { actDiv.innerHTML = `<button class="file-action-btn download" onclick="downloadFileById('${fileId}')">⬇ تحميل</button><button class="file-action-btn delete" onclick="deleteFile('${fileId}')">🗑 حذف</button>`; }
         infoDiv.appendChild(actDiv);
     }
-
     box.classList.remove('receiving');
-    if (isImage || isVideo) {
-        box.onclick = () => openFullscreen(fileId);
-        box.style.cursor = 'pointer';
-    }
+    if (isImage || isVideo) { box.onclick = () => openFullscreen(fileId); box.style.cursor = 'pointer'; }
 }
 
 function downloadFileById(fileId) {
@@ -740,13 +678,11 @@ function openFullscreen(fileId) {
     const isImage = f.meta.fileType?.startsWith('image/');
     const isVideo = f.meta.fileType?.startsWith('video/');
     if (!isImage && !isVideo) return;
-
     const overlay = document.createElement('div');
     overlay.className = 'fullscreen-viewer';
     overlay.innerHTML = isImage
         ? `<img src="${f.url}" alt="${esc(f.meta.fileName)}"><button class="fullscreen-close">✕</button>`
         : `<video src="${f.url}" controls autoplay style="max-width:100%;max-height:100%;"></video><button class="fullscreen-close">✕</button>`;
-
     document.body.appendChild(overlay);
     overlay.querySelector('.fullscreen-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
@@ -782,42 +718,17 @@ function stopDiscovery() {
 function updateLocalDevicesUI() {
     const list = document.getElementById('local-devices-list');
     if (!list) return;
-
     if (!isDiscovering) { list.innerHTML = ''; return; }
-
     if (localDiscovery.size === 0) {
-        list.innerHTML = `
-          <div class="local-no-devices">
-            <div class="local-pulse-ring"></div>
-            <p>جاري البحث عن الأجهزة...</p>
-            <small>تأكد من أن الأجهزة الأخرى مفتوحة على AetherLink</small>
-          </div>`;
+        list.innerHTML = `<div class="local-no-devices"><div class="local-pulse-ring"></div><p>جاري البحث عن الأجهزة...</p><small>تأكد من أن الأجهزة الأخرى مفتوحة على AetherLink</small></div>`;
         return;
     }
-
-    // Determine which discovered devices are already connected
     const connectedNames = new Set([...peers.values()].filter(p => p.connected).map(p => p.name));
     const devices = [...localDiscovery.values()];
-
-    list.innerHTML = `
-      <p class="local-found-label">● ${devices.length} جهاز متاح</p>
-      ${devices.map(d => {
+    list.innerHTML = `<p class="local-found-label">● ${devices.length} جهاز متاح</p>${devices.map(d => {
           const alreadyConn = localConnected.has(d.socketId) || connectedNames.has(d.deviceName);
-          return `
-            <div class="local-device-card" data-sid="${esc(d.socketId)}">
-              <div class="local-device-dot${alreadyConn ? ' connected' : ''}"></div>
-              <div class="local-device-info">
-                <span class="local-device-name">📱 ${esc(d.deviceName)}</span>
-                <span class="local-device-status${alreadyConn ? ' connected' : ''}">
-                  ${alreadyConn ? '● متصل حالياً' : 'متاح للاتصال المباشر'}
-                </span>
-              </div>
-              <button class="local-connect-btn ${alreadyConn ? 'new-session' : ''}" data-connected="${alreadyConn}">
-                ${alreadyConn ? '+ جلسة جديدة' : 'اتصال'}
-              </button>
-            </div>`;
+          return `<div class="local-device-card" data-sid="${esc(d.socketId)}"><div class="local-device-dot${alreadyConn ? ' connected' : ''}"></div><div class="local-device-info"><span class="local-device-name">📱 ${esc(d.deviceName)}</span><span class="local-device-status${alreadyConn ? ' connected' : ''}">${alreadyConn ? '● متصل حالياً' : 'متاح للاتصال المباشر'}</span></div><button class="local-connect-btn ${alreadyConn ? 'new-session' : ''}" data-connected="${alreadyConn}">${alreadyConn ? '+ جلسة جديدة' : 'اتصال'}</button></div>`;
       }).join('')}`;
-
     list.querySelectorAll('.local-device-card').forEach(card => {
         const sid = card.getAttribute('data-sid');
         const d   = localDiscovery.get(sid);
@@ -825,63 +736,38 @@ function updateLocalDevicesUI() {
         const btn = card.querySelector('.local-connect-btn');
         btn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            const alreadyConn = btn.dataset.connected === 'true';
-            if (alreadyConn) {
-                // Open a new tab for a fresh parallel session
-                window.open(location.origin + location.pathname, '_blank');
-            } else {
-                inviteLocalPeer(sid, d.deviceName);
-            }
+            if (btn.dataset.connected === 'true') { window.open(location.origin + location.pathname, '_blank'); }
+            else { inviteLocalPeer(sid, d.deviceName); }
         });
-        card.addEventListener('click', () => {
-            if (btn?.dataset.connected !== 'true') inviteLocalPeer(sid, d.deviceName);
-        });
+        card.addEventListener('click', () => { if (btn?.dataset.connected !== 'true') inviteLocalPeer(sid, d.deviceName); });
     });
 }
 
 function inviteLocalPeer(socketId, peerName) {
     const newRoomId = mkId();
     socket.emit('connect-invite', { to: socketId, roomId: newRoomId });
-
-    // Set local connection flags
     isLocalConnection = true;
     roomId = newRoomId;
     isHost = true;
     history.replaceState({}, '', `?id=${newRoomId}`);
     socket.emit('join-room', { roomId, deviceName });
-
     toast(`⏳ انتظار رد ${peerName}...`, 'info');
-
     const btn = document.querySelector(`[data-sid="${socketId}"] .local-connect-btn`);
     if (btn) { btn.textContent = '⏳ انتظار...'; btn.disabled = true; }
 }
 
 function showLocalInviteModal(from, fromName, inviteRoomId) {
     document.querySelector('.local-invite-overlay')?.remove();
-
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay local-invite-overlay';
-    overlay.innerHTML = `
-      <div class="modal-box local-invite-box">
-        <div class="local-invite-icon">📡</div>
-        <h3>طلب اتصال</h3>
-        <p class="local-invite-from">${esc(fromName)}</p>
-        <p class="local-invite-sub">يريد الاتصال بجهازك مباشرةً</p>
-        <div class="modal-actions">
-          <button class="action-button" id="invite-accept">✅ قبول</button>
-          <button class="action-button secondary" id="invite-decline">❌ رفض</button>
-        </div>
-      </div>`;
+    overlay.innerHTML = `<div class="modal-box local-invite-box"><div class="local-invite-icon">📡</div><h3>طلب اتصال</h3><p class="local-invite-from">${esc(fromName)}</p><p class="local-invite-sub">يريد الاتصال بجهازك مباشرةً</p><div class="modal-actions"><button class="action-button" id="invite-accept">✅ قبول</button><button class="action-button secondary" id="invite-decline">❌ رفض</button></div></div>`;
     document.body.appendChild(overlay);
-
     overlay.querySelector('#invite-accept')?.addEventListener('click', () => {
         socket.emit('connect-invite-response', { to: from, accepted: true, roomId: inviteRoomId });
         overlay.remove();
-        // ✅ Set local connection before joining
         isLocalConnection = true;
         joinDiscoveredRoom(inviteRoomId);
     });
-
     overlay.querySelector('#invite-decline')?.addEventListener('click', () => {
         socket.emit('connect-invite-response', { to: from, accepted: false });
         overlay.remove();
@@ -903,23 +789,42 @@ function bindTabEvents() {
     const tabLocal      = document.getElementById('tab-local');
     const panelInternet = document.getElementById('panel-internet');
     const panelLocal    = document.getElementById('panel-local');
-
     tabInternet?.addEventListener('click', () => {
-        tabInternet.classList.add('active');
-        tabLocal.classList.remove('active');
-        panelInternet.classList.remove('hidden');
-        panelLocal.classList.add('hidden');
+        tabInternet.classList.add('active'); tabLocal.classList.remove('active');
+        panelInternet.classList.remove('hidden'); panelLocal.classList.add('hidden');
     });
-
     tabLocal?.addEventListener('click', () => {
-        tabLocal.classList.add('active');
-        tabInternet.classList.remove('active');
-        panelLocal.classList.remove('hidden');
-        panelInternet.classList.add('hidden');
+        tabLocal.classList.add('active'); tabInternet.classList.remove('active');
+        panelLocal.classList.remove('hidden'); panelInternet.classList.add('hidden');
         if (!isDiscovering) startDiscovery();
     });
-
     document.getElementById('btn-start-scan')?.addEventListener('click', startDiscovery);
+}
+
+// ─────────────────────────────────────────
+//  FULL RESET / HOME FUNCTION
+// ─────────────────────────────────────────
+function resetToHome() {
+    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+    peers.clear();
+    localConnected.clear();
+    sendingFiles.forEach(sf => sf.cancelled = true);
+    sendingFiles.clear();
+    recvMap.clear();
+    downloadedFiles.forEach(f => URL.revokeObjectURL(f.url));
+    downloadedFiles.clear();
+    sessionMessages = [];
+    sessionFiles = [];
+    socket.emit('leave-room');
+    stopDiscovery();
+    roomId = mkId();
+    isLocalConnection = false;
+    isHost = true;
+    history.replaceState({}, '', location.pathname);
+    const newUrl = `${location.origin}${location.pathname}?id=${roomId}`;
+    renderHomeUI(newUrl);
+    socket.emit('join-room', { roomId, deviceName });
+    toast('تمت العودة للرئيسية وإنهاء الجلسة', 'success');
 }
 
 // ─────────────────────────────────────────
@@ -927,7 +832,6 @@ function bindTabEvents() {
 // ─────────────────────────────────────────
 function renderHomeUI(joinUrl) {
     const prev = loadPrev();
-
     mainEl.innerHTML = `
     <div class="app-layout">
       <header class="app-header">
@@ -936,6 +840,7 @@ function renderHomeUI(joinUrl) {
           <span class="header-sub">نقل الملفات الفوري والآمن</span>
         </div>
         <div class="header-right">
+          <button class="icon-btn refresh-btn" id="full-reset-btn" title="العودة للرئيسية">🔄</button>
           <div class="device-chip" id="name-chip">
             <span>📡</span>
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
@@ -944,68 +849,36 @@ function renderHomeUI(joinUrl) {
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
-
-      <!-- Mode Tabs -->
       <div class="mode-tabs">
         <button class="mode-tab active" id="tab-internet">🌐 عبر الإنترنت</button>
         <button class="mode-tab" id="tab-local">📶 الأجهزة القريبة</button>
       </div>
-
       <div class="home-content">
-
-        <!-- ── Internet Panel ── -->
         <div id="panel-internet" class="tab-panel">
           <div class="qr-section">
             <div class="qr-box" id="qr-box"><div id="qr-inner"></div></div>
             <p class="scan-hint">امسح الرمز أو شارك الرابط لبدء الاتصال</p>
-            <p class="wait-status" id="status-line">
-              <span class="wait-dot"></span>
-              في انتظار انضمام الطرف الآخر...
-            </p>
+            <p class="wait-status" id="status-line"><span class="wait-dot"></span>في انتظار انضمام الطرف الآخر...</p>
             <div class="share-row">
               <button class="share-btn btn-copy" id="btn-copy">📋 نسخ الرابط</button>
               <button class="share-btn btn-whatsapp" id="btn-wa">💬 واتساب</button>
               <button class="share-btn btn-share" id="btn-share">↗ مشاركة</button>
             </div>
           </div>
-
-          ${prev.length ? `
-          <div class="prev-section">
-            <p class="section-label">📱 الأجهزة السابقة</p>
-            <div class="prev-list" id="prev-list">
-              ${prev.map(d => `
-                <div class="prev-item">
-                  <span class="prev-icon">📡</span>
-                  <span class="prev-name">${esc(d.name)}</span>
-                  <span class="prev-time">${fmtDate(d.ts)}</span>
-                  <button class="action-button secondary small" data-pname="${esc(d.name)}">إعادة الاتصال</button>
-                </div>`).join('')}
-            </div>
-          </div>` : ''}
+          ${prev.length ? `<div class="prev-section"><p class="section-label">📱 الأجهزة السابقة</p><div class="prev-list" id="prev-list">${prev.map(d => `<div class="prev-item"><span class="prev-icon">📡</span><span class="prev-name">${esc(d.name)}</span><span class="prev-time">${fmtDate(d.ts)}</span><button class="action-button secondary small" data-pname="${esc(d.name)}">إعادة الاتصال</button></div>`).join('')}</div></div>` : ''}
         </div>
-
-        <!-- ── Local Discovery Panel ── -->
         <div id="panel-local" class="tab-panel hidden">
           <div class="local-discovery-panel">
-            <div class="local-scan-header">
-              <span class="local-scan-icon" id="scan-icon">📶</span>
-              <p class="local-scan-title">اكتشاف الأجهزة القريبة</p>
-              <p class="local-scan-subtitle">
-                ابحث عن أجهزة أخرى تفتح AetherLink على نفس الشبكة<br>
-                <small>اتصال مباشر P2P — البيانات لا تمر عبر السيرفر</small>
-              </p>
-              <button class="action-button" id="btn-start-scan">🔍 بدء البحث</button>
-            </div>
+            <div class="local-scan-header"><span class="local-scan-icon" id="scan-icon">📶</span><p class="local-scan-title">اكتشاف الأجهزة القريبة</p><p class="local-scan-subtitle">ابحث عن أجهزة أخرى تفتح AetherLink على نفس الشبكة<br><small>اتصال مباشر P2P — البيانات لا تمر عبر السيرفر</small></p><button class="action-button" id="btn-start-scan">🔍 بدء البحث</button></div>
             <div class="local-devices-list" id="local-devices-list"></div>
           </div>
         </div>
-
       </div>
     </div>`;
-
     generateQR(joinUrl);
     bindHomeEvents(joinUrl);
     bindTabEvents();
+    document.getElementById('full-reset-btn')?.addEventListener('click', resetToHome);
 }
 
 // ─────────────────────────────────────────
@@ -1020,6 +893,7 @@ function renderJoinerUI() {
           <span class="header-sub">نقل الملفات الفوري والآمن</span>
         </div>
         <div class="header-right">
+          <button class="icon-btn refresh-btn" id="full-reset-btn" title="العودة للرئيسية">🔄</button>
           <div class="device-chip">
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
@@ -1033,6 +907,10 @@ function renderJoinerUI() {
       </div>
     </div>`;
     bindMinBtn();
+    document.getElementById('full-reset-btn')?.addEventListener('click', resetToHome);
+    
+    // بدء العد التنازلي فور ظهور واجهة الانضمام
+    startConnectionCountdown();
 }
 
 // ─────────────────────────────────────────
@@ -1040,7 +918,6 @@ function renderJoinerUI() {
 // ─────────────────────────────────────────
 function renderConnectedUI() {
     if (document.getElementById('messages-section')) { updatePeersUI(); return; }
-
     mainEl.innerHTML = `
     <div class="app-layout">
       <header class="app-header">
@@ -1049,6 +926,7 @@ function renderConnectedUI() {
           <span class="header-sub">${isLocalConnection ? '📶 اتصال محلي مباشر' : 'نقل الملفات الفوري والآمن'}</span>
         </div>
         <div class="header-right">
+          <button class="icon-btn refresh-btn" id="full-reset-btn" title="العودة للرئيسية">🔄</button>
           <div class="header-actions">
             <button class="header-action-btn show-users" id="show-users-btn" title="المتصلين">👥 المتصلين</button>
             ${!isLocalConnection ? `<button class="header-action-btn group-link" id="group-link-btn" title="رابط الجلسة">🔗 مشاركة</button>` : ''}
@@ -1062,35 +940,21 @@ function renderConnectedUI() {
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
-
-      <!-- Peers panel -->
-      <div class="peers-panel" id="peers-panel">
-        <span class="peers-count" id="peers-count">0 متصل</span>
-        <div class="peer-chips" id="peer-chips"></div>
-      </div>
-
-      <!-- Messages Section -->
+      <div class="peers-panel" id="peers-panel"><span class="peers-count" id="peers-count">0 متصل</span><div class="peer-chips" id="peer-chips"></div></div>
       <div class="messages-section-full" id="messages-section">
         <div class="messages-list" id="msg-list"></div>
         <div class="msg-bar">
           <input type="file" id="file-input" multiple style="display:none">
-          <button class="file-input-btn" id="file-btn" title="إرسال ملف (حتى 50 ملف)">📎</button>
+          <button class="file-input-btn" id="file-btn" title="إرسال ملف">📎</button>
           <input type="text" class="msg-field" id="msg-field" placeholder="اكتب رسالة..." autocomplete="off">
           <button class="send-btn" id="send-btn">↑</button>
         </div>
       </div>
     </div>`;
-
-    updatePeersUI();
-    bindMsgEvents();
-    bindMinBtn();
-    bindHeaderActions();
-    restoreSessionMessages();
+    updatePeersUI(); bindMsgEvents(); bindMinBtn(); bindHeaderActions(); restoreSessionMessages();
+    document.getElementById('full-reset-btn')?.addEventListener('click', () => { if(confirm('هل تريد العودة للرئيسية وإنهاء الاتصال؟')) resetToHome(); });
 }
 
-// ─────────────────────────────────────────
-//  Peers panel update
-// ─────────────────────────────────────────
 function updatePeersUI() {
     const countEl = document.getElementById('peers-count');
     const chipsEl = document.getElementById('peer-chips');
@@ -1100,9 +964,6 @@ function updatePeersUI() {
     if (chipsEl) chipsEl.innerHTML = connected.map(([_, p]) => `<span class="peer-chip">📱 ${esc(p.name)}</span>`).join('');
 }
 
-// ─────────────────────────────────────────
-//  Status / badge helpers
-// ─────────────────────────────────────────
 function setStatus(msg) {
     const el = document.getElementById('status-line');
     if (el) el.innerHTML = `<span class="wait-dot"></span>${esc(msg)}`;
@@ -1113,179 +974,87 @@ function setBadge(type, text) {
     if (el) { el.className = `conn-badge ${type}`; el.textContent = text; }
 }
 
-// ─────────────────────────────────────────
-//  Event binding — home
-// ─────────────────────────────────────────
 function bindHomeEvents(joinUrl) {
     bindMinBtn();
-
     document.getElementById('edit-name-btn')?.addEventListener('click', () => {
         const chip  = document.getElementById('chip-name');
         const input = document.createElement('input');
-        input.className = 'name-edit-field';
-        input.value = deviceName;
-        chip.replaceWith(input);
+        input.className = 'name-edit-field'; input.value = deviceName; chip.replaceWith(input);
         input.focus(); input.select();
         const commit = () => {
-            const v = input.value.trim() || deviceName;
-            deviceName = v; saveName(v);
-            input.replaceWith(Object.assign(document.createElement('span'), {
-                className: 'device-chip-name', id: 'chip-name', textContent: v
-            }));
+            const v = input.value.trim() || deviceName; deviceName = v; saveName(v);
+            input.replaceWith(Object.assign(document.createElement('span'), { className: 'device-chip-name', id: 'chip-name', textContent: v }));
         };
-        input.addEventListener('blur', commit);
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
+        input.addEventListener('blur', commit); input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
     });
-
     document.getElementById('btn-copy')?.addEventListener('click', () => {
         navigator.clipboard.writeText(joinUrl).then(() => {
-            const b = document.getElementById('btn-copy');
-            if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => b.textContent = '📋 نسخ الرابط', 2000); }
+            const b = document.getElementById('btn-copy'); if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => b.textContent = '📋 نسخ الرابط', 2000); }
         });
     });
-
-    document.getElementById('btn-wa')?.addEventListener('click', () => {
-        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
-    });
-
+    document.getElementById('btn-wa')?.addEventListener('click', () => { open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank'); });
     document.getElementById('btn-share')?.addEventListener('click', async () => {
-        if (navigator.share) {
-            try { await navigator.share({ title: 'AetherLink', url: joinUrl }); return; } catch (_) {}
-        }
+        if (navigator.share) { try { await navigator.share({ title: 'AetherLink', url: joinUrl }); return; } catch (_) {} }
         open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('AetherLink - نقل الملفات الآمن\n' + joinUrl)}`, '_blank');
     });
-
     document.querySelectorAll('[data-pname]').forEach(btn => {
         btn.addEventListener('click', () => {
-            const name    = btn.getAttribute('data-pname');
-            const newRoom = mkId();
-            const newUrl  = `${location.origin}${location.pathname}?id=${newRoom}`;
-            roomId        = newRoom;
-            history.replaceState({}, '', `?id=${newRoom}`);
+            const name = btn.getAttribute('data-pname'); const newRoom = mkId();
+            roomId = newRoom; history.replaceState({}, '', `?id=${newRoom}`);
             socket.emit('join-room', { roomId, deviceName });
-            renderHomeUI(newUrl);
-            toast(`جلسة جديدة للاتصال بـ ${name} — شارك الرابط`, 'info');
+            renderHomeUI(`${location.origin}${location.pathname}?id=${newRoom}`);
+            toast(`جلسة جديدة للاتصال بـ ${name}`, 'info');
         });
     });
 }
 
-// ─────────────────────────────────────────
-//  Event binding — messages & file send
-// ─────────────────────────────────────────
 function bindMsgEvents() {
-    const field     = document.getElementById('msg-field');
-    const btn       = document.getElementById('send-btn');
-    const fileBtn   = document.getElementById('file-btn');
-    const fileInput = document.getElementById('file-input');
-
+    const field = document.getElementById('msg-field'), btn = document.getElementById('send-btn'), fileBtn = document.getElementById('file-btn'), fileInput = document.getElementById('file-input');
     const send = () => {
-        const txt = field?.value.trim();
-        if (!txt) return;
-        getConnected().forEach(([_, p]) => {
-            try { p.peer.send(JSON.stringify({ type: 'chat', text: txt })); } catch (_) {}
-        });
-        appendMsg(txt, true, deviceName);
-        if (field) field.value = '';
+        const txt = field?.value.trim(); if (!txt) return;
+        getConnected().forEach(([_, p]) => { try { p.peer.send(JSON.stringify({ type: 'chat', text: txt })); } catch (_) {} });
+        appendMsg(txt, true, deviceName); if (field) field.value = '';
     };
-
-    btn?.addEventListener('click', send);
-    field?.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
-
+    btn?.addEventListener('click', send); field?.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
     fileBtn?.addEventListener('click', () => fileInput?.click());
-
     fileInput?.addEventListener('change', (e) => {
-        const all = Array.from(e.target.files || []);
-        if (!all.length) return;
-
-        // ✅ Limit to 50 files
-        if (all.length > 50) {
-            toast(`تم اختيار ${all.length} ملف — سيتم إرسال أول 50 فقط`, 'warning');
-        }
-        const files = all.slice(0, 50);
-
-        const targets = getConnected().map(([id]) => id);
-        if (!targets.length) {
-            toast('لا يوجد أجهزة متصلة', 'error');
-            fileInput.value = '';
-            return;
-        }
-
-        // ✅ Send all files in PARALLEL — no queue
-        files.forEach(f => sendFileParallel(f, targets));
-        fileInput.value = '';
+        const all = Array.from(e.target.files || []); if (!all.length) return;
+        const files = all.slice(0, 50); const targets = getConnected().map(([id]) => id);
+        if (!targets.length) { toast('لا يوجد أجهزة متصلة', 'error'); fileInput.value = ''; return; }
+        files.forEach(f => sendFileParallel(f, targets)); fileInput.value = '';
     });
 }
 
-// ─────────────────────────────────────────
-//  Header Actions
-// ─────────────────────────────────────────
 function bindHeaderActions() {
     document.getElementById('edit-name-btn')?.addEventListener('click', () => {
-        const chip  = document.getElementById('chip-name');
-        const input = document.createElement('input');
-        input.className = 'name-edit-field';
-        input.value = deviceName;
+        const chip  = document.getElementById('chip-name'); const input = document.createElement('input');
+        input.className = 'name-edit-field'; input.value = deviceName;
         input.style.cssText = 'background:rgba(255,255,255,.06);border:1px solid rgba(0,210,255,.4);border-radius:8px;color:#00d2ff;font-family:"Tajawal",sans-serif;font-size:.78rem;font-weight:700;padding:3px 8px;outline:none;width:100px;';
-        chip.replaceWith(input);
-        input.focus(); input.select();
+        chip.replaceWith(input); input.focus(); input.select();
         const commit = () => {
-            const v = input.value.trim() || deviceName;
-            deviceName = v; saveName(v);
-            const s = document.createElement('span');
-            s.className = 'device-chip-name'; s.id = 'chip-name'; s.textContent = v;
-            input.replaceWith(s);
+            const v = input.value.trim() || deviceName; deviceName = v; saveName(v);
+            const s = document.createElement('span'); s.className = 'device-chip-name'; s.id = 'chip-name'; s.textContent = v; input.replaceWith(s);
         };
-        input.addEventListener('blur', commit);
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
+        input.addEventListener('blur', commit); input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
     });
-
     document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
     document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
     document.getElementById('end-session-btn')?.addEventListener('click', endSession);
 }
 
 function showUsersModal() {
-    const connected = getConnected();
-    const overlay = document.createElement('div');
-    overlay.className = 'users-modal-overlay';
-    overlay.innerHTML = `
-      <div class="users-modal">
-        <h3>👥 المتصلون (${connected.length})</h3>
-        <div class="users-list">
-          ${connected.length === 0 ? '<p style="text-align:center;color:#8899aa;">لا يوجد متصلين</p>' :
-            connected.map(([_, p]) => `
-              <div class="user-item">
-                <span class="user-icon">📱</span>
-                <span class="user-name">${esc(p.name)}</span>
-              </div>`).join('')}
-        </div>
-        <button class="users-modal-close">إغلاق</button>
-      </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('.users-modal-close')?.addEventListener('click', () => overlay.remove());
+    const connected = getConnected(); const overlay = document.createElement('div'); overlay.className = 'users-modal-overlay';
+    overlay.innerHTML = `<div class="users-modal"><h3>👥 المتصلون (${connected.length})</h3><div class="users-list">${connected.length === 0 ? '<p style="text-align:center;color:#8899aa;">لا يوجد متصلين</p>' : connected.map(([_, p]) => `<div class="user-item"><span class="user-icon">📱</span><span class="user-name">${esc(p.name)}</span></div>`).join('')}</div><button class="users-modal-close">إغلاق</button></div>`;
+    document.body.appendChild(overlay); overlay.querySelector('.users-modal-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function showGroupLinkModal() {
     const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-      <div class="modal-box">
-        <h3>🔗 رابط الجلسة</h3>
-        <p>شارك هذا الرابط لدعوة آخرين للانضمام</p>
-        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:8px;word-break:break-all;font-size:.8rem;color:#00d2ff;margin:10px 0;">${esc(joinUrl)}</div>
-        <div class="modal-actions">
-          <button class="action-button" id="modal-copy">📋 نسخ</button>
-          <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
-          <button class="action-button secondary" id="modal-close">إغلاق</button>
-        </div>
-      </div>`;
+    const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal-box"><h3>🔗 رابط الجلسة</h3><p>شارك هذا الرابط لدعوة آخرين للانضمام</p><div style="background:rgba(0,0,0,.3);padding:12px;border-radius:8px;word-break:break-all;font-size:.8rem;color:#00d2ff;margin:10px 0;">${esc(joinUrl)}</div><div class="modal-actions"><button class="action-button" id="modal-copy">📋 نسخ</button><button class="action-button secondary" id="modal-share">↗ مشاركة</button><button class="action-button secondary" id="modal-close">إغلاق</button></div></div>`;
     document.body.appendChild(overlay);
-
-    overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
-    });
+    overlay.querySelector('#modal-copy')?.addEventListener('click', () => { navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success')); });
     overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
         if (navigator.share) { try { await navigator.share({ title: 'AetherLink', url: joinUrl }); } catch (_) {} }
         else open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
@@ -1296,452 +1065,190 @@ function showGroupLinkModal() {
 
 function endSession() {
     if (!confirm('هل أنت متأكد من إنهاء الجلسة؟ سيتم حذف جميع الرسائل والملفات.')) return;
-
-    sessionMessages = []; sessionFiles = [];
-    downloadedFiles.clear(); recvMap.clear();
-    sendingFiles.forEach(sf => sf.cancelled = true);
-    sendingFiles.clear();
-
-    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
-    peers.clear();
-    localConnected.clear();
-
-    socket.emit('leave-room');
-    isLocalConnection = false;
-    roomId = mkId();
-    history.replaceState({}, '', `?id=${roomId}`);
-    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-    socket.emit('join-room', { roomId, deviceName });
-    toast('تم إنهاء الجلسة', 'success');
+    resetToHome();
 }
 
 function restoreSessionMessages() {
-    const list = document.getElementById('msg-list');
-    if (!list || sessionMessages.length === 0) return;
+    const list = document.getElementById('msg-list'); if (!list || sessionMessages.length === 0) return;
     sessionMessages.forEach(({ text, sent, sender }) => appendMsgToList(text, sent, sender, false));
 }
 
-// ─────────────────────────────────────────
-//  Minimize / PiP / Mini widget
-// ─────────────────────────────────────────
 function bindMinBtn() {
     document.getElementById('minimize-btn')?.addEventListener('click', () => setMini(true));
     document.getElementById('mini-expand-btn')?.addEventListener('click', () => setMini(false));
 }
 
 async function setMini(on) {
-    isMinimized = on;
-    mainEl.classList.toggle('hidden', on);
-    if (on) {
-        const ok = await enterPiPMode();
-        if (!ok) showMiniWidget(); else hideMiniWidget();
-    } else {
-        hidePiP(); hideMiniWidget();
-        if (pipWindow && !pipWindow.closed) { pipWindow.close(); pipWindow = null; pipDocument = null; }
-    }
+    isMinimized = on; mainEl.classList.toggle('hidden', on);
+    if (on) { const ok = await enterPiPMode(); if (!ok) showMiniWidget(); else hideMiniWidget(); }
+    else { hidePiP(); hideMiniWidget(); if (pipWindow && !pipWindow.closed) { pipWindow.close(); pipWindow = null; pipDocument = null; } }
 }
 
 function initMiniDrag() {
-    const el = document.getElementById('mini-widget');
-    if (!el) return;
+    const el = document.getElementById('mini-widget'); if (!el) return;
     let ox = 0, oy = 0, sl = 0, st = 0, drag = false;
-    const start = (cx, cy) => {
-        drag = true; ox = cx; oy = cy;
-        const r = el.getBoundingClientRect(); sl = r.left; st = r.top;
-        el.style.left = sl + 'px'; el.style.bottom = 'auto'; el.style.top = st + 'px';
-    };
+    const start = (cx, cy) => { drag = true; ox = cx; oy = cy; const r = el.getBoundingClientRect(); sl = r.left; st = r.top; el.style.left = sl + 'px'; el.style.bottom = 'auto'; el.style.top = st + 'px'; };
     const move = (cx, cy) => { if (!drag) return; el.style.left = `${sl + cx - ox}px`; el.style.top = `${st + cy - oy}px`; };
     const stop = () => { drag = false; };
     el.addEventListener('mousedown', e => { if (e.target.closest('button')) return; start(e.clientX, e.clientY); });
-    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
-    document.addEventListener('mouseup', stop);
+    document.addEventListener('mousemove', e => move(e.clientX, e.clientY)); document.addEventListener('mouseup', stop);
     el.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
     el.addEventListener('touchmove',  e => { const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: true });
     el.addEventListener('touchend', stop);
 }
 
 // ─────────────────────────────────────────
-//  Parallel file send — async, no queue
+//  Parallel file send
 // ─────────────────────────────────────────
- async function sendFileParallel(file, peerIds) {
+async function sendFileParallel(file, peerIds) {
     const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const meta   = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
- 
     sendingFiles.set(fileId, { cancelled: false });
- 
-    // أرسل الـ metadata لكل الـ peers
     const metaMsg = JSON.stringify({ type: 'metadata', payload: meta });
-    peerIds.forEach(id => {
-        const pi = peers.get(id);
-        if (pi?.connected) try { pi.peer.send(metaMsg); } catch (_) {}
-    });
- 
+    peerIds.forEach(id => { const pi = peers.get(id); if (pi?.connected) try { pi.peer.send(metaMsg); } catch (_) {} });
     createSenderFileBox(file, meta);
- 
     let offset = 0;
     try {
         while (offset < file.size) {
-            const sf = sendingFiles.get(fileId);
-            if (!sf || sf.cancelled) break;
- 
-            const end      = Math.min(offset + CHUNK_SIZE, file.size);
+            const sf = sendingFiles.get(fileId); if (!sf || sf.cancelled) break;
+            const end = Math.min(offset + CHUNK_SIZE, file.size);
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
-            const tagged   = makeChunkWithId(fileId, chunkBuf);
- 
+            const tagged = makeChunkWithId(fileId, chunkBuf);
             for (const id of peerIds) {
-                const pi = peers.get(id);
-                if (!pi?.connected) continue;
- 
-                // Backpressure: انتظر إذا كان Buffer ممتلئاً
+                const pi = peers.get(id); if (!pi?.connected) continue;
                 let waits = 0;
-                while (
-                    pi.peer._channel &&
-                    pi.peer._channel.bufferedAmount > 8 * 1024 * 1024 &&
-                    waits < 400  // ← ضاعفنا وقت الانتظار (400 × 30ms = 12s)
-                ) {
-                    await new Promise(r => setTimeout(r, 30));
-                    waits++;
- 
-                    // إذا انقطع الاتصال أثناء الانتظار — انتظر إعادة الاتصال
-                    const current = peers.get(id);
-                    if (!current?.connected) {
-                        // انتظر حتى 20 ثانية لإعادة الاتصال
-                        let waitReconn = 0;
-                        while (waitReconn < 200) {
-                            await new Promise(r => setTimeout(r, 100));
-                            const reconnected = peers.get(id);
-                            if (reconnected?.connected) break;
-                            waitReconn++;
-                        }
-                        // أعد إرسال الـ metadata بعد إعادة الاتصال
-                        const reconn = peers.get(id);
-                        if (reconn?.connected) {
-                            try { reconn.peer.send(metaMsg); } catch (_) {}
-                        }
-                        break;
-                    }
+                while (pi.peer._channel && pi.peer._channel.bufferedAmount > 8 * 1024 * 1024 && waits < 400) {
+                    await new Promise(r => setTimeout(r, 30)); waits++;
+                    if (!peers.get(id)?.connected) break;
                 }
- 
-                // محاولة الإرسال مع retry عند الفشل
-                let sent = false;
-                for (let retry = 0; retry < 5; retry++) {
-                    const currentPi = peers.get(id);
-                    if (!currentPi?.connected) {
-                        // انتظر إعادة الاتصال (حتى 15 ثانية)
-                        let w = 0;
-                        while (w < 150) {
-                            await new Promise(r => setTimeout(r, 100));
-                            if (peers.get(id)?.connected) break;
-                            w++;
-                        }
-                        continue;
-                    }
-                    try {
-                        currentPi.peer.send(tagged);
-                        sent = true;
-                        break;
-                    } catch (sendErr) {
-                        console.warn(`send retry ${retry + 1} for ${fileId}`, sendErr);
-                        await new Promise(r => setTimeout(r, 500 * (retry + 1)));
-                    }
-                }
- 
-                if (!sent) {
-                    // بعد 5 محاولات — أخبر المستخدم لكن لا توقف باقي الإرسال
-                    console.error(`فشل إرسال chunk للـ peer ${id}`);
-                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
-                    // استمر مع باقي الـ peers
-                }
+                try { pi.peer.send(tagged); } catch (_) {}
             }
- 
-            offset = end;
-            updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
- 
-            // أعطِ للمتصفح فرصة لمعالجة الأحداث
+            offset = end; updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
             await new Promise(r => setTimeout(r, 0));
         }
- 
-        const sf = sendingFiles.get(fileId);
-        if (sf && !sf.cancelled) finalizeSenderFileBox(fileId);
- 
+        const sf = sendingFiles.get(fileId); if (sf && !sf.cancelled) finalizeSenderFileBox(fileId);
     } catch (err) {
-        console.error('sendFileParallel error', err);
-        updateSenderFileBox(fileId, 0, true, 'فشل قراءة الملف');
-        peerIds.forEach(id => {
-            const pi = peers.get(id);
-            if (pi?.connected) {
-                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
-            }
-        });
+        updateSenderFileBox(fileId, 0, true, 'فشل الإرسال');
     }
- 
     sendingFiles.delete(fileId);
 }
 
-// ─────────────────────────────────────────
-//  Sender File Box UI
-// ─────────────────────────────────────────
 function createSenderFileBox(file, meta) {
-    const list = document.getElementById('msg-list');
-    if (!list) return;
-
-    const isImage = file.type?.startsWith('image/');
-    const isVideo = file.type?.startsWith('video/');
-    const time    = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-
+    const list = document.getElementById('msg-list'); if (!list) return;
+    const isImage = file.type?.startsWith('image/'), isVideo = file.type?.startsWith('video/'), time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
     let previewHtml = '';
-    if (isImage) {
-        previewHtml = `<img src="${URL.createObjectURL(file)}" alt="${esc(meta.fileName)}">`;
-    } else if (isVideo) {
-        previewHtml = `<video src="${URL.createObjectURL(file)}"></video>`;
-    } else {
-        let icon = '📄';
-        if (file.type?.includes('pdf'))   icon = '📕';
-        else if (file.type?.includes('audio')) icon = '🎵';
-        else if (/zip|rar|7z/.test(file.type || '')) icon = '📦';
-        previewHtml = `<div class="file-icon">${icon}</div>`;
-    }
-
-    const div = document.createElement('div');
-    div.className = 'msg sent';
-    div.id = `sender-file-${meta.fileId}`;
-    div.innerHTML = `
-      <span class="msg-sender">أنت</span>
-      <div class="file-msg-box sending" id="sender-box-${meta.fileId}">
-        <div class="file-preview">${previewHtml}</div>
-        <div class="file-info">
-          <span class="file-name">${esc(meta.fileName)}</span>
-          <span class="file-meta">${fmtBytes(meta.fileSize)} • ${time}</span>
-          <div class="file-progress">
-            <div class="file-progress-bar">
-              <div class="file-progress-inner" id="sender-progress-${meta.fileId}" style="width:0%"></div>
-            </div>
-            <span class="file-pct" id="sender-pct-${meta.fileId}">0%</span>
-          </div>
-          <div class="tr-status" id="sender-status-${meta.fileId}" style="font-size:.75rem;color:#8899aa;">جاري الإرسال...</div>
-        </div>
-      </div>`;
-
-    list.appendChild(div);
-    list.scrollTop = list.scrollHeight;
+    if (isImage) previewHtml = `<img src="${URL.createObjectURL(file)}" alt="${esc(meta.fileName)}">`;
+    else if (isVideo) previewHtml = `<video src="${URL.createObjectURL(file)}"></video>`;
+    else { let icon = '📄'; if (file.type?.includes('pdf')) icon = '📕'; else if (file.type?.includes('audio')) icon = '🎵'; else if (/zip|rar|7z/.test(file.type || '')) icon = '📦'; previewHtml = `<div class="file-icon">${icon}</div>`; }
+    const div = document.createElement('div'); div.className = 'msg sent'; div.id = `sender-file-${meta.fileId}`;
+    div.innerHTML = `<span class="msg-sender">أنت</span><div class="file-msg-box sending" id="sender-box-${meta.fileId}"><div class="file-preview">${previewHtml}</div><div class="file-info"><span class="file-name">${esc(meta.fileName)}</span><span class="file-meta">${fmtBytes(meta.fileSize)} • ${time}</span><div class="file-progress"><div class="file-progress-bar"><div class="file-progress-inner" id="sender-progress-${meta.fileId}" style="width:0%"></div></div><span class="file-pct" id="sender-pct-${meta.fileId}">0%</span></div><div class="tr-status" id="sender-status-${meta.fileId}" style="font-size:.75rem;color:#8899aa;">جاري الإرسال...</div></div></div>`;
+    list.appendChild(div); list.scrollTop = list.scrollHeight;
 }
 
 function updateSenderFileBox(fileId, pct, done = false, errorMsg = null) {
-    const progressEl = document.getElementById(`sender-progress-${fileId}`);
-    const pctEl      = document.getElementById(`sender-pct-${fileId}`);
-    const statusEl   = document.getElementById(`sender-status-${fileId}`);
+    const progressEl = document.getElementById(`sender-progress-${fileId}`), pctEl = document.getElementById(`sender-pct-${fileId}`), statusEl = document.getElementById(`sender-status-${fileId}`);
     if (progressEl) { progressEl.style.width = `${pct}%`; if (done) progressEl.classList.add(errorMsg ? 'error' : 'done'); }
-    if (pctEl)    { pctEl.textContent = errorMsg || `${pct}%`; if (errorMsg) pctEl.style.color = '#ff6b6b'; }
+    if (pctEl) { pctEl.textContent = errorMsg || `${pct}%`; if (errorMsg) pctEl.style.color = '#ff6b6b'; }
     if (statusEl) { statusEl.textContent = errorMsg || (done ? 'تم الإرسال ✓' : 'جاري الإرسال...'); if (errorMsg) statusEl.classList.add('error'); }
 }
 
 function finalizeSenderFileBox(fileId) {
-    const progressEl = document.getElementById(`sender-progress-${fileId}`);
-    const pctEl      = document.getElementById(`sender-pct-${fileId}`);
-    const statusEl   = document.getElementById(`sender-status-${fileId}`);
-    const box        = document.getElementById(`sender-box-${fileId}`);
-
+    const progressEl = document.getElementById(`sender-progress-${fileId}`), pctEl = document.getElementById(`sender-pct-${fileId}`), statusEl = document.getElementById(`sender-status-${fileId}`), box = document.getElementById(`sender-box-${fileId}`);
     if (progressEl) { progressEl.style.width = '100%'; progressEl.classList.add('done'); }
-    if (pctEl)    { pctEl.textContent = '100%'; pctEl.style.color = '#43e97b'; }
+    if (pctEl) { pctEl.textContent = '100%'; pctEl.style.color = '#43e97b'; }
     if (statusEl) { statusEl.textContent = 'تم الإرسال ✓'; statusEl.classList.add('done'); }
-
     if (box) {
         const infoDiv = box.querySelector('.file-info');
         if (infoDiv && !infoDiv.querySelector('.file-actions')) {
-            const actDiv = document.createElement('div');
-            actDiv.className = 'file-actions';
-            actDiv.innerHTML = `<button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>`;
-            infoDiv.appendChild(actDiv);
+            const actDiv = document.createElement('div'); actDiv.className = 'file-actions'; actDiv.innerHTML = `<button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>`; infoDiv.appendChild(actDiv);
         }
-        box.classList.remove('sending');
-        box.onclick = () => openSenderFullscreen(fileId);
-        box.style.cursor = 'pointer';
+        box.classList.remove('sending'); box.onclick = () => openSenderFullscreen(fileId); box.style.cursor = 'pointer';
     }
 }
 
-function deleteSenderFile(fileId) {
-    document.getElementById(`sender-file-${fileId}`)?.remove();
-    toast('تم حذف الملف', 'success');
-}
+function deleteSenderFile(fileId) { document.getElementById(`sender-file-${fileId}`)?.remove(); toast('تم حذف الملف', 'success'); }
 
 function openSenderFullscreen(fileId) {
-    const el = document.getElementById(`sender-file-${fileId}`);
-    if (!el) return;
-    const img   = el.querySelector('img');
-    const video = el.querySelector('video');
-    if (!img && !video) return;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'fullscreen-viewer';
-    overlay.innerHTML = img
-        ? `<img src="${img.src}" alt="fullscreen"><button class="fullscreen-close">✕</button>`
-        : `<video src="${video.src}" controls autoplay style="max-width:100%;max-height:100%;"></video><button class="fullscreen-close">✕</button>`;
-
-    document.body.appendChild(overlay);
-    overlay.querySelector('.fullscreen-close')?.addEventListener('click', () => overlay.remove());
+    const el = document.getElementById(`sender-file-${fileId}`); if (!el) return;
+    const img = el.querySelector('img'), video = el.querySelector('video'); if (!img && !video) return;
+    const overlay = document.createElement('div'); overlay.className = 'fullscreen-viewer';
+    overlay.innerHTML = img ? `<img src="${img.src}" alt="fullscreen"><button class="fullscreen-close">✕</button>` : `<video src="${video.src}" controls autoplay style="max-width:100%;max-height:100%;"></video><button class="fullscreen-close">✕</button>`;
+    document.body.appendChild(overlay); overlay.querySelector('.fullscreen-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-// ─────────────────────────────────────────
-//  Chat messages
-// ─────────────────────────────────────────
-function appendMsg(text, sent, senderName) {
-    sessionMessages.push({ text, sent, sender: senderName });
-    appendMsgToList(text, sent, senderName, true);
-}
+function appendMsg(text, sent, senderName) { sessionMessages.push({ text, sent, sender: senderName }); appendMsgToList(text, sent, senderName, true); }
 
 function appendMsgToList(text, sent, senderName, scroll = true) {
-    const list = document.getElementById('msg-list');
-    if (!list) return;
-    const time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' });
-    const div  = document.createElement('div');
-    div.className = `msg ${sent ? 'sent' : 'received'}`;
-    div.innerHTML = `
-      <span class="msg-sender">${esc(senderName)}</span>
-      <span class="msg-bubble">${esc(text)}</span>
-      <span class="msg-time">${time}</span>`;
-    list.appendChild(div);
-    if (scroll) list.scrollTop = list.scrollHeight;
+    const list = document.getElementById('msg-list'); if (!list) return;
+    const time = new Date().toLocaleTimeString('ar-IQ', { hour: '2-digit', minute: '2-digit' }), div = document.createElement('div');
+    div.className = `msg ${sent ? 'sent' : 'received'}`; div.innerHTML = `<span class="msg-sender">${esc(senderName)}</span><span class="msg-bubble">${esc(text)}</span><span class="msg-time">${time}</span>`;
+    list.appendChild(div); if (scroll) list.scrollTop = list.scrollHeight;
 }
 
-// ─────────────────────────────────────────
-//  QR code
-// ─────────────────────────────────────────
 function generateQR(url) {
-    const qr = qrcode(0, 'L');
-    qr.addData(url);
-    qr.make();
-    const el = document.getElementById('qr-inner');
-    if (el) {
-        el.innerHTML = qr.createImgTag(4, 8);
-        const img = el.querySelector('img');
-        if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:12px;';
-    }
+    const qr = qrcode(0, 'L'); qr.addData(url); qr.make(); const el = document.getElementById('qr-inner');
+    if (el) { el.innerHTML = qr.createImgTag(4, 8); const img = el.querySelector('img'); if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:12px;'; }
 }
 
-// ─────────────────────────────────────────
-//  Reconnect modal
-// ─────────────────────────────────────────
 function showReconnectModal(fromName, fromSocketId) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-      <div class="modal-box">
-        <h3>📡 طلب اتصال</h3>
-        <p>${esc(fromName)} يطلب إعادة الاتصال</p>
-        <div class="modal-actions">
-          <button class="action-button" id="modal-accept">قبول</button>
-          <button class="action-button secondary" id="modal-decline">رفض</button>
-        </div>
-      </div>`;
+    const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal-box"><h3>📡 طلب اتصال</h3><p>${esc(fromName)} يطلب إعادة الاتصال</p><div class="modal-actions"><button class="action-button" id="modal-accept">قبول</button><button class="action-button secondary" id="modal-decline">رفض</button></div></div>`;
     document.body.appendChild(overlay);
-
     overlay.querySelector('#modal-accept').addEventListener('click', () => {
-        const nr  = mkId();
-        const url = `${location.origin}${location.pathname}?id=${nr}`;
-        socket.emit('reconnect-accept', { to: fromSocketId, newRoomId: nr });
-        overlay.remove();
-        roomId = nr;
-        history.replaceState({}, '', `?id=${nr}`);
-        renderHomeUI(url);
-        socket.emit('join-room', { roomId, deviceName });
-        toast('تم إنشاء جلسة جديدة', 'success');
+        const nr = mkId(); const url = `${location.origin}${location.pathname}?id=${nr}`;
+        socket.emit('reconnect-accept', { to: fromSocketId, newRoomId: nr }); overlay.remove();
+        roomId = nr; history.replaceState({}, '', `?id=${nr}`); renderHomeUI(url); socket.emit('join-room', { roomId, deviceName });
     });
     overlay.querySelector('#modal-decline').addEventListener('click', () => overlay.remove());
 }
 
-// ─────────────────────────────────────────
-//  Utilities
-// ─────────────────────────────────────────
 function mkId() { return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; }
 
 function downloadBlob(blob, name) {
-    const url = URL.createObjectURL(blob);
-    const a   = Object.assign(document.createElement('a'), { href: url, download: name, style: 'display:none' });
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+    const url = URL.createObjectURL(blob), a = Object.assign(document.createElement('a'), { href: url, download: name, style: 'display:none' });
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
 }
 
-function fmtBytes(b) {
-    if (!b) return '0 B';
-    const u = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(b) / Math.log(1024));
-    return `${(b / 1024 ** i).toFixed(1)} ${u[i]}`;
-}
-
-function fmtDate(ts) {
-    return new Date(ts).toLocaleDateString('ar-IQ', { month: 'short', day: 'numeric' });
-}
-
-function esc(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
+function fmtBytes(b) { if (!b) return '0 B'; const u = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(b) / Math.log(1024)); return `${(b / 1024 ** i).toFixed(1)} ${u[i]}`; }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('ar-IQ', { month: 'short', day: 'numeric' }); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 let _toastTimer = null;
 function toast(msg, type = 'info') {
-    let el = document.querySelector('.toast');
-    if (!el) { el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); }
-    el.textContent = msg;
-    el.className   = `toast ${type}`;
-    clearTimeout(_toastTimer);
-    setTimeout(() => el.classList.add('show'), 10);
-    _toastTimer = setTimeout(() => {
-        el.classList.remove('show');
-        setTimeout(() => el?.remove(), 350);
-    }, 3200);
+    let el = document.querySelector('.toast'); if (!el) { el = document.createElement('div'); el.className = 'toast'; document.body.appendChild(el); }
+    el.textContent = msg; el.className = `toast ${type}`; clearTimeout(_toastTimer); setTimeout(() => el.classList.add('show'), 10);
+    _toastTimer = setTimeout(() => { el.classList.remove('show'); setTimeout(() => el?.remove(), 350); }, 3200);
 }
 
-// ─────────────────────────────────────────
-//  Responsive container
-// ─────────────────────────────────────────
 function resizeContainer() {
     const w = window.innerWidth;
     if (w >= 768) {
-        const pct    = w >= 1920 ? 0.82 : w >= 1440 ? 0.88 : w >= 1024 ? 0.92 : 0.94;
-        const margin = w >= 1920 ? 60   : w >= 1440 ? 50   : w >= 1024 ? 40   : 30;
-        const radius = w >= 1920 ? '36px' : w >= 1440 ? '32px' : w >= 1024 ? '28px' : '24px';
-        Object.assign(mainEl.style, {
-            position    : 'fixed',
-            top         : '50%',
-            left        : '50%',
-            transform   : 'translate(-50%, -50%)',
-            width       : Math.round(w * pct) + 'px',
-            maxWidth    : 'none',
-            height      : `calc(100vh - ${margin}px)`,
-            borderRadius: radius,
-            margin      : '0',
-        });
-    } else {
-        ['position','top','left','transform','width','maxWidth','height','borderRadius','margin']
-            .forEach(p => mainEl.style[p] = '');
-    }
+        const pct = w >= 1920 ? 0.82 : w >= 1440 ? 0.88 : w >= 1024 ? 0.92 : 0.94;
+        const margin = w >= 1920 ? 60 : 30; const radius = w >= 1024 ? '28px' : '24px';
+        Object.assign(mainEl.style, { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: Math.round(w * pct) + 'px', height: `calc(100vh - ${margin}px)`, borderRadius: radius });
+    } else { ['position','top','left','transform','width','height','borderRadius'].forEach(p => mainEl.style[p] = ''); }
 }
 
 // ─────────────────────────────────────────
-//  Bootstrap
+//  Bootstrap & Exit Handling
 // ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    initCanvas();
-    initMiniDrag();
-    initPiPDrag();
-    resizeContainer();
+    initCanvas(); initMiniDrag(); initPiPDrag(); resizeContainer();
     window.addEventListener('resize', resizeContainer);
-
     const params = new URLSearchParams(location.search);
-    roomId = params.get('id') || '';
-    isHost = !roomId;
-
-    if (isHost) {
-        roomId = mkId();
-        history.replaceState({}, '', `?id=${roomId}`);
-        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-    } else {
-        renderJoinerUI();
-    }
-
+    roomId = params.get('id') || ''; isHost = !roomId;
+    if (isHost) { roomId = mkId(); history.replaceState({}, '', `?id=${roomId}`); renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`); }
+    else { renderJoinerUI(); }
     setupSocket();
+});
+
+// إنهاء الاتصال فور الخروج من البرنامج
+window.addEventListener('beforeunload', () => {
+    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+    socket.emit('leave-room');
+    socket.disconnect();
+});
+window.addEventListener('pagehide', () => {
+    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
 });
