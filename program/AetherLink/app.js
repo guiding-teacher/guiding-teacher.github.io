@@ -35,8 +35,7 @@ function addToPrev(name) {
 // ─────────────────────────────────────────
 //  Global state
 // ─────────────────────────────────────────
-const CHUNK_SIZE    = 1024 * 1024 ? 8 * 1024 * 1024  // 8MB للملفات الكبيرة
-    : 1024 * 1024; // 1 MB — fast for LAN
+const CHUNK_SIZE    = 1024 * 1024; // 1 MB — fast for LAN
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://aetherlink-server.onrender.com';
@@ -1314,17 +1313,7 @@ function bindMsgEvents() {
     const btn       = document.getElementById('send-btn');
     const fileBtn   = document.getElementById('file-btn');
     const fileInput = document.getElementById('file-input');
-// يمكن إضافة هذا التحقق في bindMsgEvents
-const allowedTypes = ['image/*', 'video/*', 'application/pdf', 'audio/*'];
-const maxFileSize = 500 * 1024 * 1024; // 500MB
 
-files.forEach(f => {
-    if (f.size > maxFileSize) {
-        toast(`الملف ${f.name} كبير جداً (الحد: 500MB)`, 'error');
-        return;
-    }
-    sendFileParallel(f, targets);
-});
     const send = () => {
         const txt = field?.value.trim();
         if (!txt) return;
