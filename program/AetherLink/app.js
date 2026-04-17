@@ -313,7 +313,7 @@ function setupSocket() {
         if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
 
-   
+    socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
     socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام الطرف الآخر...'));
 
     socket.on('room-peers', (list) => {
@@ -941,7 +941,6 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn" id="home-btn" title="الصفحة الرئيسية">الرئيسية🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1025,7 +1024,6 @@ function renderJoinerUI() {
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
           </div>
-          <button class="icon-btn" id="home-btn" title="الصفحة الرئيسية">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1061,7 +1059,6 @@ function renderConnectedUI() {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn" id="home-btn" title="الصفحة الرئيسية">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1170,9 +1167,6 @@ function bindHomeEvents(joinUrl) {
             toast(`جلسة جديدة للاتصال بـ ${name} — شارك الرابط`, 'info');
         });
     });
-
-    // Home button
-    document.getElementById('home-btn')?.addEventListener('click', () => resetToHome(false));
 }
 
 // ─────────────────────────────────────────
@@ -1248,9 +1242,6 @@ function bindHeaderActions() {
     document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
     document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
     document.getElementById('end-session-btn')?.addEventListener('click', endSession);
-    
-    // Home button in connected UI
-    document.getElementById('home-btn')?.addEventListener('click', () => resetToHome(false));
 }
 
 function showUsersModal() {
@@ -1322,55 +1313,6 @@ function endSession() {
     renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
     socket.emit('join-room', { roomId, deviceName });
     toast('تم إنهاء الجلسة', 'success');
-}
-
-// ─────────────────────────────────────────
-//  Reset session and go home (exit or manual)
-// ─────────────────────────────────────────
-function resetToHome(shouldExit = false) {
-    // Stop all reconnect timers
-    for (const [peerId, { timer }] of reconnectTimers.entries()) {
-        clearTimeout(timer);
-    }
-    reconnectTimers.clear();
-
-    // Destroy all peer connections
-    peers.forEach(({ peer, _keepalive }) => {
-        if (_keepalive) clearInterval(_keepalive);
-        try { peer.destroy(); } catch (_) {}
-    });
-    peers.clear();
-    localConnected.clear();
-
-    // Cancel ongoing file transfers
-    sendingFiles.forEach(sf => sf.cancelled = true);
-    sendingFiles.clear();
-    recvMap.clear();
-    downloadedFiles.clear();
-    sessionMessages = [];
-    sessionFiles = [];
-
-    // Notify server to leave room
-    if (socket && socket.connected) {
-        socket.emit('leave-room');
-        if (shouldExit) {
-            // For beforeunload, we don't wait for response
-            socket.disconnect();
-        }
-    }
-
-    // Reset state
-    isLocalConnection = false;
-    roomId = mkId();
-    history.replaceState({}, '', `?id=${roomId}`);
-    
-    // Re-render home UI
-    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-    
-    // Re-join the new room as host
-    socket.emit('join-room', { roomId, deviceName });
-    
-    toast(shouldExit ? 'تم إنهاء الجلسة والخروج' : 'تم العودة للصفحة الرئيسية', 'success');
 }
 
 function restoreSessionMessages() {
@@ -1802,9 +1744,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupSocket();
-    
-    // ✅ Exit session immediately when page is closed
-    window.addEventListener('beforeunload', () => {
-        resetToHome(true);
-    });
 });
