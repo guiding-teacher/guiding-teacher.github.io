@@ -1008,6 +1008,19 @@ function bindHomeEvents(joinUrl) {
     });
 }
 
+function generateQR(url, targetId = 'qr-inner') {
+    const qr = qrcode(0, 'L');
+    qr.addData(url);
+    qr.make();
+    const el = document.getElementById(targetId);
+    if (el) {
+        el.innerHTML = qr.createImgTag(4, 8);
+        const img = el.querySelector('img');
+        if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:12px;';
+    }
+}
+
+
 function bindMsgEvents() {
     const field = document.getElementById('msg-field'), btn = document.getElementById('send-btn'), fileBtn = document.getElementById('file-btn'), fileInput = document.getElementById('file-input');
     const send = () => {
@@ -1051,14 +1064,44 @@ function showUsersModal() {
 
 function showGroupLinkModal() {
     const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
-    const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
-    overlay.innerHTML = `<div class="modal-box"><h3>🔗 رابط الجلسة</h3><p>شارك هذا الرابط لدعوة آخرين للانضمام</p><div style="background:rgba(0,0,0,.3);padding:12px;border-radius:8px;word-break:break-all;font-size:.8rem;color:#00d2ff;margin:10px 0;">${esc(joinUrl)}</div><div class="modal-actions"><button class="action-button" id="modal-copy">📋 نسخ</button><button class="action-button secondary" id="modal-share">↗ مشاركة</button><button class="action-button secondary" id="modal-close">إغلاق</button></div></div>`;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box" style="max-width: 400px;">
+        <h3>🔗 مشاركة الجلسة</h3>
+        
+        <!-- قسم الباركود الجديد -->
+        <div style="background: #fff; padding: 15px; border-radius: 16px; width: 200px; height: 200px; margin: 20px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div id="modal-qr-target" style="width:100%; height:100%;"></div>
+        </div>
+        
+        <p style="font-size: 0.9rem; color: #8899aa;">امسح الباركود للانضمام فوراً</p>
+        
+        <div style="background:rgba(0,0,0,.3); padding:12px; border-radius:8px; word-break:break-all; font-size:.8rem; color:#00d2ff; margin:15px 0; border: 1px solid rgba(0,210,255,0.2);">
+            ${esc(joinUrl)}
+        </div>
+
+        <div class="modal-actions">
+          <button class="action-button" id="modal-copy">📋 نسخ الرابط</button>
+          <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
+          <button class="action-button secondary" id="modal-close">إغلاق</button>
+        </div>
+      </div>`;
+    
     document.body.appendChild(overlay);
-    overlay.querySelector('#modal-copy')?.addEventListener('click', () => { navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success')); });
+
+    // توليد الباركود داخل النافذة المنبثقة
+    generateQR(joinUrl, 'modal-qr-target');
+
+    overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
+    });
+    
     overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
         if (navigator.share) { try { await navigator.share({ title: 'AetherLink', url: joinUrl }); } catch (_) {} }
         else open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
     });
+
     overlay.querySelector('#modal-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
