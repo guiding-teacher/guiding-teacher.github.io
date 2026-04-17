@@ -313,7 +313,8 @@ function setupSocket() {
         if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
 
-     socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام الطرف الآخر...'));
+    socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
+    socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام الطرف الآخر...'));
 
     socket.on('room-peers', (list) => {
         if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
@@ -327,21 +328,18 @@ function setupSocket() {
         if (pi) pi.peer.signal(signal);
     });
 
-    // داخل دالة setupSocket ابحث عن socket.on('peer-left' ... واستبدله بهذا:
-socket.on('peer-left', ({ id, name }) => {
-    const pi = peers.get(id);
-    if (pi) { try { pi.peer.destroy(); } catch (_) {} peers.delete(id); }
-    
-    toast(`${name} غادر، تم إنهاء الجلسة`, 'warning');
-    
-    // إذا لم يتبقَ أي طرف متصل، عد للرئيسية فوراً
-    if (getConnected().length === 0) {
-        setTimeout(() => resetToHome(), 1000);
-    } else {
-        updatePeersUI(); 
-        updatePiPStatus();
-    }
-});
+    socket.on('peer-left', ({ id, name }) => {
+        const pi = peers.get(id);
+        if (pi) { try { pi.peer.destroy(); } catch (_) {} peers.delete(id); }
+        addToPrev(name);
+        updatePeersUI(); updatePiPStatus();
+        toast(`${name} غادر الجلسة`, 'warning');
+        if (getConnected().length === 0) {
+            setBadge('warn', '● منقطع');
+            // إنهاء الجلسة تلقائياً والعودة للرئيسية عندما لا يتبقى أحد
+            setTimeout(() => goHome(), 1500);
+        }
+    });
 
     socket.on('reconnect-request', ({ from, fromName }) => showReconnectModal(fromName, from));
 
@@ -377,7 +375,6 @@ socket.on('peer-left', ({ id, name }) => {
             // Re-enable connect button
             const btn = document.querySelector('[data-sid] .local-connect-btn');
             if (btn) { btn.textContent = 'اتصال'; btn.disabled = false; }
-            
         }
     });
 }
@@ -932,9 +929,9 @@ function bindTabEvents() {
 // ─────────────────────────────────────────
 //  UI — Home (host)
 // ─────────────────────────────────────────
- // 1. واجهة الصفحة الرئيسية (المنظم)
 function renderHomeUI(joinUrl) {
     const prev = loadPrev();
+
     mainEl.innerHTML = `
     <div class="app-layout">
       <header class="app-header">
@@ -943,22 +940,25 @@ function renderHomeUI(joinUrl) {
           <span class="header-sub">نقل الملفات الفوري والآمن</span>
         </div>
         <div class="header-right">
-          <button class="icon-btn refresh-btn" id="reset-all-btn" title="إعادة ضبط الجلسة">🔄</button>
           <div class="device-chip" id="name-chip">
             <span>📡</span>
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
+          <button class="icon-btn" id="home-btn" title="الرئيسية" onclick="goHome()">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
 
+      <!-- Mode Tabs -->
       <div class="mode-tabs">
         <button class="mode-tab active" id="tab-internet">🌐 عبر الإنترنت</button>
         <button class="mode-tab" id="tab-local">📶 الأجهزة القريبة</button>
       </div>
 
       <div class="home-content">
+
+        <!-- ── Internet Panel ── -->
         <div id="panel-internet" class="tab-panel">
           <div class="qr-section">
             <div class="qr-box" id="qr-box"><div id="qr-inner"></div></div>
@@ -973,6 +973,7 @@ function renderHomeUI(joinUrl) {
               <button class="share-btn btn-share" id="btn-share">↗ مشاركة</button>
             </div>
           </div>
+
           ${prev.length ? `
           <div class="prev-section">
             <p class="section-label">📱 الأجهزة السابقة</p>
@@ -987,16 +988,23 @@ function renderHomeUI(joinUrl) {
             </div>
           </div>` : ''}
         </div>
+
+        <!-- ── Local Discovery Panel ── -->
         <div id="panel-local" class="tab-panel hidden">
           <div class="local-discovery-panel">
             <div class="local-scan-header">
               <span class="local-scan-icon" id="scan-icon">📶</span>
               <p class="local-scan-title">اكتشاف الأجهزة القريبة</p>
+              <p class="local-scan-subtitle">
+                ابحث عن أجهزة أخرى تفتح AetherLink على نفس الشبكة<br>
+                <small>اتصال مباشر P2P — البيانات لا تمر عبر السيرفر</small>
+              </p>
               <button class="action-button" id="btn-start-scan">🔍 بدء البحث</button>
             </div>
             <div class="local-devices-list" id="local-devices-list"></div>
           </div>
         </div>
+
       </div>
     </div>`;
 
@@ -1008,7 +1016,6 @@ function renderHomeUI(joinUrl) {
 // ─────────────────────────────────────────
 //  UI — Joiner (loading)
 // ─────────────────────────────────────────
- // 2. واجهة الانضمام (جارِ التحميل)
 function renderJoinerUI() {
     mainEl.innerHTML = `
     <div class="app-layout">
@@ -1018,11 +1025,11 @@ function renderJoinerUI() {
           <span class="header-sub">نقل الملفات الفوري والآمن</span>
         </div>
         <div class="header-right">
-          <button class="icon-btn refresh-btn" id="reset-all-btn" title="إعادة ضبط">🔄</button>
           <div class="device-chip">
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
           </div>
+          <button class="icon-btn" id="home-btn" title="الرئيسية" onclick="goHome()">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1031,14 +1038,12 @@ function renderJoinerUI() {
         <p class="instructions" id="status-line">جاري الانضمام للجلسة...</p>
       </div>
     </div>`;
-    bindHomeEvents(""); // لربط زر التحديث حتى في صفحة التحميل
+    bindMinBtn();
 }
 
 // ─────────────────────────────────────────
 //  UI — Connected
 // ─────────────────────────────────────────
- 
-// 3. واجهة الاتصال النشط
 function renderConnectedUI() {
     if (document.getElementById('messages-section')) { updatePeersUI(); return; }
 
@@ -1051,29 +1056,32 @@ function renderConnectedUI() {
         </div>
         <div class="header-right">
           <div class="header-actions">
-            <button class="header-action-btn show-users" id="show-users-btn" title="المتصلين">👥</button>
-            ${!isLocalConnection ? `<button class="header-action-btn group-link" id="group-link-btn" title="رابط الجلسة">🔗</button>` : ''}
+            <button class="header-action-btn show-users" id="show-users-btn" title="المتصلين">👥 المتصلين</button>
+            ${!isLocalConnection ? `<button class="header-action-btn group-link" id="group-link-btn" title="رابط الجلسة">🔗 مشاركة</button>` : ''}
+            <button class="header-action-btn end-session" id="end-session-btn" title="إنهاء الجلسة">✕ إنهاء</button>
           </div>
-          <button class="icon-btn refresh-btn" id="reset-all-btn" title="جلسة جديدة">🔄</button>
           <div class="device-chip" id="name-chip">
             <span>📡</span>
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
+          <button class="icon-btn" id="home-btn" title="الرئيسية" onclick="goHome()">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
 
+      <!-- Peers panel -->
       <div class="peers-panel" id="peers-panel">
         <span class="peers-count" id="peers-count">0 متصل</span>
         <div class="peer-chips" id="peer-chips"></div>
       </div>
 
+      <!-- Messages Section -->
       <div class="messages-section-full" id="messages-section">
         <div class="messages-list" id="msg-list"></div>
         <div class="msg-bar">
           <input type="file" id="file-input" multiple style="display:none">
-          <button class="file-input-btn" id="file-btn" title="إرسال ملف">📎</button>
+          <button class="file-input-btn" id="file-btn" title="إرسال ملف (حتى 50 ملف)">📎</button>
           <input type="text" class="msg-field" id="msg-field" placeholder="اكتب رسالة..." autocomplete="off">
           <button class="send-btn" id="send-btn">↑</button>
         </div>
@@ -1086,6 +1094,7 @@ function renderConnectedUI() {
     bindHeaderActions();
     restoreSessionMessages();
 }
+
 // ─────────────────────────────────────────
 //  Peers panel update
 // ─────────────────────────────────────────
@@ -1114,18 +1123,11 @@ function setBadge(type, text) {
 // ─────────────────────────────────────────
 //  Event binding — home
 // ─────────────────────────────────────────
- // 1. ربط الأحداث في الصفحة الرئيسية
 function bindHomeEvents(joinUrl) {
     bindMinBtn();
 
-    // زر التحديث الجديد
-    document.getElementById('reset-all-btn')?.addEventListener('click', () => {
-        resetToHome();
-    });
-
     document.getElementById('edit-name-btn')?.addEventListener('click', () => {
         const chip  = document.getElementById('chip-name');
-        if (!chip) return;
         const input = document.createElement('input');
         input.className = 'name-edit-field';
         input.value = deviceName;
@@ -1134,16 +1136,15 @@ function bindHomeEvents(joinUrl) {
         const commit = () => {
             const v = input.value.trim() || deviceName;
             deviceName = v; saveName(v);
-            const s = document.createElement('span');
-            s.className = 'device-chip-name'; s.id = 'chip-name'; s.textContent = v;
-            input.replaceWith(s);
+            input.replaceWith(Object.assign(document.createElement('span'), {
+                className: 'device-chip-name', id: 'chip-name', textContent: v
+            }));
         };
         input.addEventListener('blur', commit);
         input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
     });
 
     document.getElementById('btn-copy')?.addEventListener('click', () => {
-        if (!joinUrl) return;
         navigator.clipboard.writeText(joinUrl).then(() => {
             const b = document.getElementById('btn-copy');
             if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => b.textContent = '📋 نسخ الرابط', 2000); }
@@ -1151,12 +1152,10 @@ function bindHomeEvents(joinUrl) {
     });
 
     document.getElementById('btn-wa')?.addEventListener('click', () => {
-        if (!joinUrl) return;
         open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
     });
 
     document.getElementById('btn-share')?.addEventListener('click', async () => {
-        if (!joinUrl) return;
         if (navigator.share) {
             try { await navigator.share({ title: 'AetherLink', url: joinUrl }); return; } catch (_) {}
         }
@@ -1165,44 +1164,16 @@ function bindHomeEvents(joinUrl) {
 
     document.querySelectorAll('[data-pname]').forEach(btn => {
         btn.addEventListener('click', () => {
-            const name = btn.getAttribute('data-pname');
-            resetToHome(); // نستخدم دالة التصفير قبل بدء اتصال قديم
-            toast(`بدء جلسة جديدة للاتصال بـ ${name}`, 'info');
+            const name    = btn.getAttribute('data-pname');
+            const newRoom = mkId();
+            const newUrl  = `${location.origin}${location.pathname}?id=${newRoom}`;
+            roomId        = newRoom;
+            history.replaceState({}, '', `?id=${newRoom}`);
+            socket.emit('join-room', { roomId, deviceName });
+            renderHomeUI(newUrl);
+            toast(`جلسة جديدة للاتصال بـ ${name} — شارك الرابط`, 'info');
         });
     });
-}
-
-// 2. ربط الأحداث في صفحة الاتصال
-function bindHeaderActions() {
-    // زر التحديث (إعادة الضبط)
-    document.getElementById('reset-all-btn')?.addEventListener('click', () => {
-        if(confirm('هل تريد إنهاء الجلسة والعودة للرئيسية؟')) {
-            resetToHome();
-        }
-    });
-
-    document.getElementById('edit-name-btn')?.addEventListener('click', () => {
-        const chip  = document.getElementById('chip-name');
-        if (!chip) return;
-        const input = document.createElement('input');
-        input.className = 'name-edit-field';
-        input.value = deviceName;
-        input.style.cssText = 'background:rgba(255,255,255,.06);border:1px solid rgba(0,210,255,.4);border-radius:8px;color:#00d2ff;padding:3px 8px;outline:none;width:100px;';
-        chip.replaceWith(input);
-        input.focus(); input.select();
-        const commit = () => {
-            const v = input.value.trim() || deviceName;
-            deviceName = v; saveName(v);
-            const s = document.createElement('span');
-            s.className = 'device-chip-name'; s.id = 'chip-name'; s.textContent = v;
-            input.replaceWith(s);
-        };
-        input.addEventListener('blur', commit);
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
-    });
-
-    document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
-    document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
 }
 
 // ─────────────────────────────────────────
@@ -1332,7 +1303,11 @@ function showGroupLinkModal() {
 
 function endSession() {
     if (!confirm('هل أنت متأكد من إنهاء الجلسة؟ سيتم حذف جميع الرسائل والملفات.')) return;
+    goHome();
+    toast('تم إنهاء الجلسة', 'success');
+}
 
+function goHome() {
     sessionMessages = []; sessionFiles = [];
     downloadedFiles.clear(); recvMap.clear();
     sendingFiles.forEach(sf => sf.cancelled = true);
@@ -1348,7 +1323,6 @@ function endSession() {
     history.replaceState({}, '', `?id=${roomId}`);
     renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
     socket.emit('join-room', { roomId, deviceName });
-    toast('تم إنهاء الجلسة', 'success');
 }
 
 function restoreSessionMessages() {
@@ -1756,37 +1730,7 @@ function resizeContainer() {
             .forEach(p => mainEl.style[p] = '');
     }
 }
-function resetToHome() {
-    // 1. تدمير كافة الأقران
-    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
-    peers.clear();
-    localConnected.clear();
-    
-    // 2. تنظيف بيانات الجلسة والملفات
-    sessionMessages = []; 
-    sessionFiles = [];
-    downloadedFiles.clear(); 
-    recvMap.clear();
-    sendingFiles.forEach(sf => sf.cancelled = true);
-    sendingFiles.clear();
 
-    // 3. مغادرة الغرفة في السيرفر
-    socket.emit('leave-room');
-    isLocalConnection = false;
-
-    // 4. توليد معرف جديد وتحديث الرابط
-    roomId = mkId();
-    const newUrl = `${location.origin}${location.pathname}?id=${roomId}`;
-    history.replaceState({}, '', `?id=${roomId}`);
-
-    // 5. إعادة بناء الواجهة الرئيسية
-    renderHomeUI(newUrl);
-    socket.emit('join-room', { roomId, deviceName });
-    
-    // إخفاء الـ PiP إذا كان يعمل
-    hidePiP();
-    hideMiniWidget();
-}
 // ─────────────────────────────────────────
 //  Bootstrap
 // ─────────────────────────────────────────
@@ -1811,5 +1755,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupSocket();
 });
-
-
