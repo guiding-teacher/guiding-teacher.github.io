@@ -320,9 +320,10 @@ function setupSocket() {
             });
         }
  
-        // ✅ إعادة الانضمام للغرفة فقط إذا لم نكن متصلين بالفعل
-        // ولم نكن في عملية انضمام حالياً
-        if (roomId && peers.size === 0 && !isJoiningRoom) {
+        // ✅ إعادة الانضمام للغرفة فقط إذا لم يكن هناك اتصال WebRTC نشط بالفعل
+        // peers.size === 0 لا يكفي — يجب التحقق من حالة الاتصال الفعلي
+        const hasActivePeer = [...peers.values()].some(p => p.connected === true);
+        if (roomId && !hasActivePeer && !isJoiningRoom) {
             isJoiningRoom = true;
             socket.emit('join-room', { roomId, deviceName });
             // إعادة تعيين العلم بعد ثانية لتجنب التكرار
@@ -336,24 +337,32 @@ function setupSocket() {
     socket.on('room-peers', (list) => {
         if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
         
-        // ✅ لا تنشئ اتصالات جديدة إذا كنا متصلين بالفعل
-        if (peers.size > 0) {
-            console.log('⚠️ Already have peers, skipping duplicate connections');
+        // ✅ لا تنشئ اتصالات جديدة إذا كان هناك WebRTC نشط فعلاً (ليس فقط peers.size)
+        const hasActivePeer = [...peers.values()].some(p => p.connected === true);
+        if (hasActivePeer) {
+            console.log('⚠️ Already have active WebRTC connections, skipping duplicate room-peers');
             return;
         }
         
         list.forEach(({ id, name }) => {
-            // تحقق من عدم وجود اتصال مسبق بهذا الـ peer
-            if (!peers.has(id)) {
+            // تحقق من عدم وجود اتصال مسبق بهذا الـ peer أو بنفس الاسم
+            const connectedByName = [...peers.values()].some(p => p.name === name && p.connected === true);
+            if (!peers.has(id) && !connectedByName) {
                 makePeer(id, name, true);
             }
         });
     });
 
     socket.on('new-peer', ({ id, name }) => {
-        // ✅ منع إنشاء peer مكرر
+        // ✅ منع إنشاء peer مكرر بالمعرف
         if (peers.has(id)) {
             console.log(`⚠️ Peer ${id} already exists, skipping duplicate`);
+            return;
+        }
+        // ✅ منع إنشاء peer مكرر بالاسم — يحدث عند reconnect للـ socket بـ ID جديد
+        const connectedByName = [...peers.values()].some(p => p.name === name && p.connected === true);
+        if (connectedByName) {
+            console.log(`⚠️ Already connected to device "${name}", skipping duplicate from new socket ID`);
             return;
         }
         makePeer(id, name, false);
@@ -452,7 +461,7 @@ function makePeer(peerId, peerName, initiator) {
  
     const peer = new SimplePeer({
         initiator,
-        trickle: false,
+        trickle: true, // ✅ أسرع بكثير على الإنترنت — يرسل ICE candidates فور اكتشافها
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -475,6 +484,8 @@ function makePeer(peerId, peerName, initiator) {
         const pi = peers.get(peerId);
         if (!pi || pi.connected === 'destroyed') return;
         
+        // ✅ تحقق هل كان هناك اتصال نشط قبل هذا (لمنع تكرار التنبيه)
+        const wasAlreadyConnected = getConnected().length > 0;
         pi.connected = true;
         addToPrev(peerName);
  
@@ -484,7 +495,10 @@ function makePeer(peerId, peerName, initiator) {
         updatePiPStatus();
         renderConnectedUI();
         setBadge('ok', '● متصل');
-        toast(`✅ متصل بـ ${peerName}`, 'success');
+        // ✅ لا تُظهر تنبيه "متصل" مكرر إذا كان الاتصال موجوداً أصلاً
+        if (!wasAlreadyConnected) {
+            toast(`✅ متصل بـ ${peerName}`, 'success');
+        }
  
         if (isLocalConnection) localConnected.add(peerId);
  
