@@ -417,17 +417,29 @@ function setupSocket() {
     });
 
     // ✅ FIX: Inviter already in room — do NOT call joinDiscoveredRoom
-    socket.on('connect-invite-response', ({ accepted, roomId: inviteRoomId }) => {
-        if (accepted) {
-            toast('✅ تم قبول الاتصال! جاري إنشاء الاتصال...', 'success');
-            // The server will send 'new-peer' which triggers makePeer → renderConnectedUI
-        } else {
-            toast('رفض الجهاز الاتصال', 'warning');
-            // Re-enable connect button
-            const btn = document.querySelector('[data-sid] .local-connect-btn');
-            if (btn) { btn.textContent = 'اتصال'; btn.disabled = false; }
-        }
-    });
+ socket.on('connect-invite-response', ({ accepted, roomId: inviteRoomId }) => {
+    if (accepted) {
+        toast('✅ تم قبول الاتصال! جاري إنشاء الاتصال...', 'success');
+        
+        // ✅ FIX: انتقل إلى واجهة الاتصال مباشرة
+        isLocalConnection = true;
+        roomId = inviteRoomId;
+        isHost = true;
+        history.replaceState({}, '', `?id=${roomId}`);
+        
+        // ✅ انضم للغرفة الآن بعد القبول
+        socket.emit('join-room', { roomId, deviceName });
+        
+        // ✅ انتقل إلى واجهة الاتصال الفعلية
+        renderConnectedUI();
+    } else {
+        toast('رفض الجهاز الاتصال', 'warning');
+        // Re-enable connect button
+        const btn = document.querySelector('[data-sid] .local-connect-btn');
+        if (btn) { btn.textContent = 'اتصال'; btn.disabled = false; }
+    }
+}); 
+    
 }
 
 function updatePiPStatus() {
@@ -955,16 +967,18 @@ function updateLocalDevicesUI() {
     });
 }
 
-function inviteLocalPeer(socketId, peerName) {
+ function inviteLocalPeer(socketId, peerName) {
     const newRoomId = mkId();
     socket.emit('connect-invite', { to: socketId, roomId: newRoomId });
 
-    // Set local connection flags
+    // Set local connection flags only (بدون renderHomeUI وبدون join-room)
     isLocalConnection = true;
     roomId = newRoomId;
     isHost = true;
     history.replaceState({}, '', `?id=${newRoomId}`);
-    socket.emit('join-room', { roomId, deviceName });
+    
+    // ✅ لا نستدعي renderHomeUI هنا بعد الآن
+    // ✅ لا ننضم للغرفة هنا، ننتظر القبول أولاً
 
     toast(`⏳ انتظار رد ${peerName}...`, 'info');
 
@@ -1005,12 +1019,15 @@ function showLocalInviteModal(from, fromName, inviteRoomId) {
     });
 }
 
-function joinDiscoveredRoom(newRoomId) {
+ function joinDiscoveredRoom(newRoomId) {
     isLocalConnection = true;
-    roomId  = newRoomId;
-    isHost  = false;
+    roomId = newRoomId;
+    isHost = false;
     history.replaceState({}, '', `?id=${newRoomId}`);
-    renderJoinerUI();
+    
+    // ✅ FIX: انتقل إلى واجهة الاتصال مباشرة بدلاً من renderJoinerUI
+    renderConnectedUI();
+    
     socket.emit('join-room', { roomId, deviceName });
 }
 
