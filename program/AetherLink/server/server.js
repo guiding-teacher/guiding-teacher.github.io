@@ -1,6 +1,6 @@
 /**
- * AetherLink Web - Signaling Server (Full Mesh Edition)
- * FIXED: Full mesh topology + Local direct connection + No duplicate joins
+ * AetherLink Web - Signaling Server (Multi-Peer Edition)
+ * FIXED: Prevent duplicate connection events
  */
 
 const express = require('express');
@@ -12,6 +12,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
+  // ✅ تقليل إعادة الاتصال المتكررة وزيادة الاستقرار
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -24,45 +25,52 @@ const rooms = new Map();
 // discovery: Map<socketId, {socketId, deviceName, joinedAt}>
 const discovery = new Map();
 
-// Track joined sockets to prevent duplicates
+// ✅ تتبع من انضم بالفعل لتجنب التكرار
 const joinedSockets = new Set();
 
 io.on('connection', (socket) => {
   console.log(`✅ Connected: ${socket.id}`);
 
   socket.on('join-room', ({ roomId, deviceName }) => {
-    // Prevent duplicate joins
+    // ✅ منع الانضمام المتكرر لنفس الـ socket
     if (joinedSockets.has(socket.id)) {
       console.log(`⚠️ Socket ${socket.id} already joined, skipping duplicate`);
       return;
     }
-
+    
+    // ✅ التحقق من عدم وجود socket بنفس المعرف في الغرفة
     if (!rooms.has(roomId)) rooms.set(roomId, []);
     const room = rooms.get(roomId);
     
-    // Remove any stale entry for this socket
+    // إزالة أي إدخال سابق لنفس الـ socket (إذا وجد)
     const existingIndex = room.findIndex(u => u.id === socket.id);
     if (existingIndex !== -1) {
       console.log(`🧹 Removing stale entry for ${socket.id}`);
       room.splice(existingIndex, 1);
     }
 
-    // Get existing peers BEFORE adding this socket
+    // ✅ إزالة أي جهاز بنفس الاسم إذا كان قد غادر (socket قديم انقطع دون تنظيف)
+    const staleByName = room.findIndex(u => u.name === deviceName);
+    if (staleByName !== -1) {
+      const staleId = room[staleByName].id;
+      console.log(`🧹 Removing stale same-name entry ${staleId} for device "${deviceName}"`);
+      room.splice(staleByName, 1);
+      joinedSockets.delete(staleId);
+    }
+
+    // Send existing peers to the newcomer (مرة واحدة فقط)
     const existingPeers = room.map(u => ({ id: u.id, name: u.name }));
-    
-    // Notify ALL existing peers about the new peer BEFORE the newcomer joins
-    // This ensures everyone creates a peer connection to the newcomer
-    socket.to(roomId).emit('new-peer', { id: socket.id, name: deviceName });
+    socket.emit('room-peers', existingPeers);
 
     // Add to room
     room.push({ id: socket.id, name: deviceName });
     socket.join(roomId);
     socket.data.roomId = roomId;
     socket.data.deviceName = deviceName;
-    joinedSockets.add(socket.id);
+    joinedSockets.add(socket.id); // ✅ علم كـ منضم
 
-    // Send existing peers to newcomer
-    socket.emit('room-peers', existingPeers);
+    // Notify all existing users about the new peer (مرة واحدة فقط)
+    socket.to(roomId).emit('new-peer', { id: socket.id, name: deviceName });
 
     const names = room.map(u => u.name).join(', ');
     console.log(`Room [${roomId.slice(0,8)}…] → ${names}`);
@@ -95,6 +103,7 @@ io.on('connection', (socket) => {
       joinedAt: Date.now()
     });
     socket.join('discovery');
+    // Broadcast updated list to everyone in discovery (including newcomer)
     io.to('discovery').emit('discovery-update', [...discovery.values()]);
     console.log(`📶 Discovery: ${socket.data.deviceName} joined (${discovery.size} total)`);
   });
@@ -120,7 +129,7 @@ io.on('connection', (socket) => {
     io.to(to).emit('connect-invite-response', { accepted, roomId: inviteRoomId });
   });
 
-  // Clean leave handler
+  // ✅ معالج جديد للمغادرة النظيفة
   socket.on('leave-room', () => {
     const roomId = socket.data.roomId;
     if (!roomId || !rooms.has(roomId)) return;
@@ -130,12 +139,11 @@ io.on('connection', (socket) => {
     if (idx !== -1) {
       const name = room[idx].name;
       room.splice(idx, 1);
-      // Notify ALL peers in room that this peer left
-      io.to(roomId).emit('peer-left', { id: socket.id, name });
+      socket.to(roomId).emit('peer-left', { id: socket.id, name });
     }
     
     socket.leave(roomId);
-    joinedSockets.delete(socket.id);
+    joinedSockets.delete(socket.id); // ✅ إزالة من قائمة المنضمين
     
     if (room.length === 0) {
       rooms.delete(roomId);
@@ -148,12 +156,11 @@ io.on('connection', (socket) => {
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
     const idx = room.findIndex(u => u.id === socket.id);
-    if (idx !== -1) {
-      const name = room[idx].name;
-      room.splice(idx, 1);
-      // Notify ALL peers in room
-      io.to(roomId).emit('peer-left', { id: socket.id, name });
-    }
+    if (idx !== -1) room.splice(idx, 1);
+    socket.to(roomId).emit('peer-left', {
+      id: socket.id,
+      name: socket.data.deviceName || 'Unknown'
+    });
     if (room.length === 0) {
       rooms.delete(roomId);
       console.log(`🧹 Deleted empty room ${roomId.slice(0,8)}…`);
@@ -167,7 +174,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`❌ Disconnected: ${socket.id}`);
-    joinedSockets.delete(socket.id);
+    joinedSockets.delete(socket.id); // ✅ تنظيف عند قطع الاتصال
   });
 });
 
