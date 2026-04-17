@@ -1,6 +1,6 @@
 /**
- * AetherLink Web — Full Mesh P2P File Transfer
- * v3: Full mesh topology · Local direct connection · Bidirectional transfer
+ * AetherLink Web — Multi-Peer P2P File Transfer
+ * v2: parallel transfers · auto-save · fast local · instant session
  */
 
 // ─────────────────────────────────────────
@@ -51,9 +51,6 @@ let pipDocument       = null;
 // Map<socketId, {peer, name, connected}>
 const peers = new Map();
 
-// Track connection state to prevent duplicates
-let isJoiningRoom = false;
-
 // Local discovery
 const localDiscovery = new Map(); // socketId → {socketId, deviceName}
 const localConnected = new Set(); // socketIds connected locally
@@ -98,6 +95,7 @@ function makeChunkWithId(fileId, chunkArrayBuffer) {
 }
 
 function parseChunkWithId(raw) {
+    // raw is Buffer/Uint8Array from SimplePeer
     const ab = (raw.buffer && raw.byteOffset !== undefined)
         ? raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
         : (raw instanceof ArrayBuffer ? raw : raw.buffer);
@@ -294,93 +292,49 @@ function hideMiniWidget() {
 }
 
 // ─────────────────────────────────────────
-//  Socket listeners - FULL MESH FIX
+//  Socket listeners
 // ─────────────────────────────────────────
 function setupSocket() {
     
-    socket.on('connect', () => {
+     socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
-        
-        // Clean up destroyed peers on reconnect
+ 
+        // دمّر فقط الـ peers غير المتصلة (لا تدمر الاتصالات النشطة)
         const toDestroy = [];
         peers.forEach(({ peer, connected }, id) => {
-            if (!connected || connected === 'destroyed') toDestroy.push({ id, peer });
+            if (!connected) toDestroy.push({ id, peer });
         });
         toDestroy.forEach(({ id, peer }) => {
             try { peer.destroy(); } catch (_) {}
             peers.delete(id);
         });
  
-        // Re-join room if we have one but no peers
-        if (roomId && peers.size === 0 && !isJoiningRoom) {
-            isJoiningRoom = true;
-            socket.emit('join-room', { roomId, deviceName });
-            setTimeout(() => { isJoiningRoom = false; }, 1000);
-        }
+        // إعادة الانضمام للغرفة (ليُرسل الخادم room-peers من جديد)
+        if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
 
     socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
-    socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام طرف آخر...'));
+    socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام الطرف الآخر...'));
 
-    // Handle room-peers - create connections to ALL existing peers
     socket.on('room-peers', (list) => {
-        if (list.length === 0) return setStatus('في انتظار انضمام طرف آخر...');
-        
-        console.log('📋 Received peers list:', list.map(p => p.name));
-        
-        // Create peer connection to EACH existing peer
-        list.forEach(({ id, name }) => {
-            if (!peers.has(id) || peers.get(id).connected === 'destroyed') {
-                console.log(`🔌 Creating peer to existing peer: ${name}`);
-                // We are the initiator because we're joining their room
-                makePeer(id, name, true);
-            }
-        });
+        if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
+        list.forEach(({ id, name }) => makePeer(id, name, true));
     });
 
-    // Handle new-peer - create connection when someone joins
-    socket.on('new-peer', ({ id, name }) => {
-        console.log(`👤 New peer joined: ${name}`);
-        
-        // Don't create duplicate connections
-        if (peers.has(id) && peers.get(id).connected !== 'destroyed') {
-            console.log(`⚠️ Peer ${name} already exists, skipping`);
-            return;
-        }
-        
-        // We are NOT the initiator - the newcomer will initiate
-        makePeer(id, name, false);
-    });
+    socket.on('new-peer', ({ id, name }) => makePeer(id, name, false));
 
     socket.on('receive-signal', ({ signal, from }) => {
         const pi = peers.get(from);
-        if (pi) {
-            pi.peer.signal(signal);
-        } else {
-            console.warn(`⚠️ Received signal from unknown peer: ${from}`);
-        }
+        if (pi) pi.peer.signal(signal);
     });
 
     socket.on('peer-left', ({ id, name }) => {
         const pi = peers.get(id);
-        if (pi) { 
-            if (pi._keepalive) clearInterval(pi._keepalive);
-            try { pi.peer.destroy(); } catch (_) {} 
-            peers.delete(id); 
-        }
-        localConnected.delete(id);
+        if (pi) { try { pi.peer.destroy(); } catch (_) {} peers.delete(id); }
         addToPrev(name);
-        updatePeersUI(); 
-        updatePiPStatus();
+        updatePeersUI(); updatePiPStatus();
         toast(`${name} غادر الجلسة`, 'warning');
-        
-        // If no peers left, go home
-        if (getConnected().length === 0 && peers.size === 0) {
-            setTimeout(() => {
-                goHome();
-                toast('تم إنهاء الجلسة - لا يوجد متصلين', 'info');
-            }, 2000);
-        }
+        if (getConnected().length === 0) setBadge('warn', '● منقطع');
     });
 
     socket.on('reconnect-request', ({ from, fromName }) => showReconnectModal(fromName, from));
@@ -407,11 +361,14 @@ function setupSocket() {
         showLocalInviteModal(from, fromName, inviteRoomId);
     });
 
+    // ✅ FIX: Inviter already in room — do NOT call joinDiscoveredRoom
     socket.on('connect-invite-response', ({ accepted, roomId: inviteRoomId }) => {
         if (accepted) {
             toast('✅ تم قبول الاتصال! جاري إنشاء الاتصال...', 'success');
+            // The server will send 'new-peer' which triggers makePeer → renderConnectedUI
         } else {
             toast('رفض الجهاز الاتصال', 'warning');
+            // Re-enable connect button
             const btn = document.querySelector('[data-sid] .local-connect-btn');
             if (btn) { btn.textContent = 'اتصال'; btn.disabled = false; }
         }
@@ -424,70 +381,37 @@ function updatePiPStatus() {
 }
 
 // ─────────────────────────────────────────
-//  Peer management - FULL MESH + LOCAL FIX
+//  Peer management
 // ─────────────────────────────────────────
 function makePeer(peerId, peerName, initiator) {
-    // Prevent duplicate connections
-    const existing = peers.get(peerId);
-    if (existing && existing.connected !== 'destroyed') {
-        if (existing.connected === true) {
-            console.log(`⚠️ Peer ${peerName} already connected, skipping`);
-            return;
-        }
-        // Destroy stale connection
-        try { existing.peer.destroy(); } catch (_) {}
-        if (existing._keepalive) clearInterval(existing._keepalive);
-    }
-    
-    // Clear any reconnect timers
+    // أوقف أي reconnect timer قديم لهذا الـ peer
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
         reconnectTimers.delete(peerId);
     }
-    
-    console.log(`🔌 Creating peer connection to ${peerName} (initiator: ${initiator}, local: ${isLocalConnection})`);
-
-    // ICE Configuration for Local vs Internet
-    const iceConfig = isLocalConnection 
-        ? { iceServers: [] } // No STUN/TURN for local - pure LAN connection
-        : {
+ 
+    const peer = new SimplePeer({
+        initiator,
+        trickle: false,
+        config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
             ],
-            iceCandidatePoolSize: 10
-        };
-
-    const peer = new SimplePeer({
-        initiator,
-        trickle: false,
-        config: iceConfig,
-        channelConfig: {
-            ordered: true,
-            maxRetransmits: 3
-        }
+        },
     });
  
     peers.set(peerId, { peer, name: peerName, connected: false });
  
-    peer.on('signal', (data) => {
-        const pi = peers.get(peerId);
-        if (!pi || pi.connected === 'destroyed') return;
-        socket.emit('send-signal', { to: peerId, signal: data });
-    });
+    peer.on('signal', (data) => socket.emit('send-signal', { to: peerId, signal: data }));
  
     peer.on('connect', () => {
         const pi = peers.get(peerId);
-        if (!pi || pi.connected === 'destroyed') return;
-        
-        pi.connected = true;
+        if (pi) pi.connected = true;
         addToPrev(peerName);
  
-        // Send hello message
-        try { 
-            peer.send(JSON.stringify({ type: 'hello', name: deviceName })); 
-        } catch (_) {}
+        try { peer.send(JSON.stringify({ type: 'hello', name: deviceName })); } catch (_) {}
  
         updatePeersUI();
         updatePiPStatus();
@@ -497,13 +421,11 @@ function makePeer(peerId, peerName, initiator) {
  
         if (isLocalConnection) localConnected.add(peerId);
  
-        // Keepalive ping every 15 seconds
+        // ── Keepalive ping كل 15 ثانية ──────────────
+        // يمنع إغلاق الـ DataChannel من قِبل الشبكة عند عدم النشاط
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
-            if (!p || !p.connected || p.connected === 'destroyed') { 
-                clearInterval(kTimer); 
-                return; 
-            }
+            if (!p || !p.connected) { clearInterval(kTimer); return; }
             try {
                 p.peer.send(JSON.stringify({ type: 'ping' }));
             } catch (_) {
@@ -511,6 +433,7 @@ function makePeer(peerId, peerName, initiator) {
             }
         }, 15000);
  
+        // احتفظ بمرجع الـ timer حتى نتمكن من إلغائه عند الإغلاق
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
  
@@ -518,10 +441,9 @@ function makePeer(peerId, peerName, initiator) {
  
     peer.on('close', () => {
         const pi = peers.get(peerId);
-        const wasConnected = pi?.connected === true;
+        const wasConnected = pi?.connected ?? false;
         if (pi?._keepalive) clearInterval(pi._keepalive);
-        
-        if (pi) pi.connected = 'destroyed';
+ 
         peers.delete(peerId);
         localConnected.delete(peerId);
         updatePeersUI();
@@ -534,69 +456,54 @@ function makePeer(peerId, peerName, initiator) {
     });
  
     peer.on('error', (e) => {
-        console.error('Peer error', peerId, e.message || e);
+        console.error('Peer error', peerId, e);
         const pi = peers.get(peerId);
-        const wasConnected = pi?.connected === true;
-        
+        const wasConnected = pi?.connected ?? false;
         if (pi?._keepalive) clearInterval(pi._keepalive);
-        if (pi) pi.connected = 'destroyed';
-        
+ 
         peers.delete(peerId);
         localConnected.delete(peerId);
         updatePeersUI();
         updatePiPStatus();
  
-        if (wasConnected || isLocalConnection) {
-            scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
-        }
+        // أعد المحاولة دائماً — سواء كان متصلاً أو لا
+        scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
     });
 }
+ 
 
 function getConnected() {
-    return [...peers.entries()].filter(([_, p]) => p.connected === true);
+    return [...peers.entries()].filter(([_, p]) => p.connected);
 }
 
 function scheduleReconnect(peerId, peerName, attempt = 1) {
+    // إذا عاد الاتصال مسبقاً — لا تفعل شيئاً
     const existing = peers.get(peerId);
-    if (existing && existing.connected === true) return;
-    
-    if (!isLocalConnection && attempt > 1) {
-        console.log(`🚫 Internet mode: giving up reconnection after first attempt`);
-        toast('انقطع الاتصال - سيتم إنهاء الجلسة', 'warning');
-        setTimeout(() => goHome(), 2000);
-        return;
-    }
+    if (existing && existing.connected) return;
  
+    // امسح أي مؤقت سابق لنفس الـ peer
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
     }
  
-    const baseDelay = isLocalConnection ? 2000 : 5000;
-    const delay = Math.min(baseDelay * attempt, isLocalConnection ? 30000 : 10000);
+    const delay = Math.min(2000 * attempt, 30000);
     console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt})`);
  
     const timer = setTimeout(() => {
         reconnectTimers.delete(peerId);
  
+        // إذا كان الـ socket غير متصل، أعد المحاولة لاحقاً
         if (!socket.connected) {
-            if (isLocalConnection) {
-                scheduleReconnect(peerId, peerName, attempt + 1);
-            } else {
-                toast('انقطع الاتصال بالخادم - سيتم إنهاء الجلسة', 'warning');
-                setTimeout(() => goHome(), 2000);
-            }
+            scheduleReconnect(peerId, peerName, attempt + 1);
             return;
         }
  
+        // إذا تم الاتصال بالفعل عبر مسار آخر (مثل socket reconnect) — توقف
         const current = peers.get(peerId);
-        if (current && current.connected === true) return;
-        
-        if (!isLocalConnection && attempt > 1) {
-            toast('فشل إعادة الاتصال - سيتم إنهاء الجلسة', 'warning');
-            setTimeout(() => goHome(), 2000);
-            return;
-        }
+        if (current && current.connected) return;
  
+        // أعد بناء الـ peer
+        // الاتفاقية: من socket.id الأصغر نصاً هو المُبادر (initiator)
         const initiator = socket.id < peerId;
         makePeer(peerId, peerName, initiator);
     }, delay);
@@ -604,11 +511,11 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
     reconnectTimers.set(peerId, { timer, attempt });
     setBadge('warn', `● إعادة الاتصال... (${attempt})`);
 }
-
 // ─────────────────────────────────────────
 //  Incoming data handler
 // ─────────────────────────────────────────
 function onData(raw, fromId) {
+    // SimplePeer: strings stay strings, binary arrives as Buffer/Uint8Array
     if (typeof raw === 'string') {
         try {
             const msg = JSON.parse(raw);
@@ -616,8 +523,9 @@ function onData(raw, fromId) {
         } catch (_) {}
         return;
     }
+    // Binary: might be old-style JSON (first byte = '{' = 0x7B) or new chunk protocol
     const firstByte = raw[0];
-    if (firstByte === 0x7B) {
+    if (firstByte === 0x7B) { // '{'
         try {
             const msg = JSON.parse(raw.toString());
             handleJsonMsg(msg, fromId);
@@ -627,7 +535,7 @@ function onData(raw, fromId) {
     recvChunk(raw, fromId);
 }
 
-function handleJsonMsg(msg, fromId) {
+ function handleJsonMsg(msg, fromId) {
     switch (msg.type) {
         case 'hello': {
             const pi = peers.get(fromId);
@@ -635,13 +543,15 @@ function handleJsonMsg(msg, fromId) {
             break;
         }
         case 'ping': {
+            // رد على الـ ping بـ pong لإبقاء الاتصال حياً
             const pi = peers.get(fromId);
-            if (pi?.connected === true) {
+            if (pi?.connected) {
                 try { pi.peer.send(JSON.stringify({ type: 'pong' })); } catch (_) {}
             }
             break;
         }
         case 'pong':
+            // الاتصال لا يزال حياً — لا إجراء مطلوب
             break;
         case 'metadata':
             recvMap.set(msg.payload.fileId, {
@@ -662,6 +572,7 @@ function handleJsonMsg(msg, fromId) {
         }
     }
 }
+ 
 
 // ─────────────────────────────────────────
 //  Receive chunks — fileId-routed
@@ -761,7 +672,7 @@ function completeReceivingFileBox(meta, blob, senderName) {
     downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
     sessionFiles.push({ fileId, meta, sender: senderName });
 
-    // AUTO-SAVE: trigger download immediately
+    // ✅ AUTO-SAVE: trigger download immediately
     downloadBlob(blob, meta.fileName);
 
     const isImage = meta.fileType?.startsWith('image/');
@@ -885,7 +796,7 @@ function updateLocalDevicesUI() {
     }
 
     // Determine which discovered devices are already connected
-    const connectedNames = new Set([...peers.values()].filter(p => p.connected === true).map(p => p.name));
+    const connectedNames = new Set([...peers.values()].filter(p => p.connected).map(p => p.name));
     const devices = [...localDiscovery.values()];
 
     list.innerHTML = `
@@ -966,7 +877,7 @@ function showLocalInviteModal(from, fromName, inviteRoomId) {
     overlay.querySelector('#invite-accept')?.addEventListener('click', () => {
         socket.emit('connect-invite-response', { to: from, accepted: true, roomId: inviteRoomId });
         overlay.remove();
-        // Set local connection before joining
+        // ✅ Set local connection before joining
         isLocalConnection = true;
         joinDiscoveredRoom(inviteRoomId);
     });
@@ -1030,7 +941,6 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn" id="home-btn" title="الرئيسية" onclick="goHome()">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1114,7 +1024,6 @@ function renderJoinerUI() {
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
           </div>
-          <button class="icon-btn" id="home-btn" title="الرئيسية" onclick="goHome()">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1150,7 +1059,6 @@ function renderConnectedUI() {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn" id="home-btn" title="الرئيسية" onclick="goHome()">🏠</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1262,7 +1170,7 @@ function bindHomeEvents(joinUrl) {
 }
 
 // ─────────────────────────────────────────
-//  Event binding — messages & file send - BROADCAST FIX
+//  Event binding — messages & file send
 // ─────────────────────────────────────────
 function bindMsgEvents() {
     const field     = document.getElementById('msg-field');
@@ -1273,13 +1181,9 @@ function bindMsgEvents() {
     const send = () => {
         const txt = field?.value.trim();
         if (!txt) return;
-        
-        // Broadcast to ALL connected peers
-        const allPeers = getConnected();
-        allPeers.forEach(([_, p]) => {
+        getConnected().forEach(([_, p]) => {
             try { p.peer.send(JSON.stringify({ type: 'chat', text: txt })); } catch (_) {}
         });
-        
         appendMsg(txt, true, deviceName);
         if (field) field.value = '';
     };
@@ -1293,21 +1197,21 @@ function bindMsgEvents() {
         const all = Array.from(e.target.files || []);
         if (!all.length) return;
 
+        // ✅ Limit to 50 files
         if (all.length > 50) {
             toast(`تم اختيار ${all.length} ملف — سيتم إرسال أول 50 فقط`, 'warning');
         }
         const files = all.slice(0, 50);
 
-        // Get ALL connected peers
-        const allPeerIds = getConnected().map(([id]) => id);
-        if (allPeerIds.length === 0) {
+        const targets = getConnected().map(([id]) => id);
+        if (!targets.length) {
             toast('لا يوجد أجهزة متصلة', 'error');
             fileInput.value = '';
             return;
         }
 
-        // Send to ALL peers in parallel
-        files.forEach(f => sendFileParallel(f, allPeerIds));
+        // ✅ Send all files in PARALLEL — no queue
+        files.forEach(f => sendFileParallel(f, targets));
         fileInput.value = '';
     });
 }
@@ -1392,11 +1296,7 @@ function showGroupLinkModal() {
 
 function endSession() {
     if (!confirm('هل أنت متأكد من إنهاء الجلسة؟ سيتم حذف جميع الرسائل والملفات.')) return;
-    goHome();
-    toast('تم إنهاء الجلسة', 'success');
-}
 
-function goHome() {
     sessionMessages = []; sessionFiles = [];
     downloadedFiles.clear(); recvMap.clear();
     sendingFiles.forEach(sf => sf.cancelled = true);
@@ -1412,6 +1312,7 @@ function goHome() {
     history.replaceState({}, '', `?id=${roomId}`);
     renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
     socket.emit('join-room', { roomId, deviceName });
+    toast('تم إنهاء الجلسة', 'success');
 }
 
 function restoreSessionMessages() {
@@ -1459,30 +1360,20 @@ function initMiniDrag() {
     el.addEventListener('touchend', stop);
 }
 
- // ─────────────────────────────────────────
-//  Parallel file send - BROADCAST TO ALL PEERS
 // ─────────────────────────────────────────
-async function sendFileParallel(file, peerIds) {
+//  Parallel file send — async, no queue
+// ─────────────────────────────────────────
+ async function sendFileParallel(file, peerIds) {
     const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const meta   = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
  
     sendingFiles.set(fileId, { cancelled: false });
  
-    // Send to ALL connected peers (broadcast)
-    const allPeerIds = getConnected().map(([id]) => id);
-    if (allPeerIds.length === 0) {
-        toast('لا يوجد أجهزة متصلة', 'error');
-        return;
-    }
- 
+    // أرسل الـ metadata لكل الـ peers
     const metaMsg = JSON.stringify({ type: 'metadata', payload: meta });
-    
-    // Send metadata to all peers
-    allPeerIds.forEach(id => {
+    peerIds.forEach(id => {
         const pi = peers.get(id);
-        if (pi?.connected === true) {
-            try { pi.peer.send(metaMsg); } catch (_) {}
-        }
+        if (pi?.connected) try { pi.peer.send(metaMsg); } catch (_) {}
     });
  
     createSenderFileBox(file, meta);
@@ -1497,20 +1388,76 @@ async function sendFileParallel(file, peerIds) {
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
             const tagged   = makeChunkWithId(fileId, chunkBuf);
  
-            // Send to ALL peers simultaneously
-            for (const id of allPeerIds) {
+            for (const id of peerIds) {
                 const pi = peers.get(id);
-                if (!pi?.connected === true) continue;
+                if (!pi?.connected) continue;
  
-                try {
-                    pi.peer.send(tagged);
-                } catch (err) {
-                    console.warn(`Failed to send to peer ${id}:`, err);
+                // Backpressure: انتظر إذا كان Buffer ممتلئاً
+                let waits = 0;
+                while (
+                    pi.peer._channel &&
+                    pi.peer._channel.bufferedAmount > 8 * 1024 * 1024 &&
+                    waits < 400  // ← ضاعفنا وقت الانتظار (400 × 30ms = 12s)
+                ) {
+                    await new Promise(r => setTimeout(r, 30));
+                    waits++;
+ 
+                    // إذا انقطع الاتصال أثناء الانتظار — انتظر إعادة الاتصال
+                    const current = peers.get(id);
+                    if (!current?.connected) {
+                        // انتظر حتى 20 ثانية لإعادة الاتصال
+                        let waitReconn = 0;
+                        while (waitReconn < 200) {
+                            await new Promise(r => setTimeout(r, 100));
+                            const reconnected = peers.get(id);
+                            if (reconnected?.connected) break;
+                            waitReconn++;
+                        }
+                        // أعد إرسال الـ metadata بعد إعادة الاتصال
+                        const reconn = peers.get(id);
+                        if (reconn?.connected) {
+                            try { reconn.peer.send(metaMsg); } catch (_) {}
+                        }
+                        break;
+                    }
+                }
+ 
+                // محاولة الإرسال مع retry عند الفشل
+                let sent = false;
+                for (let retry = 0; retry < 5; retry++) {
+                    const currentPi = peers.get(id);
+                    if (!currentPi?.connected) {
+                        // انتظر إعادة الاتصال (حتى 15 ثانية)
+                        let w = 0;
+                        while (w < 150) {
+                            await new Promise(r => setTimeout(r, 100));
+                            if (peers.get(id)?.connected) break;
+                            w++;
+                        }
+                        continue;
+                    }
+                    try {
+                        currentPi.peer.send(tagged);
+                        sent = true;
+                        break;
+                    } catch (sendErr) {
+                        console.warn(`send retry ${retry + 1} for ${fileId}`, sendErr);
+                        await new Promise(r => setTimeout(r, 500 * (retry + 1)));
+                    }
+                }
+ 
+                if (!sent) {
+                    // بعد 5 محاولات — أخبر المستخدم لكن لا توقف باقي الإرسال
+                    console.error(`فشل إرسال chunk للـ peer ${id}`);
+                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
+                    // استمر مع باقي الـ peers
                 }
             }
  
             offset = end;
             updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
+ 
+            // أعطِ للمتصفح فرصة لمعالجة الأحداث
             await new Promise(r => setTimeout(r, 0));
         }
  
@@ -1519,7 +1466,13 @@ async function sendFileParallel(file, peerIds) {
  
     } catch (err) {
         console.error('sendFileParallel error', err);
-        updateSenderFileBox(fileId, 0, true, 'فشل الإرسال');
+        updateSenderFileBox(fileId, 0, true, 'فشل قراءة الملف');
+        peerIds.forEach(id => {
+            const pi = peers.get(id);
+            if (pi?.connected) {
+                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
+            }
+        });
     }
  
     sendingFiles.delete(fileId);
