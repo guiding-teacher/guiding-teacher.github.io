@@ -298,9 +298,12 @@ function hideMiniWidget() {
 // ─────────────────────────────────────────
 //  Socket listeners
 // ─────────────────────────────────────────
+ // ─────────────────────────────────────────
+//  Socket listeners
+// ─────────────────────────────────────────
 function setupSocket() {
     
-     socket.on('connect', () => {
+    socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
         
         // ✅ لا تدمر الـ peers النشطة عند إعادة الاتصال بالـ socket
@@ -317,9 +320,13 @@ function setupSocket() {
             });
         }
  
-        // إعادة الانضمام للغرفة فقط إذا لم نكن متصلين بالفعل
-        if (roomId && peers.size === 0) {
+        // ✅ إعادة الانضمام للغرفة فقط إذا لم نكن متصلين بالفعل
+        // ولم نكن في عملية انضمام حالياً
+        if (roomId && peers.size === 0 && !isJoiningRoom) {
+            isJoiningRoom = true;
             socket.emit('join-room', { roomId, deviceName });
+            // إعادة تعيين العلم بعد ثانية لتجنب التكرار
+            setTimeout(() => { isJoiningRoom = false; }, 1000);
         }
     });
 
@@ -343,7 +350,14 @@ function setupSocket() {
         });
     });
 
-    socket.on('new-peer', ({ id, name }) => makePeer(id, name, false));
+    socket.on('new-peer', ({ id, name }) => {
+        // ✅ منع إنشاء peer مكرر
+        if (peers.has(id)) {
+            console.log(`⚠️ Peer ${id} already exists, skipping duplicate`);
+            return;
+        }
+        makePeer(id, name, false);
+    });
 
     socket.on('receive-signal', ({ signal, from }) => {
         const pi = peers.get(from);
@@ -362,8 +376,7 @@ function setupSocket() {
         updatePeersUI(); updatePiPStatus();
         toast(`${name} غادر الجلسة - سيتم إنهاء الجلسة`, 'warning');
         
-        // إنهاء الجلسة فوراً للطرف الآخر عند مغادرة أي طرف
-        // لا ننتظر، ننهي الجلسة مباشرة
+        // ✅ إنهاء الجلسة فوراً للطرف الآخر عند مغادرة أي طرف
         setTimeout(() => {
             goHome();
             toast('تم إنهاء الجلسة بسبب مغادرة الطرف الآخر', 'info');
