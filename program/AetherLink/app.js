@@ -51,6 +51,10 @@ let pipDocument       = null;
 // Map<socketId, {peer, name, connected}>
 const peers = new Map();
 
+// ✅ Track connection state to prevent duplicates
+let isJoiningRoom = false;
+let lastJoinTime = 0;
+
 // Local discovery
 const localDiscovery = new Map(); // socketId → {socketId, deviceName}
 const localConnected = new Set(); // socketIds connected locally
@@ -298,19 +302,25 @@ function setupSocket() {
     
      socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
+        
+        // ✅ لا تدمر الـ peers النشطة عند إعادة الاتصال بالـ socket
+        // في وضع الإنترنت، نحتفظ بالاتصالات النشطة ما لم تنقطع فعلياً
+        if (isLocalConnection) {
+            // في الوضع المحلي فقط، نظف الاتصالات غير النشطة
+            const toDestroy = [];
+            peers.forEach(({ peer, connected }, id) => {
+                if (!connected) toDestroy.push({ id, peer });
+            });
+            toDestroy.forEach(({ id, peer }) => {
+                try { peer.destroy(); } catch (_) {}
+                peers.delete(id);
+            });
+        }
  
-        // دمّر فقط الـ peers غير المتصلة (لا تدمر الاتصالات النشطة)
-        const toDestroy = [];
-        peers.forEach(({ peer, connected }, id) => {
-            if (!connected) toDestroy.push({ id, peer });
-        });
-        toDestroy.forEach(({ id, peer }) => {
-            try { peer.destroy(); } catch (_) {}
-            peers.delete(id);
-        });
- 
-        // إعادة الانضمام للغرفة (ليُرسل الخادم room-peers من جديد)
-        if (roomId) socket.emit('join-room', { roomId, deviceName });
+        // إعادة الانضمام للغرفة فقط إذا لم نكن متصلين بالفعل
+        if (roomId && peers.size === 0) {
+            socket.emit('join-room', { roomId, deviceName });
+        }
     });
 
     socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
@@ -318,7 +328,19 @@ function setupSocket() {
 
     socket.on('room-peers', (list) => {
         if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
-        list.forEach(({ id, name }) => makePeer(id, name, true));
+        
+        // ✅ لا تنشئ اتصالات جديدة إذا كنا متصلين بالفعل
+        if (peers.size > 0) {
+            console.log('⚠️ Already have peers, skipping duplicate connections');
+            return;
+        }
+        
+        list.forEach(({ id, name }) => {
+            // تحقق من عدم وجود اتصال مسبق بهذا الـ peer
+            if (!peers.has(id)) {
+                makePeer(id, name, true);
+            }
+        });
     });
 
     socket.on('new-peer', ({ id, name }) => makePeer(id, name, false));
@@ -330,15 +352,22 @@ function setupSocket() {
 
     socket.on('peer-left', ({ id, name }) => {
         const pi = peers.get(id);
-        if (pi) { try { pi.peer.destroy(); } catch (_) {} peers.delete(id); }
+        if (pi) { 
+            if (pi._keepalive) clearInterval(pi._keepalive);
+            try { pi.peer.destroy(); } catch (_) {} 
+            peers.delete(id); 
+        }
+        localConnected.delete(id);
         addToPrev(name);
         updatePeersUI(); updatePiPStatus();
-        toast(`${name} غادر الجلسة`, 'warning');
-        if (getConnected().length === 0) {
-            setBadge('warn', '● منقطع');
-            // إنهاء الجلسة تلقائياً والعودة للرئيسية عندما لا يتبقى أحد
-            setTimeout(() => goHome(), 1500);
-        }
+        toast(`${name} غادر الجلسة - سيتم إنهاء الجلسة`, 'warning');
+        
+        // إنهاء الجلسة فوراً للطرف الآخر عند مغادرة أي طرف
+        // لا ننتظر، ننهي الجلسة مباشرة
+        setTimeout(() => {
+            goHome();
+            toast('تم إنهاء الجلسة بسبب مغادرة الطرف الآخر', 'info');
+        }, 2000);
     });
 
     socket.on('reconnect-request', ({ from, fromName }) => showReconnectModal(fromName, from));
@@ -388,11 +417,25 @@ function updatePiPStatus() {
 //  Peer management
 // ─────────────────────────────────────────
 function makePeer(peerId, peerName, initiator) {
+    // ✅ تحقق مما إذا كان هناك اتصال نشط بالفعل - لا تكرر
+    const existing = peers.get(peerId);
+    if (existing) {
+        if (existing.connected) {
+            console.log(`⚠️ Peer ${peerName} already connected, skipping duplicate`);
+            return;
+        }
+        // إذا كان هناك peer غير متصل، دمره أولاً
+        try { existing.peer.destroy(); } catch (_) {}
+        if (existing._keepalive) clearInterval(existing._keepalive);
+    }
+    
     // أوقف أي reconnect timer قديم لهذا الـ peer
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
         reconnectTimers.delete(peerId);
     }
+    
+    console.log(`🔌 Creating peer connection to ${peerName} (initiator: ${initiator}, local: ${isLocalConnection})`);
  
     const peer = new SimplePeer({
         initiator,
@@ -408,11 +451,18 @@ function makePeer(peerId, peerName, initiator) {
  
     peers.set(peerId, { peer, name: peerName, connected: false });
  
-    peer.on('signal', (data) => socket.emit('send-signal', { to: peerId, signal: data }));
+    peer.on('signal', (data) => {
+        // ✅ تأكد من أننا لا نرسل إشارات بعد إغلاق الاتصال
+        const pi = peers.get(peerId);
+        if (!pi || pi.connected === 'destroyed') return;
+        socket.emit('send-signal', { to: peerId, signal: data });
+    });
  
     peer.on('connect', () => {
         const pi = peers.get(peerId);
-        if (pi) pi.connected = true;
+        if (!pi || pi.connected === 'destroyed') return;
+        
+        pi.connected = true;
         addToPrev(peerName);
  
         try { peer.send(JSON.stringify({ type: 'hello', name: deviceName })); } catch (_) {}
@@ -426,10 +476,12 @@ function makePeer(peerId, peerName, initiator) {
         if (isLocalConnection) localConnected.add(peerId);
  
         // ── Keepalive ping كل 15 ثانية ──────────────
-        // يمنع إغلاق الـ DataChannel من قِبل الشبكة عند عدم النشاط
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
-            if (!p || !p.connected) { clearInterval(kTimer); return; }
+            if (!p || !p.connected || p.connected === 'destroyed') { 
+                clearInterval(kTimer); 
+                return; 
+            }
             try {
                 p.peer.send(JSON.stringify({ type: 'ping' }));
             } catch (_) {
@@ -437,7 +489,6 @@ function makePeer(peerId, peerName, initiator) {
             }
         }, 15000);
  
-        // احتفظ بمرجع الـ timer حتى نتمكن من إلغائه عند الإغلاق
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
  
@@ -445,9 +496,12 @@ function makePeer(peerId, peerName, initiator) {
  
     peer.on('close', () => {
         const pi = peers.get(peerId);
-        const wasConnected = pi?.connected ?? false;
+        const wasConnected = pi?.connected === true;
         if (pi?._keepalive) clearInterval(pi._keepalive);
- 
+        
+        // ✅ علم الـ peer كـ destroyed لتجنب العمليات عليه
+        if (pi) pi.connected = 'destroyed';
+        
         peers.delete(peerId);
         localConnected.delete(peerId);
         updatePeersUI();
@@ -460,17 +514,25 @@ function makePeer(peerId, peerName, initiator) {
     });
  
     peer.on('error', (e) => {
-        console.error('Peer error', peerId, e);
+        console.error('Peer error', peerId, e.message || e);
         const pi = peers.get(peerId);
-        const wasConnected = pi?.connected ?? false;
+        const wasConnected = pi?.connected === true;
+        
+        // ✅ في وضع الإنترنت، لا نحاول إعادة الاتصال على الفور عند الخطأ
+        // نترك للـ 'close' event أن يتعامل مع ذلك
+        if (!isLocalConnection && !wasConnected) {
+            console.log('Internet mode: ignoring early error, waiting for close event');
+            return;
+        }
+        
         if (pi?._keepalive) clearInterval(pi._keepalive);
- 
+        if (pi) pi.connected = 'destroyed';
+        
         peers.delete(peerId);
         localConnected.delete(peerId);
         updatePeersUI();
         updatePiPStatus();
  
-        // أعد المحاولة دائماً — سواء كان متصلاً أو لا
         scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
     });
 }
@@ -484,30 +546,53 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
     // إذا عاد الاتصال مسبقاً — لا تفعل شيئاً
     const existing = peers.get(peerId);
     if (existing && existing.connected) return;
+    
+    // ✅ في وضع الإنترنت، لا نحاول إعادة الاتصال كثيراً
+    // نكتفي بمحاولة واحدة فقط ثم ننهي الجلسة
+    if (!isLocalConnection && attempt > 1) {
+        console.log(`🚫 Internet mode: giving up reconnection after first attempt`);
+        toast('انقطع الاتصال - سيتم إنهاء الجلسة', 'warning');
+        setTimeout(() => goHome(), 2000);
+        return;
+    }
  
     // امسح أي مؤقت سابق لنفس الـ peer
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
     }
  
-    const delay = Math.min(2000 * attempt, 30000);
-    console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt})`);
+    // ✅ تأخير أطول للإنترنت، أقصر للشبكة المحلية
+    const baseDelay = isLocalConnection ? 2000 : 5000;
+    const delay = Math.min(baseDelay * attempt, isLocalConnection ? 30000 : 10000);
+    console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt}) - ${isLocalConnection ? 'Local' : 'Internet'}`);
  
     const timer = setTimeout(() => {
         reconnectTimers.delete(peerId);
  
-        // إذا كان الـ socket غير متصل، أعد المحاولة لاحقاً
+        // إذا كان الـ socket غير متصل، أعد المحاولة لاحقاً (للشبكة المحلية فقط)
         if (!socket.connected) {
-            scheduleReconnect(peerId, peerName, attempt + 1);
+            if (isLocalConnection) {
+                scheduleReconnect(peerId, peerName, attempt + 1);
+            } else {
+                // في الإنترنت، ننتظر قليلاً ثم ننهي الجلسة
+                toast('انقطع الاتصال بالخادم - سيتم إنهاء الجلسة', 'warning');
+                setTimeout(() => goHome(), 2000);
+            }
             return;
         }
  
-        // إذا تم الاتصال بالفعل عبر مسار آخر (مثل socket reconnect) — توقف
+        // إذا تم الاتصال بالفعل عبر مسار آخر — توقف
         const current = peers.get(peerId);
         if (current && current.connected) return;
+        
+        // ✅ في وضع الإنترنت، لا نعيد بناء Peer إذا كان قد تم الاتصال من قبل
+        if (!isLocalConnection && attempt > 1) {
+            toast('فشل إعادة الاتصال - سيتم إنهاء الجلسة', 'warning');
+            setTimeout(() => goHome(), 2000);
+            return;
+        }
  
         // أعد بناء الـ peer
-        // الاتفاقية: من socket.id الأصغر نصاً هو المُبادر (initiator)
         const initiator = socket.id < peerId;
         makePeer(peerId, peerName, initiator);
     }, delay);
@@ -1373,7 +1458,10 @@ function initMiniDrag() {
 // ─────────────────────────────────────────
 //  Parallel file send — async, no queue
 // ─────────────────────────────────────────
- async function sendFileParallel(file, peerIds) {
+  // ─────────────────────────────────────────
+//  Parallel file send — async, no queue
+// ─────────────────────────────────────────
+async function sendFileParallel(file, peerIds) {
     const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const meta   = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
  
@@ -1407,7 +1495,7 @@ function initMiniDrag() {
                 while (
                     pi.peer._channel &&
                     pi.peer._channel.bufferedAmount > 8 * 1024 * 1024 &&
-                    waits < 400  // ← ضاعفنا وقت الانتظار (400 × 30ms = 12s)
+                    waits < 400
                 ) {
                     await new Promise(r => setTimeout(r, 30));
                     waits++;
