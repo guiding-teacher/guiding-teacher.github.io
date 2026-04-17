@@ -163,23 +163,35 @@ function initCanvas() {
     })();
 }
 
-function startConnectionCountdown() {
+ function startConnectionCountdown() {
     let secondsLeft = 30;
-    const timerStatus = document.getElementById('status-line');
-    
-    // مسح أي مؤقت سابق
+    // مسح أي مؤقت سابق لضمان عدم التداخل
     if (connectionTimer) clearInterval(connectionTimer);
 
     connectionTimer = setInterval(() => {
+        const timerStatus = document.getElementById('status-line');
         secondsLeft--;
+        
         if (timerStatus) {
-            timerStatus.innerHTML = `<span class="wait-dot"></span> جاري الانتظار... سيتم الإلغاء خلال ${secondsLeft} ثانية`;
+            timerStatus.innerHTML = `<span class="wait-dot"></span> جاري الانتظار... (${secondsLeft} ثانية)`;
         }
 
         if (secondsLeft <= 0) {
             clearInterval(connectionTimer);
-            resetToHome();
-            toast('انتهى الوقت، لم ينضم أحد للجلسة', 'warning');
+            connectionTimer = null;
+
+            // تدمير أي محاولات اتصال عالقة دون مسح المعرف
+            peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+            peers.clear();
+
+            // إعادة تشغيل الواجهة الرئيسية بنفس الـ roomId الحالي
+            const currentUrl = `${location.origin}${location.pathname}?id=${roomId}`;
+            renderHomeUI(currentUrl);
+            
+            // إعادة إخبار السيرفر أننا ما زلنا في الغرفة لنستقبل من ينضم
+            socket.emit('join-room', { roomId, deviceName });
+            
+            toast('انتهى وقت الانتظار، الرابط والباركود لا يزالان فعالين', 'info');
         }
     }, 1000);
 }
@@ -326,9 +338,10 @@ function setupSocket() {
     });
 
     socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
-   socket.on('waiting-for-peer', () => {
+    // داخل دالة setupSocket
+    socket.on('waiting-for-peer', () => {
         setStatus('في انتظار انضمام الطرف الآخر...');
-        startConnectionCountdown(); // <--- أضف هذا السطر لبدء العد التنازلي للمنشئ (Host)
+        startConnectionCountdown(); // يبدأ العداد لمنشئ الغرفة
     });
 
     socket.on('room-peers', (list) => {
@@ -394,13 +407,14 @@ function updatePiPStatus() {
 // ─────────────────────────────────────────
 //  Peer management
 // ─────────────────────────────────────────
-function makePeer(peerId, peerName, initiator) {
-    // أوقف أي reconnect timer قديم لهذا الـ peer
+ function makePeer(peerId, peerName, initiator) {
+    // 1. تنظيف أي محاولات إعادة اتصال سابقة لهذا الطرف
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
         reconnectTimers.delete(peerId);
     }
  
+    // 2. إنشاء اتصال P2P جديد
     const peer = new SimplePeer({
         initiator,
         trickle: false,
@@ -415,10 +429,12 @@ function makePeer(peerId, peerName, initiator) {
  
     peers.set(peerId, { peer, name: peerName, connected: false });
  
+    // 3. إرسال إشارات الربط عبر السيرفر
     peer.on('signal', (data) => socket.emit('send-signal', { to: peerId, signal: data }));
  
+    // 4. عند نجاح الاتصال المباشر
     peer.on('connect', () => {
-        // ✅ إيقاف مؤقت الـ 30 ثانية فور نجاح الاتصال
+        // ✅ [تعديل] إيقاف مؤقت الـ 30 ثانية فوراً
         if (connectionTimer) {
             clearInterval(connectionTimer);
             connectionTimer = null;
@@ -426,10 +442,13 @@ function makePeer(peerId, peerName, initiator) {
 
         const pi = peers.get(peerId);
         if (pi) pi.connected = true;
-        addToPrev(peerName);
+        
+        addToPrev(peerName); // حفظ الجهاز في القائمة السابقة
  
+        // إرسال اسم جهازنا للطرف الآخر
         try { peer.send(JSON.stringify({ type: 'hello', name: deviceName })); } catch (_) {}
  
+        // تحديث الواجهات
         updatePeersUI();
         updatePiPStatus();
         renderConnectedUI();
@@ -438,7 +457,7 @@ function makePeer(peerId, peerName, initiator) {
  
         if (isLocalConnection) localConnected.add(peerId);
  
-        // Keepalive ping كل 15 ثانية
+        // إنشاء نبضات (Ping) لإبقاء الاتصال حياً ومنع الخمول
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
             if (!p || !p.connected) { clearInterval(kTimer); return; }
@@ -452,8 +471,10 @@ function makePeer(peerId, peerName, initiator) {
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
  
+    // 5. عند استقبال بيانات (رسائل أو ملفات)
     peer.on('data', (data) => onData(data, peerId));
  
+    // 6. عند إغلاق الاتصال
     peer.on('close', () => {
         const pi = peers.get(peerId);
         const wasConnected = pi?.connected ?? false;
@@ -470,6 +491,7 @@ function makePeer(peerId, peerName, initiator) {
         }
     });
  
+    // 7. عند حدوث خطأ في الاتصال
     peer.on('error', (e) => {
         console.error('Peer error', peerId, e);
         const pi = peers.get(peerId);
@@ -481,6 +503,7 @@ function makePeer(peerId, peerName, initiator) {
         updatePeersUI();
         updatePiPStatus();
  
+        // محاولة إعادة الاتصال التلقائي
         scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
     });
 }
@@ -884,6 +907,7 @@ function renderHomeUI(joinUrl) {
 // ─────────────────────────────────────────
 //  UI — Joiner (loading)
 // ─────────────────────────────────────────
+ 
 function renderJoinerUI() {
     mainEl.innerHTML = `
     <div class="app-layout">
@@ -906,13 +930,13 @@ function renderJoinerUI() {
         <p class="instructions" id="status-line">جاري الانضمام للجلسة...</p>
       </div>
     </div>`;
-    bindMinBtn();
-    document.getElementById('full-reset-btn')?.addEventListener('click', resetToHome);
     
-    // بدء العد التنازلي فور ظهور واجهة الانضمام
+    bindMinBtn();
+    document.getElementById('full-reset-btn')?.addEventListener('click', resetToHome); // هذا الزر فقط هو من يغير الرابط
+    
+    // بدء العداد لمنتظر الاتصال
     startConnectionCountdown();
 }
-
 // ─────────────────────────────────────────
 //  UI — Connected
 // ─────────────────────────────────────────
