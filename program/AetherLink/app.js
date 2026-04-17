@@ -1,7 +1,7 @@
 /**
  * AetherLink Web — Multi-Peer P2P File Transfer
  * v2: parallel transfers · auto-save · fast local · instant session
- * FIXED: Initiator logic for proper host-guest connection
+ * FIXED: Bidirectional P2P — all peers are initiators for full duplex communication
  */
 
 // ─────────────────────────────────────────
@@ -329,6 +329,9 @@ function setupSocket() {
     socket.on('connect_error', () => toast('خطأ في الاتصال بالخادم', 'error'));
     socket.on('waiting-for-peer', () => setStatus('في انتظار انضمام الطرف الآخر...'));
 
+    // ═══════════════════════════════════════════════════════════════════
+    //  ✅ FIX: Bidirectional P2P — كلاهما initiators للاتصال ثنائي الاتجاه
+    // ═══════════════════════════════════════════════════════════════════
     socket.on('room-peers', (list) => {
         if (list.length === 0) return setStatus('في انتظار انضمام الطرف الآخر...');
         
@@ -341,11 +344,9 @@ function setupSocket() {
         list.forEach(({ id, name }) => {
             // تحقق من عدم وجود اتصال مسبق بهذا الـ peer
             if (!peers.has(id)) {
-                // ✅ الضيف (joiner) لا يجب أن يكون مبادراً
-                // المضيف هو من يرسل الإشارة أولاً
-                // نحن هنا في وضع الضيف (لأننا تلقينا room-peers)
-                // لذا ننتظر الإشارة من المضيف (initiator=false)
-                makePeer(id, name, false);
+                // ✅ FIX: اتصال ثنائي الاتجاه — كلاهما initiators
+                // هذا يمكّن كل المتصلين من الإرسال والاستقبال
+                makePeer(id, name, true);
             }
         });
     });
@@ -599,9 +600,8 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
             return;
         }
  
-        // ✅ إعادة بناء الـ peer بناءً على الدور (مضيف/ضيف)
-        // المضيف هو دائماً المبادر، الضيف هو المستقبل
-        const shouldInitiate = isHost;
+        // ✅ FIX: اتصال ثنائي الاتجاه — كلاهما initiators
+        const shouldInitiate = true;
         makePeer(peerId, peerName, shouldInitiate);
     }, delay);
  
@@ -1611,7 +1611,6 @@ async function sendFileParallel(file, peerIds) {
  
     sendingFiles.delete(fileId);
 }
-
 // ─────────────────────────────────────────
 //  Sender File Box UI
 // ─────────────────────────────────────────
