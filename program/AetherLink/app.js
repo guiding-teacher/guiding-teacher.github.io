@@ -9,6 +9,7 @@
 const SK = {
     NAME: 'aetherlink-device-name',
     PREV: 'aetherlink-prev-devices',
+    HOST_ROOM: 'aetherlink-host-room',   // جديد: تخزين معرف الجلسة للمضيف
 };
 
 function loadName() {
@@ -31,6 +32,14 @@ function addToPrev(name) {
     list.unshift({ name, ts: Date.now() });
     localStorage.setItem(SK.PREV, JSON.stringify(list.slice(0, 12)));
 }
+
+// ── إدارة تذكر المضيف ──
+function setHostRoom(roomId) {
+    if (roomId) localStorage.setItem(SK.HOST_ROOM, roomId);
+    else localStorage.removeItem(SK.HOST_ROOM);
+}
+function getHostRoom() { return localStorage.getItem(SK.HOST_ROOM); }
+function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 
 // ─────────────────────────────────────────
 //  Global state
@@ -72,21 +81,6 @@ let sessionFiles    = [];
 const mainEl = document.getElementById('main-container');
 
 // ─────────────────────────────────────────
-//  Session persistence flag (clean exit)   <-- NEW
-// ─────────────────────────────────────────
-const SESSION_FLAG = 'aetherlink-session-active';
-
-function cleanupSession() {
-    sessionStorage.removeItem(SESSION_FLAG);
-    if (socket && roomId && socket.connected) {
-        socket.emit('leave-room');
-    }
-    if (socket && socket.connected) {
-        socket.disconnect();
-    }
-}
-
-// ─────────────────────────────────────────
 //  Socket
 // ─────────────────────────────────────────
 const socket = io(SIG_URL, {
@@ -110,6 +104,7 @@ function makeChunkWithId(fileId, chunkArrayBuffer) {
 }
 
 function parseChunkWithId(raw) {
+    // raw is Buffer/Uint8Array from SimplePeer
     const ab = (raw.buffer && raw.byteOffset !== undefined)
         ? raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
         : (raw instanceof ArrayBuffer ? raw : raw.buffer);
@@ -313,6 +308,7 @@ function setupSocket() {
      socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
  
+        // دمّر فقط الـ peers غير المتصلة (لا تدمر الاتصالات النشطة)
         const toDestroy = [];
         peers.forEach(({ peer, connected }, id) => {
             if (!connected) toDestroy.push({ id, peer });
@@ -322,6 +318,7 @@ function setupSocket() {
             peers.delete(id);
         });
  
+        // إعادة الانضمام للغرفة (ليُرسل الخادم room-peers من جديد)
         if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
 
@@ -360,6 +357,7 @@ function setupSocket() {
             toast('جاري إعادة الاتصال بالخادم...', 'warning');
     });
 
+    // ── Local Discovery events ───────────────
     socket.on('discovery-update', (devices) => {
         localDiscovery.clear();
         devices.forEach(d => {
@@ -392,6 +390,7 @@ function updatePiPStatus() {
 //  Peer management
 // ─────────────────────────────────────────
 function makePeer(peerId, peerName, initiator) {
+    // أوقف أي reconnect timer قديم لهذا الـ peer
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
         reconnectTimers.delete(peerId);
@@ -428,6 +427,7 @@ function makePeer(peerId, peerName, initiator) {
  
         if (isLocalConnection) localConnected.add(peerId);
  
+        // ── Keepalive ping كل 15 ثانية ──────────────
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
             if (!p || !p.connected) { clearInterval(kTimer); return; }
@@ -480,9 +480,6 @@ function getConnected() {
 }
 
 function scheduleReconnect(peerId, peerName, attempt = 1) {
-    const existing = peers.get(peerId);
-    if (existing && existing.connected) return;
- 
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
     }
@@ -833,6 +830,7 @@ function inviteLocalPeer(socketId, peerName) {
     isLocalConnection = true;
     roomId = newRoomId;
     isHost = true;
+    setHostRoom(newRoomId);   // تذكر أن هذا الجهاز هو المضيف
     history.replaceState({}, '', `?id=${newRoomId}`);
     socket.emit('join-room', { roomId, deviceName });
 
@@ -1146,6 +1144,7 @@ function bindHomeEvents(joinUrl) {
             const newRoom = mkId();
             const newUrl  = `${location.origin}${location.pathname}?id=${newRoom}`;
             roomId        = newRoom;
+            setHostRoom(newRoom);
             history.replaceState({}, '', `?id=${newRoom}`);
             socket.emit('join-room', { roomId, deviceName });
             renderHomeUI(newUrl);
@@ -1289,10 +1288,10 @@ function endSession() {
     peers.clear();
     localConnected.clear();
 
-    cleanupSession(); // <-- MODIFIED: call cleanup to remove flag and leave room
-
+    socket.emit('leave-room');
     isLocalConnection = false;
     roomId = mkId();
+    setHostRoom(roomId);          // تذكر الجلسة الجديدة كمضيف
     history.replaceState({}, '', `?id=${roomId}`);
     renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
     socket.emit('join-room', { roomId, deviceName });
@@ -1616,6 +1615,7 @@ function showReconnectModal(fromName, fromSocketId) {
         socket.emit('reconnect-accept', { to: fromSocketId, newRoomId: nr });
         overlay.remove();
         roomId = nr;
+        setHostRoom(nr);
         history.replaceState({}, '', `?id=${nr}`);
         renderHomeUI(url);
         socket.emit('join-room', { roomId, deviceName });
@@ -1706,33 +1706,30 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', resizeContainer);
 
     const params = new URLSearchParams(location.search);
-    let urlRoomId = params.get('id') || '';
-    
-    // NEW: Check for active session flag
-    const hasActiveSession = sessionStorage.getItem(SESSION_FLAG);
-    if (!hasActiveSession && urlRoomId) {
-        // Ignore the old room ID and start a new session (home UI)
-        urlRoomId = '';
-    }
-    
-    roomId = urlRoomId;
-    isHost = !roomId;
+    const urlRoomId = params.get('id') || '';
+    const storedHostRoom = getHostRoom();
 
-    if (isHost) {
+    if (urlRoomId && storedHostRoom === urlRoomId) {
+        // نفس الجلسة التي أنشأها هذا الجهاز سابقاً → نتعامل كمضيف ونعرض الشاشة الرئيسية
+        isHost = true;
+        roomId = urlRoomId;
+        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
+        // لا نمسح التخزين، بل نؤكد أن هذا الجهاز هو المضيف لهذه الجلسة
+        setHostRoom(roomId);
+    } else if (urlRoomId) {
+        // جلسة موجودة في الرابط ولكن لم ينشئها هذا الجهاز → ضيف
+        isHost = false;
+        roomId = urlRoomId;
+        renderJoinerUI();
+        clearHostRoom(); // لا نتذكر هذه الجلسة كمضيف
+    } else {
+        // لا يوجد معرف في الرابط → ننشئ جلسة جديدة كمضيف
+        isHost = true;
         roomId = mkId();
+        setHostRoom(roomId);
         history.replaceState({}, '', `?id=${roomId}`);
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-    } else {
-        renderJoinerUI();
     }
 
-    // Mark this session as active
-    sessionStorage.setItem(SESSION_FLAG, '1');
-
     setupSocket();
-
-    // Clean up when page/tab is closed (not on reload)
-    window.addEventListener('beforeunload', () => {
-        cleanupSession();
-    });
 });
