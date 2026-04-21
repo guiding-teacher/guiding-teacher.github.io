@@ -28,6 +28,16 @@ io.on('connection', (socket) => {
     if (!rooms.has(roomId)) rooms.set(roomId, []);
     const room = rooms.get(roomId);
 
+    // ── منع التكرار: إذا كان نفس الجهاز (نفس الاسم) موجوداً بـ socket قديم، أزله بصمت ──
+    const dupIdx = room.findIndex(u => u.name === deviceName && u.id !== socket.id);
+    if (dupIdx !== -1) {
+      const oldEntry = room[dupIdx];
+      room.splice(dupIdx, 1);
+      // أبلغ الآخرين بالـ socket القديم حتى يُنظّفوا peers map بدون إعادة اتصال
+      socket.to(roomId).emit('peer-stale', { id: oldEntry.id });
+      console.log(`♻️  استبدل socket قديم لـ ${deviceName} في الغرفة`);
+    }
+
     // Send existing peers to the newcomer
     const existingPeers = room.map(u => ({ id: u.id, name: u.name }));
     socket.emit('room-peers', existingPeers);
@@ -46,6 +56,25 @@ io.on('connection', (socket) => {
 
     if (existingPeers.length === 0) {
       socket.emit('waiting-for-peer');
+    }
+  });
+
+  // ── Leave room explicitly (called on endSession) ────────
+  socket.on('leave-room', () => {
+    const roomId = socket.data.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+    const idx = room.findIndex(u => u.id === socket.id);
+    if (idx !== -1) room.splice(idx, 1);
+    socket.to(roomId).emit('peer-left', {
+      id: socket.id,
+      name: socket.data.deviceName || 'Unknown'
+    });
+    socket.leave(roomId);
+    socket.data.roomId = null;
+    if (room.length === 0) {
+      rooms.delete(roomId);
+      console.log(`🧹 Deleted empty room ${roomId.slice(0,8)}… (leave-room)`);
     }
   });
 

@@ -307,8 +307,12 @@ function setupSocket() {
     
      socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
- 
-        // دمّر فقط الـ peers غير المتصلة (لا تدمر الاتصالات النشطة)
+
+        // ✅ إصلاح جوهري: ألغِ كل timers إعادة الاتصال — socket IDs قد تغيّرت
+        reconnectTimers.forEach(({ timer }) => clearTimeout(timer));
+        reconnectTimers.clear();
+
+        // دمّر جميع الـ peers غير المتصلة
         const toDestroy = [];
         peers.forEach(({ peer, connected }, id) => {
             if (!connected) toDestroy.push({ id, peer });
@@ -317,7 +321,7 @@ function setupSocket() {
             try { peer.destroy(); } catch (_) {}
             peers.delete(id);
         });
- 
+
         // إعادة الانضمام للغرفة (ليُرسل الخادم room-peers من جديد)
         if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
@@ -344,6 +348,21 @@ function setupSocket() {
         updatePeersUI(); updatePiPStatus();
         toast(`${name} غادر الجلسة`, 'warning');
         if (getConnected().length === 0) setBadge('warn', '● منقطع');
+    });
+
+    // ── socket قديم لنفس الجهاز أعاد الاتصال — نظّف بصمت بدون reconnect ──
+    socket.on('peer-stale', ({ id }) => {
+        const pi = peers.get(id);
+        if (!pi) return;
+        if (pi._keepalive) clearInterval(pi._keepalive);
+        try { pi.peer.destroy(); } catch (_) {}
+        peers.delete(id);
+        // ألغِ أي timer إعادة اتصال لهذا الـ ID القديم
+        if (reconnectTimers.has(id)) {
+            clearTimeout(reconnectTimers.get(id).timer);
+            reconnectTimers.delete(id);
+        }
+        console.log(`♻️  نُظِّف socket قديم ${id.slice(0,8)}…`);
     });
 
     socket.on('reconnect-request', ({ from, fromName }) => showReconnectModal(fromName, from));
@@ -390,10 +409,25 @@ function updatePiPStatus() {
 //  Peer management
 // ─────────────────────────────────────────
 function makePeer(peerId, peerName, initiator) {
-    // أوقف أي reconnect timer قديم لهذا الـ peer
+    // أوقف أي reconnect timer قديم لهذا الـ peer ID
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
         reconnectTimers.delete(peerId);
+    }
+
+    // ✅ أيضاً: ألغِ timers لنفس الاسم (الجهاز أعاد الاتصال بـ socket ID جديد)
+    for (const [oldId, info] of reconnectTimers.entries()) {
+        if (info.peerName === peerName) {
+            clearTimeout(info.timer);
+            reconnectTimers.delete(oldId);
+            // دمّر أي peer قديم بنفس الاسم
+            const oldPi = peers.get(oldId);
+            if (oldPi) {
+                if (oldPi._keepalive) clearInterval(oldPi._keepalive);
+                try { oldPi.peer.destroy(); } catch (_) {}
+                peers.delete(oldId);
+            }
+        }
     }
  
     const peer = new SimplePeer({
@@ -490,26 +524,27 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
     }
- 
+
     const delay = Math.min(2000 * attempt, 30000);
     console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt})`);
- 
+
     const timer = setTimeout(() => {
         reconnectTimers.delete(peerId);
- 
+
         if (!socket.connected) {
             scheduleReconnect(peerId, peerName, attempt + 1);
             return;
         }
- 
+
         const current = peers.get(peerId);
         if (current && current.connected) return;
- 
+
         const initiator = socket.id < peerId;
         makePeer(peerId, peerName, initiator);
     }, delay);
- 
-    reconnectTimers.set(peerId, { timer, attempt });
+
+    // ✅ خزّن peerName لإلغاء Timer بالاسم عند الحاجة
+    reconnectTimers.set(peerId, { timer, attempt, peerName });
     setBadge('warn', `● إعادة الاتصال... (${attempt})`);
 }
 // ─────────────────────────────────────────
@@ -1384,7 +1419,7 @@ async function waitForPeer(peerId, maxMs = 90000) {
  * Wait until the DataChannel bufferedAmount drops below `threshold`.
  * Returns true if drained in time, false if timeout exceeded.
  */
-async function waitForBuffer(pi, threshold = 16 * 1024 * 1024, maxMs = 60000) {
+async function waitForBuffer(pi, threshold = 4 * 1024 * 1024, maxMs = 60000) {
     const start = Date.now();
     while (
         pi.peer._channel &&
@@ -1458,7 +1493,7 @@ async function waitForBuffer(pi, threshold = 16 * 1024 * 1024, maxMs = 60000) {
                 }
 
                 // ── انتظر حتى يفرغ buffer القناة ──────────────────────────
-                const drained = await waitForBuffer(pi, 16 * 1024 * 1024, 60000);
+                const drained = await waitForBuffer(pi, 4 * 1024 * 1024, 60000);
                 if (!drained) {
                     console.warn(`Buffer لم يفرغ خلال 60s للـ peer ${id}`);
                 }
