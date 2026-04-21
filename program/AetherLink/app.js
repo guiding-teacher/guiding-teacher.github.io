@@ -445,14 +445,17 @@ function makePeer(peerId, peerName, initiator) {
  
     peer.on('close', () => {
         const pi = peers.get(peerId);
-        const wasConnected = pi?.connected ?? false;
-        if (pi?._keepalive) clearInterval(pi._keepalive);
- 
+        if (!pi) return; // already cleaned up
+        const wasConnected = pi.connected ?? false;
+        if (pi._keepalive) clearInterval(pi._keepalive);
+
         peers.delete(peerId);
         localConnected.delete(peerId);
+        try { peer.destroy(); } catch (_) {}
+
         updatePeersUI();
         updatePiPStatus();
- 
+
         if (wasConnected) {
             toast(`⚠️ انقطع الاتصال مع ${peerName}، جاري إعادة المحاولة...`, 'warning');
             scheduleReconnect(peerId, peerName, 1);
@@ -462,14 +465,18 @@ function makePeer(peerId, peerName, initiator) {
     peer.on('error', (e) => {
         console.error('Peer error', peerId, e);
         const pi = peers.get(peerId);
-        const wasConnected = pi?.connected ?? false;
-        if (pi?._keepalive) clearInterval(pi._keepalive);
- 
+        if (!pi) return; // already cleaned up — منع تكرار المعالجة
+        const wasConnected = pi.connected ?? false;
+        if (pi._keepalive) clearInterval(pi._keepalive);
+
         peers.delete(peerId);
         localConnected.delete(peerId);
+
+        // ✅ إصلاح جوهري: دمّر الـ peer فوراً لإيقاف تكرار أحداث الخطأ
+        try { peer.destroy(); } catch (_) {}
+
         updatePeersUI();
         updatePiPStatus();
- 
         scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
     });
 }
@@ -1439,37 +1446,42 @@ async function waitForBuffer(pi, threshold = 16 * 1024 * 1024, maxMs = 60000) {
                     continue SEND_LOOP; // أعد حلقة SEND من offset=0
                 }
 
+                // ── فحص حالة القناة قبل الإرسال ──────────────────────
+                const ch = pi.peer._channel;
+                if (!ch || ch.readyState !== 'open') {
+                    // القناة مغلقة — انتظر إعادة الاتصال وأعد من الصفر
+                    offset = 0;
+                    toast('⏳ القناة مغلقة، انتظار إعادة الاتصال...', 'warning');
+                    const reconn = await waitForPeer(id, 90000);
+                    if (reconn) { try { reconn.peer.send(metaMsg); } catch (_) {} }
+                    continue SEND_LOOP;
+                }
+
                 // ── انتظر حتى يفرغ buffer القناة ──────────────────────────
                 const drained = await waitForBuffer(pi, 16 * 1024 * 1024, 60000);
                 if (!drained) {
                     console.warn(`Buffer لم يفرغ خلال 60s للـ peer ${id}`);
                 }
 
-                // ── أرسل الـ chunk مع إعادة المحاولة ─────────────────────
+                // ── أرسل الـ chunk ─────────────────────────────────────────
                 let sent = false;
-                for (let retry = 0; retry < 5; retry++) {
+                try {
                     const cur = peers.get(id);
-                    if (!cur?.connected) {
-                        // منقطع أثناء الإرسال → أعد الحلقة الخارجية
-                        offset = 0;
-                        try {
-                            const reconn2 = await waitForPeer(id, 90000);
-                            if (reconn2) { reconn2.peer.send(metaMsg); }
-                        } catch (_) {}
-                        continue SEND_LOOP;
-                    }
-                    try {
+                    if (cur?.connected && cur.peer._channel?.readyState === 'open') {
                         cur.peer.send(tagged);
                         sent = true;
-                        break;
-                    } catch (sendErr) {
-                        console.warn(`send retry ${retry + 1} for ${fileId}`, sendErr);
-                        await new Promise(r => setTimeout(r, 500 * (retry + 1)));
                     }
+                } catch (sendErr) {
+                    // OperationError أو أي خطأ إرسال — عامله كانقطاع فوري
+                    console.warn(`OperationError للـ peer ${id}، انتظار إعادة الاتصال...`, sendErr.message);
+                    offset = 0;
+                    const reconn = await waitForPeer(id, 90000);
+                    if (reconn) { try { reconn.peer.send(metaMsg); } catch (_) {} }
+                    continue SEND_LOOP;
                 }
 
                 if (!sent) {
-                    console.error(`فشل إرسال chunk للـ peer ${id} بعد 5 محاولات`);
+                    console.warn(`لم يُرسَل chunk للـ peer ${id} — الـ peer غير متصل`);
                 }
             }
 
