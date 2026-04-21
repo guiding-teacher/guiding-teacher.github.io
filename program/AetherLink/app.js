@@ -2,10 +2,7 @@
  * AetherLink Web — Multi-Peer P2P File Transfer
  * v2: parallel transfers · auto-save · fast local · instant session
  */
-// إدارة طابور النقل لمنع الضغط
-let transferQueue = [];
-let isProcessingQueue = false;
-const MAX_CONCURRENT_SENDS = 1; // إرسال ملف واحد فقط في كل مرة لضمان الاستقرار التام
+
 // ─────────────────────────────────────────
 //  Storage helpers
 // ─────────────────────────────────────────
@@ -47,7 +44,7 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Global state
 // ─────────────────────────────────────────
-const CHUNK_SIZE    = 1024 * 1024; // 1 MB — fast for LAN
+const CHUNK_SIZE    = 256 * 1024;  // 256 KB — balanced for LAN & WAN, less buffer pressure
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://aetherlink-server.onrender.com';
@@ -546,12 +543,24 @@ function onData(raw, fromId) {
         }
         case 'pong':
             break;
-        case 'metadata':
+        case 'metadata': {
+            const existingEntry = recvMap.get(msg.payload.fileId);
+            if (existingEntry) {
+                // إعادة الإرسال بعد انقطاع — صفِّر الـ buffer والـ UI
+                recvMap.delete(msg.payload.fileId);
+                const pEl = document.getElementById(`recv-progress-${msg.payload.fileId}`);
+                const tEl = document.getElementById(`recv-pct-${msg.payload.fileId}`);
+                const sEl = document.getElementById(`recv-status-${msg.payload.fileId}`);
+                if (pEl) { pEl.style.width = '0%'; pEl.classList.remove('done', 'error'); }
+                if (tEl) { tEl.textContent = '0%'; tEl.style.color = ''; }
+                if (sEl) { sEl.textContent = 'جاري الاستلام... (إعادة)'; sEl.classList.remove('done', 'error'); }
+            }
             recvMap.set(msg.payload.fileId, {
                 meta: msg.payload, buffer: [], received: 0, fromId,
             });
-            createReceivingFileBox(msg.payload, fromId);
+            if (!existingEntry) createReceivingFileBox(msg.payload, fromId);
             break;
+        }
         case 'cancel':
             cancelRecv(msg.payload.fileId, 'تم إلغاء الإرسال من المرسل');
             break;
@@ -1180,50 +1189,27 @@ function bindMsgEvents() {
 
     fileBtn?.addEventListener('click', () => fileInput?.click());
 
-     fileInput?.addEventListener('change', (e) => {
-    const all = Array.from(e.target.files || []);
-    if (!all.length) return;
+    fileInput?.addEventListener('change', (e) => {
+        const all = Array.from(e.target.files || []);
+        if (!all.length) return;
 
-    const targets = getConnected().map(([id]) => id);
-    if (!targets.length) {
-        toast('لا يوجد أجهزة متصلة', 'error');
-        fileInput.value = '';
-        return;
-    }
-
-    // إضافة جميع الملفات المختارة إلى الطابور (بدون حد 50)
-    all.forEach(f => {
-        transferQueue.push({ file: f, targets });
-    });
-
-    toast(`تم إضافة ${all.length} ملف للطابور`, 'info');
-    
-    // بدء المعالجة إذا لم تكن تعمل
-    processTransferQueue();
-    fileInput.value = '';
-});
-}
-async function processTransferQueue() {
-    if (isProcessingQueue || transferQueue.length === 0) return;
-
-    isProcessingQueue = true;
-
-    while (transferQueue.length > 0) {
-        const item = transferQueue.shift(); // أخذ أول ملف من الطابور
-        try {
-            // انتظار انتهاء إرسال الملف الحالي تماماً قبل الانتقال للتالي
-            await sendFileParallel(item.file, item.targets);
-        } catch (err) {
-            console.error("خطأ في الطابور:", err);
+        if (all.length > 50) {
+            toast(`تم اختيار ${all.length} ملف — سيتم إرسال أول 50 فقط`, 'warning');
         }
-        
-        // فترة راحة قصيرة جداً بين الملفات لضمان استقرار السيرفر والمتصفح
-        await new Promise(r => setTimeout(r, 100));
-    }
+        const files = all.slice(0, 50);
 
-    isProcessingQueue = false;
-    toast('✅ اكتمل إرسال جميع الملفات في الطابور', 'success');
+        const targets = getConnected().map(([id]) => id);
+        if (!targets.length) {
+            toast('لا يوجد أجهزة متصلة', 'error');
+            fileInput.value = '';
+            return;
+        }
+
+        files.forEach(f => sendFileParallel(f, targets));
+        fileInput.value = '';
+    });
 }
+
 // ─────────────────────────────────────────
 //  Header Actions
 // ─────────────────────────────────────────
@@ -1370,57 +1356,142 @@ function initMiniDrag() {
 }
 
 // ─────────────────────────────────────────
+//  Transfer helpers
+// ─────────────────────────────────────────
+
+/**
+ * Wait until the given peer reconnects and is connected again.
+ * Returns the updated peer info object, or null if timeout exceeded.
+ */
+async function waitForPeer(peerId, maxMs = 90000) {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+        const pi = peers.get(peerId);
+        if (pi?.connected) return pi;
+        await new Promise(r => setTimeout(r, 200));
+    }
+    return null;
+}
+
+/**
+ * Wait until the DataChannel bufferedAmount drops below `threshold`.
+ * Returns true if drained in time, false if timeout exceeded.
+ */
+async function waitForBuffer(pi, threshold = 16 * 1024 * 1024, maxMs = 60000) {
+    const start = Date.now();
+    while (
+        pi.peer._channel &&
+        pi.peer._channel.bufferedAmount > threshold
+    ) {
+        if (Date.now() - start > maxMs) return false;
+        await new Promise(r => setTimeout(r, 30));
+    }
+    return true;
+}
+
+// ─────────────────────────────────────────
 //  Parallel file send — async, no queue
 // ─────────────────────────────────────────
-  async function sendFileParallel(file, peerIds) {
+ async function sendFileParallel(file, peerIds) {
     const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    const meta = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
-
+    const meta   = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
+ 
     sendingFiles.set(fileId, { cancelled: false });
-
-    // إخطار الأطراف الأخرى ببدء ملف جديد
+ 
     const metaMsg = JSON.stringify({ type: 'metadata', payload: meta });
     peerIds.forEach(id => {
         const pi = peers.get(id);
         if (pi?.connected) try { pi.peer.send(metaMsg); } catch (_) {}
     });
-
+ 
     createSenderFileBox(file, meta);
-
+ 
     let offset = 0;
-    // حجم قطعة كبير (256KB) للسرعة
-    const MY_CHUNK_SIZE = 256 * 1024; 
-
     try {
-        while (offset < file.size) {
+        SEND_LOOP: while (offset < file.size) {
             const sf = sendingFiles.get(fileId);
             if (!sf || sf.cancelled) break;
 
-            const end = Math.min(offset + MY_CHUNK_SIZE, file.size);
+            const end      = Math.min(offset + CHUNK_SIZE, file.size);
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
-            const tagged = makeChunkWithId(fileId, chunkBuf);
+            const tagged   = makeChunkWithId(fileId, chunkBuf);
 
             for (const id of peerIds) {
-                const pi = peers.get(id);
-                if (!pi?.connected) continue;
+                let pi = peers.get(id);
 
-                // حماية من تراكم البيانات في الذاكرة (Backpressure)
-                if (pi.peer._channel && pi.peer._channel.bufferedAmount > 4 * 1024 * 1024) {
-                    await new Promise(r => setTimeout(r, 30));
+                // ── إذا الـ peer منقطع: انتظر إعادة الاتصال ──────────────
+                if (!pi?.connected) {
+                    toast(`⏳ انتظار إعادة الاتصال لإتمام الإرسال...`, 'warning');
+                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
+
+                    const reconn = await waitForPeer(id, 90000); // انتظر حتى 90 ثانية
+
+                    if (!reconn) {
+                        // لم يعد الـ peer → تخطّى
+                        console.warn(`Peer ${id} لم يعد خلال 90s، تجاهل`);
+                        continue;
+                    }
+
+                    // ✅ عاد الاتصال — أعد إرسال metadata وابدأ من الصفر
+                    try { reconn.peer.send(metaMsg); } catch (_) {}
+                    offset = 0; // ← إصلاح جوهري: أعد من البداية
+                    toast(`🔄 إعادة إرسال الملف بعد استئناف الاتصال...`, 'info');
+                    continue SEND_LOOP; // أعد حلقة SEND من offset=0
                 }
-                try { pi.peer.send(tagged); } catch (e) {}
+
+                // ── انتظر حتى يفرغ buffer القناة ──────────────────────────
+                const drained = await waitForBuffer(pi, 16 * 1024 * 1024, 60000);
+                if (!drained) {
+                    console.warn(`Buffer لم يفرغ خلال 60s للـ peer ${id}`);
+                }
+
+                // ── أرسل الـ chunk مع إعادة المحاولة ─────────────────────
+                let sent = false;
+                for (let retry = 0; retry < 5; retry++) {
+                    const cur = peers.get(id);
+                    if (!cur?.connected) {
+                        // منقطع أثناء الإرسال → أعد الحلقة الخارجية
+                        offset = 0;
+                        try {
+                            const reconn2 = await waitForPeer(id, 90000);
+                            if (reconn2) { reconn2.peer.send(metaMsg); }
+                        } catch (_) {}
+                        continue SEND_LOOP;
+                    }
+                    try {
+                        cur.peer.send(tagged);
+                        sent = true;
+                        break;
+                    } catch (sendErr) {
+                        console.warn(`send retry ${retry + 1} for ${fileId}`, sendErr);
+                        await new Promise(r => setTimeout(r, 500 * (retry + 1)));
+                    }
+                }
+
+                if (!sent) {
+                    console.error(`فشل إرسال chunk للـ peer ${id} بعد 5 محاولات`);
+                }
             }
 
             offset = end;
-            // تحديث النسبة المئوية
-            if (offset % (MY_CHUNK_SIZE * 4) === 0 || offset >= file.size) {
-                updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
-            }
+            updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
+            await new Promise(r => setTimeout(r, 0));
         }
-        finalizeSenderFileBox(fileId);
+
+        const sf = sendingFiles.get(fileId);
+        if (sf && !sf.cancelled) finalizeSenderFileBox(fileId);
+
     } catch (err) {
-        updateSenderFileBox(fileId, 0, true, 'فشل الإرسال');
+        console.error('sendFileParallel error', err);
+        updateSenderFileBox(fileId, 0, true, 'فشل قراءة الملف');
+        peerIds.forEach(id => {
+            const pi = peers.get(id);
+            if (pi?.connected) {
+                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
+            }
+        });
     }
+
     sendingFiles.delete(fileId);
 }
 
