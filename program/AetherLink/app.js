@@ -1,6 +1,6 @@
 /**
- * AetherLink Web — Multi-Peer P2P File Transfer
- * v2: parallel transfers · auto-save · fast local · instant session
+ * AetherLink Web — Multi-Peer P2P File Transfer (Large File Ready)
+ * v3: sequential queue · small chunks · back-pressure · disk writes
  */
 
 // ─────────────────────────────────────────
@@ -9,7 +9,7 @@
 const SK = {
     NAME: 'aetherlink-device-name',
     PREV: 'aetherlink-prev-devices',
-    HOST_ROOM: 'aetherlink-host-room',   // جديد: تخزين معرف الجلسة للمضيف
+    HOST_ROOM: 'aetherlink-host-room',
 };
 
 function loadName() {
@@ -42,13 +42,20 @@ function getHostRoom() { return localStorage.getItem(SK.HOST_ROOM); }
 function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 
 // ─────────────────────────────────────────
-//  Global state
+//  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE    = 256 * 1024;  // 256 KB — balanced for LAN & WAN, less buffer pressure
+const CHUNK_SIZE = 16 * 1024;        // 16 KB — small, safe for all networks
+const BUFFER_HIGH = 1024 * 1024;     // 1 MB — pause sending above this
+const BUFFER_LOW  = 256 * 1024;      // 256 KB — resume below this
+const SEND_DELAY_MS = 5;             // tiny delay between chunks for GC
+
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://aetherlink-server.onrender.com';
 
+// ─────────────────────────────────────────
+//  Global state
+// ─────────────────────────────────────────
 let deviceName        = loadName();
 let roomId            = '';
 let isHost            = false;
@@ -57,22 +64,19 @@ let isLocalConnection = false;
 let pipWindow         = null;
 let pipDocument       = null;
 
-// Map<socketId, {peer, name, connected}>
 const peers = new Map();
-
-// Local discovery
-const localDiscovery = new Map(); // socketId → {socketId, deviceName}
-const localConnected = new Set(); // socketIds connected locally
-const reconnectTimers = new Map(); // peerId → {timer, attempt}
+const localDiscovery = new Map();
+const localConnected = new Set();
+const reconnectTimers = new Map();
 let isDiscovering    = false;
 
-// Parallel sends: Map<fileId, {cancelled}>
-const sendingFiles = new Map();
+// Send queue: sequential file sending
+const sendQueue = [];
+let isSendingQueue = false;
+const sendingFiles = new Map(); // fileId -> {cancelled}
 
-// Map<fileId, {meta, buffer[], received, fromId}>
-const recvMap = new Map();
-
-// Map<fileId, {blob, meta, sender, url}>
+// Receive map
+const recvMap = new Map(); // fileId -> {meta, writer, received, fromId}
 const downloadedFiles = new Map();
 
 let sessionMessages = [];
@@ -104,7 +108,6 @@ function makeChunkWithId(fileId, chunkArrayBuffer) {
 }
 
 function parseChunkWithId(raw) {
-    // raw is Buffer/Uint8Array from SimplePeer
     const ab = (raw.buffer && raw.byteOffset !== undefined)
         ? raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
         : (raw instanceof ArrayBuffer ? raw : raw.buffer);
@@ -113,6 +116,71 @@ function parseChunkWithId(raw) {
     const fileId = new TextDecoder().decode(new Uint8Array(ab, 4, idLen));
     const chunk  = ab.slice(4 + idLen);
     return { fileId, chunk };
+}
+
+// ─────────────────────────────────────────
+//  File System Writer — writes directly to disk
+//  Falls back to in-memory buffer for unsupported browsers
+// ─────────────────────────────────────────
+class FileWriter {
+    constructor(fileName, fileSize) {
+        this.fileName = fileName;
+        this.fileSize = fileSize;
+        this.received = 0;
+        this.chunks = [];       // fallback buffer
+        this.stream = null;     // FileSystemWritableFileStream
+        this.writer = null;     // WritableStreamDefaultWriter
+        this.closed = false;
+    }
+
+    async open() {
+        // Try File System Access API (Chrome/Edge)
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: this.fileName,
+                });
+                this.stream = await handle.createWritable();
+                this.writer = this.stream.getWriter();
+                return true;
+            } catch (err) {
+                // User cancelled or API failed — fall back
+            }
+        }
+        // Fallback: accumulate in memory
+        this.chunks = [];
+        return false;
+    }
+
+    async write(chunk) {
+        if (this.closed) return;
+        if (this.writer) {
+            await this.writer.write(new Uint8Array(chunk));
+        } else {
+            this.chunks.push(chunk);
+        }
+        this.received += chunk.byteLength;
+    }
+
+    async close() {
+        if (this.closed) return;
+        this.closed = true;
+        if (this.writer) {
+            await this.writer.close();
+            return null; // already saved to disk
+        }
+        // Fallback: create Blob from accumulated chunks
+        return new Blob(this.chunks);
+    }
+
+    async abort() {
+        if (this.closed) return;
+        this.closed = true;
+        if (this.writer) {
+            try { await this.writer.abort(); } catch (_) {}
+        }
+        this.chunks = [];
+    }
 }
 
 // ─────────────────────────────────────────
@@ -308,7 +376,7 @@ function setupSocket() {
      socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
 
-        // ✅ إصلاح جوهري: ألغِ كل timers إعادة الاتصال — socket IDs قد تغيّرت
+        // ألغِ كل timers إعادة الاتصال — socket IDs قد تغيّرت
         reconnectTimers.forEach(({ timer }) => clearTimeout(timer));
         reconnectTimers.clear();
 
@@ -357,7 +425,6 @@ function setupSocket() {
         if (pi._keepalive) clearInterval(pi._keepalive);
         try { pi.peer.destroy(); } catch (_) {}
         peers.delete(id);
-        // ألغِ أي timer إعادة اتصال لهذا الـ ID القديم
         if (reconnectTimers.has(id)) {
             clearTimeout(reconnectTimers.get(id).timer);
             reconnectTimers.delete(id);
@@ -409,18 +476,15 @@ function updatePiPStatus() {
 //  Peer management
 // ─────────────────────────────────────────
 function makePeer(peerId, peerName, initiator) {
-    // أوقف أي reconnect timer قديم لهذا الـ peer ID
     if (reconnectTimers.has(peerId)) {
         clearTimeout(reconnectTimers.get(peerId).timer);
         reconnectTimers.delete(peerId);
     }
 
-    // ✅ أيضاً: ألغِ timers لنفس الاسم (الجهاز أعاد الاتصال بـ socket ID جديد)
     for (const [oldId, info] of reconnectTimers.entries()) {
         if (info.peerName === peerName) {
             clearTimeout(info.timer);
             reconnectTimers.delete(oldId);
-            // دمّر أي peer قديم بنفس الاسم
             const oldPi = peers.get(oldId);
             if (oldPi) {
                 if (oldPi._keepalive) clearInterval(oldPi._keepalive);
@@ -461,7 +525,6 @@ function makePeer(peerId, peerName, initiator) {
  
         if (isLocalConnection) localConnected.add(peerId);
  
-        // ── Keepalive ping كل 15 ثانية ──────────────
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
             if (!p || !p.connected) { clearInterval(kTimer); return; }
@@ -479,7 +542,7 @@ function makePeer(peerId, peerName, initiator) {
  
     peer.on('close', () => {
         const pi = peers.get(peerId);
-        if (!pi) return; // already cleaned up
+        if (!pi) return;
         const wasConnected = pi.connected ?? false;
         if (pi._keepalive) clearInterval(pi._keepalive);
 
@@ -499,14 +562,12 @@ function makePeer(peerId, peerName, initiator) {
     peer.on('error', (e) => {
         console.error('Peer error', peerId, e);
         const pi = peers.get(peerId);
-        if (!pi) return; // already cleaned up — منع تكرار المعالجة
+        if (!pi) return;
         const wasConnected = pi.connected ?? false;
         if (pi._keepalive) clearInterval(pi._keepalive);
 
         peers.delete(peerId);
         localConnected.delete(peerId);
-
-        // ✅ إصلاح جوهري: دمّر الـ peer فوراً لإيقاف تكرار أحداث الخطأ
         try { peer.destroy(); } catch (_) {}
 
         updatePeersUI();
@@ -543,10 +604,10 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
         makePeer(peerId, peerName, initiator);
     }, delay);
 
-    // ✅ خزّن peerName لإلغاء Timer بالاسم عند الحاجة
     reconnectTimers.set(peerId, { timer, attempt, peerName });
     setBadge('warn', `● إعادة الاتصال... (${attempt})`);
 }
+
 // ─────────────────────────────────────────
 //  Incoming data handler
 // ─────────────────────────────────────────
@@ -586,21 +647,28 @@ function onData(raw, fromId) {
         case 'pong':
             break;
         case 'metadata': {
+            // إذا كان هناك استقبال سابق لنفس الملف، ألغِه
             const existingEntry = recvMap.get(msg.payload.fileId);
             if (existingEntry) {
-                // إعادة الإرسال بعد انقطاع — صفِّر الـ buffer والـ UI
+                existingEntry.writer.abort().catch(() => {});
                 recvMap.delete(msg.payload.fileId);
-                const pEl = document.getElementById(`recv-progress-${msg.payload.fileId}`);
-                const tEl = document.getElementById(`recv-pct-${msg.payload.fileId}`);
-                const sEl = document.getElementById(`recv-status-${msg.payload.fileId}`);
-                if (pEl) { pEl.style.width = '0%'; pEl.classList.remove('done', 'error'); }
-                if (tEl) { tEl.textContent = '0%'; tEl.style.color = ''; }
-                if (sEl) { sEl.textContent = 'جاري الاستلام... (إعادة)'; sEl.classList.remove('done', 'error'); }
+                resetRecvUI(msg.payload.fileId);
             }
+            // إنشاء writer جديد وابدأ الاستقبال
+            const writer = new FileWriter(msg.payload.fileName, msg.payload.fileSize);
             recvMap.set(msg.payload.fileId, {
-                meta: msg.payload, buffer: [], received: 0, fromId,
+                meta: msg.payload,
+                writer: writer,
+                received: 0,
+                fromId,
             });
-            if (!existingEntry) createReceivingFileBox(msg.payload, fromId);
+            // افتح الملف على القرص
+            writer.open().then(() => {
+                createReceivingFileBox(msg.payload, fromId);
+            }).catch(err => {
+                console.error('Failed to open file writer:', err);
+                createReceivingFileBox(msg.payload, fromId);
+            });
             break;
         }
         case 'cancel':
@@ -616,24 +684,33 @@ function onData(raw, fromId) {
         }
     }
 }
+
+function resetRecvUI(fileId) {
+    const pEl = document.getElementById(`recv-progress-${fileId}`);
+    const tEl = document.getElementById(`recv-pct-${fileId}`);
+    const sEl = document.getElementById(`recv-status-${fileId}`);
+    if (pEl) { pEl.style.width = '0%'; pEl.classList.remove('done', 'error'); }
+    if (tEl) { tEl.textContent = '0%'; tEl.style.color = ''; }
+    if (sEl) { sEl.textContent = 'جاري الاستلام... (إعادة)'; sEl.classList.remove('done', 'error'); }
+}
  
 
 // ─────────────────────────────────────────
-//  Receive chunks — fileId-routed
+//  Receive chunks — writes directly to disk
 // ─────────────────────────────────────────
-function recvChunk(raw, fromId) {
+async function recvChunk(raw, fromId) {
     try {
         const { fileId, chunk } = parseChunkWithId(raw);
         const entry = recvMap.get(fileId);
         if (!entry) return;
 
-        entry.buffer.push(chunk);
+        await entry.writer.write(chunk);
         entry.received += chunk.byteLength;
-        const pct = Math.round((entry.received / entry.meta.fileSize) * 100);
+        const pct = Math.min(100, Math.round((entry.received / entry.meta.fileSize) * 100));
         updateReceivingFileBox(entry.meta, pct, entry.fromId);
 
         if (entry.received >= entry.meta.fileSize) {
-            const blob = new Blob(entry.buffer);
+            const blob = await entry.writer.close();
             const pi   = peers.get(fromId);
             completeReceivingFileBox(entry.meta, blob, pi?.name || 'مجهول');
             recvMap.delete(fileId);
@@ -645,7 +722,11 @@ function recvChunk(raw, fromId) {
 
 function cancelRecv(fileId, reason) {
     const e = recvMap.get(fileId);
-    if (e) { updateReceivingFileBox(e.meta, 0, e.fromId, true, reason); recvMap.delete(fileId); }
+    if (e) {
+        e.writer.abort().catch(() => {});
+        updateReceivingFileBox(e.meta, 0, e.fromId, true, reason);
+        recvMap.delete(fileId);
+    }
 }
 
 // ─────────────────────────────────────────
@@ -712,19 +793,28 @@ function completeReceivingFileBox(meta, blob, senderName) {
     const box = document.getElementById(`file-box-${fileId}`);
     if (!box) return;
 
-    const objectUrl = URL.createObjectURL(blob);
-    downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
-    sessionFiles.push({ fileId, meta, sender: senderName });
-
-    downloadBlob(blob, meta.fileName);
-
     const isImage = meta.fileType?.startsWith('image/');
     const isVideo = meta.fileType?.startsWith('video/');
 
+    let objectUrl = null;
+    // If blob is null, it was saved directly to disk — just show completion
+    // If blob exists (fallback mode), create URL and offer download
+    if (blob) {
+        objectUrl = URL.createObjectURL(blob);
+        downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
+        sessionFiles.push({ fileId, meta, sender: senderName });
+        // Auto-download for fallback mode
+        downloadBlob(blob, meta.fileName);
+    } else {
+        // Saved to disk directly — just track metadata
+        downloadedFiles.set(fileId, { blob: null, meta, sender: senderName, url: null });
+        sessionFiles.push({ fileId, meta, sender: senderName });
+    }
+
     const previewDiv = box.querySelector('.file-preview');
-    if (previewDiv && isImage) {
+    if (previewDiv && isImage && objectUrl) {
         previewDiv.innerHTML = `<img src="${objectUrl}" alt="${esc(meta.fileName)}">`;
-    } else if (previewDiv && isVideo) {
+    } else if (previewDiv && isVideo && objectUrl) {
         previewDiv.innerHTML = `
             <video src="${objectUrl}" style="width:100%;height:100%;object-fit:cover;" preload="metadata"></video>
             <div class="file-preview-overlay"><span>▶</span></div>`;
@@ -735,13 +825,13 @@ function completeReceivingFileBox(meta, blob, senderName) {
     const statusEl   = document.getElementById(`recv-status-${fileId}`);
     if (progressEl) { progressEl.style.width = '100%'; progressEl.classList.add('done'); }
     if (pctEl)    { pctEl.textContent = '100%'; pctEl.style.color = '#43e97b'; }
-    if (statusEl) { statusEl.textContent = 'تم الحفظ تلقائياً ✓'; statusEl.classList.add('done'); }
+    if (statusEl) { statusEl.textContent = blob ? 'تم الحفظ تلقائياً ✓' : 'تم الحفظ على القرص ✓'; statusEl.classList.add('done'); }
 
     const infoDiv = box.querySelector('.file-info');
     if (infoDiv) {
         const actDiv = document.createElement('div');
         actDiv.className = 'file-actions';
-        if (isImage || isVideo) {
+        if ((isImage || isVideo) && objectUrl) {
             actDiv.innerHTML = `
                 <button class="file-action-btn download" onclick="openFullscreen('${fileId}')">👁 فتح</button>
                 <button class="file-action-btn delete" onclick="deleteFile('${fileId}')">🗑 حذف</button>`;
@@ -754,7 +844,7 @@ function completeReceivingFileBox(meta, blob, senderName) {
     }
 
     box.classList.remove('receiving');
-    if (isImage || isVideo) {
+    if ((isImage || isVideo) && objectUrl) {
         box.onclick = () => openFullscreen(fileId);
         box.style.cursor = 'pointer';
     }
@@ -762,13 +852,14 @@ function completeReceivingFileBox(meta, blob, senderName) {
 
 function downloadFileById(fileId) {
     const f = downloadedFiles.get(fileId);
-    if (f) downloadBlob(f.blob, f.meta.fileName);
+    if (f?.blob) downloadBlob(f.blob, f.meta.fileName);
+    else if (f) toast('الملف محفوظ على القرص مسبقاً', 'info');
     else toast('الملف غير متوفر', 'error');
 }
 
 function deleteFile(fileId) {
     const f = downloadedFiles.get(fileId);
-    if (f) { URL.revokeObjectURL(f.url); downloadedFiles.delete(fileId); }
+    if (f) { if (f.url) URL.revokeObjectURL(f.url); downloadedFiles.delete(fileId); }
     document.getElementById(`recv-file-${fileId}`)?.remove();
     sessionFiles = sessionFiles.filter(x => x.fileId !== fileId);
     toast('تم حذف الملف', 'success');
@@ -776,7 +867,7 @@ function deleteFile(fileId) {
 
 function openFullscreen(fileId) {
     const f = downloadedFiles.get(fileId);
-    if (!f) return;
+    if (!f || !f.url) return;
     const isImage = f.meta.fileType?.startsWith('image/');
     const isVideo = f.meta.fileType?.startsWith('video/');
     if (!isImage && !isVideo) return;
@@ -884,7 +975,7 @@ function inviteLocalPeer(socketId, peerName) {
     isLocalConnection = true;
     roomId = newRoomId;
     isHost = true;
-    setHostRoom(newRoomId);   // تذكر أن هذا الجهاز هو المضيف
+    setHostRoom(newRoomId);
     history.replaceState({}, '', `?id=${newRoomId}`);
     socket.emit('join-room', { roomId, deviceName });
 
@@ -1207,9 +1298,12 @@ function bindHomeEvents(joinUrl) {
     });
 }
 
-// ─────────────────────────────────────────
-//  Event binding — messages & file send
-// ─────────────────────────────────────────
+// ═════════════════════════════════════════
+//  SEQUENTIAL FILE SEND QUEUE
+//  The key improvement: files are sent one
+//  after another, not in parallel.
+// ═════════════════════════════════════════
+
 function bindMsgEvents() {
     const field     = document.getElementById('msg-field');
     const btn       = document.getElementById('send-btn');
@@ -1247,208 +1341,63 @@ function bindMsgEvents() {
             return;
         }
 
-        files.forEach(f => sendFileParallel(f, targets));
+        // Add all files to the sequential queue
+        files.forEach(f => enqueueFileSend(f, targets));
         fileInput.value = '';
     });
 }
 
-// ─────────────────────────────────────────
-//  Header Actions
-// ─────────────────────────────────────────
-function bindHeaderActions() {
-    document.getElementById('edit-name-btn')?.addEventListener('click', () => {
-        const chip  = document.getElementById('chip-name');
-        const input = document.createElement('input');
-        input.className = 'name-edit-field';
-        input.value = deviceName;
-        input.style.cssText = 'background:rgba(255,255,255,.06);border:1px solid rgba(0,210,255,.4);border-radius:8px;color:#00d2ff;font-family:"Tajawal",sans-serif;font-size:.78rem;font-weight:700;padding:3px 8px;outline:none;width:100px;';
-        chip.replaceWith(input);
-        input.focus(); input.select();
-        const commit = () => {
-            const v = input.value.trim() || deviceName;
-            deviceName = v; saveName(v);
-            const s = document.createElement('span');
-            s.className = 'device-chip-name'; s.id = 'chip-name'; s.textContent = v;
-            input.replaceWith(s);
-        };
-        input.addEventListener('blur', commit);
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
-    });
-
-    document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
-    document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
-    document.getElementById('end-session-btn')?.addEventListener('click', endSession);
+// ── Sequential send queue ──
+function enqueueFileSend(file, peerIds) {
+    sendQueue.push({ file, peerIds });
+    processSendQueue();
 }
 
-function showUsersModal() {
-    const connected = getConnected();
-    const overlay = document.createElement('div');
-    overlay.className = 'users-modal-overlay';
-    overlay.innerHTML = `
-      <div class="users-modal">
-        <h3>👥 المتصلون (${connected.length})</h3>
-        <div class="users-list">
-          ${connected.length === 0 ? '<p style="text-align:center;color:#8899aa;">لا يوجد متصلين</p>' :
-            connected.map(([_, p]) => `
-              <div class="user-item">
-                <span class="user-icon">📱</span>
-                <span class="user-name">${esc(p.name)}</span>
-              </div>`).join('')}
-        </div>
-        <button class="users-modal-close">إغلاق</button>
-      </div>`;
-    document.body.appendChild(overlay);
-    overlay.querySelector('.users-modal-close')?.addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-}
+async function processSendQueue() {
+    if (isSendingQueue || sendQueue.length === 0) return;
+    isSendingQueue = true;
 
-function showGroupLinkModal() {
-    const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-      <div class="modal-box">
-        <h3>🔗 رابط الجلسة</h3>
-        <p>شارك هذا الرابط لدعوة آخرين للانضمام</p>
-        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:8px;word-break:break-all;font-size:.8rem;color:#00d2ff;margin:10px 0;">${esc(joinUrl)}</div>
-        <div class="modal-actions">
-          <button class="action-button" id="modal-copy">📋 نسخ</button>
-          <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
-          <button class="action-button secondary" id="modal-close">إغلاق</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
-        navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
-    });
-    overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
-        if (navigator.share) { try { await navigator.share({ title: 'AetherLink', url: joinUrl }); } catch (_) {} }
-        else open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
-    });
-    overlay.querySelector('#modal-close')?.addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-}
-
-function endSession() {
-    if (!confirm('هل أنت متأكد من إنهاء الجلسة؟ سيتم حذف جميع الرسائل والملفات.')) return;
-
-    sessionMessages = []; sessionFiles = [];
-    downloadedFiles.clear(); recvMap.clear();
-    sendingFiles.forEach(sf => sf.cancelled = true);
-    sendingFiles.clear();
-
-    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
-    peers.clear();
-    localConnected.clear();
-
-    socket.emit('leave-room');
-    isLocalConnection = false;
-    roomId = mkId();
-    setHostRoom(roomId);          // تذكر الجلسة الجديدة كمضيف
-    history.replaceState({}, '', `?id=${roomId}`);
-    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-    socket.emit('join-room', { roomId, deviceName });
-    toast('تم إنهاء الجلسة', 'success');
-}
-
-function restoreSessionMessages() {
-    const list = document.getElementById('msg-list');
-    if (!list || sessionMessages.length === 0) return;
-    sessionMessages.forEach(({ text, sent, sender }) => appendMsgToList(text, sent, sender, false));
-}
-
-// ─────────────────────────────────────────
-//  Minimize / PiP / Mini widget
-// ─────────────────────────────────────────
-function bindMinBtn() {
-    document.getElementById('minimize-btn')?.addEventListener('click', () => setMini(true));
-    document.getElementById('mini-expand-btn')?.addEventListener('click', () => setMini(false));
-}
-
-async function setMini(on) {
-    isMinimized = on;
-    mainEl.classList.toggle('hidden', on);
-    if (on) {
-        const ok = await enterPiPMode();
-        if (!ok) showMiniWidget(); else hideMiniWidget();
-    } else {
-        hidePiP(); hideMiniWidget();
-        if (pipWindow && !pipWindow.closed) { pipWindow.close(); pipWindow = null; pipDocument = null; }
+    while (sendQueue.length > 0) {
+        const { file, peerIds } = sendQueue.shift();
+        await sendFileSequential(file, peerIds);
     }
-}
 
-function initMiniDrag() {
-    const el = document.getElementById('mini-widget');
-    if (!el) return;
-    let ox = 0, oy = 0, sl = 0, st = 0, drag = false;
-    const start = (cx, cy) => {
-        drag = true; ox = cx; oy = cy;
-        const r = el.getBoundingClientRect(); sl = r.left; st = r.top;
-        el.style.left = sl + 'px'; el.style.bottom = 'auto'; el.style.top = st + 'px';
-    };
-    const move = (cx, cy) => { if (!drag) return; el.style.left = `${sl + cx - ox}px`; el.style.top = `${st + cy - oy}px`; };
-    const stop = () => { drag = false; };
-    el.addEventListener('mousedown', e => { if (e.target.closest('button')) return; start(e.clientX, e.clientY); });
-    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
-    document.addEventListener('mouseup', stop);
-    el.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
-    el.addEventListener('touchmove',  e => { const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: true });
-    el.addEventListener('touchend', stop);
+    isSendingQueue = false;
 }
 
 // ─────────────────────────────────────────
-//  Transfer helpers
+//  Sequential file send — one file at a time
+//  with back-pressure and reconnection support
 // ─────────────────────────────────────────
-
-/**
- * Wait until the given peer reconnects and is connected again.
- * Returns the updated peer info object, or null if timeout exceeded.
- */
-async function waitForPeer(peerId, maxMs = 90000) {
-    const start = Date.now();
-    while (Date.now() - start < maxMs) {
-        const pi = peers.get(peerId);
-        if (pi?.connected) return pi;
-        await new Promise(r => setTimeout(r, 200));
-    }
-    return null;
-}
-
-/**
- * Wait until the DataChannel bufferedAmount drops below `threshold`.
- * Returns true if drained in time, false if timeout exceeded.
- */
-async function waitForBuffer(pi, threshold = 4 * 1024 * 1024, maxMs = 60000) {
-    const start = Date.now();
-    while (
-        pi.peer._channel &&
-        pi.peer._channel.bufferedAmount > threshold
-    ) {
-        if (Date.now() - start > maxMs) return false;
-        await new Promise(r => setTimeout(r, 30));
-    }
-    return true;
-}
-
-// ─────────────────────────────────────────
-//  Parallel file send — async, no queue
-// ─────────────────────────────────────────
- async function sendFileParallel(file, peerIds) {
+async function sendFileSequential(file, peerIds) {
     const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const meta   = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
- 
+
     sendingFiles.set(fileId, { cancelled: false });
- 
+
     const metaMsg = JSON.stringify({ type: 'metadata', payload: meta });
+
+    // Send metadata to all peers
+    const connectedPeers = [];
     peerIds.forEach(id => {
         const pi = peers.get(id);
-        if (pi?.connected) try { pi.peer.send(metaMsg); } catch (_) {}
+        if (pi?.connected) {
+            try { pi.peer.send(metaMsg); connectedPeers.push(id); } catch (_) {}
+        }
     });
- 
+
+    if (connectedPeers.length === 0) {
+        toast('لا يوجد أجهزة متصلة لإرسال الملف', 'error');
+        sendingFiles.delete(fileId);
+        return;
+    }
+
     createSenderFileBox(file, meta);
- 
+
     let offset = 0;
+    let retries = 0;
+    const MAX_RETRIES = 3;
+
     try {
         SEND_LOOP: while (offset < file.size) {
             const sf = sendingFiles.get(fileId);
@@ -1458,47 +1407,45 @@ async function waitForBuffer(pi, threshold = 4 * 1024 * 1024, maxMs = 60000) {
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
             const tagged   = makeChunkWithId(fileId, chunkBuf);
 
-            for (const id of peerIds) {
+            // Send this chunk to all connected peers sequentially
+            let allSent = true;
+            for (const id of connectedPeers) {
                 let pi = peers.get(id);
 
-                // ── إذا الـ peer منقطع: انتظر إعادة الاتصال ──────────────
+                // If peer disconnected, try to wait for reconnection
                 if (!pi?.connected) {
-                    toast(`⏳ انتظار إعادة الاتصال لإتمام الإرسال...`, 'warning');
-                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
+                    if (retries < MAX_RETRIES) {
+                        toast(`⏳ انتظار إعادة الاتصال...`, 'warning');
+                        updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
 
-                    const reconn = await waitForPeer(id, 90000); // انتظر حتى 90 ثانية
-
-                    if (!reconn) {
-                        // لم يعد الـ peer → تخطّى
-                        console.warn(`Peer ${id} لم يعد خلال 90s، تجاهل`);
-                        continue;
+                        const reconn = await waitForPeer(id, 90000);
+                        if (reconn) {
+                            retries++;
+                            // Resend metadata to the reconnected peer
+                            try { reconn.peer.send(metaMsg); } catch (_) {}
+                            // Don't reset offset — just retry this chunk
+                            continue;
+                        }
                     }
-
-                    // ✅ عاد الاتصال — أعد إرسال metadata وابدأ من الصفر
-                    try { reconn.peer.send(metaMsg); } catch (_) {}
-                    offset = 0; // ← إصلاح جوهري: أعد من البداية
-                    toast(`🔄 إعادة إرسال الملف بعد استئناف الاتصال...`, 'info');
-                    continue SEND_LOOP; // أعد حلقة SEND من offset=0
+                    // Peer not coming back — skip it for remaining chunks
+                    console.warn(`Peer ${id} failed to reconnect, skipping`);
+                    continue;
                 }
 
-                // ── فحص حالة القناة قبل الإرسال ──────────────────────
+                // ── Back-pressure: wait for buffer to drain ──
                 const ch = pi.peer._channel;
-                if (!ch || ch.readyState !== 'open') {
-                    // القناة مغلقة — انتظر إعادة الاتصال وأعد من الصفر
-                    offset = 0;
-                    toast('⏳ القناة مغلقة، انتظار إعادة الاتصال...', 'warning');
-                    const reconn = await waitForPeer(id, 90000);
-                    if (reconn) { try { reconn.peer.send(metaMsg); } catch (_) {} }
-                    continue SEND_LOOP;
+                if (ch) {
+                    while (ch.bufferedAmount > BUFFER_HIGH) {
+                        await sleep(30);
+                        const check = peers.get(id);
+                        if (!check?.connected) {
+                            allSent = false;
+                            continue;
+                        }
+                    }
                 }
 
-                // ── انتظر حتى يفرغ buffer القناة ──────────────────────────
-                const drained = await waitForBuffer(pi, 4 * 1024 * 1024, 60000);
-                if (!drained) {
-                    console.warn(`Buffer لم يفرغ خلال 60s للـ peer ${id}`);
-                }
-
-                // ── أرسل الـ chunk ─────────────────────────────────────────
+                // ── Send the chunk ──
                 let sent = false;
                 try {
                     const cur = peers.get(id);
@@ -1507,31 +1454,36 @@ async function waitForBuffer(pi, threshold = 4 * 1024 * 1024, maxMs = 60000) {
                         sent = true;
                     }
                 } catch (sendErr) {
-                    // OperationError أو أي خطأ إرسال — عامله كانقطاع فوري
-                    console.warn(`OperationError للـ peer ${id}، انتظار إعادة الاتصال...`, sendErr.message);
-                    offset = 0;
-                    const reconn = await waitForPeer(id, 90000);
-                    if (reconn) { try { reconn.peer.send(metaMsg); } catch (_) {} }
-                    continue SEND_LOOP;
+                    console.warn(`Send error for peer ${id}:`, sendErr.message);
+                    allSent = false;
                 }
 
-                if (!sent) {
-                    console.warn(`لم يُرسَل chunk للـ peer ${id} — الـ peer غير متصل`);
-                }
+                if (!sent) allSent = false;
             }
 
-            offset = end;
+            if (allSent || retries < MAX_RETRIES) {
+                offset = end;
+                retries = 0; // Reset retries on successful chunk
+            } else {
+                // Too many failures — abort
+                throw new Error('Too many send failures');
+            }
+
             updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
-            await new Promise(r => setTimeout(r, 0));
+
+            // Small delay for GC and to prevent overwhelming the channel
+            if (offset < file.size) {
+                await sleep(SEND_DELAY_MS);
+            }
         }
 
         const sf = sendingFiles.get(fileId);
         if (sf && !sf.cancelled) finalizeSenderFileBox(fileId);
 
     } catch (err) {
-        console.error('sendFileParallel error', err);
-        updateSenderFileBox(fileId, 0, true, 'فشل قراءة الملف');
-        peerIds.forEach(id => {
+        console.error('sendFileSequential error', err);
+        updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), true, 'فشل الإرسال');
+        connectedPeers.forEach(id => {
             const pi = peers.get(id);
             if (pi?.connected) {
                 try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
@@ -1540,6 +1492,27 @@ async function waitForBuffer(pi, threshold = 4 * 1024 * 1024, maxMs = 60000) {
     }
 
     sendingFiles.delete(fileId);
+}
+
+// ─────────────────────────────────────────
+//  Transfer helpers
+// ─────────────────────────────────────────
+
+/**
+ * Wait until the given peer reconnects and is connected again.
+ */
+async function waitForPeer(peerId, maxMs = 90000) {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+        const pi = peers.get(peerId);
+        if (pi?.connected) return pi;
+        await sleep(200);
+    }
+    return null;
+}
+
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
 }
 
 // ─────────────────────────────────────────
@@ -1647,6 +1620,155 @@ function openSenderFullscreen(fileId) {
 }
 
 // ─────────────────────────────────────────
+//  Header Actions
+// ─────────────────────────────────────────
+function bindHeaderActions() {
+    document.getElementById('edit-name-btn')?.addEventListener('click', () => {
+        const chip  = document.getElementById('chip-name');
+        const input = document.createElement('input');
+        input.className = 'name-edit-field';
+        input.value = deviceName;
+        input.style.cssText = 'background:rgba(255,255,255,.06);border:1px solid rgba(0,210,255,.4);border-radius:8px;color:#00d2ff;font-family:"Tajawal",sans-serif;font-size:.78rem;font-weight:700;padding:3px 8px;outline:none;width:100px;';
+        chip.replaceWith(input);
+        input.focus(); input.select();
+        const commit = () => {
+            const v = input.value.trim() || deviceName;
+            deviceName = v; saveName(v);
+            const s = document.createElement('span');
+            s.className = 'device-chip-name'; s.id = 'chip-name'; s.textContent = v;
+            input.replaceWith(s);
+        };
+        input.addEventListener('blur', commit);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') commit(); });
+    });
+
+    document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
+    document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
+    document.getElementById('end-session-btn')?.addEventListener('click', endSession);
+}
+
+function showUsersModal() {
+    const connected = getConnected();
+    const overlay = document.createElement('div');
+    overlay.className = 'users-modal-overlay';
+    overlay.innerHTML = `
+      <div class="users-modal">
+        <h3>👥 المتصلون (${connected.length})</h3>
+        <div class="users-list">
+          ${connected.length === 0 ? '<p style="text-align:center;color:#8899aa;">لا يوجد متصلين</p>' :
+            connected.map(([_, p]) => `
+              <div class="user-item">
+                <span class="user-icon">📱</span>
+                <span class="user-name">${esc(p.name)}</span>
+              </div>`).join('')}
+        </div>
+        <button class="users-modal-close">إغلاق</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.users-modal-close')?.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function showGroupLinkModal() {
+    const joinUrl = `${location.origin}${location.pathname}?id=${roomId}`;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <h3>🔗 رابط الجلسة</h3>
+        <p>شارك هذا الرابط لدعوة آخرين للانضمام</p>
+        <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:8px;word-break:break-all;font-size:.8rem;color:#00d2ff;margin:10px 0;">${esc(joinUrl)}</div>
+        <div class="modal-actions">
+          <button class="action-button" id="modal-copy">📋 نسخ</button>
+          <button class="action-button secondary" id="modal-share">↗ مشاركة</button>
+          <button class="action-button secondary" id="modal-close">إغلاق</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
+    });
+    overlay.querySelector('#modal-share')?.addEventListener('click', async () => {
+        if (navigator.share) { try { await navigator.share({ title: 'AetherLink', url: joinUrl }); } catch (_) {} }
+        else open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:\n' + joinUrl)}`, '_blank');
+    });
+    overlay.querySelector('#modal-close')?.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+function endSession() {
+    if (!confirm('هل أنت متأكد من إنهاء الجلسة؟ سيتم حذف جميع الرسائل والملفات.')) return;
+
+    sessionMessages = []; sessionFiles = [];
+    downloadedFiles.clear();
+    recvMap.forEach(e => e.writer.abort().catch(() => {}));
+    recvMap.clear();
+    sendingFiles.forEach(sf => sf.cancelled = true);
+    sendingFiles.clear();
+    sendQueue.length = 0;
+    isSendingQueue = false;
+
+    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+    peers.clear();
+    localConnected.clear();
+
+    socket.emit('leave-room');
+    isLocalConnection = false;
+    roomId = mkId();
+    setHostRoom(roomId);
+    history.replaceState({}, '', `?id=${roomId}`);
+    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
+    socket.emit('join-room', { roomId, deviceName });
+    toast('تم إنهاء الجلسة', 'success');
+}
+
+function restoreSessionMessages() {
+    const list = document.getElementById('msg-list');
+    if (!list || sessionMessages.length === 0) return;
+    sessionMessages.forEach(({ text, sent, sender }) => appendMsgToList(text, sent, sender, false));
+}
+
+// ─────────────────────────────────────────
+//  Minimize / PiP / Mini widget
+// ─────────────────────────────────────────
+function bindMinBtn() {
+    document.getElementById('minimize-btn')?.addEventListener('click', () => setMini(true));
+    document.getElementById('mini-expand-btn')?.addEventListener('click', () => setMini(false));
+}
+
+async function setMini(on) {
+    isMinimized = on;
+    mainEl.classList.toggle('hidden', on);
+    if (on) {
+        const ok = await enterPiPMode();
+        if (!ok) showMiniWidget(); else hideMiniWidget();
+    } else {
+        hidePiP(); hideMiniWidget();
+        if (pipWindow && !pipWindow.closed) { pipWindow.close(); pipWindow = null; pipDocument = null; }
+    }
+}
+
+function initMiniDrag() {
+    const el = document.getElementById('mini-widget');
+    if (!el) return;
+    let ox = 0, oy = 0, sl = 0, st = 0, drag = false;
+    const start = (cx, cy) => {
+        drag = true; ox = cx; oy = cy;
+        const r = el.getBoundingClientRect(); sl = r.left; st = r.top;
+        el.style.left = sl + 'px'; el.style.bottom = 'auto'; el.style.top = st + 'px';
+    };
+    const move = (cx, cy) => { if (!drag) return; el.style.left = `${sl + cx - ox}px`; el.style.top = `${st + cy - oy}px`; };
+    const stop = () => { drag = false; };
+    el.addEventListener('mousedown', e => { if (e.target.closest('button')) return; start(e.clientX, e.clientY); });
+    document.addEventListener('mousemove', e => move(e.clientX, e.clientY));
+    document.addEventListener('mouseup', stop);
+    el.addEventListener('touchstart', e => { const t = e.touches[0]; start(t.clientX, t.clientY); }, { passive: true });
+    el.addEventListener('touchmove',  e => { const t = e.touches[0]; move(t.clientX, t.clientY); }, { passive: true });
+    el.addEventListener('touchend', stop);
+}
+
+// ─────────────────────────────────────────
 //  Chat messages
 // ─────────────────────────────────────────
 function appendMsg(text, sent, senderName) {
@@ -1729,9 +1851,9 @@ function downloadBlob(blob, name) {
 
 function fmtBytes(b) {
     if (!b) return '0 B';
-    const u = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(b) / Math.log(1024));
-    return `${(b / 1024 ** i).toFixed(1)} ${u[i]}`;
+    const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.min(Math.floor(Math.log(b) / Math.log(1024)), u.length - 1);
+    return `${(b / 1024 ** i).toFixed(i > 0 ? 1 : 0)} ${u[i]}`;
 }
 
 function fmtDate(ts) {
@@ -1801,20 +1923,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const storedHostRoom = getHostRoom();
 
     if (urlRoomId && storedHostRoom === urlRoomId) {
-        // نفس الجلسة التي أنشأها هذا الجهاز سابقاً → نتعامل كمضيف ونعرض الشاشة الرئيسية
         isHost = true;
         roomId = urlRoomId;
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-        // لا نمسح التخزين، بل نؤكد أن هذا الجهاز هو المضيف لهذه الجلسة
         setHostRoom(roomId);
     } else if (urlRoomId) {
-        // جلسة موجودة في الرابط ولكن لم ينشئها هذا الجهاز → ضيف
         isHost = false;
         roomId = urlRoomId;
         renderJoinerUI();
-        clearHostRoom(); // لا نتذكر هذه الجلسة كمضيف
+        clearHostRoom();
     } else {
-        // لا يوجد معرف في الرابط → ننشئ جلسة جديدة كمضيف
         isHost = true;
         roomId = mkId();
         setHostRoom(roomId);

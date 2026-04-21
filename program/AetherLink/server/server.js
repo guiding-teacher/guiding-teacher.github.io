@@ -1,5 +1,6 @@
 /**
- * AetherLink Web - Signaling Server (Multi-Peer Edition)
+ * AetherLink Web - Signaling Server (Large-File Edition)
+ * v3: keepalive pings · larger buffer · stable rooms
  */
 
 const express = require('express');
@@ -9,8 +10,12 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
+// Allow large buffer sizes for signaling data
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] }
+  cors: { origin: "*", methods: ["GET", "POST"] },
+  maxHttpBufferSize: 1e8,  // 100 MB (generous for signaling)
+  pingTimeout: 60000,       // 60s — more forgiving for slow networks
+  pingInterval: 25000,      // 25s keepalive
 });
 
 const PORT = process.env.PORT || 3000;
