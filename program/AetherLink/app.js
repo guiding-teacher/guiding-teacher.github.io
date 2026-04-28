@@ -1925,25 +1925,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlRoomId = params.get('id') || '';
     const storedHostRoom = getHostRoom();
 
-    // ── sessionStorage يُمسح تلقائياً عند إغلاق التاب/المتصفح ──
-    // إذا لم يكن موجوداً، يعني هذا أول فتح بعد خروج/إغلاق
-    const hasAppSession = sessionStorage.getItem('aetherlink-active');
+    // ── Detect if this is a page reload (exit & re-enter) vs fresh navigation ──
+    const navEntry = performance.getEntriesByType('navigation')[0];
+    const isReload = navEntry?.type === 'reload';
 
-    if (!hasAppSession && urlRoomId) {
-        // المستخدم فاتح رابط جلسة (باركود/واتساب) لأول مرة في هذه التاب
-        // لكن ربما كان عنده جلسة معلقة سابقاً — نظفها وخليه ينضم للجديدة
+    if (isReload) {
+        // المستخدم أغلق الصفحة وأعاد فتحها — اخرج من أي جلسة قديمة واذهب للرئيسية
         clearHostRoom();
-        peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
-        peers.clear();
-        localConnected.clear();
-
-        isHost = false;
-        roomId = urlRoomId;
-        renderJoinerUI();
-        sessionStorage.setItem('aetherlink-active', '1');
-    } else if (!hasAppSession) {
-        // ── أول فتح بعد خروج/إغلاق → اذهب للصفحة الرئيسية ──
-        clearHostRoom();
+        if (roomId) { try { socket.emit('leave-room'); } catch (_) {} }
         peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
         peers.clear();
         localConnected.clear();
@@ -1953,21 +1942,20 @@ document.addEventListener('DOMContentLoaded', () => {
         setHostRoom(roomId);
         history.replaceState({}, '', `?id=${roomId}`);
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-        sessionStorage.setItem('aetherlink-active', '1');
     } else if (urlRoomId && storedHostRoom === urlRoomId) {
-        // reload داخل نفس التاب والمستخدم هو المضيف
+        // المستخدم هو المضيف ولم يُغلق الصفحة
         isHost = true;
         roomId = urlRoomId;
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
         setHostRoom(roomId);
     } else if (urlRoomId) {
-        // reload داخل نفس التاب والمستخدم ينضم
+        // ضيف ينضم عبر رابط/باركود
         isHost = false;
         roomId = urlRoomId;
         renderJoinerUI();
         clearHostRoom();
     } else {
-        // reload بدون روم
+        // فتح عادي بدون رابط
         isHost = true;
         roomId = mkId();
         setHostRoom(roomId);
