@@ -1925,12 +1925,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlRoomId = params.get('id') || '';
     const storedHostRoom = getHostRoom();
 
-    // ── Detect if this is a page reload (exit & re-enter) vs fresh navigation ──
-    const navEntry = performance.getEntriesByType('navigation')[0];
-    const isReload = navEntry?.type === 'reload';
+    // ── Detect page reload using sessionStorage ──
+    // sessionStorage persists across page refresh but NOT across new tabs
+    const wasReloaded = sessionStorage.getItem('aetherlink-active') === '1';
+    sessionStorage.setItem('aetherlink-active', '1');
 
-    if (isReload) {
-        // المستخدم أغلق الصفحة وأعاد فتحها — اخرج من أي جلسة قديمة واذهب للرئيسية
+    if (wasReloaded) {
+        // Page was refreshed or reopened in same tab — reset to home
         clearHostRoom();
         if (roomId) { try { socket.emit('leave-room'); } catch (_) {} }
         peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
@@ -1943,19 +1944,19 @@ document.addEventListener('DOMContentLoaded', () => {
         history.replaceState({}, '', `?id=${roomId}`);
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
     } else if (urlRoomId && storedHostRoom === urlRoomId) {
-        // المستخدم هو المضيف ولم يُغلق الصفحة
+        // Host returning to existing session (tab still open)
         isHost = true;
         roomId = urlRoomId;
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
         setHostRoom(roomId);
     } else if (urlRoomId) {
-        // ضيف ينضم عبر رابط/باركود
+        // Guest joining via link/QR (new tab)
         isHost = false;
         roomId = urlRoomId;
         renderJoinerUI();
         clearHostRoom();
     } else {
-        // فتح عادي بدون رابط
+        // Normal open without link
         isHost = true;
         roomId = mkId();
         setHostRoom(roomId);
