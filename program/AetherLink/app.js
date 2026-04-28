@@ -1911,6 +1911,9 @@ function resizeContainer() {
 // ─────────────────────────────────────────
 //  Bootstrap
 // ─────────────────────────────────────────
+// ─────────────────────────────────────────
+//  Bootstrap
+// ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     initCanvas();
     initMiniDrag();
@@ -1922,31 +1925,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlRoomId = params.get('id') || '';
     const storedHostRoom = getHostRoom();
 
-    // ── Fix: On fresh page load (not back/forward), clear any hanging session ──
-    // and always start fresh on the home screen. This prevents getting stuck
-    // in a disconnected session after closing and reopening the app.
-    const isPageRefresh = performance.navigation?.type === 1 || 
-                          performance.getEntriesByType('navigation')[0]?.type === 'reload';
+    // ── sessionStorage يُمسح تلقائياً عند إغلاق التاب/المتصفح ──
+    // إذا لم يكن موجوداً، يعني هذا أول فتح بعد خروج/إغلاق
+    const hasAppSession = sessionStorage.getItem('aetherlink-active');
 
-    // Always clear host room on fresh load to prevent rejoining stale sessions
-    clearHostRoom();
+    if (!hasAppSession && urlRoomId) {
+        // المستخدم فاتح رابط جلسة (باركود/واتساب) لأول مرة في هذه التاب
+        // لكن ربما كان عنده جلسة معلقة سابقاً — نظفها وخليه ينضم للجديدة
+        clearHostRoom();
+        peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+        peers.clear();
+        localConnected.clear();
 
-    // Leave any previous room silently
-    if (roomId) {
-        try { socket.emit('leave-room'); } catch (_) {}
+        isHost = false;
+        roomId = urlRoomId;
+        renderJoinerUI();
+        sessionStorage.setItem('aetherlink-active', '1');
+    } else if (!hasAppSession) {
+        // ── أول فتح بعد خروج/إغلاق → اذهب للصفحة الرئيسية ──
+        clearHostRoom();
+        peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+        peers.clear();
+        localConnected.clear();
+
+        isHost = true;
+        roomId = mkId();
+        setHostRoom(roomId);
+        history.replaceState({}, '', `?id=${roomId}`);
+        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
+        sessionStorage.setItem('aetherlink-active', '1');
+    } else if (urlRoomId && storedHostRoom === urlRoomId) {
+        // reload داخل نفس التاب والمستخدم هو المضيف
+        isHost = true;
+        roomId = urlRoomId;
+        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
+        setHostRoom(roomId);
+    } else if (urlRoomId) {
+        // reload داخل نفس التاب والمستخدم ينضم
+        isHost = false;
+        roomId = urlRoomId;
+        renderJoinerUI();
+        clearHostRoom();
+    } else {
+        // reload بدون روم
+        isHost = true;
+        roomId = mkId();
+        setHostRoom(roomId);
+        history.replaceState({}, '', `?id=${roomId}`);
+        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
     }
-
-    // Clean up any hanging peers
-    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
-    peers.clear();
-    localConnected.clear();
-
-    // Always start fresh as host on the home screen
-    isHost = true;
-    roomId = mkId();
-    setHostRoom(roomId);
-    history.replaceState({}, '', `?id=${roomId}`);
-    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
 
     setupSocket();
 });
