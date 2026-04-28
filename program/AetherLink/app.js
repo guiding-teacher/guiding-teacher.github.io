@@ -1922,23 +1922,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlRoomId = params.get('id') || '';
     const storedHostRoom = getHostRoom();
 
-    if (urlRoomId && storedHostRoom === urlRoomId) {
-        isHost = true;
-        roomId = urlRoomId;
-        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-        setHostRoom(roomId);
-    } else if (urlRoomId) {
-        isHost = false;
-        roomId = urlRoomId;
-        renderJoinerUI();
-        clearHostRoom();
-    } else {
-        isHost = true;
-        roomId = mkId();
-        setHostRoom(roomId);
-        history.replaceState({}, '', `?id=${roomId}`);
-        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
+    // ── Fix: On fresh page load (not back/forward), clear any hanging session ──
+    // and always start fresh on the home screen. This prevents getting stuck
+    // in a disconnected session after closing and reopening the app.
+    const isPageRefresh = performance.navigation?.type === 1 || 
+                          performance.getEntriesByType('navigation')[0]?.type === 'reload';
+
+    // Always clear host room on fresh load to prevent rejoining stale sessions
+    clearHostRoom();
+
+    // Leave any previous room silently
+    if (roomId) {
+        try { socket.emit('leave-room'); } catch (_) {}
     }
+
+    // Clean up any hanging peers
+    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+    peers.clear();
+    localConnected.clear();
+
+    // Always start fresh as host on the home screen
+    isHost = true;
+    roomId = mkId();
+    setHostRoom(roomId);
+    history.replaceState({}, '', `?id=${roomId}`);
+    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
 
     setupSocket();
 });
