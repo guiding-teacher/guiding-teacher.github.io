@@ -1069,6 +1069,7 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
+          <button class="icon-btn" id="new-session-btn" title="اتصال جديد">🔄</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1152,6 +1153,7 @@ function renderJoinerUI() {
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
           </div>
+          <button class="icon-btn" id="new-session-btn" title="اتصال جديد">🔄</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1180,13 +1182,13 @@ function renderConnectedUI() {
           <div class="header-actions">
             <button class="header-action-btn show-users" id="show-users-btn" title="المتصلين">👥 المتصلين</button>
             ${!isLocalConnection ? `<button class="header-action-btn group-link" id="group-link-btn" title="رابط الجلسة">🔗 مشاركة</button>` : ''}
-            <button class="header-action-btn end-session" id="end-session-btn" title="إنهاء الجلسة">✕ إنهاء</button>
           </div>
           <div class="device-chip" id="name-chip">
             <span>📡</span>
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
+          <button class="icon-btn" id="new-session-btn" title="اتصال جديد">🔄</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1644,7 +1646,7 @@ function bindHeaderActions() {
 
     document.getElementById('show-users-btn')?.addEventListener('click', showUsersModal);
     document.getElementById('group-link-btn')?.addEventListener('click', showGroupLinkModal);
-    document.getElementById('end-session-btn')?.addEventListener('click', endSession);
+    document.getElementById('new-session-btn')?.addEventListener('click', newSession);
 }
 
 function showUsersModal() {
@@ -1723,6 +1725,31 @@ function endSession() {
     toast('تم إنهاء الجلسة', 'success');
 }
 
+function newSession() {
+    // Destroy previous session and show home immediately (no confirmation)
+    sessionMessages = []; sessionFiles = [];
+    downloadedFiles.clear();
+    recvMap.forEach(e => e.writer.abort().catch(() => {}));
+    recvMap.clear();
+    sendingFiles.forEach(sf => sf.cancelled = true);
+    sendingFiles.clear();
+    sendQueue.length = 0;
+    isSendingQueue = false;
+
+    peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
+    peers.clear();
+    localConnected.clear();
+
+    socket.emit('leave-room');
+    isLocalConnection = false;
+    roomId = mkId();
+    setHostRoom(roomId);
+    history.replaceState({}, '', `?id=${roomId}`);
+    renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
+    socket.emit('join-room', { roomId, deviceName });
+    toast('تم إنشاء جلسة جديدة', 'success');
+}
+
 function restoreSessionMessages() {
     const list = document.getElementById('msg-list');
     if (!list || sessionMessages.length === 0) return;
@@ -1733,6 +1760,7 @@ function restoreSessionMessages() {
 //  Minimize / PiP / Mini widget
 // ─────────────────────────────────────────
 function bindMinBtn() {
+    document.getElementById('new-session-btn')?.addEventListener('click', newSession);
     document.getElementById('minimize-btn')?.addEventListener('click', () => setMini(true));
     document.getElementById('mini-expand-btn')?.addEventListener('click', () => setMini(false));
 }
@@ -1911,9 +1939,6 @@ function resizeContainer() {
 // ─────────────────────────────────────────
 //  Bootstrap
 // ─────────────────────────────────────────
-// ─────────────────────────────────────────
-//  Bootstrap
-// ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     initCanvas();
     initMiniDrag();
@@ -1925,38 +1950,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlRoomId = params.get('id') || '';
     const storedHostRoom = getHostRoom();
 
-    // ── Detect page reload using sessionStorage ──
-    // sessionStorage persists across page refresh but NOT across new tabs
-    const wasReloaded = sessionStorage.getItem('aetherlink-active') === '1';
-    sessionStorage.setItem('aetherlink-active', '1');
-
-    if (wasReloaded) {
-        // Page was refreshed or reopened in same tab — reset to home
-        clearHostRoom();
-        if (roomId) { try { socket.emit('leave-room'); } catch (_) {} }
-        peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
-        peers.clear();
-        localConnected.clear();
-
-        isHost = true;
-        roomId = mkId();
-        setHostRoom(roomId);
-        history.replaceState({}, '', `?id=${roomId}`);
-        renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
-    } else if (urlRoomId && storedHostRoom === urlRoomId) {
-        // Host returning to existing session (tab still open)
+    if (urlRoomId && storedHostRoom === urlRoomId) {
         isHost = true;
         roomId = urlRoomId;
         renderHomeUI(`${location.origin}${location.pathname}?id=${roomId}`);
         setHostRoom(roomId);
     } else if (urlRoomId) {
-        // Guest joining via link/QR (new tab)
         isHost = false;
         roomId = urlRoomId;
         renderJoinerUI();
         clearHostRoom();
     } else {
-        // Normal open without link
         isHost = true;
         roomId = mkId();
         setHostRoom(roomId);
