@@ -44,10 +44,10 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 16 * 1024;        // 16 KB — small, safe for all networks
-const BUFFER_HIGH = 1024 * 1024;     // 1 MB — pause sending above this
-const BUFFER_LOW  = 256 * 1024;      // 256 KB — resume below this
-const SEND_DELAY_MS = 5;             // tiny delay between chunks for GC
+const CHUNK_SIZE = 256 * 1024;       // 256 KB — max speed for all networks
+const BUFFER_HIGH = 8 * 1024 * 1024; // 8 MB — pause sending above this
+const BUFFER_LOW  = 2 * 1024 * 1024; // 2 MB — resume below this
+const SEND_DELAY_MS = 0;             // no delay — full speed
 
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
@@ -90,8 +90,10 @@ const mainEl = document.getElementById('main-container');
 const socket = io(SIG_URL, {
     reconnection: true,
     reconnectionAttempts: Infinity,
-    reconnectionDelay: 1500,
-    timeout: 20000,
+    reconnectionDelay: 300,
+    reconnectionDelayMax: 4000,
+    randomizationFactor: 0.3,
+    timeout: 8000,
 });
 
 // ─────────────────────────────────────────
@@ -407,6 +409,7 @@ function setupSocket() {
     socket.on('receive-signal', ({ signal, from }) => {
         const pi = peers.get(from);
         if (pi) pi.peer.signal(signal);
+        // مع trickle=true قد تصل إشارات متعددة — كل منها يُمرّر للـ peer
     });
 
     socket.on('peer-left', ({ id, name }) => {
@@ -496,13 +499,20 @@ function makePeer(peerId, peerName, initiator) {
  
     const peer = new SimplePeer({
         initiator,
-        trickle: false,
+        trickle: true,   // تفعيل ICE التدريجي — أسرع اتصال أولي
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' },
+                { urls: 'stun:stun.cloudflare.com:3478' },
             ],
+            iceCandidatePoolSize: 10,
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require',
         },
     });
  
@@ -533,7 +543,7 @@ function makePeer(peerId, peerName, initiator) {
             } catch (_) {
                 clearInterval(kTimer);
             }
-        }, 15000);
+        }, 5000);  // كل 5 ثوانٍ — keepalive سريع للحفاظ على الاتصال
  
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
@@ -586,7 +596,7 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
         clearTimeout(reconnectTimers.get(peerId).timer);
     }
 
-    const delay = Math.min(2000 * attempt, 30000);
+    const delay = Math.min(800 * attempt, 10000);  // بداية من 800ms — إعادة اتصال أسرع
     console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt})`);
 
     const timer = setTimeout(() => {
@@ -1069,7 +1079,7 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn" id="new-session-btn" title="اتصال جديد">🔄</button>
+          <button class="icon-btn home-btn" id="new-session-btn" title="العودة للرئيسية">🏠 الرئيسية</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1153,7 +1163,7 @@ function renderJoinerUI() {
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
           </div>
-          <button class="icon-btn" id="new-session-btn" title="اتصال جديد">🔄</button>
+          <button class="icon-btn home-btn" id="new-session-btn" title="العودة للرئيسية">🏠 الرئيسية</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1188,7 +1198,7 @@ function renderConnectedUI() {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn" id="new-session-btn" title="اتصال جديد">🔄</button>
+          <button class="icon-btn home-btn" id="new-session-btn" title="العودة للرئيسية">🏠 الرئيسية</button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1350,8 +1360,12 @@ function bindMsgEvents() {
 }
 
 // ── Sequential send queue ──
+// كل عنصر: { file, peerIds, queueId, previewUrl }
 function enqueueFileSend(file, peerIds) {
-    sendQueue.push({ file, peerIds });
+    const queueId = `q-${Date.now()}-${Math.random().toString(36).substr(2,5)}`;
+    const previewUrl = file.type?.startsWith('image/') ? URL.createObjectURL(file) : null;
+    sendQueue.push({ file, peerIds, queueId, previewUrl });
+    renderQueuePreview();
     processSendQueue();
 }
 
@@ -1360,11 +1374,76 @@ async function processSendQueue() {
     isSendingQueue = true;
 
     while (sendQueue.length > 0) {
-        const { file, peerIds } = sendQueue.shift();
-        await sendFileSequential(file, peerIds);
+        const item = sendQueue.shift();
+        renderQueuePreview();
+        await sendFileSequential(item.file, item.peerIds);
+        // تحرير الـ previewUrl بعد الإرسال
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
     }
 
     isSendingQueue = false;
+    renderQueuePreview();
+}
+
+// ─────────────────────────────────────────
+//  Queue Preview Strip UI
+// ─────────────────────────────────────────
+function renderQueuePreview() {
+    const bar = document.querySelector('.msg-bar');
+    if (!bar) return;
+
+    let strip = document.getElementById('queue-preview-strip');
+
+    if (sendQueue.length === 0) {
+        strip?.remove();
+        return;
+    }
+
+    if (!strip) {
+        strip = document.createElement('div');
+        strip.id = 'queue-preview-strip';
+        strip.className = 'queue-preview-strip';
+        bar.parentElement.insertBefore(strip, bar);
+    }
+
+    strip.innerHTML = `
+      <div class="queue-strip-header">
+        <span class="queue-strip-label">📋 في الطابور (${sendQueue.length} ملف)</span>
+      </div>
+      <div class="queue-strip-items">
+        ${sendQueue.map((item, idx) => {
+            const isImage = item.file.type?.startsWith('image/');
+            const isVideo = item.file.type?.startsWith('video/');
+            let thumb = '';
+            if (isImage && item.previewUrl) {
+                thumb = `<img src="${item.previewUrl}" class="queue-thumb-img" alt="${esc(item.file.name)}">`;
+            } else {
+                let icon = '📄';
+                if (isVideo) icon = '🎬';
+                else if (item.file.type?.includes('pdf')) icon = '📕';
+                else if (item.file.type?.includes('audio')) icon = '🎵';
+                else if (/zip|rar|7z/.test(item.file.type || '')) icon = '📦';
+                thumb = `<span class="queue-thumb-icon">${icon}</span>`;
+            }
+            return `
+              <div class="queue-item" id="queue-item-${item.queueId}">
+                <div class="queue-thumb">${thumb}</div>
+                <div class="queue-item-name" title="${esc(item.file.name)}">${esc(item.file.name.length > 14 ? item.file.name.slice(0,12)+'…' : item.file.name)}</div>
+                <div class="queue-item-size">${fmtBytes(item.file.size)}</div>
+                <button class="queue-delete-btn" onclick="removeFromQueue('${item.queueId}')" title="حذف من الطابور">×</button>
+              </div>`;
+        }).join('')}
+      </div>`;
+}
+
+function removeFromQueue(queueId) {
+    const idx = sendQueue.findIndex(i => i.queueId === queueId);
+    if (idx === -1) return;
+    const item = sendQueue[idx];
+    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+    sendQueue.splice(idx, 1);
+    renderQueuePreview();
+    toast('تم حذف الملف من الطابور', 'info');
 }
 
 // ─────────────────────────────────────────
@@ -1473,10 +1552,9 @@ async function sendFileSequential(file, peerIds) {
 
             updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
 
-            // Small delay for GC and to prevent overwhelming the channel
-            if (offset < file.size) {
-                await sleep(SEND_DELAY_MS);
-            }
+                if (offset < file.size && SEND_DELAY_MS > 0) {
+                    await sleep(SEND_DELAY_MS);
+                }
         }
 
         const sf = sendingFiles.get(fileId);
@@ -1558,6 +1636,9 @@ function createSenderFileBox(file, meta) {
             <span class="file-pct" id="sender-pct-${meta.fileId}">0%</span>
           </div>
           <div class="tr-status" id="sender-status-${meta.fileId}" style="font-size:.75rem;color:#8899aa;">جاري الإرسال...</div>
+          <div class="file-actions" id="sender-actions-${meta.fileId}">
+            <button class="file-action-btn cancel-send" id="cancel-send-${meta.fileId}" onclick="cancelSending('${meta.fileId}')">✕ إلغاء الإرسال</button>
+          </div>
         </div>
       </div>`;
 
@@ -1586,11 +1667,11 @@ function finalizeSenderFileBox(fileId) {
 
     if (box) {
         const infoDiv = box.querySelector('.file-info');
-        if (infoDiv && !infoDiv.querySelector('.file-actions')) {
-            const actDiv = document.createElement('div');
-            actDiv.className = 'file-actions';
+        // استبدال زر الإلغاء بزر الحذف بعد اكتمال الإرسال
+        const cancelBtn = document.getElementById(`cancel-send-${fileId}`);
+        const actDiv = document.getElementById(`sender-actions-${fileId}`);
+        if (actDiv) {
             actDiv.innerHTML = `<button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>`;
-            infoDiv.appendChild(actDiv);
         }
         box.classList.remove('sending');
         box.onclick = () => openSenderFullscreen(fileId);
@@ -1601,6 +1682,23 @@ function finalizeSenderFileBox(fileId) {
 function deleteSenderFile(fileId) {
     document.getElementById(`sender-file-${fileId}`)?.remove();
     toast('تم حذف الملف', 'success');
+}
+
+// إلغاء الإرسال أثناء التقدم
+function cancelSending(fileId) {
+    const sf = sendingFiles.get(fileId);
+    if (sf) sf.cancelled = true;
+    // إخبار المستقبلين بالإلغاء
+    getConnected().forEach(([_, p]) => {
+        try { p.peer.send(JSON.stringify({ type: 'cancel', payload: { fileId } })); } catch (_) {}
+    });
+    updateSenderFileBox(fileId, 0, true, '❌ تم إلغاء الإرسال');
+    // استبدال الأزرار
+    const actDiv = document.getElementById(`sender-actions-${fileId}`);
+    if (actDiv) {
+        actDiv.innerHTML = `<button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>`;
+    }
+    toast('تم إلغاء إرسال الملف', 'warning');
 }
 
 function openSenderFullscreen(fileId) {
@@ -1708,8 +1806,10 @@ function endSession() {
     recvMap.clear();
     sendingFiles.forEach(sf => sf.cancelled = true);
     sendingFiles.clear();
+    sendQueue.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
     sendQueue.length = 0;
     isSendingQueue = false;
+    document.getElementById('queue-preview-strip')?.remove();
 
     peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
     peers.clear();
@@ -1733,8 +1833,10 @@ function newSession() {
     recvMap.clear();
     sendingFiles.forEach(sf => sf.cancelled = true);
     sendingFiles.clear();
+    sendQueue.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
     sendQueue.length = 0;
     isSendingQueue = false;
+    document.getElementById('queue-preview-strip')?.remove();
 
     peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
     peers.clear();
