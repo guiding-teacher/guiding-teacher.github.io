@@ -13,9 +13,12 @@ const server = http.createServer(app);
 // Allow large buffer sizes for signaling data
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
-  maxHttpBufferSize: 1e8,  // 100 MB
-  pingTimeout: 30000,      // 30s
-  pingInterval: 10000,     // 10s keepalive — أسرع للكشف عن الانقطاع
+  maxHttpBufferSize: 1e8,  // 100 MB (generous for signaling)
+  pingTimeout: 30000,       // 30s — balanced for speed & stability
+  pingInterval: 10000,      // 10s keepalive — faster detection
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true,
+  perMessageDeflate: false,  // disable compression for speed
 });
 
 const PORT = process.env.PORT || 3000;

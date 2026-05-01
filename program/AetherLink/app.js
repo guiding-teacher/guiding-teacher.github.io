@@ -44,10 +44,10 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 64 * 1024;        // 64 KB — توازن بين السرعة والموثوقية
-const BUFFER_HIGH = 4 * 1024 * 1024; // 4 MB — توقف فوق هذا الحد
-const BUFFER_LOW  = 512 * 1024;      // 512 KB — استئناف تحت هذا الحد
-const SEND_DELAY_MS = 0;             // لا توقف — أقصى سرعة
+const CHUNK_SIZE = 64 * 1024;        // 64 KB — maximum transfer speed
+const BUFFER_HIGH = 4 * 1024 * 1024; // 4 MB — generous buffer
+const BUFFER_LOW  = 1 * 1024 * 1024; // 1 MB — resume below this
+const SEND_DELAY_MS = 0;             // zero delay — raw speed
 
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
@@ -75,6 +75,9 @@ const sendQueue = [];
 let isSendingQueue = false;
 const sendingFiles = new Map(); // fileId -> {cancelled}
 
+// Pending queue: visible file list
+const pendingFiles = new Map(); // fileId -> {file, status: 'waiting'|'sending'|'done', objectUrl}
+
 // Receive map
 const recvMap = new Map(); // fileId -> {meta, writer, received, fromId}
 const downloadedFiles = new Map();
@@ -91,9 +94,9 @@ const socket = io(SIG_URL, {
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 300,
-    reconnectionDelayMax: 4000,
-    randomizationFactor: 0.3,
-    timeout: 8000,
+    reconnectionDelayMax: 3000,
+    timeout: 10000,
+    transports: ['websocket', 'polling'],
 });
 
 // ─────────────────────────────────────────
@@ -188,6 +191,171 @@ class FileWriter {
 // ─────────────────────────────────────────
 //  Canvas particle network
 // ─────────────────────────────────────────
+function addPendingQueueStyles() {
+    if (document.getElementById('pending-queue-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'pending-queue-styles';
+    style.textContent = `
+    .pending-queue-panel { 
+        background: rgba(10,26,48,0.7); 
+        border: 1px solid rgba(0,210,255,0.15); 
+        border-radius: 12px; 
+        margin: 8px 16px; 
+        padding: 12px; 
+        max-height: 160px; 
+        overflow-y: auto; 
+        backdrop-filter: blur(8px);
+    }
+    .pending-queue-title { 
+        font-size: .78rem; 
+        font-weight: 700; 
+        color: #00d2ff; 
+        margin-bottom: 8px; 
+        display: flex; 
+        align-items: center; 
+        gap: 6px; 
+    }
+    .pending-queue-grid { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 8px; 
+    }
+    .pending-item { 
+        position: relative; 
+        width: 72px; 
+        height: 72px; 
+        border-radius: 8px; 
+        overflow: hidden; 
+        border: 2px solid rgba(0,210,255,0.2); 
+        background: rgba(0,0,0,0.3); 
+        flex-shrink: 0;
+        transition: transform .2s, border-color .2s;
+    }
+    .pending-item:hover { 
+        transform: scale(1.05); 
+        border-color: rgba(0,210,255,0.5); 
+    }
+    .pending-item img, .pending-item video { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+    }
+    .pending-item-icon { 
+        width: 100%; 
+        height: 100%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 1.6rem; 
+    }
+    .pending-item-del { 
+        position: absolute; 
+        top: 2px; 
+        right: 2px; 
+        width: 20px; 
+        height: 20px; 
+        border-radius: 50%; 
+        background: rgba(255,80,80,0.85); 
+        color: #fff; 
+        border: none; 
+        font-size: .65rem; 
+        cursor: pointer; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        opacity: 0; 
+        transition: opacity .2s;
+        line-height: 1;
+        padding: 0;
+    }
+    .pending-item:hover .pending-item-del { 
+        opacity: 1; 
+    }
+    .pending-item-name { 
+        position: absolute; 
+        bottom: 0; 
+        left: 0; 
+        right: 0; 
+        background: rgba(0,0,0,0.65); 
+        color: #fff; 
+        font-size: .55rem; 
+        padding: 2px 4px; 
+        white-space: nowrap; 
+        overflow: hidden; 
+        text-overflow: ellipsis;
+        direction: ltr;
+        text-align: center;
+    }
+    .pending-item.waiting { 
+        border-color: rgba(255,193,7,0.5); 
+        animation: pendingPulse 1.5s ease-in-out infinite; 
+    }
+    @keyframes pendingPulse { 
+        0%,100% { opacity: 1; } 
+        50% { opacity: .6; } 
+    }
+    .pending-item.sending { 
+        border-color: rgba(67,233,123,0.5); 
+    }
+    .pending-item.done { 
+        border-color: rgba(67,233,123,0.8); 
+        opacity: .7;
+    }
+    .home-return-btn {
+        background: linear-gradient(135deg, rgba(0,210,255,.12), rgba(58,123,213,.12));
+        border: 1px solid rgba(0,210,255,.25);
+        border-radius: 20px;
+        padding: 6px 14px;
+        color: #00d2ff;
+        font-family: 'Tajawal', sans-serif;
+        font-size: .78rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all .3s;
+        backdrop-filter: blur(4px);
+    }
+    .home-return-btn:hover {
+        background: linear-gradient(135deg, rgba(0,210,255,.25), rgba(58,123,213,.25));
+        border-color: rgba(0,210,255,.5);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0,210,255,.15);
+    }
+    .home-return-icon { font-size: .9rem; }
+    .sender-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    .cancel-send-btn {
+        background: rgba(255,80,80,.15);
+        border: 1px solid rgba(255,80,80,.35);
+        border-radius: 6px;
+        padding: 3px 8px;
+        color: #ff6b6b;
+        font-family: 'Tajawal',sans-serif;
+        font-size: .68rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all .2s;
+        white-space: nowrap;
+    }
+    .cancel-send-btn:hover {
+        background: rgba(255,80,80,.3);
+        border-color: rgba(255,80,80,.6);
+    }
+    .file-msg-box.cancelled {
+        opacity: .5;
+        filter: grayscale(.7);
+    }
+    `;
+    document.head.appendChild(style);
+}
+
 function initCanvas() {
     const canvas = document.getElementById('bg-canvas');
     if (!canvas) return;
@@ -409,7 +577,6 @@ function setupSocket() {
     socket.on('receive-signal', ({ signal, from }) => {
         const pi = peers.get(from);
         if (pi) pi.peer.signal(signal);
-        // مع trickle=true قد تصل إشارات متعددة — كل منها يُمرّر للـ peer
     });
 
     socket.on('peer-left', ({ id, name }) => {
@@ -499,7 +666,7 @@ function makePeer(peerId, peerName, initiator) {
  
     const peer = new SimplePeer({
         initiator,
-        trickle: true,   // تفعيل ICE التدريجي — أسرع اتصال أولي
+        trickle: true,
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -507,12 +674,24 @@ function makePeer(peerId, peerName, initiator) {
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
-                { urls: 'stun:global.stun.twilio.com:3478' },
-                { urls: 'stun:stun.cloudflare.com:3478' },
+                { urls: 'stun:openrelay.metered.ca:80' },
+                {
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                {
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
             ],
             iceCandidatePoolSize: 10,
-            bundlePolicy: 'max-bundle',
-            rtcpMuxPolicy: 'require',
+            iceTransportPolicy: 'all',
+        },
+        channelConfig: {
+            ordered: true,
+            maxRetransmits: 3,
         },
     });
  
@@ -543,7 +722,7 @@ function makePeer(peerId, peerName, initiator) {
             } catch (_) {
                 clearInterval(kTimer);
             }
-        }, 5000);  // كل 5 ثوانٍ — keepalive سريع للحفاظ على الاتصال
+        }, 5000);
  
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
@@ -596,7 +775,7 @@ function scheduleReconnect(peerId, peerName, attempt = 1) {
         clearTimeout(reconnectTimers.get(peerId).timer);
     }
 
-    const delay = Math.min(800 * attempt, 10000);  // بداية من 800ms — إعادة اتصال أسرع
+    const delay = Math.min(500 * attempt, 10000);
     console.log(`🔄 إعادة الاتصال بـ ${peerName} بعد ${delay}ms (محاولة ${attempt})`);
 
     const timer = setTimeout(() => {
@@ -696,8 +875,12 @@ function onData(raw, fromId) {
 }
 
 function resetRecvUI(fileId) {
-    // احذف البطاقة القديمة كلياً حتى لا يظهر صندوقان
-    document.getElementById(`recv-file-${fileId}`)?.remove();
+    const pEl = document.getElementById(`recv-progress-${fileId}`);
+    const tEl = document.getElementById(`recv-pct-${fileId}`);
+    const sEl = document.getElementById(`recv-status-${fileId}`);
+    if (pEl) { pEl.style.width = '0%'; pEl.classList.remove('done', 'error'); }
+    if (tEl) { tEl.textContent = '0%'; tEl.style.color = ''; }
+    if (sEl) { sEl.textContent = 'جاري الاستلام... (إعادة)'; sEl.classList.remove('done', 'error'); }
 }
  
 
@@ -803,12 +986,16 @@ function completeReceivingFileBox(meta, blob, senderName) {
     const isVideo = meta.fileType?.startsWith('video/');
 
     let objectUrl = null;
+    // If blob is null, it was saved directly to disk — just show completion
+    // If blob exists (fallback mode), create URL and offer download
     if (blob) {
         objectUrl = URL.createObjectURL(blob);
         downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
         sessionFiles.push({ fileId, meta, sender: senderName });
-        // لا تحميل تلقائي — المستخدم يضغط زر التحميل بنفسه
+        // Auto-download for fallback mode
+        downloadBlob(blob, meta.fileName);
     } else {
+        // Saved to disk directly — just track metadata
         downloadedFiles.set(fileId, { blob: null, meta, sender: senderName, url: null });
         sessionFiles.push({ fileId, meta, sender: senderName });
     }
@@ -1071,7 +1258,7 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn home-btn" id="new-session-btn" title="العودة للرئيسية">🏠 الرئيسية</button>
+          <button class="home-return-btn" id="new-session-btn" title="العودة للرئيسية"><span class="home-return-icon">🏠</span><span>العودة للرئيسية</span></button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1155,7 +1342,7 @@ function renderJoinerUI() {
             <span>📡</span>
             <span class="device-chip-name">${esc(deviceName)}</span>
           </div>
-          <button class="icon-btn home-btn" id="new-session-btn" title="العودة للرئيسية">🏠 الرئيسية</button>
+          <button class="home-return-btn" id="new-session-btn" title="العودة للرئيسية"><span class="home-return-icon">🏠</span><span>العودة للرئيسية</span></button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1190,7 +1377,7 @@ function renderConnectedUI() {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="icon-btn home-btn" id="new-session-btn" title="العودة للرئيسية">🏠 الرئيسية</button>
+          <button class="home-return-btn" id="new-session-btn" title="العودة للرئيسية"><span class="home-return-icon">🏠</span><span>العودة للرئيسية</span></button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
@@ -1199,6 +1386,12 @@ function renderConnectedUI() {
       <div class="peers-panel" id="peers-panel">
         <span class="peers-count" id="peers-count">0 متصل</span>
         <div class="peer-chips" id="peer-chips"></div>
+      </div>
+
+      <!-- Pending Queue Panel -->
+      <div class="pending-queue-panel hidden" id="pending-panel">
+        <div class="pending-queue-title">⏳ ملفات في الانتظار (<span id="pending-count">0</span>)</div>
+        <div class="pending-queue-grid" id="pending-list"></div>
       </div>
 
       <!-- Messages Section -->
@@ -1351,13 +1544,83 @@ function bindMsgEvents() {
     });
 }
 
+// ── Pending Queue UI ──
+function addPendingFile(file, fileId) {
+    const panel = document.getElementById('pending-panel');
+    const list = document.getElementById('pending-list');
+    const count = document.getElementById('pending-count');
+    if (!panel || !list) return;
+
+    panel.classList.remove('hidden');
+
+    const isImage = file.type?.startsWith('image/');
+    const isVideo = file.type?.startsWith('video/');
+    let preview = '';
+    if (isImage) {
+        const url = URL.createObjectURL(file);
+        preview = `<img src="${url}" alt="">`;
+        pendingFiles.set(fileId, { file, status: 'waiting', objectUrl: url });
+    } else if (isVideo) {
+        const url = URL.createObjectURL(file);
+        preview = `<video src="${url}" muted></video>`;
+        pendingFiles.set(fileId, { file, status: 'waiting', objectUrl: url });
+    } else {
+        let icon = '📄';
+        if (file.type?.includes('pdf')) icon = '📕';
+        else if (file.type?.includes('audio')) icon = '🎵';
+        else if (/zip|rar|7z/.test(file.type || '')) icon = '📦';
+        preview = `<div class="pending-item-icon">${icon}</div>`;
+        pendingFiles.set(fileId, { file, status: 'waiting', objectUrl: null });
+    }
+
+    const div = document.createElement('div');
+    div.className = 'pending-item waiting';
+    div.id = `pending-item-${fileId}`;
+    div.innerHTML = `
+        ${preview}
+        <div class="pending-item-name">${esc(file.name)}</div>
+        <button class="pending-item-del" onclick="removePendingFile('${fileId}')" title="حذف">×</button>`;
+    list.appendChild(div);
+    if (count) count.textContent = pendingFiles.size;
+}
+
+function removePendingFile(fileId) {
+    const pf = pendingFiles.get(fileId);
+    if (pf) {
+        if (pf.objectUrl) URL.revokeObjectURL(pf.objectUrl);
+        pendingFiles.delete(fileId);
+    }
+    document.getElementById(`pending-item-${fileId}`)?.remove();
+    const count = document.getElementById('pending-count');
+    if (count) count.textContent = pendingFiles.size;
+    if (pendingFiles.size === 0) {
+        document.getElementById('pending-panel')?.classList.add('hidden');
+    }
+    // Also mark sending as cancelled if still in queue
+    const sf = sendingFiles.get(fileId);
+    if (sf) sf.cancelled = true;
+    // Remove from sendQueue
+    const idx = sendQueue.findIndex(q => q.file.fileId === fileId);
+    if (idx !== -1) sendQueue.splice(idx, 1);
+    toast('تم حذف الملف من الطابور', 'success');
+}
+
+function updatePendingStatus(fileId, status) {
+    const item = document.getElementById(`pending-item-${fileId}`);
+    if (!item) return;
+    item.classList.remove('waiting', 'sending', 'done');
+    item.classList.add(status);
+    const pf = pendingFiles.get(fileId);
+    if (pf) pf.status = status;
+}
+
 // ── Sequential send queue ──
-// كل عنصر: { file, peerIds, queueId, previewUrl }
 function enqueueFileSend(file, peerIds) {
-    const queueId = `q-${Date.now()}-${Math.random().toString(36).substr(2,5)}`;
-    const previewUrl = file.type?.startsWith('image/') ? URL.createObjectURL(file) : null;
-    sendQueue.push({ file, peerIds, queueId, previewUrl });
-    renderQueuePreview();
+    // Generate fileId here so we can track it in pending queue
+    const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+    file.fileId = fileId; // attach to file object
+    sendQueue.push({ file, peerIds, fileId });
+    addPendingFile(file, fileId);
     processSendQueue();
 }
 
@@ -1366,84 +1629,22 @@ async function processSendQueue() {
     isSendingQueue = true;
 
     while (sendQueue.length > 0) {
-        const item = sendQueue.shift();
-        renderQueuePreview();
-        await sendFileSequential(item.file, item.peerIds);
-        // تحرير الـ previewUrl بعد الإرسال
-        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        const { file, peerIds, fileId } = sendQueue.shift();
+        updatePendingStatus(fileId, 'sending');
+        await sendFileSequential(file, peerIds, fileId);
+        updatePendingStatus(fileId, 'done');
+        // Keep in panel but mark done — user can manually remove
     }
 
     isSendingQueue = false;
-    renderQueuePreview();
-}
-
-// ─────────────────────────────────────────
-//  Queue Preview Strip UI
-// ─────────────────────────────────────────
-function renderQueuePreview() {
-    const bar = document.querySelector('.msg-bar');
-    if (!bar) return;
-
-    let strip = document.getElementById('queue-preview-strip');
-
-    if (sendQueue.length === 0) {
-        strip?.remove();
-        return;
-    }
-
-    if (!strip) {
-        strip = document.createElement('div');
-        strip.id = 'queue-preview-strip';
-        strip.className = 'queue-preview-strip';
-        bar.parentElement.insertBefore(strip, bar);
-    }
-
-    strip.innerHTML = `
-      <div class="queue-strip-header">
-        <span class="queue-strip-label">📋 في الطابور (${sendQueue.length} ملف)</span>
-      </div>
-      <div class="queue-strip-items">
-        ${sendQueue.map((item, idx) => {
-            const isImage = item.file.type?.startsWith('image/');
-            const isVideo = item.file.type?.startsWith('video/');
-            let thumb = '';
-            if (isImage && item.previewUrl) {
-                thumb = `<img src="${item.previewUrl}" class="queue-thumb-img" alt="${esc(item.file.name)}">`;
-            } else {
-                let icon = '📄';
-                if (isVideo) icon = '🎬';
-                else if (item.file.type?.includes('pdf')) icon = '📕';
-                else if (item.file.type?.includes('audio')) icon = '🎵';
-                else if (/zip|rar|7z/.test(item.file.type || '')) icon = '📦';
-                thumb = `<span class="queue-thumb-icon">${icon}</span>`;
-            }
-            return `
-              <div class="queue-item" id="queue-item-${item.queueId}">
-                <div class="queue-thumb">${thumb}</div>
-                <div class="queue-item-name" title="${esc(item.file.name)}">${esc(item.file.name.length > 14 ? item.file.name.slice(0,12)+'…' : item.file.name)}</div>
-                <div class="queue-item-size">${fmtBytes(item.file.size)}</div>
-                <button class="queue-delete-btn" onclick="removeFromQueue('${item.queueId}')" title="حذف من الطابور">×</button>
-              </div>`;
-        }).join('')}
-      </div>`;
-}
-
-function removeFromQueue(queueId) {
-    const idx = sendQueue.findIndex(i => i.queueId === queueId);
-    if (idx === -1) return;
-    const item = sendQueue[idx];
-    if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
-    sendQueue.splice(idx, 1);
-    renderQueuePreview();
-    toast('تم حذف الملف من الطابور', 'info');
 }
 
 // ─────────────────────────────────────────
 //  Sequential file send — one file at a time
 //  with back-pressure and reconnection support
 // ─────────────────────────────────────────
-async function sendFileSequential(file, peerIds) {
-    const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+async function sendFileSequential(file, peerIds, fileId) {
+    fileId = fileId || `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     const meta   = { fileName: file.name, fileSize: file.size, fileType: file.type, fileId };
 
     sendingFiles.set(fileId, { cancelled: false });
@@ -1468,7 +1669,8 @@ async function sendFileSequential(file, peerIds) {
     createSenderFileBox(file, meta);
 
     let offset = 0;
-    let reconnectToastShown = false;
+    let retries = 0;
+    const MAX_RETRIES = 3;
 
     try {
         SEND_LOOP: while (offset < file.size) {
@@ -1479,66 +1681,73 @@ async function sendFileSequential(file, peerIds) {
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
             const tagged   = makeChunkWithId(fileId, chunkBuf);
 
-            let chunkSentToAtLeastOne = false;
-
+            // Send this chunk to all connected peers sequentially
+            let allSent = true;
             for (const id of connectedPeers) {
-                const pi = peers.get(id);
+                let pi = peers.get(id);
 
-                // إذا انقطع الاتصال — انتظر إعادته (مرة واحدة فقط لكل انقطاع)
+                // If peer disconnected, try to wait for reconnection
                 if (!pi?.connected) {
-                    if (!reconnectToastShown) {
-                        reconnectToastShown = true;
+                    if (retries < MAX_RETRIES) {
                         toast(`⏳ انتظار إعادة الاتصال...`, 'warning');
+                        updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
+
+                        const reconn = await waitForPeer(id, 90000);
+                        if (reconn) {
+                            retries++;
+                            // Resend metadata to the reconnected peer
+                            try { reconn.peer.send(metaMsg); } catch (_) {}
+                            // Don't reset offset — just retry this chunk
+                            continue;
+                        }
                     }
-                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
-                    const reconn = await waitForPeer(id, 120000);
-                    reconnectToastShown = false;
-                    if (reconn) {
-                        try { reconn.peer.send(metaMsg); } catch (_) {}
-                        // أعد إرسال هذا الـ chunk من جديد لهذا الـ peer
-                        try {
-                            reconn.peer.send(tagged);
-                            chunkSentToAtLeastOne = true;
-                        } catch (_) {}
-                    }
+                    // Peer not coming back — skip it for remaining chunks
+                    console.warn(`Peer ${id} failed to reconnect, skipping`);
                     continue;
                 }
 
-                // ── Back-pressure: انتظر حتى يفرغ البافر ──
+                // ── Back-pressure: wait for buffer to drain ──
                 const ch = pi.peer._channel;
-                if (ch && ch.bufferedAmount > BUFFER_HIGH) {
-                    let waited = 0;
-                    while (ch.bufferedAmount > BUFFER_LOW) {
-                        await sleep(20);
-                        waited += 20;
+                if (ch) {
+                    while (ch.bufferedAmount > BUFFER_HIGH) {
+                        await sleep(30);
                         const check = peers.get(id);
-                        if (!check?.connected) break;
-                        if (waited > 30000) break; // أقصى انتظار 30 ثانية
+                        if (!check?.connected) {
+                            allSent = false;
+                            continue;
+                        }
                     }
-                    // تحقق من الاتصال بعد الانتظار
-                    const afterWait = peers.get(id);
-                    if (!afterWait?.connected) continue;
                 }
 
-                // ── أرسل الـ chunk ──
+                // ── Send the chunk ──
+                let sent = false;
                 try {
                     const cur = peers.get(id);
                     if (cur?.connected && cur.peer._channel?.readyState === 'open') {
                         cur.peer.send(tagged);
-                        chunkSentToAtLeastOne = true;
+                        sent = true;
                     }
                 } catch (sendErr) {
                     console.warn(`Send error for peer ${id}:`, sendErr.message);
+                    allSent = false;
                 }
+
+                if (!sent) allSent = false;
             }
 
-            // قدّم في الملف فقط إذا أُرسل الـ chunk بنجاح لأحد الـ peers
-            if (chunkSentToAtLeastOne) {
+            if (allSent || retries < MAX_RETRIES) {
                 offset = end;
-                updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
+                retries = 0; // Reset retries on successful chunk
             } else {
-                // لا أحد استقبل — انتظر قليلاً وأعد المحاولة
-                await sleep(200);
+                // Too many failures — abort
+                throw new Error('Too many send failures');
+            }
+
+            updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
+
+            // Small delay for GC and to prevent overwhelming the channel
+            if (offset < file.size) {
+                await sleep(SEND_DELAY_MS);
             }
         }
 
@@ -1620,9 +1829,9 @@ function createSenderFileBox(file, meta) {
             </div>
             <span class="file-pct" id="sender-pct-${meta.fileId}">0%</span>
           </div>
-          <div class="tr-status" id="sender-status-${meta.fileId}" style="font-size:.75rem;color:#8899aa;">جاري الإرسال...</div>
-          <div class="file-actions" id="sender-actions-${meta.fileId}">
-            <button class="file-action-btn cancel-send" id="cancel-send-${meta.fileId}" onclick="cancelSending('${meta.fileId}')">✕ إلغاء الإرسال</button>
+          <div class="sender-actions">
+            <div class="tr-status" id="sender-status-${meta.fileId}">جاري الإرسال...</div>
+            <button class="cancel-send-btn" onclick="cancelSenderFile('${meta.fileId}')" title="إلغاء الإرسال">❌ إلغاء</button>
           </div>
         </div>
       </div>`;
@@ -1652,11 +1861,14 @@ function finalizeSenderFileBox(fileId) {
 
     if (box) {
         const infoDiv = box.querySelector('.file-info');
-        // استبدال زر الإلغاء بزر الحذف بعد اكتمال الإرسال
-        const cancelBtn = document.getElementById(`cancel-send-${fileId}`);
-        const actDiv = document.getElementById(`sender-actions-${fileId}`);
-        if (actDiv) {
+        // Remove cancel button if exists
+        const cancelBtn = infoDiv?.querySelector('.cancel-send-btn');
+        if (cancelBtn) cancelBtn.remove();
+        if (infoDiv && !infoDiv.querySelector('.file-actions')) {
+            const actDiv = document.createElement('div');
+            actDiv.className = 'file-actions';
             actDiv.innerHTML = `<button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>`;
+            infoDiv.appendChild(actDiv);
         }
         box.classList.remove('sending');
         box.onclick = () => openSenderFullscreen(fileId);
@@ -1669,20 +1881,29 @@ function deleteSenderFile(fileId) {
     toast('تم حذف الملف', 'success');
 }
 
-// إلغاء الإرسال أثناء التقدم
-function cancelSending(fileId) {
+function cancelSenderFile(fileId) {
     const sf = sendingFiles.get(fileId);
-    if (sf) sf.cancelled = true;
-    // إخبار المستقبلين بالإلغاء
-    getConnected().forEach(([_, p]) => {
-        try { p.peer.send(JSON.stringify({ type: 'cancel', payload: { fileId } })); } catch (_) {}
-    });
-    updateSenderFileBox(fileId, 0, true, '❌ تم إلغاء الإرسال');
-    // استبدال الأزرار
-    const actDiv = document.getElementById(`sender-actions-${fileId}`);
-    if (actDiv) {
-        actDiv.innerHTML = `<button class="file-action-btn delete" onclick="deleteSenderFile('${fileId}')">🗑 حذف</button>`;
+    if (sf) {
+        sf.cancelled = true;
+        sendingFiles.delete(fileId);
     }
+    // Send cancel to all connected peers
+    getConnected().forEach(([_, p]) => {
+        try {
+            p.peer.send(JSON.stringify({ type: 'cancel', payload: { fileId } }));
+        } catch (_) {}
+    });
+    const box = document.getElementById(`sender-box-${fileId}`);
+    if (box) {
+        box.classList.remove('sending');
+        box.classList.add('cancelled');
+    }
+    const status = document.getElementById(`sender-status-${fileId}`);
+    if (status) status.textContent = 'تم إلغاء الإرسال';
+    const progress = document.getElementById(`sender-progress-${fileId}`);
+    if (progress) { progress.style.width = '0%'; progress.classList.add('error'); }
+    const pct = document.getElementById(`sender-pct-${fileId}`);
+    if (pct) { pct.textContent = 'ملغى'; pct.style.color = '#ff6b6b'; }
     toast('تم إلغاء إرسال الملف', 'warning');
 }
 
@@ -1791,10 +2012,8 @@ function endSession() {
     recvMap.clear();
     sendingFiles.forEach(sf => sf.cancelled = true);
     sendingFiles.clear();
-    sendQueue.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
     sendQueue.length = 0;
     isSendingQueue = false;
-    document.getElementById('queue-preview-strip')?.remove();
 
     peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
     peers.clear();
@@ -1818,10 +2037,8 @@ function newSession() {
     recvMap.clear();
     sendingFiles.forEach(sf => sf.cancelled = true);
     sendingFiles.clear();
-    sendQueue.forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
     sendQueue.length = 0;
     isSendingQueue = false;
-    document.getElementById('queue-preview-strip')?.remove();
 
     peers.forEach(({ peer }) => { try { peer.destroy(); } catch (_) {} });
     peers.clear();
@@ -2027,6 +2244,7 @@ function resizeContainer() {
 //  Bootstrap
 // ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    addPendingQueueStyles();
     initCanvas();
     initMiniDrag();
     initPiPDrag();
