@@ -860,6 +860,11 @@ function onData(raw, fromId) {
             });
             break;
         }
+        case 'ack': {
+            const ackFileId = msg.payload?.fileId;
+            if (ackFileId) removePendingFile(ackFileId);
+            break;
+        }
         case 'cancel':
             cancelRecv(msg.payload.fileId, 'تم إلغاء الإرسال من المرسل');
             break;
@@ -894,15 +899,19 @@ async function recvChunk(raw, fromId) {
         if (!entry) return;
 
         await entry.writer.write(chunk);
-        entry.received += chunk.byteLength;
-        const pct = Math.min(100, Math.round((entry.received / entry.meta.fileSize) * 100));
+        // Use writer.received as single source of truth (FileWriter increments internally)
+        const pct = Math.min(100, Math.round((entry.writer.received / entry.meta.fileSize) * 100));
         updateReceivingFileBox(entry.meta, pct, entry.fromId);
 
-        if (entry.received >= entry.meta.fileSize) {
+        if (entry.writer.received >= entry.meta.fileSize) {
             const blob = await entry.writer.close();
             const pi   = peers.get(fromId);
             completeReceivingFileBox(entry.meta, blob, pi?.name || 'مجهول');
             recvMap.delete(fileId);
+            // Send ACK back to sender so they remove from queue
+            if (pi?.connected) {
+                try { pi.peer.send(JSON.stringify({ type: 'ack', payload: { fileId } })); } catch (_) {}
+            }
         }
     } catch (e) {
         console.error('recvChunk error', e);
@@ -995,9 +1004,13 @@ function completeReceivingFileBox(meta, blob, senderName) {
         // Auto-download for fallback mode
         downloadBlob(blob, meta.fileName);
     } else {
-        // Saved to disk directly — just track metadata
+        // Saved to disk directly via File System Access API
         downloadedFiles.set(fileId, { blob: null, meta, sender: senderName, url: null });
         sessionFiles.push({ fileId, meta, sender: senderName });
+        // Notify receiver that file was saved to disk
+        toast(`تم حفظ الملف على القرص: ${esc(meta.fileName)}`, 'success');
+        // Also trigger a hidden download to show in browser's download bar
+        triggerDiskDownloadNotification(meta.fileName);
     }
 
     const previewDiv = box.querySelector('.file-preview');
@@ -1633,7 +1646,8 @@ async function processSendQueue() {
         updatePendingStatus(fileId, 'sending');
         await sendFileSequential(file, peerIds, fileId);
         updatePendingStatus(fileId, 'done');
-        // Keep in panel but mark done — user can manually remove
+        // Auto-remove from pending after brief delay so user sees 'done' state
+        setTimeout(() => removePendingFile(fileId), 2500);
     }
 
     isSendingQueue = false;
@@ -2177,6 +2191,19 @@ function mkId() { return `${Date.now()}-${Math.random().toString(36).substr(2, 9
 function downloadBlob(blob, name) {
     const url = URL.createObjectURL(blob);
     const a   = Object.assign(document.createElement('a'), { href: url, download: name, style: 'display:none' });
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+}
+
+function triggerDiskDownloadNotification(fileName) {
+    // Creates a tiny blob to trigger browser download bar so user sees activity
+    const blob = new Blob(['File saved via File System Access API: ' + fileName], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), {
+        href: url,
+        download: fileName + '.saved.txt',
+        style: 'display:none'
+    });
     document.body.appendChild(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
 }
