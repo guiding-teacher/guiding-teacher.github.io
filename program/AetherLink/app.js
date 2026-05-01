@@ -44,10 +44,10 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 256 * 1024;       // 256 KB — max speed for all networks
-const BUFFER_HIGH = 8 * 1024 * 1024; // 8 MB — pause sending above this
-const BUFFER_LOW  = 2 * 1024 * 1024; // 2 MB — resume below this
-const SEND_DELAY_MS = 0;             // no delay — full speed
+const CHUNK_SIZE = 64 * 1024;        // 64 KB — توازن بين السرعة والموثوقية
+const BUFFER_HIGH = 4 * 1024 * 1024; // 4 MB — توقف فوق هذا الحد
+const BUFFER_LOW  = 512 * 1024;      // 512 KB — استئناف تحت هذا الحد
+const SEND_DELAY_MS = 0;             // لا توقف — أقصى سرعة
 
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
@@ -696,12 +696,8 @@ function onData(raw, fromId) {
 }
 
 function resetRecvUI(fileId) {
-    const pEl = document.getElementById(`recv-progress-${fileId}`);
-    const tEl = document.getElementById(`recv-pct-${fileId}`);
-    const sEl = document.getElementById(`recv-status-${fileId}`);
-    if (pEl) { pEl.style.width = '0%'; pEl.classList.remove('done', 'error'); }
-    if (tEl) { tEl.textContent = '0%'; tEl.style.color = ''; }
-    if (sEl) { sEl.textContent = 'جاري الاستلام... (إعادة)'; sEl.classList.remove('done', 'error'); }
+    // احذف البطاقة القديمة كلياً حتى لا يظهر صندوقان
+    document.getElementById(`recv-file-${fileId}`)?.remove();
 }
  
 
@@ -807,16 +803,12 @@ function completeReceivingFileBox(meta, blob, senderName) {
     const isVideo = meta.fileType?.startsWith('video/');
 
     let objectUrl = null;
-    // If blob is null, it was saved directly to disk — just show completion
-    // If blob exists (fallback mode), create URL and offer download
     if (blob) {
         objectUrl = URL.createObjectURL(blob);
         downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
         sessionFiles.push({ fileId, meta, sender: senderName });
-        // Auto-download for fallback mode
-        downloadBlob(blob, meta.fileName);
+        // لا تحميل تلقائي — المستخدم يضغط زر التحميل بنفسه
     } else {
-        // Saved to disk directly — just track metadata
         downloadedFiles.set(fileId, { blob: null, meta, sender: senderName, url: null });
         sessionFiles.push({ fileId, meta, sender: senderName });
     }
@@ -1476,8 +1468,7 @@ async function sendFileSequential(file, peerIds) {
     createSenderFileBox(file, meta);
 
     let offset = 0;
-    let retries = 0;
-    const MAX_RETRIES = 3;
+    let reconnectToastShown = false;
 
     try {
         SEND_LOOP: while (offset < file.size) {
@@ -1488,73 +1479,67 @@ async function sendFileSequential(file, peerIds) {
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
             const tagged   = makeChunkWithId(fileId, chunkBuf);
 
-            // Send this chunk to all connected peers sequentially
-            let allSent = true;
+            let chunkSentToAtLeastOne = false;
+
             for (const id of connectedPeers) {
-                let pi = peers.get(id);
+                const pi = peers.get(id);
 
-                // If peer disconnected, try to wait for reconnection
+                // إذا انقطع الاتصال — انتظر إعادته (مرة واحدة فقط لكل انقطاع)
                 if (!pi?.connected) {
-                    if (retries < MAX_RETRIES) {
+                    if (!reconnectToastShown) {
+                        reconnectToastShown = true;
                         toast(`⏳ انتظار إعادة الاتصال...`, 'warning');
-                        updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
-
-                        const reconn = await waitForPeer(id, 90000);
-                        if (reconn) {
-                            retries++;
-                            // Resend metadata to the reconnected peer
-                            try { reconn.peer.send(metaMsg); } catch (_) {}
-                            // Don't reset offset — just retry this chunk
-                            continue;
-                        }
                     }
-                    // Peer not coming back — skip it for remaining chunks
-                    console.warn(`Peer ${id} failed to reconnect, skipping`);
+                    updateSenderFileBox(fileId, Math.round((offset / file.size) * 100), false, null);
+                    const reconn = await waitForPeer(id, 120000);
+                    reconnectToastShown = false;
+                    if (reconn) {
+                        try { reconn.peer.send(metaMsg); } catch (_) {}
+                        // أعد إرسال هذا الـ chunk من جديد لهذا الـ peer
+                        try {
+                            reconn.peer.send(tagged);
+                            chunkSentToAtLeastOne = true;
+                        } catch (_) {}
+                    }
                     continue;
                 }
 
-                // ── Back-pressure: wait for buffer to drain ──
+                // ── Back-pressure: انتظر حتى يفرغ البافر ──
                 const ch = pi.peer._channel;
-                if (ch) {
-                    while (ch.bufferedAmount > BUFFER_HIGH) {
-                        await sleep(30);
+                if (ch && ch.bufferedAmount > BUFFER_HIGH) {
+                    let waited = 0;
+                    while (ch.bufferedAmount > BUFFER_LOW) {
+                        await sleep(20);
+                        waited += 20;
                         const check = peers.get(id);
-                        if (!check?.connected) {
-                            allSent = false;
-                            continue;
-                        }
+                        if (!check?.connected) break;
+                        if (waited > 30000) break; // أقصى انتظار 30 ثانية
                     }
+                    // تحقق من الاتصال بعد الانتظار
+                    const afterWait = peers.get(id);
+                    if (!afterWait?.connected) continue;
                 }
 
-                // ── Send the chunk ──
-                let sent = false;
+                // ── أرسل الـ chunk ──
                 try {
                     const cur = peers.get(id);
                     if (cur?.connected && cur.peer._channel?.readyState === 'open') {
                         cur.peer.send(tagged);
-                        sent = true;
+                        chunkSentToAtLeastOne = true;
                     }
                 } catch (sendErr) {
                     console.warn(`Send error for peer ${id}:`, sendErr.message);
-                    allSent = false;
                 }
-
-                if (!sent) allSent = false;
             }
 
-            if (allSent || retries < MAX_RETRIES) {
+            // قدّم في الملف فقط إذا أُرسل الـ chunk بنجاح لأحد الـ peers
+            if (chunkSentToAtLeastOne) {
                 offset = end;
-                retries = 0; // Reset retries on successful chunk
+                updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
             } else {
-                // Too many failures — abort
-                throw new Error('Too many send failures');
+                // لا أحد استقبل — انتظر قليلاً وأعد المحاولة
+                await sleep(200);
             }
-
-            updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
-
-                if (offset < file.size && SEND_DELAY_MS > 0) {
-                    await sleep(SEND_DELAY_MS);
-                }
         }
 
         const sf = sendingFiles.get(fileId);
