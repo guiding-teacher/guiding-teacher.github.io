@@ -74,6 +74,7 @@ let isDiscovering    = false;
 const sendQueue = [];
 let isSendingQueue = false;
 const sendingFiles = new Map(); // fileId -> {cancelled}
+const ackTimeouts  = new Map(); // fileId -> timeoutId (fallback removal if ACK never arrives)
 
 // Pending queue: visible file list
 const pendingFiles = new Map(); // fileId -> {file, status: 'waiting'|'sending'|'done', objectUrl}
@@ -96,7 +97,7 @@ const socket = io(SIG_URL, {
     reconnectionDelay: 300,
     reconnectionDelayMax: 3000,
     timeout: 10000,
-    transports: ['websocket', 'polling'],
+    transports: ['websocket'], // ✅ WebSocket مباشرةً — بدون تأخير polling
 });
 
 // ─────────────────────────────────────────
@@ -862,7 +863,8 @@ function onData(raw, fromId) {
         }
         case 'ack': {
             const ackFileId = msg.payload?.fileId;
-            if (ackFileId) removePendingFile(ackFileId);
+            // ✅ ACK = المستلم استلم الملف فعلاً — احذف من الطابور بصمت
+            if (ackFileId) removePendingFile(ackFileId, true);
             break;
         }
         case 'cancel':
@@ -1597,7 +1599,12 @@ function addPendingFile(file, fileId) {
     if (count) count.textContent = pendingFiles.size;
 }
 
-function removePendingFile(fileId) {
+function removePendingFile(fileId, silent = false) {
+    // ✅ ألغِ timeout الـ ACK الاحتياطي إن وُجد
+    if (ackTimeouts.has(fileId)) {
+        clearTimeout(ackTimeouts.get(fileId));
+        ackTimeouts.delete(fileId);
+    }
     const pf = pendingFiles.get(fileId);
     if (pf) {
         if (pf.objectUrl) URL.revokeObjectURL(pf.objectUrl);
@@ -1615,7 +1622,8 @@ function removePendingFile(fileId) {
     // Remove from sendQueue
     const idx = sendQueue.findIndex(q => q.file.fileId === fileId);
     if (idx !== -1) sendQueue.splice(idx, 1);
-    toast('تم حذف الملف من الطابور', 'success');
+    // ✅ أظهر toast فقط عند الحذف اليدوي (silent=false)
+    if (!silent) toast('تم حذف الملف من الطابور', 'success');
 }
 
 function updatePendingStatus(fileId, status) {
@@ -1646,8 +1654,12 @@ async function processSendQueue() {
         updatePendingStatus(fileId, 'sending');
         await sendFileSequential(file, peerIds, fileId);
         updatePendingStatus(fileId, 'done');
-        // Auto-remove from pending after brief delay so user sees 'done' state
-        setTimeout(() => removePendingFile(fileId), 2500);
+        // ✅ لا نحذف تلقائياً — ننتظر ACK من المستلم (handleJsonMsg → 'ack')
+        // Fallback: إذا لم يصل ACK خلال 60 ثانية، احذف بصمت
+        const ackTimeout = setTimeout(() => {
+            if (pendingFiles.has(fileId)) removePendingFile(fileId, true);
+        }, 60000);
+        ackTimeouts.set(fileId, ackTimeout);
     }
 
     isSendingQueue = false;
@@ -1749,12 +1761,18 @@ async function sendFileSequential(file, peerIds, fileId) {
                 if (!sent) allSent = false;
             }
 
-            if (allSent || retries < MAX_RETRIES) {
+            if (allSent) {
+                // ✅ Chunk sent successfully — advance to next chunk
                 offset = end;
-                retries = 0; // Reset retries on successful chunk
+                retries = 0;
             } else {
-                // Too many failures — abort
-                throw new Error('Too many send failures');
+                // ✅ Chunk failed — retry without advancing offset
+                retries++;
+                if (retries >= MAX_RETRIES) {
+                    throw new Error('Too many send failures');
+                }
+                await sleep(300 * retries); // brief back-off before retry
+                // offset intentionally NOT advanced — retry same chunk
             }
 
             updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
