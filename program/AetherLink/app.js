@@ -2014,7 +2014,13 @@ function showGroupLinkModal() {
     overlay.innerHTML = `
       <div class="modal-box">
         <h3>🔗 رابط الجلسة</h3>
-        <p>شارك هذا الرابط لدعوة آخرين للانضمام</p>
+        <p>امسح الباركود أو شارك الرابط لدعوة آخرين</p>
+        <div id="modal-qr-box" style="
+            display:flex; align-items:center; justify-content:center;
+            background:#fff; border-radius:12px;
+            padding:12px; margin:12px auto;
+            width:fit-content;
+        "></div>
         <div style="background:rgba(0,0,0,.3);padding:12px;border-radius:8px;word-break:break-all;font-size:.8rem;color:#00d2ff;margin:10px 0;">${esc(joinUrl)}</div>
         <div class="modal-actions">
           <button class="action-button" id="modal-copy">📋 نسخ</button>
@@ -2023,6 +2029,21 @@ function showGroupLinkModal() {
         </div>
       </div>`;
     document.body.appendChild(overlay);
+
+    // ── توليد باركود الجلسة داخل المودال ──
+    const qrBox = overlay.querySelector('#modal-qr-box');
+    if (qrBox) {
+        try {
+            const qr = qrcode(0, 'L');
+            qr.addData(joinUrl);
+            qr.make();
+            qrBox.innerHTML = qr.createImgTag(4, 6);
+            const img = qrBox.querySelector('img');
+            if (img) img.style.cssText = 'display:block;border-radius:8px;';
+        } catch (_) {
+            qrBox.style.display = 'none';
+        }
+    }
 
     overlay.querySelector('#modal-copy')?.addEventListener('click', () => {
         navigator.clipboard.writeText(joinUrl).then(() => toast('تم نسخ الرابط!', 'success'));
