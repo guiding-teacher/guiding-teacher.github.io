@@ -1,6 +1,6 @@
 /**
  * AetherLink Web - Signaling Server (Large-File Edition)
- * v3: keepalive pings · larger buffer · stable rooms
+ * v4: instant WebSocket · fast ICE · faster peer detection
  */
 
 const express = require('express');
@@ -10,15 +10,17 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
-// Allow large buffer sizes for signaling data
+// ✅ FIX 1: Force WebSocket-only — يمنع تأخير HTTP polling → WebSocket upgrade
+// ✅ FIX 2: allowUpgrades: false — لا داعي للـ upgrade لأننا على WebSocket مباشرةً
+// ✅ FIX 3: pingTimeout أقل — كشف الانقطاع بسرعة بدلاً من 30 ثانية
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
-  maxHttpBufferSize: 1e8,  // 100 MB (generous for signaling)
-  pingTimeout: 30000,       // 30s — balanced for speed & stability
-  pingInterval: 10000,      // 10s keepalive — faster detection
-  transports: ['websocket', 'polling'],
-  allowUpgrades: true,
-  perMessageDeflate: false,  // disable compression for speed
+  maxHttpBufferSize: 1e8,
+  pingTimeout: 8000,        // ✅ كان 30000 — الآن يكتشف الانقطاع في 8 ثوانٍ
+  pingInterval: 5000,       // ✅ كان 10000 — keepalive أسرع
+  transports: ['websocket'], // ✅ WebSocket فوراً، بدون polling
+  allowUpgrades: false,      // ✅ لا upgrade = لا تأخير
+  perMessageDeflate: false,
 });
 
 const PORT = process.env.PORT || 3000;
@@ -36,12 +38,11 @@ io.on('connection', (socket) => {
     if (!rooms.has(roomId)) rooms.set(roomId, []);
     const room = rooms.get(roomId);
 
-    // ── منع التكرار: إذا كان نفس الجهاز (نفس الاسم) موجوداً بـ socket قديم، أزله بصمت ──
+    // منع التكرار: إذا كان نفس الجهاز (نفس الاسم) موجوداً بـ socket قديم، أزله بصمت
     const dupIdx = room.findIndex(u => u.name === deviceName && u.id !== socket.id);
     if (dupIdx !== -1) {
       const oldEntry = room[dupIdx];
       room.splice(dupIdx, 1);
-      // أبلغ الآخرين بالـ socket القديم حتى يُنظّفوا peers map بدون إعادة اتصال
       socket.to(roomId).emit('peer-stale', { id: oldEntry.id });
       console.log(`♻️  استبدل socket قديم لـ ${deviceName} في الغرفة`);
     }
@@ -109,7 +110,6 @@ io.on('connection', (socket) => {
       joinedAt: Date.now()
     });
     socket.join('discovery');
-    // Broadcast updated list to everyone in discovery (including newcomer)
     io.to('discovery').emit('discovery-update', [...discovery.values()]);
     console.log(`📶 Discovery: ${socket.data.deviceName} joined (${discovery.size} total)`);
   });
@@ -149,7 +149,6 @@ io.on('connection', (socket) => {
       rooms.delete(roomId);
       console.log(`🧹 Deleted empty room ${roomId.slice(0,8)}…`);
     }
-    // Clean up discovery
     if (discovery.has(socket.id)) {
       discovery.delete(socket.id);
       io.to('discovery').emit('discovery-update', [...discovery.values()]);
