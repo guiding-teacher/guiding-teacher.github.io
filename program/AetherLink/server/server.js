@@ -1,14 +1,51 @@
 /**
  * AetherLink Web - Signaling Server (Large-File Edition)
- * v4: instant WebSocket · fast ICE · faster peer detection
+ * v5: instant WebSocket · fast ICE · faster peer detection
+ *     + serves the whole web app AND the client-side libraries locally,
+ *       so the entire app (signaling + UI + WebRTC libs) runs from this
+ *       one process with ZERO internet access required — perfect for a
+ *       phone hotspot / LAN with no real internet connectivity.
  */
 
 const express = require('express');
 const http = require('http');
+const path = require('path');
+const os = require('os');
 const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
+
+// ─────────────────────────────────────────
+//  Serve the web app itself (index.html, app.js, style.css, images/)
+//  so any device on the same network can just open this server's URL
+//  in a browser — no separate web host needed, no internet needed.
+// ─────────────────────────────────────────
+const APP_ROOT = path.join(__dirname, '..');
+app.use(express.static(APP_ROOT));
+
+// ─────────────────────────────────────────
+//  Serve the browser libraries LOCALLY instead of from a CDN
+//  (socket.io.min.js / simplepeer.min.js / qrcode.min.js).
+//  Without this, the app would still need real internet to fetch these
+//  from cdn.socket.io / cdn.jsdelivr.net even though signaling itself
+//  is fully local — this closes that gap.
+//  These come straight from the already-installed npm packages, so no
+//  extra download step is needed beyond the normal `npm install`.
+// ─────────────────────────────────────────
+function serveVendorFile(route, resolveTarget) {
+  app.get(route, (req, res) => {
+    try {
+      res.sendFile(require.resolve(resolveTarget));
+    } catch (err) {
+      console.error(`⚠️  تعذّر تقديم ${route} — تأكد من تشغيل npm install:`, err.message);
+      res.status(404).send(`// missing dependency for ${resolveTarget}, run: npm install`);
+    }
+  });
+}
+serveVendorFile('/vendor/socket.io.min.js', 'socket.io/client-dist/socket.io.min.js');
+serveVendorFile('/vendor/simplepeer.min.js', 'simple-peer/simplepeer.min.js');
+serveVendorFile('/vendor/qrcode.min.js', 'qrcode-generator/qrcode.js');
 
 // ✅ FIX 1: Force WebSocket-only — يمنع تأخير HTTP polling → WebSocket upgrade
 // ✅ FIX 2: allowUpgrades: false — لا داعي للـ upgrade لأننا على WebSocket مباشرةً
@@ -158,4 +195,31 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log(`❌ Disconnected: ${socket.id}`));
 });
 
-server.listen(PORT, () => console.log(`🚀 AetherLink server on port ${PORT}`));
+// ─────────────────────────────────────────
+//  اطبع كل عناوين الشبكة المحلية التي يمكن لأي جهاز آخر على نفس
+//  الواي فاي/الهوتسبوت استخدامها لفتح التطبيق — بدون أي إنترنت.
+// ─────────────────────────────────────────
+function getLanUrls(port) {
+  const urls = [];
+  const nets = os.networkInterfaces();
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        urls.push(`http://${net.address}:${port}`);
+      }
+    }
+  }
+  return urls;
+}
+
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 AetherLink server on port ${PORT}`);
+  console.log(`\n📱 افتح أحد هذه الروابط من أي جهاز على نفس الشبكة (بدون إنترنت):`);
+  const lan = getLanUrls(PORT);
+  if (lan.length === 0) {
+    console.log('   ⚠️  لم يتم العثور على شبكة محلية — تأكد من الاتصال بنفس الواي فاي/الهوتسبوت.');
+  } else {
+    lan.forEach(u => console.log(`   → ${u}`));
+  }
+  console.log(`   → http://localhost:${PORT}  (على هذا الجهاز نفسه)\n`);
+});
