@@ -715,30 +715,7 @@ function makePeer(peerId, peerName, initiator) {
         },
     });
  
-    peers.set(peerId, { peer, name: peerName, connected: false, ctrlChannel: null });
-
-    // ── Dedicated high-priority control channel ──
-    // Chat / metadata / ack / ping messages are small and time-sensitive. If they
-    // shared the single ordered channel with bulk file chunks, typing a message
-    // mid-transfer would sit in line behind however many megabytes of chunk data
-    // are already queued (see BUFFER_HIGH) and could take a long time to actually
-    // go out. A second RTCDataChannel has its own SCTP stream id, so it isn't
-    // subject to in-order head-of-line blocking by the bulk channel, and 'high'
-    // priority tells the browser to favor it whenever the wire is busy — texts
-    // and control messages now go out immediately regardless of how big a
-    // transfer is in flight.
-    peer._pc.addEventListener('datachannel', (ev) => {
-        if (ev.channel.label === 'aetherlink-ctrl') wireControlChannel(ev.channel, peerId);
-    });
-    if (initiator) {
-        try {
-            const ctrl = peer._pc.createDataChannel('aetherlink-ctrl', { ordered: true, priority: 'high' });
-            wireControlChannel(ctrl, peerId);
-        } catch (_) {
-            // Older browser without the 'priority' option, or createDataChannel unsupported here —
-            // sendCtrl() below falls back to the main channel automatically, so nothing breaks.
-        }
-    }
+    peers.set(peerId, { peer, name: peerName, connected: false });
  
     peer.on('signal', (data) => socket.emit('send-signal', { to: peerId, signal: data }));
  
@@ -747,7 +724,7 @@ function makePeer(peerId, peerName, initiator) {
         if (pi) pi.connected = true;
         addToPrev(peerName);
  
-        try { sendCtrl(pi, { type: 'hello', name: deviceName }); } catch (_) {}
+        try { peer.send(JSON.stringify({ type: 'hello', name: deviceName })); } catch (_) {}
  
         updatePeersUI();
         updatePiPStatus();
@@ -761,7 +738,7 @@ function makePeer(peerId, peerName, initiator) {
             const p = peers.get(peerId);
             if (!p || !p.connected) { clearInterval(kTimer); return; }
             try {
-                sendCtrl(p, { type: 'ping' });
+                p.peer.send(JSON.stringify({ type: 'ping' }));
             } catch (_) {
                 clearInterval(kTimer);
             }
@@ -872,7 +849,7 @@ function onData(raw, fromId) {
         case 'ping': {
             const pi = peers.get(fromId);
             if (pi?.connected) {
-                try { sendCtrl(pi, { type: 'pong' }); } catch (_) {}
+                try { pi.peer.send(JSON.stringify({ type: 'pong' })); } catch (_) {}
             }
             break;
         }
@@ -966,7 +943,7 @@ async function recvChunk(raw, fromId) {
             recvMap.delete(fileId);
             // Send ACK back to sender so they remove from queue
             if (pi?.connected) {
-                try { sendCtrl(pi, { type: 'ack', payload: { fileId } }); } catch (_) {}
+                try { pi.peer.send(JSON.stringify({ type: 'ack', payload: { fileId } })); } catch (_) {}
             }
         }
     } catch (e) {
@@ -1599,7 +1576,7 @@ function bindMsgEvents() {
         const txt = field?.value.trim();
         if (!txt) return;
         getConnected().forEach(([_, p]) => {
-            try { sendCtrl(p, { type: 'chat', text: txt }); } catch (_) {}
+            try { p.peer.send(JSON.stringify({ type: 'chat', text: txt })); } catch (_) {}
         });
         appendMsg(txt, true, deviceName);
         if (field) field.value = '';
@@ -1755,7 +1732,7 @@ async function sendFileSequential(file, peerIds, fileId) {
     peerIds.forEach(id => {
         const pi = peers.get(id);
         if (pi?.connected) {
-            try { sendCtrlRaw(pi, metaMsg); connectedPeers.push(id); } catch (_) {}
+            try { pi.peer.send(metaMsg); connectedPeers.push(id); } catch (_) {}
         }
     });
 
@@ -1795,7 +1772,7 @@ async function sendFileSequential(file, peerIds, fileId) {
                         if (reconn) {
                             retries++;
                             // Resend metadata to the reconnected peer
-                            try { sendCtrlRaw(reconn, metaMsg); } catch (_) {}
+                            try { reconn.peer.send(metaMsg); } catch (_) {}
                             // Don't reset offset — just retry this chunk
                             continue;
                         }
@@ -1877,55 +1854,12 @@ async function sendFileSequential(file, peerIds, fileId) {
         connectedPeers.forEach(id => {
             const pi = peers.get(id);
             if (pi?.connected) {
-                try { sendCtrl(pi, { type: 'error', payload: meta }); } catch (_) {}
+                try { pi.peer.send(JSON.stringify({ type: 'error', payload: meta })); } catch (_) {}
             }
         });
     }
 
     sendingFiles.delete(fileId);
-}
-
-// ─────────────────────────────────────────
-//  Control channel — text/JSON messages that must never queue behind bulk file data
-// ─────────────────────────────────────────
-function wireControlChannel(channel, peerId) {
-    channel.binaryType = 'arraybuffer';
-    channel.addEventListener('open', () => {
-        const pi = peers.get(peerId);
-        if (pi) pi.ctrlChannel = channel;
-    });
-    channel.addEventListener('message', (ev) => {
-        if (typeof ev.data !== 'string') return; // this channel only ever carries JSON text
-        try { handleJsonMsg(JSON.parse(ev.data), peerId); } catch (_) {}
-    });
-    channel.addEventListener('close', () => {
-        const pi = peers.get(peerId);
-        if (pi && pi.ctrlChannel === channel) pi.ctrlChannel = null;
-    });
-    channel.addEventListener('error', () => {
-        const pi = peers.get(peerId);
-        if (pi && pi.ctrlChannel === channel) pi.ctrlChannel = null;
-    });
-}
-
-// Send a JSON control message on the dedicated control channel when it's open;
-// gracefully falls back to the main (bulk) channel otherwise — e.g. in the brief
-// window right after 'connect' before the control channel has finished opening,
-// or for any peer running an older build without it. Throws on total failure,
-// same as a plain peer.send() call, so existing try/catch call sites keep working.
-function sendCtrl(pi, obj) {
-    if (!pi) throw new Error('sendCtrl: no peer');
-    sendCtrlRaw(pi, JSON.stringify(obj));
-}
-
-// Same as sendCtrl but for an already-serialized JSON string (e.g. metadata
-// resent verbatim on reconnect) — avoids a redundant stringify/parse round trip.
-function sendCtrlRaw(pi, json) {
-    if (!pi) throw new Error('sendCtrlRaw: no peer');
-    if (pi.ctrlChannel && pi.ctrlChannel.readyState === 'open') {
-        try { pi.ctrlChannel.send(json); return; } catch (_) { /* fall through to main channel */ }
-    }
-    pi.peer.send(json);
 }
 
 // ─────────────────────────────────────────
@@ -2050,7 +1984,7 @@ function cancelSenderFile(fileId) {
     // Send cancel to all connected peers
     getConnected().forEach(([_, p]) => {
         try {
-            sendCtrl(p, { type: 'cancel', payload: { fileId } });
+            p.peer.send(JSON.stringify({ type: 'cancel', payload: { fileId } }));
         } catch (_) {}
     });
     const box = document.getElementById(`sender-box-${fileId}`);
