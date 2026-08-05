@@ -39,6 +39,7 @@ const LOCAL_URL = `http://${LOCAL_IP}:${PORT}`;
 
 // ── نفس منطق الغرف تماماً ──
 const rooms = new Map();
+const discovery = new Map();
 
 io.on('connection', (socket) => {
   console.log(`📡 متصل: ${socket.id.slice(0, 8)}`);
@@ -65,9 +66,9 @@ io.on('connection', (socket) => {
 
     socket.to(roomId).emit('new-peer', { id: socket.id, name: deviceName });
 
-    console.log(`🟢 غرفة [${roomId.slice(0, 8)}…] → ${room.map(u => u.name).join(', ')}`);
-
     if (existingPeers.length === 0) socket.emit('waiting-for-peer');
+
+    console.log(`🟢 غرفة [${roomId.slice(0, 8)}…] → ${room.map(u => u.name).join(', ')}`);
   });
 
   socket.on('send-signal', ({ to, signal }) => {
@@ -112,12 +113,8 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`🔴 انفصل: ${socket.id.slice(0, 8)}`);
   });
-});
 
-// ── Discovery محلي (بدون إنترنت) ──
-const discovery = new Map();
-
-io.on('connection', (socket) => {
+  // ── Discovery محلي ──
   socket.on('discover-join', ({ deviceName }) => {
     if (deviceName) socket.data.deviceName = deviceName;
     discovery.set(socket.id, {
