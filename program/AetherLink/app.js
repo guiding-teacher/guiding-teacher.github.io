@@ -45,15 +45,25 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 128 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
+const CHUNK_SIZE = 256 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
 const BUFFER_HIGH = 16 * 1024 * 1024; // 16 MB — stop feeding the channel above this
 const BUFFER_LOW  = 4 * 1024 * 1024;  // 4 MB — resume feeding once drained below this
 const SEND_DELAY_MS = 0;             // zero delay — raw speed
 const STALL_TIMEOUT_MS = 15000;      // if no bytes received for this long, ask sender to resend from last good offset
 
-const SIG_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : 'https://aetherlink-server.onrender.com';
+// خادم الإشارة (signaling): إذا كان التطبيق مُحمَّلاً من نفس الخادم المحلي
+// (localhost أو عنوان IP محلي ضمن الشبكة نفسها 192.168.x / 10.x / 172.16-31.x)
+// فهذا يعني أن أحد الأجهزة يُشغّل server.js محلياً وأن الجميع على نفس
+// الشبكة/الهوتسبوت — نتصل بنفس المصدر (origin) مباشرة، فيعمل التطبيق بالكامل
+// بدون أي إنترنت فعلي. غير ذلك (مثلاً عند فتح النسخة المستضافة على GitHub
+// Pages) نستخدم خادم الإشارة السحابي كخطة احتياطية.
+const SIG_URL = (() => {
+    const host = window.location.hostname;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+    const isPrivateLan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host);
+    if (isLocalHost || isPrivateLan) return window.location.origin;
+    return 'https://aetherlink-server.onrender.com';
+})();
 
 // ─────────────────────────────────────────
 //  Global state
