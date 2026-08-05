@@ -45,7 +45,7 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 256 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
+const CHUNK_SIZE = 128 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
 const BUFFER_HIGH = 16 * 1024 * 1024; // 16 MB — stop feeding the channel above this
 const BUFFER_LOW  = 4 * 1024 * 1024;  // 4 MB — resume feeding once drained below this
 const SEND_DELAY_MS = 0;             // zero delay — raw speed
