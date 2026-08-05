@@ -10,25 +10,19 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
-// ✅ FIX 1: Force WebSocket-only — يمنع تأخير HTTP polling → WebSocket upgrade
-// ✅ FIX 2: allowUpgrades: false — لا داعي للـ upgrade لأننا على WebSocket مباشرةً
-// ✅ FIX 3: pingTimeout أقل — كشف الانقطاع بسرعة بدلاً من 30 ثانية
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
   maxHttpBufferSize: 1e8,
-  pingTimeout: 8000,        // ✅ كان 30000 — الآن يكتشف الانقطاع في 8 ثوانٍ
-  pingInterval: 5000,       // ✅ كان 10000 — keepalive أسرع
-  transports: ['websocket'], // ✅ WebSocket فوراً، بدون polling
-  allowUpgrades: false,      // ✅ لا upgrade = لا تأخير
+  pingTimeout: 8000,
+  pingInterval: 5000,
+  transports: ['websocket'],
+  allowUpgrades: false,
   perMessageDeflate: false,
 });
 
 const PORT = process.env.PORT || 3000;
 
-// rooms: Map<roomId, Array<{id, name}>>
 const rooms = new Map();
-
-// discovery: Map<socketId, {socketId, deviceName, joinedAt}>
 const discovery = new Map();
 
 io.on('connection', (socket) => {
@@ -38,7 +32,6 @@ io.on('connection', (socket) => {
     if (!rooms.has(roomId)) rooms.set(roomId, []);
     const room = rooms.get(roomId);
 
-    // منع التكرار: إذا كان نفس الجهاز (نفس الاسم) موجوداً بـ socket قديم، أزله بصمت
     const dupIdx = room.findIndex(u => u.name === deviceName && u.id !== socket.id);
     if (dupIdx !== -1) {
       const oldEntry = room[dupIdx];
@@ -47,17 +40,14 @@ io.on('connection', (socket) => {
       console.log(`♻️  استبدل socket قديم لـ ${deviceName} في الغرفة`);
     }
 
-    // Send existing peers to the newcomer
     const existingPeers = room.map(u => ({ id: u.id, name: u.name }));
     socket.emit('room-peers', existingPeers);
 
-    // Add to room
     room.push({ id: socket.id, name: deviceName });
     socket.join(roomId);
     socket.data.roomId = roomId;
     socket.data.deviceName = deviceName;
 
-    // Notify all existing users about the new peer
     socket.to(roomId).emit('new-peer', { id: socket.id, name: deviceName });
 
     const names = room.map(u => u.name).join(', ');
@@ -68,7 +58,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ── Leave room explicitly (called on endSession) ────────
   socket.on('leave-room', () => {
     const roomId = socket.data.roomId;
     if (!roomId || !rooms.has(roomId)) return;
@@ -87,12 +76,10 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Signal relay: target is a specific socket id
   socket.on('send-signal', ({ to, signal }) => {
     io.to(to).emit('receive-signal', { signal, from: socket.id });
   });
 
-  // Reconnect helpers
   socket.on('reconnect-request', ({ to, fromName }) => {
     io.to(to).emit('reconnect-request', { from: socket.id, fromName });
   });
@@ -101,7 +88,6 @@ io.on('connection', (socket) => {
     io.to(to).emit('reconnect-accepted', { newRoomId });
   });
 
-  // ── Local Discovery ─────────────────────
   socket.on('discover-join', ({ deviceName }) => {
     if (deviceName) socket.data.deviceName = deviceName;
     discovery.set(socket.id, {
@@ -122,7 +108,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Relay connection invitations between discovered devices
   socket.on('connect-invite', ({ to, roomId: inviteRoomId }) => {
     io.to(to).emit('connect-invite', {
       from: socket.id,
