@@ -2371,7 +2371,13 @@ function resizeContainer() {
 // ─────────────────────────────────────────
 //  Bootstrap
 // ─────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// app.js is now loaded dynamically by index.html's script loader (after the
+// vendor libraries resolve), so by the time this file executes, the document
+// has *already* finished parsing and 'DOMContentLoaded' has already fired —
+// a listener added at this point would simply never run, leaving a blank
+// page. Guard for both cases: run immediately if the doc is already ready,
+// otherwise wait for the event as before.
+function bootstrapApp() {
     addPendingQueueStyles();
     initCanvas();
     initMiniDrag();
@@ -2402,4 +2408,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupSocket();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrapApp);
+} else {
+    bootstrapApp();
+}
