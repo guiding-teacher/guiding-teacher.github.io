@@ -51,9 +51,13 @@ const BUFFER_LOW  = 4 * 1024 * 1024;  // 4 MB — resume feeding once drained be
 const SEND_DELAY_MS = 0;             // zero delay — raw speed
 const STALL_TIMEOUT_MS = 15000;      // if no bytes received for this long, ask sender to resend from last good offset
 
-const SIG_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:3000'
-    : 'https://aetherlink-server.onrender.com';
+const SIG_URL = (() => {
+    const isLocalIP = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.)/.test(location.hostname);
+    if (isLocalIP) return `http://${location.hostname}:3000`;
+    return window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : 'https://aetherlink-server.onrender.com';
+})();
 
 // ─────────────────────────────────────────
 //  Global state
@@ -356,7 +360,108 @@ function addPendingQueueStyles() {
         filter: grayscale(.7);
     }
     `;
-    document.head.appendChild(style);
+    
+    /* ── Quick Connect Tab ── */
+    .quick-section { margin: 0 16px 16px; }
+    .quick-card {
+        background: rgba(10,26,48,0.7);
+        border: 1px solid rgba(0,210,255,0.12);
+        border-radius: 16px;
+        padding: 16px;
+        backdrop-filter: blur(8px);
+        transition: border-color .3s;
+    }
+    .quick-card:hover { border-color: rgba(0,210,255,0.25); }
+    .quick-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .quick-icon { font-size: 1.2rem; }
+    .quick-title {
+        font-size: .9rem;
+        font-weight: 700;
+        color: #00d2ff;
+    }
+    .quick-hint {
+        text-align: center;
+        font-size: .72rem;
+        color: #8899aa;
+        margin-top: 8px;
+    }
+    .quick-desc {
+        font-size: .78rem;
+        color: #aabbcc;
+        line-height: 1.6;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+    .qr-box.small {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+        padding: 8px;
+    }
+    .share-row.compact {
+        justify-content: center;
+        margin-top: 10px;
+    }
+    .share-row.compact .share-btn {
+        padding: 5px 12px;
+        font-size: .72rem;
+    }
+    .local-card { border-color: rgba(67,233,123,0.15); }
+    .local-card:hover { border-color: rgba(67,233,123,0.3); }
+    .local-input-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .local-ip-input {
+        flex: 1;
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(0,210,255,0.2);
+        border-radius: 10px;
+        padding: 8px 12px;
+        color: #dde4f0;
+        font-family: 'Tajawal', sans-serif;
+        font-size: .85rem;
+        outline: none;
+        text-align: center;
+        letter-spacing: 1px;
+    }
+    .local-ip-input:focus {
+        border-color: rgba(0,210,255,0.5);
+        box-shadow: 0 0 10px rgba(0,210,255,0.1);
+    }
+    .local-hint {
+        text-align: center;
+        font-size: .7rem;
+        color: #667788;
+    }
+    .local-hint code {
+        background: rgba(0,0,0,0.3);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #00d2ff;
+        font-family: monospace;
+    }
+    .prev-item.active {
+        border-color: rgba(67,233,123,0.3);
+        background: rgba(67,233,123,0.05);
+    }
+    .prev-badge {
+        background: rgba(67,233,123,0.15);
+        color: #43e97b;
+        font-size: .65rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-right: auto;
+    }
+
+document.head.appendChild(style);
 }
 
 function initCanvas() {
@@ -1271,26 +1376,30 @@ function joinDiscoveredRoom(newRoomId) {
 }
 
 function bindTabEvents() {
-    const tabInternet   = document.getElementById('tab-internet');
-    const tabLocal      = document.getElementById('tab-local');
-    const panelInternet = document.getElementById('panel-internet');
-    const panelLocal    = document.getElementById('panel-local');
+    const tabs = {
+        internet: { tab: 'tab-internet', panel: 'panel-internet' },
+        quick:    { tab: 'tab-quick',    panel: 'panel-quick' },
+        local:    { tab: 'tab-local',    panel: 'panel-local' },
+    };
 
-    tabInternet?.addEventListener('click', () => {
-        tabInternet.classList.add('active');
-        tabLocal.classList.remove('active');
-        panelInternet.classList.remove('hidden');
-        panelLocal.classList.add('hidden');
-    });
+    function activate(activeKey) {
+        Object.keys(tabs).forEach(key => {
+            const t = document.getElementById(tabs[key].tab);
+            const p = document.getElementById(tabs[key].panel);
+            if (key === activeKey) {
+                t?.classList.add('active');
+                p?.classList.remove('hidden');
+            } else {
+                t?.classList.remove('active');
+                p?.classList.add('hidden');
+            }
+        });
+        if (activeKey === 'local' && !isDiscovering) startDiscovery();
+    }
 
-    tabLocal?.addEventListener('click', () => {
-        tabLocal.classList.add('active');
-        tabInternet.classList.remove('active');
-        panelLocal.classList.remove('hidden');
-        panelInternet.classList.add('hidden');
-        if (!isDiscovering) startDiscovery();
-    });
-
+    document.getElementById('tab-internet')?.addEventListener('click', () => activate('internet'));
+    document.getElementById('tab-quick')?.addEventListener('click', () => activate('quick'));
+    document.getElementById('tab-local')?.addEventListener('click', () => activate('local'));
     document.getElementById('btn-start-scan')?.addEventListener('click', startDiscovery);
 }
 
@@ -1299,6 +1408,7 @@ function bindTabEvents() {
 // ─────────────────────────────────────────
 function renderHomeUI(joinUrl) {
     const prev = loadPrev();
+    const connected = getConnected();
 
     mainEl.innerHTML = `
     <div class="app-layout">
@@ -1313,20 +1423,18 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
-          <button class="home-return-btn" id="new-session-btn" title="العودة للرئيسية"><span class="home-return-icon">🏠</span><span>العودة للرئيسية</span></button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
 
-      <!-- Mode Tabs -->
       <div class="mode-tabs">
         <button class="mode-tab active" id="tab-internet">🌐 عبر الإنترنت</button>
-        <button class="mode-tab" id="tab-local">📶 الأجهزة القريبة</button>
+        <button class="mode-tab" id="tab-quick">⚡ اتصال سريع</button>
+        <button class="mode-tab" id="tab-local">📶 اكتشاف الشبكة</button>
       </div>
 
       <div class="home-content">
 
-        <!-- ── Internet Panel ── -->
         <div id="panel-internet" class="tab-panel">
           <div class="qr-section">
             <div class="qr-box" id="qr-box"><div id="qr-inner"></div></div>
@@ -1341,9 +1449,60 @@ function renderHomeUI(joinUrl) {
               <button class="share-btn btn-share" id="btn-share">↗ مشاركة</button>
             </div>
           </div>
+        </div>
+
+        <div id="panel-quick" class="tab-panel hidden">
+          <div class="quick-section">
+            <div class="quick-card">
+              <div class="quick-card-header">
+                <span class="quick-icon">📱</span>
+                <span class="quick-title">باركود الجلسة</span>
+              </div>
+              <div class="qr-box small" id="quick-qr-box"><div id="quick-qr-inner"></div></div>
+              <p class="quick-hint">امسح للانضمام الفوري</p>
+              <div class="share-row compact">
+                <button class="share-btn btn-copy" id="btn-quick-copy">📋 نسخ</button>
+                <button class="share-btn btn-share" id="btn-quick-share">↗ مشاركة</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-section">
+            <div class="quick-card local-card">
+              <div class="quick-card-header">
+                <span class="quick-icon">📶</span>
+                <span class="quick-title">اتصال بدون إنترنت</span>
+              </div>
+              <p class="quick-desc">
+                شغّل خادم الإشارة المحلي على جهازك، ثم ادخل IP الشبكة هنا.
+                <br><small>يعمل على نفس WiFi / Hotspot بدون نت</small>
+              </p>
+              <div class="local-input-row">
+                <input type="text" class="local-ip-input" id="local-ip-input" 
+                       placeholder="192.168.1.x" autocomplete="off">
+                <button class="action-button" id="btn-local-connect">اتصال</button>
+              </div>
+              <div class="local-hint" id="local-hint">
+                💡 الجهاز المضيف يشغل: <code>node local-server.js</code>
+              </div>
+            </div>
+          </div>
+
+          ${connected.length ? `
+          <div class="quick-section">
+            <p class="section-label">🟢 متصل الآن</p>
+            <div class="prev-list">
+              ${connected.map(([_, p]) => `
+                <div class="prev-item active">
+                  <span class="prev-icon">📱</span>
+                  <span class="prev-name">${esc(p.name)}</span>
+                  <span class="prev-badge">متصل</span>
+                </div>`).join('')}
+            </div>
+          </div>` : ''}
 
           ${prev.length ? `
-          <div class="prev-section">
+          <div class="quick-section">
             <p class="section-label">📱 الأجهزة السابقة</p>
             <div class="prev-list" id="prev-list">
               ${prev.map(d => `
@@ -1357,7 +1516,6 @@ function renderHomeUI(joinUrl) {
           </div>` : ''}
         </div>
 
-        <!-- ── Local Discovery Panel ── -->
         <div id="panel-local" class="tab-panel hidden">
           <div class="local-discovery-panel">
             <div class="local-scan-header">
@@ -1377,10 +1535,11 @@ function renderHomeUI(joinUrl) {
     </div>`;
 
     generateQR(joinUrl);
+    generateQuickQR(joinUrl);
     bindHomeEvents(joinUrl);
     bindTabEvents();
+    bindQuickEvents();
 }
-
 // ─────────────────────────────────────────
 //  UI — Joiner (loading)
 // ─────────────────────────────────────────
@@ -2243,6 +2402,21 @@ function generateQR(url) {
 }
 
 // ─────────────────────────────────────────
+//  Quick QR for Fast Connect tab
+// ─────────────────────────────────────────
+function generateQuickQR(url) {
+    const qr = qrcode(0, 'L');
+    qr.addData(url);
+    qr.make();
+    const el = document.getElementById('quick-qr-inner');
+    if (el) {
+        el.innerHTML = qr.createImgTag(3, 4);
+        const img = el.querySelector('img');
+        if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:8px;';
+    }
+}
+
+// ─────────────────────────────────────────
 //  Reconnect modal
 // ─────────────────────────────────────────
 function showReconnectModal(fromName, fromSocketId) {
@@ -2392,4 +2566,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupSocket();
-});
+})
+// ─────────────────────────────────────────
+//  Quick Connect Events
+// ─────────────────────────────────────────
+function bindQuickEvents() {
+    document.getElementById('btn-quick-copy')?.addEventListener('click', () => {
+        const url = `${location.origin}${location.pathname}?id=${roomId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            const b = document.getElementById('btn-quick-copy');
+            if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => b.textContent = '📋 نسخ', 2000); }
+        });
+    });
+
+    document.getElementById('btn-quick-share')?.addEventListener('click', async () => {
+        const url = `${location.origin}${location.pathname}?id=${roomId}`;
+        if (navigator.share) {
+            try { await navigator.share({ title: 'AetherLink', url }); return; } catch (_) {}
+        }
+        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:
+' + url)}`, '_blank');
+    });
+
+    document.getElementById('btn-local-connect')?.addEventListener('click', () => {
+        const input = document.getElementById('local-ip-input');
+        const hint = document.getElementById('local-hint');
+        let ip = input?.value.trim();
+        if (!ip) {
+            hint.innerHTML = '<span style="color:#ff6b6b;">⚠️ أدخل IP الجهاز المضيف أولاً</span>';
+            return;
+        }
+        ip = ip.replace(/https?:\/\//g, '').replace(/\/$/g, '').split(':')[0];
+        if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+            hint.innerHTML = '<span style="color:#ff6b6b;">⚠️ IP غير صالح</span>';
+            return;
+        }
+        window.location.href = `http://${ip}:3000`;
+    });
+
+    document.querySelectorAll('#panel-quick [data-pname]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const name = btn.getAttribute('data-pname');
+            const newRoom = mkId();
+            const newUrl = `${location.origin}${location.pathname}?id=${newRoom}`;
+            roomId = newRoom;
+            setHostRoom(newRoom);
+            history.replaceState({}, '', `?id=${newRoom}`);
+            socket.emit('join-room', { roomId, deviceName });
+            renderHomeUI(newUrl);
+            toast(`جلسة جديدة للاتصال بـ ${name} — شارك الرابط`, 'info');
+        });
+    });
+}
+
+;
