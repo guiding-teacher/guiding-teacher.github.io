@@ -73,9 +73,36 @@
         <!-- Content injected by app.js -->
     </main>
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-    <script src="app.js"></script>
+    <!-- تحميل ذكي: يحاول أولاً تحميل المكتبات محلياً من نفس الخادم (عند
+         التشغيل عبر server.js على شبكة محلية بدون إنترنت)، وإن لم تكن
+         متوفرة (كما في حال الاستضافة الثابتة على GitHub Pages) يعود
+         تلقائياً لتحميلها من CDN — بدون كسر أي من طريقتي التشغيل. -->
+    <script>
+    (function () {
+        function loadScript(localSrc, cdnSrc) {
+            return new Promise(function (resolve) {
+                var s = document.createElement('script');
+                s.src = localSrc;
+                s.onload = resolve;
+                s.onerror = function () {
+                    var f = document.createElement('script');
+                    f.src = cdnSrc;
+                    f.onload = resolve;
+                    f.onerror = resolve; // تابع حتى لو فشلت الشبكة، بدل تعليق التحميل للأبد
+                    document.head.appendChild(f);
+                };
+                document.head.appendChild(s);
+            });
+        }
+        loadScript('vendor/socket.io.min.js', 'https://cdn.socket.io/4.5.4/socket.io.min.js')
+            .then(function () { return loadScript('vendor/simplepeer.min.js', 'https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js'); })
+            .then(function () { return loadScript('vendor/qrcode.min.js', 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js'); })
+            .then(function () {
+                var app = document.createElement('script');
+                app.src = 'app.js';
+                document.body.appendChild(app);
+            });
+    })();
+    </script>
 </body>
 </html>
