@@ -1,7 +1,6 @@
 /**
- * AetherLink Web — Multi-Peer P2P File Transfer (Large File Ready)
- * v4: reliable (non-lossy) data channel · larger chunks · event-driven
- *     back-pressure · safe mid-transfer reconnect resume · stall watchdog
+ * AetherLink Web — Multi-Peer P2P File Transfer (Large File Ready) + Offline Mode
+ * v4.1: reliable data channel · offline local signaling support
  */
 
 // ─────────────────────────────────────────
@@ -45,12 +44,13 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 128 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
-const BUFFER_HIGH = 16 * 1024 * 1024; // 16 MB — stop feeding the channel above this
-const BUFFER_LOW  = 4 * 1024 * 1024;  // 4 MB — resume feeding once drained below this
-const SEND_DELAY_MS = 0;             // zero delay — raw speed
-const STALL_TIMEOUT_MS = 15000;      // if no bytes received for this long, ask sender to resend from last good offset
+const CHUNK_SIZE = 128 * 1024;
+const BUFFER_HIGH = 16 * 1024 * 1024;
+const BUFFER_LOW  = 4 * 1024 * 1024;
+const SEND_DELAY_MS = 0;
+const STALL_TIMEOUT_MS = 15000;
 
+// ── اكتشاف تلقائي للخادم ──
 const SIG_URL = (() => {
     const isLocalIP = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.)/.test(location.hostname);
     if (isLocalIP) return `http://${location.hostname}:3000`;
@@ -79,14 +79,14 @@ let isDiscovering    = false;
 // Send queue: sequential file sending
 const sendQueue = [];
 let isSendingQueue = false;
-const sendingFiles = new Map(); // fileId -> {cancelled}
-const ackTimeouts  = new Map(); // fileId -> timeoutId (fallback removal if ACK never arrives)
+const sendingFiles = new Map();
+const ackTimeouts  = new Map();
 
 // Pending queue: visible file list
-const pendingFiles = new Map(); // fileId -> {file, status: 'waiting'|'sending'|'done', objectUrl}
+const pendingFiles = new Map();
 
 // Receive map
-const recvMap = new Map(); // fileId -> {meta, writer, received, fromId}
+const recvMap = new Map();
 const downloadedFiles = new Map();
 
 let sessionMessages = [];
@@ -103,12 +103,11 @@ const socket = io(SIG_URL, {
     reconnectionDelay: 300,
     reconnectionDelayMax: 3000,
     timeout: 10000,
-    transports: ['websocket'], // ✅ WebSocket مباشرةً — بدون تأخير polling
+    transports: ['websocket'],
 });
 
 // ─────────────────────────────────────────
 //  Chunk protocol — fileId-prefixed binary
-//  Format: [4 bytes: idLen LE][idLen bytes: fileId][chunk data]
 // ─────────────────────────────────────────
 function makeChunkWithId(fileId, chunkArrayBuffer) {
     const idBytes = new TextEncoder().encode(fileId);
@@ -131,35 +130,28 @@ function parseChunkWithId(raw) {
 }
 
 // ─────────────────────────────────────────
-//  File System Writer — writes directly to disk
-//  Falls back to in-memory buffer for unsupported browsers
+//  File System Writer
 // ─────────────────────────────────────────
 class FileWriter {
     constructor(fileName, fileSize) {
         this.fileName = fileName;
         this.fileSize = fileSize;
         this.received = 0;
-        this.chunks = [];       // fallback buffer
-        this.stream = null;     // FileSystemWritableFileStream
-        this.writer = null;     // WritableStreamDefaultWriter
+        this.chunks = [];
+        this.stream = null;
+        this.writer = null;
         this.closed = false;
     }
 
     async open() {
-        // Try File System Access API (Chrome/Edge)
         if (window.showSaveFilePicker) {
             try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: this.fileName,
-                });
+                const handle = await window.showSaveFilePicker({ suggestedName: this.fileName });
                 this.stream = await handle.createWritable();
                 this.writer = this.stream.getWriter();
                 return true;
-            } catch (err) {
-                // User cancelled or API failed — fall back
-            }
+            } catch (err) {}
         }
-        // Fallback: accumulate in memory
         this.chunks = [];
         return false;
     }
@@ -179,9 +171,8 @@ class FileWriter {
         this.closed = true;
         if (this.writer) {
             await this.writer.close();
-            return null; // already saved to disk
+            return null;
         }
-        // Fallback: create Blob from accumulated chunks
         return new Blob(this.chunks);
     }
 
@@ -360,108 +351,7 @@ function addPendingQueueStyles() {
         filter: grayscale(.7);
     }
     `;
-    
-    /* ── Quick Connect Tab ── */
-    .quick-section { margin: 0 16px 16px; }
-    .quick-card {
-        background: rgba(10,26,48,0.7);
-        border: 1px solid rgba(0,210,255,0.12);
-        border-radius: 16px;
-        padding: 16px;
-        backdrop-filter: blur(8px);
-        transition: border-color .3s;
-    }
-    .quick-card:hover { border-color: rgba(0,210,255,0.25); }
-    .quick-card-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-    .quick-icon { font-size: 1.2rem; }
-    .quick-title {
-        font-size: .9rem;
-        font-weight: 700;
-        color: #00d2ff;
-    }
-    .quick-hint {
-        text-align: center;
-        font-size: .72rem;
-        color: #8899aa;
-        margin-top: 8px;
-    }
-    .quick-desc {
-        font-size: .78rem;
-        color: #aabbcc;
-        line-height: 1.6;
-        margin-bottom: 12px;
-        text-align: center;
-    }
-    .qr-box.small {
-        width: 140px;
-        height: 140px;
-        margin: 0 auto;
-        padding: 8px;
-    }
-    .share-row.compact {
-        justify-content: center;
-        margin-top: 10px;
-    }
-    .share-row.compact .share-btn {
-        padding: 5px 12px;
-        font-size: .72rem;
-    }
-    .local-card { border-color: rgba(67,233,123,0.15); }
-    .local-card:hover { border-color: rgba(67,233,123,0.3); }
-    .local-input-row {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    .local-ip-input {
-        flex: 1;
-        background: rgba(0,0,0,0.3);
-        border: 1px solid rgba(0,210,255,0.2);
-        border-radius: 10px;
-        padding: 8px 12px;
-        color: #dde4f0;
-        font-family: 'Tajawal', sans-serif;
-        font-size: .85rem;
-        outline: none;
-        text-align: center;
-        letter-spacing: 1px;
-    }
-    .local-ip-input:focus {
-        border-color: rgba(0,210,255,0.5);
-        box-shadow: 0 0 10px rgba(0,210,255,0.1);
-    }
-    .local-hint {
-        text-align: center;
-        font-size: .7rem;
-        color: #667788;
-    }
-    .local-hint code {
-        background: rgba(0,0,0,0.3);
-        padding: 2px 6px;
-        border-radius: 4px;
-        color: #00d2ff;
-        font-family: monospace;
-    }
-    .prev-item.active {
-        border-color: rgba(67,233,123,0.3);
-        background: rgba(67,233,123,0.05);
-    }
-    .prev-badge {
-        background: rgba(67,233,123,0.15);
-        color: #43e97b;
-        font-size: .65rem;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 10px;
-        margin-right: auto;
-    }
-
-document.head.appendChild(style);
+    document.head.appendChild(style);
 }
 
 function initCanvas() {
@@ -646,19 +536,18 @@ function hideMiniWidget() {
     document.getElementById('mini-widget')?.classList.add('hidden');
 }
 
+
 // ─────────────────────────────────────────
 //  Socket listeners
 // ─────────────────────────────────────────
 function setupSocket() {
-    
+
      socket.on('connect', () => {
         console.log('✅ Socket:', socket.id);
 
-        // ألغِ كل timers إعادة الاتصال — socket IDs قد تغيّرت
         reconnectTimers.forEach(({ timer }) => clearTimeout(timer));
         reconnectTimers.clear();
 
-        // دمّر جميع الـ peers غير المتصلة
         const toDestroy = [];
         peers.forEach(({ peer, connected }, id) => {
             if (!connected) toDestroy.push({ id, peer });
@@ -668,7 +557,6 @@ function setupSocket() {
             peers.delete(id);
         });
 
-        // إعادة الانضمام للغرفة (ليُرسل الخادم room-peers من جديد)
         if (roomId) socket.emit('join-room', { roomId, deviceName });
     });
 
@@ -696,7 +584,6 @@ function setupSocket() {
         if (getConnected().length === 0) setBadge('warn', '● منقطع');
     });
 
-    // ── socket قديم لنفس الجهاز أعاد الاتصال — نظّف بصمت بدون reconnect ──
     socket.on('peer-stale', ({ id }) => {
         const pi = peers.get(id);
         if (!pi) return;
@@ -721,7 +608,6 @@ function setupSocket() {
             toast('جاري إعادة الاتصال بالخادم...', 'warning');
     });
 
-    // ── Local Discovery events ───────────────
     socket.on('discovery-update', (devices) => {
         localDiscovery.clear();
         devices.forEach(d => {
@@ -771,7 +657,7 @@ function makePeer(peerId, peerName, initiator) {
             }
         }
     }
- 
+
     const peer = new SimplePeer({
         initiator,
         trickle: true,
@@ -798,37 +684,29 @@ function makePeer(peerId, peerName, initiator) {
             iceTransportPolicy: 'all',
         },
         channelConfig: {
-            ordered: true, // reliable, in-order delivery — every byte is guaranteed to arrive.
-            // ⚠️ NOTE: we intentionally do NOT set maxRetransmits/maxPacketLifeTime here.
-            // Setting either of those switches the SCTP channel into "partially reliable"
-            // (unreliable) mode: once a chunk fails to be delivered within the retry cap,
-            // the browser silently drops it forever — no error, no event, nothing.
-            // For a large file that's thousands of 256KB chunks, the odds of hitting this
-            // approach 100% as the file grows, which is exactly why transfers used to stall
-            // permanently around ~90MB+ and never complete. Leaving both unset gives a fully
-            // reliable channel (like TCP) so no chunk can ever be silently lost.
+            ordered: true,
         },
     });
- 
+
     peers.set(peerId, { peer, name: peerName, connected: false });
- 
+
     peer.on('signal', (data) => socket.emit('send-signal', { to: peerId, signal: data }));
- 
+
     peer.on('connect', () => {
         const pi = peers.get(peerId);
         if (pi) pi.connected = true;
         addToPrev(peerName);
- 
+
         try { peer.send(JSON.stringify({ type: 'hello', name: deviceName })); } catch (_) {}
- 
+
         updatePeersUI();
         updatePiPStatus();
         renderConnectedUI();
         setBadge('ok', '● متصل');
         toast(`✅ متصل بـ ${peerName}`, 'success');
- 
+
         if (isLocalConnection) localConnected.add(peerId);
- 
+
         const kTimer = setInterval(() => {
             const p = peers.get(peerId);
             if (!p || !p.connected) { clearInterval(kTimer); return; }
@@ -838,12 +716,12 @@ function makePeer(peerId, peerName, initiator) {
                 clearInterval(kTimer);
             }
         }, 5000);
- 
+
         if (peers.has(peerId)) peers.get(peerId)._keepalive = kTimer;
     });
- 
+
     peer.on('data', (data) => onData(data, peerId));
- 
+
     peer.on('close', () => {
         const pi = peers.get(peerId);
         if (!pi) return;
@@ -862,7 +740,7 @@ function makePeer(peerId, peerName, initiator) {
             scheduleReconnect(peerId, peerName, 1);
         }
     });
- 
+
     peer.on('error', (e) => {
         console.error('Peer error', peerId, e);
         const pi = peers.get(peerId);
@@ -879,7 +757,7 @@ function makePeer(peerId, peerName, initiator) {
         scheduleReconnect(peerId, peerName, wasConnected ? 1 : 2);
     });
 }
- 
+
 
 function getConnected() {
     return [...peers.entries()].filter(([_, p]) => p.connected);
@@ -951,24 +829,16 @@ function onData(raw, fromId) {
         case 'pong':
             break;
         case 'metadata': {
-            // fileId is unique per transfer (name+size+timestamp+random), so if we already have
-            // an in-progress entry for this exact fileId, this 'metadata' message is a RESEND —
-            // e.g. the sender re-announcing after an ICE reconnect mid-transfer — NOT a new file.
-            // Wiping the writer here would silently throw away everything already received and
-            // desync from the sender's byte offset (which keeps advancing, not resetting).
-            // So: same fileId + not yet complete → just keep the existing writer and ignore.
             const existingEntry = recvMap.get(msg.payload.fileId);
             if (existingEntry) {
                 if (existingEntry.writer.received < msg.payload.fileSize) {
-                    existingEntry.fromId = fromId; // peer may have a new socket id after reconnect
-                    break; // keep receiving into the same writer, no reset
+                    existingEntry.fromId = fromId;
+                    break;
                 }
-                // Already complete — safe to tear down before restarting fresh.
                 existingEntry.writer.abort().catch(() => {});
                 recvMap.delete(msg.payload.fileId);
                 resetRecvUI(msg.payload.fileId);
             }
-            // إنشاء writer جديد وابدأ الاستقبال
             const writer = new FileWriter(msg.payload.fileName, msg.payload.fileSize);
             recvMap.set(msg.payload.fileId, {
                 meta: msg.payload,
@@ -977,7 +847,6 @@ function onData(raw, fromId) {
                 fromId,
                 lastByteAt: Date.now(),
             });
-            // افتح الملف على القرص
             writer.open().then(() => {
                 createReceivingFileBox(msg.payload, fromId);
             }).catch(err => {
@@ -988,7 +857,6 @@ function onData(raw, fromId) {
         }
         case 'ack': {
             const ackFileId = msg.payload?.fileId;
-            // ✅ ACK = المستلم استلم الملف فعلاً — احذف من الطابور بصمت
             if (ackFileId) removePendingFile(ackFileId, true);
             break;
         }
@@ -1014,10 +882,10 @@ function resetRecvUI(fileId) {
     if (tEl) { tEl.textContent = '0%'; tEl.style.color = ''; }
     if (sEl) { sEl.textContent = 'جاري الاستلام... (إعادة)'; sEl.classList.remove('done', 'error'); }
 }
- 
+
 
 // ─────────────────────────────────────────
-//  Receive chunks — writes directly to disk
+//  Receive chunks
 // ─────────────────────────────────────────
 async function recvChunk(raw, fromId) {
     try {
@@ -1027,7 +895,6 @@ async function recvChunk(raw, fromId) {
 
         entry.lastByteAt = Date.now();
         await entry.writer.write(chunk);
-        // Use writer.received as single source of truth (FileWriter increments internally)
         const pct = Math.min(100, Math.round((entry.writer.received / entry.meta.fileSize) * 100));
         updateReceivingFileBox(entry.meta, pct, entry.fromId);
 
@@ -1036,7 +903,6 @@ async function recvChunk(raw, fromId) {
             const pi   = peers.get(fromId);
             completeReceivingFileBox(entry.meta, blob, pi?.name || 'مجهول');
             recvMap.delete(fileId);
-            // Send ACK back to sender so they remove from queue
             if (pi?.connected) {
                 try { pi.peer.send(JSON.stringify({ type: 'ack', payload: { fileId } })); } catch (_) {}
             }
@@ -1046,21 +912,13 @@ async function recvChunk(raw, fromId) {
     }
 }
 
-// ─────────────────────────────────────────
-//  Stall watchdog — surfaces a clear error instead of an infinite silent
-//  hang if a receiving transfer truly stops (peer gone for good). With the
-//  reliable data channel this should basically never fire for an open
-//  connection; it only catches the case where the peer is unreachable and
-//  reconnection has already been exhausted.
-// ─────────────────────────────────────────
 setInterval(() => {
     const now = Date.now();
     for (const [fileId, entry] of recvMap.entries()) {
         if (entry.writer.received >= entry.meta.fileSize) continue;
         if (now - entry.lastByteAt < STALL_TIMEOUT_MS) continue;
         const pi = peers.get(entry.fromId);
-        if (pi?.connected) { entry.lastByteAt = now; continue; } // channel is fine, just a lull — don't false-alarm
-        // Peer is disconnected AND has been for a while with no reconnect — genuinely stuck.
+        if (pi?.connected) { entry.lastByteAt = now; continue; }
         cancelRecv(fileId, 'انقطع الاتصال ولم تكتمل عملية الاستلام');
     }
 }, 5000);
@@ -1073,6 +931,7 @@ function cancelRecv(fileId, reason) {
         recvMap.delete(fileId);
     }
 }
+
 
 // ─────────────────────────────────────────
 //  Receiving File Box UI
@@ -1142,21 +1001,15 @@ function completeReceivingFileBox(meta, blob, senderName) {
     const isVideo = meta.fileType?.startsWith('video/');
 
     let objectUrl = null;
-    // If blob is null, it was saved directly to disk — just show completion
-    // If blob exists (fallback mode), create URL and offer download
     if (blob) {
         objectUrl = URL.createObjectURL(blob);
         downloadedFiles.set(fileId, { blob, meta, sender: senderName, url: objectUrl });
         sessionFiles.push({ fileId, meta, sender: senderName });
-        // Auto-download for fallback mode
         downloadBlob(blob, meta.fileName);
     } else {
-        // Saved to disk directly via File System Access API
         downloadedFiles.set(fileId, { blob: null, meta, sender: senderName, url: null });
         sessionFiles.push({ fileId, meta, sender: senderName });
-        // Notify receiver that file was saved to disk
         toast(`تم حفظ الملف على القرص: ${esc(meta.fileName)}`, 'success');
-        // Also trigger a hidden download to show in browser's download bar
         triggerDiskDownloadNotification(meta.fileName);
     }
 
@@ -1376,39 +1229,35 @@ function joinDiscoveredRoom(newRoomId) {
 }
 
 function bindTabEvents() {
-    const tabs = {
-        internet: { tab: 'tab-internet', panel: 'panel-internet' },
-        quick:    { tab: 'tab-quick',    panel: 'panel-quick' },
-        local:    { tab: 'tab-local',    panel: 'panel-local' },
-    };
+    const tabInternet   = document.getElementById('tab-internet');
+    const tabLocal      = document.getElementById('tab-local');
+    const panelInternet = document.getElementById('panel-internet');
+    const panelLocal    = document.getElementById('panel-local');
 
-    function activate(activeKey) {
-        Object.keys(tabs).forEach(key => {
-            const t = document.getElementById(tabs[key].tab);
-            const p = document.getElementById(tabs[key].panel);
-            if (key === activeKey) {
-                t?.classList.add('active');
-                p?.classList.remove('hidden');
-            } else {
-                t?.classList.remove('active');
-                p?.classList.add('hidden');
-            }
-        });
-        if (activeKey === 'local' && !isDiscovering) startDiscovery();
-    }
+    tabInternet?.addEventListener('click', () => {
+        tabInternet.classList.add('active');
+        tabLocal.classList.remove('active');
+        panelInternet.classList.remove('hidden');
+        panelLocal.classList.add('hidden');
+    });
 
-    document.getElementById('tab-internet')?.addEventListener('click', () => activate('internet'));
-    document.getElementById('tab-quick')?.addEventListener('click', () => activate('quick'));
-    document.getElementById('tab-local')?.addEventListener('click', () => activate('local'));
+    tabLocal?.addEventListener('click', () => {
+        tabLocal.classList.add('active');
+        tabInternet.classList.remove('active');
+        panelLocal.classList.remove('hidden');
+        panelInternet.classList.add('hidden');
+        if (!isDiscovering) startDiscovery();
+    });
+
     document.getElementById('btn-start-scan')?.addEventListener('click', startDiscovery);
 }
+
 
 // ─────────────────────────────────────────
 //  UI — Home (host)
 // ─────────────────────────────────────────
 function renderHomeUI(joinUrl) {
     const prev = loadPrev();
-    const connected = getConnected();
 
     mainEl.innerHTML = `
     <div class="app-layout">
@@ -1423,18 +1272,20 @@ function renderHomeUI(joinUrl) {
             <span class="device-chip-name" id="chip-name">${esc(deviceName)}</span>
             <button class="icon-btn" id="edit-name-btn" title="تغيير الاسم">✏️</button>
           </div>
+          <button class="home-return-btn" id="new-session-btn" title="العودة للرئيسية"><span class="home-return-icon">🏠</span><span>العودة للرئيسية</span></button>
           <button class="icon-btn" id="minimize-btn" title="تصغير">⊟</button>
         </div>
       </header>
 
+      <!-- Mode Tabs -->
       <div class="mode-tabs">
         <button class="mode-tab active" id="tab-internet">🌐 عبر الإنترنت</button>
-        <button class="mode-tab" id="tab-quick">⚡ اتصال سريع</button>
-        <button class="mode-tab" id="tab-local">📶 اكتشاف الشبكة</button>
+        <button class="mode-tab" id="tab-local">📶 الأجهزة القريبة</button>
       </div>
 
       <div class="home-content">
 
+        <!-- ── Internet Panel ── -->
         <div id="panel-internet" class="tab-panel">
           <div class="qr-section">
             <div class="qr-box" id="qr-box"><div id="qr-inner"></div></div>
@@ -1448,61 +1299,15 @@ function renderHomeUI(joinUrl) {
               <button class="share-btn btn-whatsapp" id="btn-wa">💬 واتساب</button>
               <button class="share-btn btn-share" id="btn-share">↗ مشاركة</button>
             </div>
-          </div>
-        </div>
-
-        <div id="panel-quick" class="tab-panel hidden">
-          <div class="quick-section">
-            <div class="quick-card">
-              <div class="quick-card-header">
-                <span class="quick-icon">📱</span>
-                <span class="quick-title">باركود الجلسة</span>
-              </div>
-              <div class="qr-box small" id="quick-qr-box"><div id="quick-qr-inner"></div></div>
-              <p class="quick-hint">امسح للانضمام الفوري</p>
-              <div class="share-row compact">
-                <button class="share-btn btn-copy" id="btn-quick-copy">📋 نسخ</button>
-                <button class="share-btn btn-share" id="btn-quick-share">↗ مشاركة</button>
-              </div>
+            <div class="share-row" style="margin-top:10px;">
+              <button class="share-btn btn-local" id="btn-local-mode" style="background:rgba(67,233,123,.12);border-color:rgba(67,233,123,.3);color:#43e97b;font-size:.75rem;">
+                📶 وضع بدون إنترنت
+              </button>
             </div>
           </div>
-
-          <div class="quick-section">
-            <div class="quick-card local-card">
-              <div class="quick-card-header">
-                <span class="quick-icon">📶</span>
-                <span class="quick-title">اتصال بدون إنترنت</span>
-              </div>
-              <p class="quick-desc">
-                شغّل خادم الإشارة المحلي على جهازك، ثم ادخل IP الشبكة هنا.
-                <br><small>يعمل على نفس WiFi / Hotspot بدون نت</small>
-              </p>
-              <div class="local-input-row">
-                <input type="text" class="local-ip-input" id="local-ip-input" 
-                       placeholder="192.168.1.x" autocomplete="off">
-                <button class="action-button" id="btn-local-connect">اتصال</button>
-              </div>
-              <div class="local-hint" id="local-hint">
-                💡 الجهاز المضيف يشغل: <code>node local-server.js</code>
-              </div>
-            </div>
-          </div>
-
-          ${connected.length ? `
-          <div class="quick-section">
-            <p class="section-label">🟢 متصل الآن</p>
-            <div class="prev-list">
-              ${connected.map(([_, p]) => `
-                <div class="prev-item active">
-                  <span class="prev-icon">📱</span>
-                  <span class="prev-name">${esc(p.name)}</span>
-                  <span class="prev-badge">متصل</span>
-                </div>`).join('')}
-            </div>
-          </div>` : ''}
 
           ${prev.length ? `
-          <div class="quick-section">
+          <div class="prev-section">
             <p class="section-label">📱 الأجهزة السابقة</p>
             <div class="prev-list" id="prev-list">
               ${prev.map(d => `
@@ -1516,6 +1321,7 @@ function renderHomeUI(joinUrl) {
           </div>` : ''}
         </div>
 
+        <!-- ── Local Discovery Panel ── -->
         <div id="panel-local" class="tab-panel hidden">
           <div class="local-discovery-panel">
             <div class="local-scan-header">
@@ -1535,11 +1341,10 @@ function renderHomeUI(joinUrl) {
     </div>`;
 
     generateQR(joinUrl);
-    generateQuickQR(joinUrl);
     bindHomeEvents(joinUrl);
     bindTabEvents();
-    bindQuickEvents();
 }
+
 // ─────────────────────────────────────────
 //  UI — Joiner (loading)
 // ─────────────────────────────────────────
@@ -1694,6 +1499,14 @@ function bindHomeEvents(joinUrl) {
         open(`https://twitter.com/intent/tweet?text=${encodeURIComponent('AetherLink - نقل الملفات الآمن\n' + joinUrl)}`, '_blank');
     });
 
+    // ── وضع بدون إنترنت ──
+    document.getElementById('btn-local-mode')?.addEventListener('click', () => {
+        const ip = prompt('🌐 أدخل IP الجهاز المضيف على الشبكة المحلية:\n(مثال: 192.168.1.5)', '');
+        if (!ip) return;
+        const cleanIP = ip.replace(/https?:\/\//, '').replace(/\/$/, '').split(':')[0];
+        window.location.href = `http://${cleanIP}:3000`;
+    });
+
     document.querySelectorAll('[data-pname]').forEach(btn => {
         btn.addEventListener('click', () => {
             const name    = btn.getAttribute('data-pname');
@@ -1709,10 +1522,9 @@ function bindHomeEvents(joinUrl) {
     });
 }
 
+
 // ═════════════════════════════════════════
 //  SEQUENTIAL FILE SEND QUEUE
-//  The key improvement: files are sent one
-//  after another, not in parallel.
 // ═════════════════════════════════════════
 
 function bindMsgEvents() {
@@ -1752,7 +1564,6 @@ function bindMsgEvents() {
             return;
         }
 
-        // Add all files to the sequential queue
         files.forEach(f => enqueueFileSend(f, targets));
         fileInput.value = '';
     });
@@ -1799,7 +1610,6 @@ function addPendingFile(file, fileId) {
 }
 
 function removePendingFile(fileId, silent = false) {
-    // ✅ ألغِ timeout الـ ACK الاحتياطي إن وُجد
     if (ackTimeouts.has(fileId)) {
         clearTimeout(ackTimeouts.get(fileId));
         ackTimeouts.delete(fileId);
@@ -1815,13 +1625,10 @@ function removePendingFile(fileId, silent = false) {
     if (pendingFiles.size === 0) {
         document.getElementById('pending-panel')?.classList.add('hidden');
     }
-    // Also mark sending as cancelled if still in queue
     const sf = sendingFiles.get(fileId);
     if (sf) sf.cancelled = true;
-    // Remove from sendQueue
     const idx = sendQueue.findIndex(q => q.file.fileId === fileId);
     if (idx !== -1) sendQueue.splice(idx, 1);
-    // ✅ أظهر toast فقط عند الحذف اليدوي (silent=false)
     if (!silent) toast('تم حذف الملف من الطابور', 'success');
 }
 
@@ -1836,9 +1643,8 @@ function updatePendingStatus(fileId, status) {
 
 // ── Sequential send queue ──
 function enqueueFileSend(file, peerIds) {
-    // Generate fileId here so we can track it in pending queue
     const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-    file.fileId = fileId; // attach to file object
+    file.fileId = fileId;
     sendQueue.push({ file, peerIds, fileId });
     addPendingFile(file, fileId);
     processSendQueue();
@@ -1853,8 +1659,6 @@ async function processSendQueue() {
         updatePendingStatus(fileId, 'sending');
         await sendFileSequential(file, peerIds, fileId);
         updatePendingStatus(fileId, 'done');
-        // ✅ لا نحذف تلقائياً — ننتظر ACK من المستلم (handleJsonMsg → 'ack')
-        // Fallback: إذا لم يصل ACK خلال 60 ثانية، احذف بصمت
         const ackTimeout = setTimeout(() => {
             if (pendingFiles.has(fileId)) removePendingFile(fileId, true);
         }, 60000);
@@ -1865,8 +1669,7 @@ async function processSendQueue() {
 }
 
 // ─────────────────────────────────────────
-//  Sequential file send — one file at a time
-//  with back-pressure and reconnection support
+//  Sequential file send
 // ─────────────────────────────────────────
 async function sendFileSequential(file, peerIds, fileId) {
     fileId = fileId || `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -1876,7 +1679,6 @@ async function sendFileSequential(file, peerIds, fileId) {
 
     const metaMsg = JSON.stringify({ type: 'metadata', payload: meta });
 
-    // Send metadata to all peers
     const connectedPeers = [];
     peerIds.forEach(id => {
         const pi = peers.get(id);
@@ -1906,12 +1708,10 @@ async function sendFileSequential(file, peerIds, fileId) {
             const chunkBuf = await file.slice(offset, end).arrayBuffer();
             const tagged   = makeChunkWithId(fileId, chunkBuf);
 
-            // Send this chunk to all connected peers sequentially
             let allSent = true;
             for (const id of connectedPeers) {
                 let pi = peers.get(id);
 
-                // If peer disconnected, try to wait for reconnection
                 if (!pi?.connected) {
                     if (retries < MAX_RETRIES) {
                         toast(`⏳ انتظار إعادة الاتصال...`, 'warning');
@@ -1920,21 +1720,14 @@ async function sendFileSequential(file, peerIds, fileId) {
                         const reconn = await waitForPeer(id, 90000);
                         if (reconn) {
                             retries++;
-                            // Resend metadata to the reconnected peer
                             try { reconn.peer.send(metaMsg); } catch (_) {}
-                            // Don't reset offset — just retry this chunk
                             continue;
                         }
                     }
-                    // Peer not coming back — skip it for remaining chunks
                     console.warn(`Peer ${id} failed to reconnect, skipping`);
                     continue;
                 }
 
-                // ── Back-pressure: wait for buffer to drain to the LOW watermark ──
-                // (drain to BUFFER_LOW, not just under BUFFER_HIGH, so we don't immediately
-                // re-trigger back-pressure on the very next chunk — this keeps the channel fed
-                // as close to saturation as possible without ever overflowing it.)
                 const ch = pi.peer._channel;
                 if (ch && ch.bufferedAmount > BUFFER_HIGH) {
                     let disconnected = false;
@@ -1942,7 +1735,6 @@ async function sendFileSequential(file, peerIds, fileId) {
                         ch.bufferedAmountLowThreshold = BUFFER_LOW;
                         const onLow = () => { ch.removeEventListener('bufferedamountlow', onLow); resolve(); };
                         ch.addEventListener('bufferedamountlow', onLow);
-                        // Safety poll in case the event doesn't fire (older browsers) or the peer drops
                         const poll = setInterval(() => {
                             const check = peers.get(id);
                             if (!check?.connected) { disconnected = true; }
@@ -1956,7 +1748,6 @@ async function sendFileSequential(file, peerIds, fileId) {
                     if (disconnected) allSent = false;
                 }
 
-                // ── Send the chunk ──
                 let sent = false;
                 try {
                     const cur = peers.get(id);
@@ -1973,22 +1764,18 @@ async function sendFileSequential(file, peerIds, fileId) {
             }
 
             if (allSent) {
-                // ✅ Chunk sent successfully — advance to next chunk
                 offset = end;
                 retries = 0;
             } else {
-                // ✅ Chunk failed — retry without advancing offset
                 retries++;
                 if (retries >= MAX_RETRIES) {
                     throw new Error('Too many send failures');
                 }
-                await sleep(300 * retries); // brief back-off before retry
-                // offset intentionally NOT advanced — retry same chunk
+                await sleep(300 * retries);
             }
 
             updateSenderFileBox(fileId, Math.round((offset / file.size) * 100));
 
-            // Small delay for GC and to prevent overwhelming the channel
             if (offset < file.size) {
                 await sleep(SEND_DELAY_MS);
             }
@@ -2014,10 +1801,6 @@ async function sendFileSequential(file, peerIds, fileId) {
 // ─────────────────────────────────────────
 //  Transfer helpers
 // ─────────────────────────────────────────
-
-/**
- * Wait until the given peer reconnects and is connected again.
- */
 async function waitForPeer(peerId, maxMs = 90000) {
     const start = Date.now();
     while (Date.now() - start < maxMs) {
@@ -2104,7 +1887,6 @@ function finalizeSenderFileBox(fileId) {
 
     if (box) {
         const infoDiv = box.querySelector('.file-info');
-        // Remove cancel button if exists
         const cancelBtn = infoDiv?.querySelector('.cancel-send-btn');
         if (cancelBtn) cancelBtn.remove();
         if (infoDiv && !infoDiv.querySelector('.file-actions')) {
@@ -2130,7 +1912,6 @@ function cancelSenderFile(fileId) {
         sf.cancelled = true;
         sendingFiles.delete(fileId);
     }
-    // Send cancel to all connected peers
     getConnected().forEach(([_, p]) => {
         try {
             p.peer.send(JSON.stringify({ type: 'cancel', payload: { fileId } }));
@@ -2167,6 +1948,7 @@ function openSenderFullscreen(fileId) {
     overlay.querySelector('.fullscreen-close')?.addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
+
 
 // ─────────────────────────────────────────
 //  Header Actions
@@ -2241,7 +2023,6 @@ function showGroupLinkModal() {
       </div>`;
     document.body.appendChild(overlay);
 
-    // ── توليد باركود الجلسة داخل المودال ──
     const qrBox = overlay.querySelector('#modal-qr-box');
     if (qrBox) {
         try {
@@ -2294,7 +2075,6 @@ function endSession() {
 }
 
 function newSession() {
-    // Destroy previous session and show home immediately (no confirmation)
     sessionMessages = []; sessionFiles = [];
     downloadedFiles.clear();
     recvMap.forEach(e => e.writer.abort().catch(() => {}));
@@ -2402,21 +2182,6 @@ function generateQR(url) {
 }
 
 // ─────────────────────────────────────────
-//  Quick QR for Fast Connect tab
-// ─────────────────────────────────────────
-function generateQuickQR(url) {
-    const qr = qrcode(0, 'L');
-    qr.addData(url);
-    qr.make();
-    const el = document.getElementById('quick-qr-inner');
-    if (el) {
-        el.innerHTML = qr.createImgTag(3, 4);
-        const img = el.querySelector('img');
-        if (img) img.style.cssText = 'width:100%;height:100%;display:block;border-radius:8px;';
-    }
-}
-
-// ─────────────────────────────────────────
 //  Reconnect modal
 // ─────────────────────────────────────────
 function showReconnectModal(fromName, fromSocketId) {
@@ -2461,7 +2226,6 @@ function downloadBlob(blob, name) {
 }
 
 function triggerDiskDownloadNotification(fileName) {
-    // Creates a tiny blob to trigger browser download bar so user sees activity
     const blob = new Blob(['File saved via File System Access API: ' + fileName], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), {
@@ -2566,57 +2330,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupSocket();
-})
-// ─────────────────────────────────────────
-//  Quick Connect Events
-// ─────────────────────────────────────────
-function bindQuickEvents() {
-    document.getElementById('btn-quick-copy')?.addEventListener('click', () => {
-        const url = `${location.origin}${location.pathname}?id=${roomId}`;
-        navigator.clipboard.writeText(url).then(() => {
-            const b = document.getElementById('btn-quick-copy');
-            if (b) { b.textContent = '✅ تم النسخ!'; setTimeout(() => b.textContent = '📋 نسخ', 2000); }
-        });
-    });
-
-    document.getElementById('btn-quick-share')?.addEventListener('click', async () => {
-        const url = `${location.origin}${location.pathname}?id=${roomId}`;
-        if (navigator.share) {
-            try { await navigator.share({ title: 'AetherLink', url }); return; } catch (_) {}
-        }
-        open(`https://wa.me/?text=${encodeURIComponent('انضم لجلستي على AetherLink:
-' + url)}`, '_blank');
-    });
-
-    document.getElementById('btn-local-connect')?.addEventListener('click', () => {
-        const input = document.getElementById('local-ip-input');
-        const hint = document.getElementById('local-hint');
-        let ip = input?.value.trim();
-        if (!ip) {
-            hint.innerHTML = '<span style="color:#ff6b6b;">⚠️ أدخل IP الجهاز المضيف أولاً</span>';
-            return;
-        }
-        ip = ip.replace(/https?:\/\//g, '').replace(/\/$/g, '').split(':')[0];
-        if (!/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-            hint.innerHTML = '<span style="color:#ff6b6b;">⚠️ IP غير صالح</span>';
-            return;
-        }
-        window.location.href = `http://${ip}:3000`;
-    });
-
-    document.querySelectorAll('#panel-quick [data-pname]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const name = btn.getAttribute('data-pname');
-            const newRoom = mkId();
-            const newUrl = `${location.origin}${location.pathname}?id=${newRoom}`;
-            roomId = newRoom;
-            setHostRoom(newRoom);
-            history.replaceState({}, '', `?id=${newRoom}`);
-            socket.emit('join-room', { roomId, deviceName });
-            renderHomeUI(newUrl);
-            toast(`جلسة جديدة للاتصال بـ ${name} — شارك الرابط`, 'info');
-        });
-    });
-}
-
-;
+});
