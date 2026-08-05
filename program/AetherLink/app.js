@@ -45,11 +45,34 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 128 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
+const CHUNK_SIZE = 256 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
 const BUFFER_HIGH = 16 * 1024 * 1024; // 16 MB — stop feeding the channel above this
 const BUFFER_LOW  = 4 * 1024 * 1024;  // 4 MB — resume feeding once drained below this
 const SEND_DELAY_MS = 0;             // zero delay — raw speed
 const STALL_TIMEOUT_MS = 15000;      // if no bytes received for this long, ask sender to resend from last good offset
+
+// ─────────────────────────────────────────
+//  Receiver-aware flow control
+// ─────────────────────────────────────────
+// The old back-pressure (BUFFER_HIGH/LOW) only looks at RTCDataChannel.bufferedAmount,
+// which is the SCTP transport's send queue — it drains as soon as the network has
+// delivered the bytes to the OS on the receiving side. It says nothing about whether
+// the receiver has actually *written those bytes to disk yet*. On a fast LAN + reliable
+// channel, the sender can push data far faster than a phone's storage can persist it,
+// so the receiver falls further and further behind — chunks pile up waiting to be
+// written, the tab gets sluggish, and progress looks "stuck" even though the network
+// transfer itself succeeded. This is a second, independent form of back-pressure: real
+// disk-write progress reported by the receiver, which the sender uses to cap how far
+// ahead of the receiver's actual disk writes it's allowed to get.
+const MAX_INFLIGHT_BYTES = 8 * 1024 * 1024;   // don't let the sender get more than 8MB ahead of confirmed disk writes
+const PROGRESS_REPORT_BYTES = 1 * 1024 * 1024; // receiver reports every ~1MB actually written
+const PROGRESS_REPORT_MS = 200;                // ...or every 200ms, whichever comes first
+const CREDIT_WAIT_TIMEOUT_MS = 5000;           // never block the sender longer than this per check (safety valve)
+
+const receiverCommitted     = new Map(); // fileId -> bytes the receiver has confirmed written to disk
+const receiverSupportsCredit = new Set(); // fileId -> true once we've seen at least one 'recv-progress' for it
+                                           // (keeps this fully backward-compatible with any peer that hasn't
+                                           //  updated yet — if no reports ever arrive, the gate simply never engages)
 
 // خادم الإشارة (signaling): إذا كان التطبيق مُحمَّلاً من نفس الخادم المحلي
 // (localhost أو عنوان IP محلي ضمن الشبكة نفسها 192.168.x / 10.x / 172.16-31.x)
@@ -881,6 +904,8 @@ function onData(raw, fromId) {
                 received: 0,
                 fromId,
                 lastByteAt: Date.now(),
+                lastReportedBytes: 0,
+                lastReportedAt: Date.now(),
             });
             // افتح الملف على القرص
             writer.open().then(() => {
@@ -895,6 +920,17 @@ function onData(raw, fromId) {
             const ackFileId = msg.payload?.fileId;
             // ✅ ACK = المستلم استلم الملف فعلاً — احذف من الطابور بصمت
             if (ackFileId) removePendingFile(ackFileId, true);
+            break;
+        }
+        case 'recv-progress': {
+            // The receiver is telling us how many bytes it has actually *written to disk*
+            // so far for this file — used to throttle sending to the receiver's real
+            // write speed, not just how fast the network can deliver bytes.
+            const p = msg.payload;
+            if (p?.fileId != null) {
+                receiverCommitted.set(p.fileId, p.received);
+                receiverSupportsCredit.add(p.fileId);
+            }
             break;
         }
         case 'cancel':
@@ -935,6 +971,27 @@ async function recvChunk(raw, fromId) {
         // Use writer.received as single source of truth (FileWriter increments internally)
         const pct = Math.min(100, Math.round((entry.writer.received / entry.meta.fileSize) * 100));
         updateReceivingFileBox(entry.meta, pct, entry.fromId);
+
+        // ── Tell the sender how much we've actually persisted to disk ──
+        // Throttled by bytes and time so this control channel stays cheap even on a
+        // multi-GB transfer with tiny chunks; the sender uses this to avoid getting
+        // further ahead of us than it can afford to (see MAX_INFLIGHT_BYTES).
+        const isDone = entry.writer.received >= entry.meta.fileSize;
+        const bytesSinceReport = entry.writer.received - entry.lastReportedBytes;
+        const timeSinceReport = Date.now() - entry.lastReportedAt;
+        if (isDone || bytesSinceReport >= PROGRESS_REPORT_BYTES || timeSinceReport >= PROGRESS_REPORT_MS) {
+            entry.lastReportedBytes = entry.writer.received;
+            entry.lastReportedAt = Date.now();
+            const pi = peers.get(entry.fromId);
+            if (pi?.connected) {
+                try {
+                    pi.peer.send(JSON.stringify({
+                        type: 'recv-progress',
+                        payload: { fileId, received: entry.writer.received },
+                    }));
+                } catch (_) { /* best-effort — a missed report just delays the next credit update */ }
+            }
+        }
 
         if (entry.writer.received >= entry.meta.fileSize) {
             const blob = await entry.writer.close();
@@ -1807,6 +1864,21 @@ async function sendFileSequential(file, peerIds, fileId) {
                     if (disconnected) allSent = false;
                 }
 
+                // ── Receiver-aware back-pressure: don't outrun the receiver's disk writes ──
+                // Only engages once this peer has proven it understands 'recv-progress'
+                // (see receiverSupportsCredit) — fully backward-compatible otherwise.
+                if (receiverSupportsCredit.has(fileId)) {
+                    const waitStart = Date.now();
+                    while (
+                        offset - (receiverCommitted.get(fileId) || 0) > MAX_INFLIGHT_BYTES &&
+                        Date.now() - waitStart < CREDIT_WAIT_TIMEOUT_MS
+                    ) {
+                        const check = peers.get(id);
+                        if (!check?.connected) break; // let the reconnect logic below handle it
+                        await sleep(20);
+                    }
+                }
+
                 // ── Send the chunk ──
                 let sent = false;
                 try {
@@ -1860,6 +1932,8 @@ async function sendFileSequential(file, peerIds, fileId) {
     }
 
     sendingFiles.delete(fileId);
+    receiverCommitted.delete(fileId);
+    receiverSupportsCredit.delete(fileId);
 }
 
 // ─────────────────────────────────────────
