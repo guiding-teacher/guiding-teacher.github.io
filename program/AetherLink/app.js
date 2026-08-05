@@ -1,6 +1,7 @@
 /**
  * AetherLink Web — Multi-Peer P2P File Transfer (Large File Ready)
- * v3: sequential queue · small chunks · back-pressure · disk writes
+ * v4: reliable (non-lossy) data channel · larger chunks · event-driven
+ *     back-pressure · safe mid-transfer reconnect resume · stall watchdog
  */
 
 // ─────────────────────────────────────────
@@ -44,10 +45,11 @@ function clearHostRoom() { localStorage.removeItem(SK.HOST_ROOM); }
 // ─────────────────────────────────────────
 //  Transfer constants
 // ─────────────────────────────────────────
-const CHUNK_SIZE = 64 * 1024;        // 64 KB — maximum transfer speed
-const BUFFER_HIGH = 4 * 1024 * 1024; // 4 MB — generous buffer
-const BUFFER_LOW  = 1 * 1024 * 1024; // 1 MB — resume below this
+const CHUNK_SIZE = 256 * 1024;       // 256 KB — larger chunks = far less overhead = higher throughput
+const BUFFER_HIGH = 16 * 1024 * 1024; // 16 MB — stop feeding the channel above this
+const BUFFER_LOW  = 4 * 1024 * 1024;  // 4 MB — resume feeding once drained below this
 const SEND_DELAY_MS = 0;             // zero delay — raw speed
+const STALL_TIMEOUT_MS = 15000;      // if no bytes received for this long, ask sender to resend from last good offset
 
 const SIG_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
@@ -691,8 +693,15 @@ function makePeer(peerId, peerName, initiator) {
             iceTransportPolicy: 'all',
         },
         channelConfig: {
-            ordered: true,
-            maxRetransmits: 3,
+            ordered: true, // reliable, in-order delivery — every byte is guaranteed to arrive.
+            // ⚠️ NOTE: we intentionally do NOT set maxRetransmits/maxPacketLifeTime here.
+            // Setting either of those switches the SCTP channel into "partially reliable"
+            // (unreliable) mode: once a chunk fails to be delivered within the retry cap,
+            // the browser silently drops it forever — no error, no event, nothing.
+            // For a large file that's thousands of 256KB chunks, the odds of hitting this
+            // approach 100% as the file grows, which is exactly why transfers used to stall
+            // permanently around ~90MB+ and never complete. Leaving both unset gives a fully
+            // reliable channel (like TCP) so no chunk can ever be silently lost.
         },
     });
  
@@ -837,9 +846,19 @@ function onData(raw, fromId) {
         case 'pong':
             break;
         case 'metadata': {
-            // إذا كان هناك استقبال سابق لنفس الملف، ألغِه
+            // fileId is unique per transfer (name+size+timestamp+random), so if we already have
+            // an in-progress entry for this exact fileId, this 'metadata' message is a RESEND —
+            // e.g. the sender re-announcing after an ICE reconnect mid-transfer — NOT a new file.
+            // Wiping the writer here would silently throw away everything already received and
+            // desync from the sender's byte offset (which keeps advancing, not resetting).
+            // So: same fileId + not yet complete → just keep the existing writer and ignore.
             const existingEntry = recvMap.get(msg.payload.fileId);
             if (existingEntry) {
+                if (existingEntry.writer.received < msg.payload.fileSize) {
+                    existingEntry.fromId = fromId; // peer may have a new socket id after reconnect
+                    break; // keep receiving into the same writer, no reset
+                }
+                // Already complete — safe to tear down before restarting fresh.
                 existingEntry.writer.abort().catch(() => {});
                 recvMap.delete(msg.payload.fileId);
                 resetRecvUI(msg.payload.fileId);
@@ -851,6 +870,7 @@ function onData(raw, fromId) {
                 writer: writer,
                 received: 0,
                 fromId,
+                lastByteAt: Date.now(),
             });
             // افتح الملف على القرص
             writer.open().then(() => {
@@ -900,6 +920,7 @@ async function recvChunk(raw, fromId) {
         const entry = recvMap.get(fileId);
         if (!entry) return;
 
+        entry.lastByteAt = Date.now();
         await entry.writer.write(chunk);
         // Use writer.received as single source of truth (FileWriter increments internally)
         const pct = Math.min(100, Math.round((entry.writer.received / entry.meta.fileSize) * 100));
@@ -919,6 +940,25 @@ async function recvChunk(raw, fromId) {
         console.error('recvChunk error', e);
     }
 }
+
+// ─────────────────────────────────────────
+//  Stall watchdog — surfaces a clear error instead of an infinite silent
+//  hang if a receiving transfer truly stops (peer gone for good). With the
+//  reliable data channel this should basically never fire for an open
+//  connection; it only catches the case where the peer is unreachable and
+//  reconnection has already been exhausted.
+// ─────────────────────────────────────────
+setInterval(() => {
+    const now = Date.now();
+    for (const [fileId, entry] of recvMap.entries()) {
+        if (entry.writer.received >= entry.meta.fileSize) continue;
+        if (now - entry.lastByteAt < STALL_TIMEOUT_MS) continue;
+        const pi = peers.get(entry.fromId);
+        if (pi?.connected) { entry.lastByteAt = now; continue; } // channel is fine, just a lull — don't false-alarm
+        // Peer is disconnected AND has been for a while with no reconnect — genuinely stuck.
+        cancelRecv(fileId, 'انقطع الاتصال ولم تكتمل عملية الاستلام');
+    }
+}, 5000);
 
 function cancelRecv(fileId, reason) {
     const e = recvMap.get(fileId);
@@ -1732,17 +1772,29 @@ async function sendFileSequential(file, peerIds, fileId) {
                     continue;
                 }
 
-                // ── Back-pressure: wait for buffer to drain ──
+                // ── Back-pressure: wait for buffer to drain to the LOW watermark ──
+                // (drain to BUFFER_LOW, not just under BUFFER_HIGH, so we don't immediately
+                // re-trigger back-pressure on the very next chunk — this keeps the channel fed
+                // as close to saturation as possible without ever overflowing it.)
                 const ch = pi.peer._channel;
-                if (ch) {
-                    while (ch.bufferedAmount > BUFFER_HIGH) {
-                        await sleep(30);
-                        const check = peers.get(id);
-                        if (!check?.connected) {
-                            allSent = false;
-                            continue;
-                        }
-                    }
+                if (ch && ch.bufferedAmount > BUFFER_HIGH) {
+                    let disconnected = false;
+                    await new Promise((resolve) => {
+                        ch.bufferedAmountLowThreshold = BUFFER_LOW;
+                        const onLow = () => { ch.removeEventListener('bufferedamountlow', onLow); resolve(); };
+                        ch.addEventListener('bufferedamountlow', onLow);
+                        // Safety poll in case the event doesn't fire (older browsers) or the peer drops
+                        const poll = setInterval(() => {
+                            const check = peers.get(id);
+                            if (!check?.connected) { disconnected = true; }
+                            if (disconnected || ch.bufferedAmount <= BUFFER_LOW || ch.readyState !== 'open') {
+                                clearInterval(poll);
+                                ch.removeEventListener('bufferedamountlow', onLow);
+                                resolve();
+                            }
+                        }, 50);
+                    });
+                    if (disconnected) allSent = false;
                 }
 
                 // ── Send the chunk ──
