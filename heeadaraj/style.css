@@ -665,16 +665,12 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
   /* شبكة: الصورة والاسم يمينًا، الموقع والوسم في المنتصف، النرد والزر يسارًا (اتجاه RTL) */
   .player-row{
     display:grid;
-    grid-template-columns:auto auto auto;
     grid-template-areas:
       "avatar pos  dice"
       "name   role btn";
-    align-items:center;
-    justify-items:center;
-    column-gap:25px;
+      column-gap:30px;
     row-gap:2px;
-    width:100%;
-  }
+   }
   .side-panel .info-col{display:contents;}
   .side-panel .avatar-big{grid-area:avatar;width:46px;height:46px;font-size:16px;flex-shrink:0;border-width:2px;margin-top:0;margin-left: 15px}
   .side-panel .p-name{grid-area:name;font-size:11.5px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
