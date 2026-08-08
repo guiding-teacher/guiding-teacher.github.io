@@ -1180,6 +1180,25 @@ async function boot(){
   }
 }
 
+
+document.querySelectorAll('.log-toggle').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const panel = btn.closest('.side-panel');
+    const log = panel.querySelector('.side-log');
+    // أغلق الباقي
+    document.querySelectorAll('.side-log').forEach(l => {
+      if(l !== log) l.classList.remove('show');
+    });
+    log.classList.toggle('show');
+  });
+});
+// إغلاق عند الضغط خارج البطاقة
+document.addEventListener('click', () => {
+  document.querySelectorAll('.side-log').forEach(l => l.classList.remove('show'));
+});
+
+
 function afterProfileReady(){
   initBoardUI();
   initReactionButtons();
