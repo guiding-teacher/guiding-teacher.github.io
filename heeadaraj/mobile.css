@@ -51,6 +51,7 @@ body{
   margin-bottom:8px;
 }
 .conn-pill{
+    display: none;
   margin:0 10px 10px;
   padding:5px 12px;
   font-size:10.5px;
