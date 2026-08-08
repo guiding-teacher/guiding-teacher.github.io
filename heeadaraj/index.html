@@ -301,6 +301,36 @@
     <button class="btn grey" id="btnCloseEventsSheet">إغلاق</button>
   </div>
 </div>
+  
+  
+  <script>
+(function(){
+  const composer = document.getElementById('composerBottom');
+  if(!composer) return;
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'chatToggleBtn';
+  toggleBtn.className = 'chat-toggle-btn';
+  toggleBtn.textContent = '💬';
+  document.body.appendChild(toggleBtn);
+
+  toggleBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    composer.classList.toggle('open');
+  });
+
+  // الضغط في أي مكان خارج الشريط يغلقه
+  document.addEventListener('click', (e)=>{
+    if(composer.classList.contains('open') && !composer.contains(e.target) && e.target!==toggleBtn){
+      composer.classList.remove('open');
+    }
+  });
+
+  // منع إغلاق الشريط عند الضغط داخله
+  composer.addEventListener('click', (e)=> e.stopPropagation());
+})();
+</script>
+  
 
 <canvas id="confetti"></canvas>
 
