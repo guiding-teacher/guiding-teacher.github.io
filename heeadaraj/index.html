@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="mobile.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <base target="_blank">
 </head>
@@ -53,6 +52,7 @@
     </div>
   </div>
 
+  <div class="iraq-badge">🇮🇶 صُنع بفخر في العراق</div>
 
   <div class="conn-pill">
     <div class="seg"><span class="dot" id="dbDot"></span> قاعدة البيانات</div>
@@ -157,7 +157,7 @@
       <!-- لوحة اللاعب الأول (يسار) -->
       <div class="side-panel" id="panelP1">
         <div class="edit-badge-side" id="editBadgeP1" style="display:none;">✏️</div>
-        <button class="log-toggle" title="سجل الأحداث">📋</button>
+        <div class="log-badge-side" id="logBadgeP1" title="أحداث اللاعب">📜</div>
         <div class="player-row">
           <div class="avatar-big" id="avatarP1">?<span class="live" id="liveP1" style="display:none;"></span></div>
           <div class="info-col">
@@ -205,6 +205,7 @@
       <!-- لوحة اللاعب الثاني (يمين) -->
       <div class="side-panel" id="panelP2">
         <div class="edit-badge-side" id="editBadgeP2" style="display:none;">✏️</div>
+        <div class="log-badge-side" id="logBadgeP2" title="أحداث اللاعب">📜</div>
         <div class="player-row">
           <div class="avatar-big" id="avatarP2">?<span class="live" id="liveP2" style="display:none;"></span></div>
           <div class="info-col">
@@ -287,6 +288,16 @@
       <button class="btn blue" id="btnRematch">🔁 إعادة بنفس الغرفة</button>
       <button class="btn grey" id="btnPlayAgain">🏠 الرئيسية</button>
     </div>
+  </div>
+</div>
+
+<!-- نافذة سلايد أحداث اللاعب — خاصة بتصميم الهاتف فقط -->
+<div class="events-sheet-bg" id="eventsSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3 id="eventsSheetTitle">📜 أحداث اللاعب</h3>
+    <div class="events-sheet-body" id="eventsSheetBody"></div>
+    <button class="btn grey" id="btnCloseEventsSheet">إغلاق</button>
   </div>
 </div>
 
