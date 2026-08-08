@@ -143,6 +143,9 @@ body.in-game #screen-game{
   flex:1;
   min-width:0;
 }
+.conn-pill{
+   display:none;
+}
 .tb-link-input{
   background:transparent;
   border:none;
