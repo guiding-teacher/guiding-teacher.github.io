@@ -721,49 +721,4 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
 
 @media (min-width:901px){
   .side-panel .info-col{display:flex;flex-direction:column;align-items:center;}
-
-  /* ====== شريط الدردشة المنزلق (الهاتف فقط) ====== */
-  .chat-fab{
-    position:fixed;
-    bottom:18px;
-    left:18px;
-    width:52px;
-    height:52px;
-    border-radius:50%;
-    background:var(--coral);
-    color:#fff;
-    display:none; /* يتحكم به JS */
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    box-shadow:0 4px 14px rgba(0,0,0,.35);
-    z-index:41;
-    cursor:pointer;
-    transition:.2s;
-    border:none;
-    outline:none;
-  }
-  .chat-fab:active{transform:scale(.9);}
-
-  .composer-bottom{
-    transform:translateY(100%);
-    transition:transform .32s cubic-bezier(.2,.9,.3,1.1);
-  }
-  .composer-bottom.open{
-    transform:translateY(0);
-  }
-
-  .chat-overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(6,14,20,.35);
-    z-index:39;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .25s ease;
-  }
-  .chat-overlay.show{
-    opacity:1;
-    pointer-events:auto;
-  }
 }
