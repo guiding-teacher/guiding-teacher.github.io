@@ -936,9 +936,6 @@ function showScreen(name){
   document.querySelector('.mini-userbar').style.display = (name!=='onboarding' && name!=='game') ? 'flex':'none';
   document.getElementById('composerBottom').style.display = (name==='game') ? 'flex':'none';
   document.body.classList.toggle('in-game', name==='game');
-  // أيقونة الدردشة في الهاتف
-  const chatFab = document.getElementById('chatFab');
-  if(chatFab) chatFab.style.display = (name==='game' && window.innerWidth <= 900) ? 'flex':'none';
 }
 
 function resetToHome(){
@@ -1165,9 +1162,6 @@ async function sendChat(){
   const input = document.getElementById('chatInput');
   const content = input.value.trim(); if(!content) return;
   input.value=''; await sendChatMessage(content);
-  // إغلاق شريط الدردشة في الهاتف بعد الإرسال
-  document.getElementById('composerBottom')?.classList.remove('open');
-  document.getElementById('chatOverlay')?.classList.remove('show');
 }
 
 function extractLinkCode(){ return new URLSearchParams(location.search).get('r'); }
@@ -1227,22 +1221,5 @@ function afterProfileReady(){
   showScreen('home'); 
   loadGlobalCounter();
 }
-
-
-/* ====== فتح/إغلاق شريط الدردشة في الهاتف ====== */
-(function(){
-  const chatFab = document.getElementById('chatFab');
-  const chatOverlay = document.getElementById('chatOverlay');
-  const composerBottom = document.getElementById('composerBottom');
-  if(!chatFab || !chatOverlay) return;
-  chatFab.addEventListener('click', ()=>{
-    composerBottom?.classList.add('open');
-    chatOverlay.classList.add('show');
-  });
-  chatOverlay.addEventListener('click', ()=>{
-    composerBottom?.classList.remove('open');
-    chatOverlay.classList.remove('show');
-  });
-})();
 
 boot();
