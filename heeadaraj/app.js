@@ -544,6 +544,11 @@ function renderRoom(room, opts={}){
   document.getElementById('roleTagP2').textContent = session.role==='p2' ? 'أنت' : 'الخصم';
   document.getElementById('editBadgeP1').style.display = session.role==='p1' ? 'flex':'none';
   document.getElementById('editBadgeP2').style.display = session.role==='p2' ? 'flex':'none';
+  // تحديد "بطاقتي" و"بطاقة الخصم" لتصميم الهاتف (يتحكم بترتيب البطاقات حول الرسم)
+  document.getElementById('panelP1').classList.toggle('me', session.role==='p1');
+  document.getElementById('panelP1').classList.toggle('opponent', session.role!=='p1');
+  document.getElementById('panelP2').classList.toggle('me', session.role==='p2');
+  document.getElementById('panelP2').classList.toggle('opponent', session.role!=='p2');
 
   if(!opts.skipTokens){
     placeToken(document.getElementById('tokenP1'), room.p1_pos||0);
@@ -612,7 +617,37 @@ function renderPerPlayerLogs(room){
   boxP2.innerHTML = p2Lines.length
     ? p2Lines.slice(-6).reverse().map(l=>`<div>${l}</div>`).join('')
     : '<div class="empty">لا أحداث بعد</div>';
+
+  // حفظ السجل الكامل (غير المختصر) لكل لاعب + اسمه، لعرضه في سلايد أحداث الهاتف
+  fullPlayerLogs.p1 = p1Lines; fullPlayerLogs.p2 = p2Lines;
+  fullPlayerNames.p1 = p1Name || 'اللاعب الأول'; fullPlayerNames.p2 = p2Name || 'اللاعب الثاني';
+  if(openEventsRole) renderEventsSheetBody(openEventsRole);
 }
+
+/* ====== سلايد أحداث اللاعب — تصميم الهاتف فقط (يفتح بدل زر القلم) ====== */
+const fullPlayerLogs = { p1:[], p2:[] };
+const fullPlayerNames = { p1:'', p2:'' };
+let openEventsRole = null;
+function renderEventsSheetBody(role){
+  const lines = fullPlayerLogs[role] || [];
+  document.getElementById('eventsSheetBody').innerHTML = lines.length
+    ? lines.slice().reverse().map(l=>`<div>${l}</div>`).join('')
+    : '<div class="empty">لا أحداث بعد</div>';
+}
+function openEventsSheet(role){
+  openEventsRole = role;
+  document.getElementById('eventsSheetTitle').textContent = '📜 أحداث ' + (fullPlayerNames[role] || '');
+  renderEventsSheetBody(role);
+  document.getElementById('eventsSheetBg').classList.add('show');
+}
+function closeEventsSheet(){
+  openEventsRole = null;
+  document.getElementById('eventsSheetBg').classList.remove('show');
+}
+document.getElementById('logBadgeP1').addEventListener('click', ()=> openEventsSheet('p1'));
+document.getElementById('logBadgeP2').addEventListener('click', ()=> openEventsSheet('p2'));
+document.getElementById('btnCloseEventsSheet').addEventListener('click', closeEventsSheet);
+document.getElementById('eventsSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='eventsSheetBg') closeEventsSheet(); });
 
 /* ====== مؤقّت الدور: رمي تلقائي إذا لم يرمِ اللاعب خلال 15 ثانية ====== */
 function clearTurnTimer(){
@@ -1179,25 +1214,6 @@ async function boot(){
     showScreen('onboarding');
   }
 }
-
-
-document.querySelectorAll('.log-toggle').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const panel = btn.closest('.side-panel');
-    const log = panel.querySelector('.side-log');
-    // أغلق الباقي
-    document.querySelectorAll('.side-log').forEach(l => {
-      if(l !== log) l.classList.remove('show');
-    });
-    log.classList.toggle('show');
-  });
-});
-// إغلاق عند الضغط خارج البطاقة
-document.addEventListener('click', () => {
-  document.querySelectorAll('.side-log').forEach(l => l.classList.remove('show'));
-});
-
 
 function afterProfileReady(){
   initBoardUI();
