@@ -668,7 +668,7 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
     grid-template-areas:
       "avatar pos  dice"
       "name   role btn";
-      column-gap:30px;
+      column-gap:12%;
     row-gap:2px;
    }
   .side-panel .info-col{display:contents;}
