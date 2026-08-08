@@ -181,8 +181,9 @@ body.in-game #screen-game{
   gap:12px;
   align-items:start;
   flex:1;
-  padding:0 12px 12px;
+  padding:0 5px 12px;
   min-height:0;
+  
 }
 
 /* لوحة اللاعب — دائرية أنيقة ومدمجة، لا تتمدد لتملأ الارتفاع */
@@ -231,6 +232,35 @@ height: 75%;
   font-size:11px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.15);z-index:2;transition:.15s;
 }
 .side-panel .edit-badge-side:hover{transform:scale(1.15);}
+/* زر أحداث اللاعب — يحل محل زر القلم في تصميم الهاتف فقط (مخفي افتراضيًا، لا يظهر في تصميم الحاسوب) */
+.side-panel .log-badge-side{
+  position:absolute;top:8px;left:8px;background:#20343d;border:1px solid rgba(255,255,255,.2);
+  border-radius:50%;width:22px;height:22px;display:none;align-items:center;justify-content:center;
+  font-size:11px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.2);z-index:2;transition:.15s;
+}
+.side-panel .log-badge-side:hover{transform:scale(1.15);}
+
+/* نافذة سلايد أحداث اللاعب — بطاقة تنزلق من أسفل الشاشة (تُستخدم من تصميم الهاتف فقط) */
+.events-sheet-bg{
+  position:fixed;inset:0;background:rgba(6,14,20,.6);z-index:55;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.events-sheet-bg.show{opacity:1;pointer-events:auto;}
+.events-sheet{
+  background:var(--paper);width:100%;max-width:520px;border-radius:20px 20px 0 0;
+  padding:14px 18px 22px;box-shadow:0 -12px 30px rgba(0,0,0,.4);
+  max-height:65vh;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.9,.3,1.1);
+}
+.events-sheet-bg.show .events-sheet{transform:translateY(0);}
+.events-sheet-handle{width:40px;height:5px;background:#e2d9c4;border-radius:99px;margin:0 auto 12px;flex-shrink:0;}
+.events-sheet h3{font-family:'Baloo Bhaijaan 2';font-size:16.5px;text-align:center;margin-bottom:12px;flex-shrink:0;}
+.events-sheet-body{overflow-y:auto;flex:1;font-size:13px;line-height:1.9;color:#5a544a;text-align:center;margin-bottom:14px;}
+.events-sheet-body div{border-bottom:1px dashed #efe8d6;padding:5px 0;}
+.events-sheet-body div:last-child{border-bottom:none;}
+.events-sheet-body .empty{color:#a49c8c;font-style:italic;}
+.events-sheet .btn{flex-shrink:0;}
 
 /* صف اللاعب: صورة دائرية كبيرة أعلى البطاقة، ثم الاسم، ثم النرد */
 .player-row{
@@ -314,13 +344,13 @@ height: 75%;
   padding-top:8px;
   border-top:1px dashed #e8e0cc;
   width:100%;
-}
+ }
 .side-reactions button{
   background:#f5f0e3;
   border:none;
   border-radius:9px;
   padding:6px 0;
-  font-size:16px;
+  font-size:12px;
   cursor:pointer;
   transition:.15s;
   flex:0 0 calc(25% - 4px);
@@ -566,46 +596,108 @@ height: 75%;
 canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
 .footer-note{margin-top:10px;color:rgba(255,255,255,.55);font-size:11px;text-align:center;}
 
-/* ========== استجابة الشاشات الصغيرة ========== */
+/* ========== استجابة الشاشات الصغيرة (تصميم الهاتف) ========== */
 @media (max-width:900px){
+  /* الترتيب: بطاقة الخصم أعلى الرسم، الرسم في الوسط، بطاقتي أسفل الرسم */
   .arena{
     grid-template-columns:1fr;
-    grid-template-rows:auto 1fr auto;
+    grid-template-rows:auto auto auto;
+    align-content:center;
     gap:6px;
     padding:0 8px 8px;
-    overflow-y:auto;
+    overflow:hidden;
+    height:100%;
+    margin-top: -65px;
   }
+  
+  .composer-bottom{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:40;
+  display:none;
+  gap:10px;
+  background:rgba(20,30,36,.92);
+  backdrop-filter:blur(10px);
+  padding:10px 14px;
+  box-shadow:0 -8px 24px rgba(0,0,0,.35);
+}
+ .composer-bottom input{flex:1;border:none;border-radius:12px;padding:10px 14px;font-family:'Cairo';font-size:12px;outline:none;}
+.composer-bottom button{background:var(--coral);border:none;color:#fff;border-radius:12px;padding:0 18px;
+  font-size:12px;cursor:pointer;font-family:'Baloo Bhaijaan 2';font-weight:700;transition:.15s;}
+.composer-bottom button:hover{filter:brightness(1.1);}
+  
+  .board-col{min-height:0;height:auto;justify-content:flex-start;}
+  .board-wrap{height:auto;}
+  .side-panel.opponent{order:1;}
+  .board-col{order:2;}
+  .side-panel.me{order:3;}
+
+  /* بطاقة مصغّرة: صف واحد بثلاثة أعمدة (نرد+زر / موقع+وسم / صورة+اسم) + شريط تفاعلات أفقي أسفلها */
   .side-panel{
-    flex-direction:row;
+    flex-direction:column;
     justify-content:flex-start;
-    text-align:right;
-    padding:8px 10px;
-    gap:8px;
-    border-radius:12px;
+    text-align:center;
+    padding:8px 10px 6px;
+    gap:2px;
+    border-radius:14px;
     max-height:none;
     overflow-y:visible;
+    height:auto;
   }
-  .player-row{flex-direction:row;gap:8px;}
-  .side-panel .avatar-big{width:80px;height:80px;font-size:16px;flex-shrink:0;border-width:3px;}
-  .side-panel .info-col{align-items:flex-start;flex:1;gap:0px;}
-  .side-panel .p-name{font-size:13px;max-width:120px;}
-  .side-dice-zone{flex-direction:row;margin-top:0;gap:6px;align-items:center;}
-  .cube-wrap{width:36px;height:36px;}
-  .cube{transform:rotateX(-18deg) rotateY(24deg) scale(.7);}
-  .face{width:36px;height:36px;border-radius:7px;padding:4px;}
-  .f-front{transform:translateZ(18px);}
-  .f-back{transform:translateZ(-18px) rotateY(180deg);}
-  .f-right{transform:rotateY(90deg) translateZ(18px);}
-  .f-left{transform:rotateY(-90deg) translateZ(18px);}
-  .f-top{transform:rotateX(90deg) translateZ(18px);}
-  .f-bottom{transform:rotateX(-90deg) translateZ(18px);}
-  .side-reactions{display:none;}
-  .side-log{max-height:40px;font-size:10px;margin-top:4px;padding-top:4px;}
-  .chat-strip{top:auto;bottom:-10px;}
+  /* شبكة: الصورة والاسم يمينًا، الموقع والوسم في المنتصف، النرد والزر يسارًا (اتجاه RTL) */
+  .player-row{
+    display:grid;
+    grid-template-columns:auto auto auto;
+    grid-template-areas:
+      "avatar pos  dice"
+      "name   role btn";
+    align-items:center;
+    justify-items:center;
+    column-gap:8px;
+    row-gap:2px;
+    width:100%;
+  }
+  .side-panel .info-col{display:contents;}
+  .side-panel .avatar-big{grid-area:avatar;width:46px;height:46px;font-size:16px;flex-shrink:0;border-width:2px;margin-top:0;margin-left: 15px}
+  .side-panel .p-name{grid-area:name;font-size:11.5px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .side-panel .p-pos{grid-area:pos;font-size:10.5px;}
+  .side-panel .role-tag{grid-area:role;font-size:8.5px;padding:1px 7px;}
+  .side-dice-zone{display:contents;}
+  .cube-wrap{grid-area:dice;width:30px;height:30px;justify-self:center;}
+  .roll-btn{grid-area:btn;justify-self:center;padding:5px 12px;font-size:11px;}
+  .opp-dice-label{grid-area:btn;justify-self:center;}
+  .cube{transform:rotateX(-18deg) rotateY(24deg) scale(.56);}
+  .face{width:30px;height:30px;border-radius:6px;padding:3px;}
+  .f-front{transform:translateZ(15px);}
+  .f-back{transform:translateZ(-15px) rotateY(180deg);}
+  .f-right{transform:rotateY(90deg) translateZ(15px);}
+  .f-left{transform:rotateY(-90deg) translateZ(15px);}
+  .f-top{transform:rotateX(90deg) translateZ(15px);}
+  .f-bottom{transform:rotateX(-90deg) translateZ(15px);}
+  .opp-dice-label{font-size:8.5px;}
+
+  /* تفاعلاتي (الأيقونات) — شريط أفقي أسفل البطاقة، في بطاقتي فقط */
+  .side-panel .side-reactions{display:none;}
+  .side-panel.me .side-reactions{ 
+    display:flex;flex-wrap:nowrap;overflow-x:auto;justify-content:center;
+    gap:4px;margin-top:3px;padding-top:5px;
+  }
+  .side-panel.me .side-reactions button{flex:0 0 20px;width:20px;height:40px;padding:0;font-size:14px;}
+
+  /* السجل المضمّن مخفي في الهاتف — استُبدل بزر الأحداث الذي يفتح السلايد */
+  .side-log{display:none;}
+
+  /* زر الأحداث (📜) يحل محل زر القلم (✏️) في تصميم الهاتف لكلا البطاقتين */
+  .side-panel .edit-badge-side{display:none !important;}
+  .side-panel .log-badge-side{display:flex !important;}
+
+  .chat-strip{font-size:13px;padding:5px 10px;max-width:150px;}
   .dro-value{width:70px;height:70px;font-size:36px;border-radius:16px;}
   .turn-bubble{font-size:12.5px;padding:7px 14px;top:6px;}
   .board-wrap{padding:8px;border-radius:14px;}
-  .board{max-height:55vh;}
+  .board{max-height:60vh;}
   .cell{font-size:10px;padding:2px 3px;}
   .turn-banner{font-size:12px;padding:6px 10px;}
   .log{max-height:50px;font-size:11px;}
