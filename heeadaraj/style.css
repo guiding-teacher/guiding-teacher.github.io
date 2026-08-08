@@ -1,0 +1,620 @@
+:root{
+  --sky-1:#0B1E33; --sky-2:#123B57; --sky-3:#0F5C57;
+  --cell-a:#FFF4D6; --cell-b:#BFE8E0;
+  --wood:#E2A65B; --wood-dark:#B9803A;
+  --snake-a:#4CB37A; --snake-b:#1E6B4A;
+  --coral:#FF6F59; --coral-dark:#E5543E;
+  --ink:#16232B; --paper:#FFFBF2;
+  --p1:#E5484D; --p2:#2F7DE1; --gold:#F2B705;
+  --glass:rgba(255,255,255,.08);
+  --shadow: 0 14px 34px rgba(4,14,22,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  margin:0;min-height:100vh;font-family:'Cairo',sans-serif;color:var(--ink);
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(255,111,89,.18), transparent 60%),
+    radial-gradient(1000px 650px at 92% 8%, rgba(47,125,225,.18), transparent 55%),
+    linear-gradient(180deg, var(--sky-1), var(--sky-2) 55%, var(--sky-3));
+  display:flex;flex-direction:column;align-items:center;padding:16px 12px 90px;
+  overflow-x:hidden;position:relative;
+}
+.aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.aurora i{position:absolute;border-radius:50%;filter:blur(46px);opacity:.35;animation:drift 22s ease-in-out infinite;}
+.aurora i:nth-child(1){width:280px;height:280px;background:var(--coral);top:-60px;right:-40px;}
+.aurora i:nth-child(2){width:220px;height:220px;background:var(--p2);bottom:0;left:-60px;animation-duration:28s;animation-delay:-6s;}
+.aurora i:nth-child(3){width:180px;height:180px;background:var(--gold);top:40%;left:44%;animation-duration:26s;animation-delay:-12s;}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-24px) scale(1.12);}}
+
+.stage{position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:center;}
+
+/* وضع اللعب بملء الشاشة */
+body.in-game{padding:0;overflow:hidden;height:100vh;height:100dvh;}
+body.in-game .site-header,
+body.in-game .iraq-badge,
+body.in-game .conn-pill,
+body.in-game .setup-warning,
+body.in-game .footer-note,
+body.in-game .mini-userbar{display:none !important;}
+body.in-game .stage{height:100vh;height:100dvh;max-width:none;}
+body.in-game #screen-game{
+  position:fixed;inset:0;max-width:none;height:100vh;height:100dvh;
+  padding:0;overflow:hidden;z-index:5;
+}
+
+/* الهيدر */
+.site-header{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:960px;margin-bottom:10px;}
+.brand{display:flex;align-items:center;gap:12px;color:#fff;}
+.brand .logo-mark{width:46px;height:46px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));flex-shrink:0;}
+.brand .titles h1{font-family:'Baloo Bhaijaan 2';font-size:24px;margin:0;letter-spacing:.3px;text-shadow:0 3px 0 rgba(0,0,0,.3);}
+.brand .titles small{display:block;font-weight:700;font-size:10.5px;opacity:.8;margin-top:2px;}
+.mini-userbar{display:none;align-items:center;gap:8px;}
+.mini-userbar .avatar-wrap{position:relative;cursor:pointer;}
+.mini-userbar .avatar-wrap .edit-badge{position:absolute;bottom:-3px;left:-3px;background:#fff;border-radius:50%;width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 5px rgba(0,0,0,.3);}
+.mini-userbar b{color:#fff;font-size:12.5px;text-shadow:0 2px 4px rgba(0,0,0,.3);}
+.iraq-badge{display:inline-flex;align-items:center;gap:5px;margin-bottom:10px;padding:5px 12px;border-radius:999px;
+  background:var(--glass);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);color:#eef;font-size:11.5px;font-weight:700;}
+.conn-pill{display:flex;align-items:center;gap:14px;margin:0 0 14px;padding:7px 16px;border-radius:999px;
+  background:var(--glass);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);color:#dfe9ee;font-size:12px;font-weight:700;}
+.conn-pill .seg{display:flex;align-items:center;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;background:#8bd39a;box-shadow:0 0 0 0 rgba(139,211,154,.6);animation:pulse 1.8s infinite;}
+.dot.off{background:#e5484d;animation:none;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(139,211,154,.55)}70%{box-shadow:0 0 0 7px rgba(139,211,154,0)}100%{box-shadow:0 0 0 0 rgba(139,211,154,0)}}
+.setup-warning{max-width:460px;width:100%;background:#3a2a06;border:1px solid #7a5b00;color:#ffe6a8;
+  border-radius:16px;padding:16px 18px;font-size:13px;line-height:1.9;margin-bottom:14px;display:none;}
+.setup-warning code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:6px;}
+
+/* بطاقات عامة */
+.card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);padding:26px;
+  width:100%;max-width:460px;border:4px solid rgba(255,255,255,.55);position:relative;}
+.card::before{content:"";position:absolute;inset:-4px;border-radius:26px;z-index:-1;opacity:.9;
+  background:repeating-linear-gradient(90deg, var(--gold) 0 14px, var(--coral) 14px 28px);}
+.tabs{display:flex;gap:8px;margin-bottom:20px;background:#eee7d6;padding:6px;border-radius:14px;}
+.tab{flex:1;text-align:center;padding:10px 8px;border-radius:10px;cursor:pointer;font-weight:700;
+  font-family:'Baloo Bhaijaan 2';color:#7a7263;transition:.2s;user-select:none;}
+.tab.active{background:var(--coral);color:#fff;box-shadow:0 4px 0 var(--coral-dark);}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#3a4750;}
+.field input[type=text]{width:100%;padding:13px 14px;border-radius:12px;border:2px solid #dfd6c0;
+  font-family:'Cairo';font-size:16px;background:#fff;outline:none;transition:.15s;}
+.field input:focus{border-color:var(--coral);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;
+  border:none;border-radius:14px;font-family:'Baloo Bhaijaan 2';font-size:18px;font-weight:700;color:#fff;
+  background:var(--coral);box-shadow:0 5px 0 var(--coral-dark);cursor:pointer;transition:.08s;}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--coral-dark);}
+.btn.blue{background:var(--p2);box-shadow:0 5px 0 #1a56a3;}
+.btn.green{background:var(--snake-a);box-shadow:0 5px 0 var(--snake-b);}
+.btn.grey{background:#8a8378;box-shadow:0 5px 0 #6d675e;}
+.btn.small{padding:9px 14px;font-size:13.5px;width:auto;box-shadow:0 3px 0 var(--coral-dark);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.hint{font-size:12.5px;color:#79726a;margin-top:10px;line-height:1.7;text-align:center;}
+.error-msg{background:#FDEBEA;color:#B3261E;border:1px solid #F4C7C4;border-radius:10px;
+  padding:10px 12px;font-size:13.5px;margin-bottom:14px;display:none;font-weight:600;}
+.avatar-picker{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px;}
+.avatar-preview{width:96px;height:96px;border-radius:50%;background:var(--p1);display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:36px;font-weight:800;font-family:'Baloo Bhaijaan 2';
+  box-shadow:0 8px 18px rgba(0,0,0,.25);background-size:cover;background-position:center;overflow:hidden;position:relative;}
+.upload-btn{background:#eee7d6;border:none;border-radius:10px;padding:8px 16px;font-family:'Cairo';
+  font-weight:700;font-size:13px;cursor:pointer;color:#5a544a;}
+.palette{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px;}
+.palette .sw{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;}
+.palette .sw.sel{border-color:var(--ink);}
+.link-box{background:#16262e;border-radius:10px;padding:10px 12px;font-size:12.5px;word-break:break-all;
+  color:var(--gold);font-family:monospace;}
+.row-actions{display:flex;gap:10px;margin-top:10px;}
+.icon-btn{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;
+  padding:10px;border-radius:10px;font-family:'Cairo';font-weight:700;cursor:pointer;font-size:13.5px;
+  display:flex;align-items:center;justify-content:center;gap:6px;}
+.icon-btn:hover{background:rgba(255,255,255,.22);}
+.match-search{text-align:center;padding:10px 0;}
+.match-spinner{width:56px;height:56px;border-radius:50%;border:5px solid #eee7d6;border-top-color:var(--coral);
+  margin:0 auto 16px;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.match-found{text-align:center;}
+.match-vs{display:flex;align-items:center;justify-content:center;gap:16px;margin:14px 0;}
+.match-vs .av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-family:'Baloo Bhaijaan 2';font-size:22px;background-size:cover;background-position:center;}
+.match-timer{font-family:'Baloo Bhaijaan 2';font-size:15px;color:var(--coral-dark);margin-bottom:10px;}
+
+/* ========== شاشة اللعب — ملء الشاشة ========== */
+#screen-game{width:100%;max-width:none;display:none;flex-direction:column;gap:0;height:100%;}
+
+/* شريط علوي موحّد */
+.game-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:rgba(255,255,255,.10);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);
+  border-radius:14px;padding:7px 10px;color:#fff;flex-shrink:0;margin:8px 12px;
+}
+.tb-btn{
+  background:rgba(255,255,255,.14);border:none;color:#fff;width:38px;height:38px;border-radius:10px;
+  font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;
+}
+.tb-btn:hover{background:rgba(255,255,255,.24);transform:scale(1.08);}
+.tb-actions{display:flex;gap:6px;}
+
+/* رابط الدعوة في الشريط */
+.tb-link-wrap{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,0,0,.25);
+  border-radius:10px;
+  padding:4px 8px;
+  flex:1;
+  min-width:0;
+}
+.tb-link-input{
+  background:transparent;
+  border:none;
+  color:var(--gold);
+  font-family:monospace;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:1px;
+  flex:1;
+  min-width:0;
+  outline:none;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.tb-copy-btn{
+  background:var(--gold);
+  border:none;
+  color:#16232B;
+  border-radius:8px;
+  padding:4px 10px;
+  font-size:11px;
+  font-weight:800;
+  font-family:'Cairo';
+  cursor:pointer;
+  flex-shrink:0;
+  transition:.15s;
+}
+.tb-copy-btn:hover{filter:brightness(1.15);transform:scale(1.05);}
+.tb-copy-btn.copied{background:#3EA06B;color:#fff;}
+
+/* ساحة اللعب */
+.arena{
+  display:grid;
+  grid-template-columns:minmax(210px, 24%) 1fr minmax(210px, 24%);
+  gap:12px;
+  align-items:start;
+  flex:1;
+  padding:0 12px 12px;
+  min-height:0;
+}
+
+/* لوحة اللاعب — دائرية أنيقة ومدمجة، لا تتمدد لتملأ الارتفاع */
+.side-panel{
+  background:var(--paper);
+  border-radius:20px;
+  padding:16px 14px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  position:relative;
+  border:3px solid transparent;
+  transition:.2s;
+  overflow:hidden;
+margin-top: 20px;
+  width:100%;
+  max-height:100%;
+  overflow-y:auto;
+}
+/* ========== رفع بطاقات اللاعبين للأعلى ========== */
+.side-panel{
+height: 75%;
+  margin-top:0;
+}
+
+/* لو بغيت ترفعها أكثر من بداية العمود */
+#panelP1, #panelP2{
+  margin-top:0;
+  padding-top:6px;        /* اضبط حسب الرغبة */
+}
+
+.side-panel.active-turn{
+  border-color:var(--snake-a);
+  box-shadow:0 0 0 4px rgba(62,160,107,.30), var(--shadow);
+  animation:turnGlow 2s ease-in-out infinite;
+}
+@keyframes turnGlow{
+  0%,100%{box-shadow:0 0 0 4px rgba(62,160,107,.20), var(--shadow);}
+  50%{box-shadow:0 0 0 9px rgba(62,160,107,.38), var(--shadow);}
+}
+.side-panel .edit-badge-side{
+  position:absolute;top:8px;left:8px;background:#fff;border:1px solid #e2d9c4;
+  border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.15);z-index:2;transition:.15s;
+}
+.side-panel .edit-badge-side:hover{transform:scale(1.15);}
+
+/* صف اللاعب: صورة دائرية كبيرة أعلى البطاقة، ثم الاسم، ثم النرد */
+.player-row{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  justify-content:center;
+}
+.side-panel .avatar-big{
+  width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top: 50px;
+  color:#fff;font-weight:800;font-family:'Baloo Bhaijaan 2';font-size:40px;background-size:cover;background-position:center;
+  box-shadow:0 8px 20px rgba(0,0,0,.28), inset 0 -3px 0 rgba(0,0,0,.15);position:relative;flex-shrink:0;
+  border:4px solid rgba(255,255,255,.95);outline:2px solid rgba(0,0,0,.06);transition:.2s;
+}
+.side-panel.active-turn .avatar-big{
+  border-color:var(--snake-a);
+  box-shadow:0 0 0 6px rgba(62,160,107,.28), 0 8px 20px rgba(0,0,0,.28);
+}
+.side-panel .avatar-big .live{
+  position:absolute;bottom:4px;left:4px;width:14px;height:14px;border-radius:50%;
+  background:#8bd39a;border:2.5px solid var(--paper);box-shadow:0 0 5px rgba(139,211,154,.7);
+}
+.side-panel .info-col{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0;width:100%;}
+.side-panel .p-name{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px;}
+.side-panel .p-pos{font-size:12.5px;color:#7a7a7a;font-weight:700;}
+.side-panel .role-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eee7d6;color:#7a7263;}
+
+/* منطقة النرد — سطر واحد: النرد يسار، الزر يمين (نفس المكان الحالي) */
+.side-dice-zone{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  perspective:700px;
+  flex-shrink:0;
+  margin-top:4px;
+  flex-wrap:nowrap;
+  width:100%;
+}
+.cube-wrap{width:54px;height:54px;order:2;}
+.roll-btn{order:1;}
+.opp-dice-label{order:2;}
+.cube{
+  width:100%;height:100%;position:relative;transform-style:preserve-3d;
+  transform:rotateX(-18deg) rotateY(24deg) scale(.9);
+  transition:transform .7s cubic-bezier(.2,.9,.3,1.1);
+}
+.cube.rolling{transition:transform .12s linear;}
+.face{
+  position:absolute;width:54px;height:54px;background:#fff;border-radius:10px;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.06);display:grid;grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,1fr);padding:7px;
+}
+.pip{border-radius:50%;background:var(--ink);align-self:center;justify-self:center;width:8px;height:8px;opacity:0;}
+.pip.on{opacity:1;}
+.f-front{transform:translateZ(27px);}
+.f-back{transform:translateZ(-27px) rotateY(180deg);}
+.f-right{transform:rotateY(90deg) translateZ(27px);}
+.f-left{transform:rotateY(-90deg) translateZ(27px);}
+.f-top{transform:rotateX(90deg) translateZ(27px);}
+.f-bottom{transform:rotateX(-90deg) translateZ(27px);}
+.roll-btn{
+  padding:10px 18px;border:none;border-radius:12px;font-family:'Baloo Bhaijaan 2';
+  font-size:15px;color:#fff;background:var(--coral);box-shadow:0 4px 0 var(--coral-dark);cursor:pointer;transition:.1s;
+}
+.roll-btn:disabled{opacity:.4;cursor:not-allowed;}
+.roll-btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--coral-dark);}
+.roll-btn:hover:not(:disabled){filter:brightness(1.1);}
+.opp-dice-label{font-size:10px;color:#8a8378;font-weight:700;}
+
+/* تفاعلات البطاقة — صفّان مدمجان بدل شريط طويل */
+.side-reactions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  justify-content:center;
+  margin-top:4px;
+  padding-top:8px;
+  border-top:1px dashed #e8e0cc;
+  width:100%;
+}
+.side-reactions button{
+  background:#f5f0e3;
+  border:none;
+  border-radius:9px;
+  padding:6px 0;
+  font-size:16px;
+  cursor:pointer;
+  transition:.15s;
+  flex:0 0 calc(25% - 4px);
+  min-width:0;
+}
+.side-reactions button:hover{
+  transform:scale(1.25);
+  background:#e8e0cc;
+}
+
+/* سجل الأحداث الخاص بكل لاعب — تحت التفاعلات مباشرة داخل بطاقته */
+.side-log{
+  width:100%;
+  max-height:78px;
+  overflow-y:auto;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px dashed #e8e0cc;
+  font-size:11px;
+  line-height:1.7;
+  color:#5a544a;
+  text-align:center;
+}
+.side-log div{border-bottom:1px dashed #efe8d6;padding:2px 0;}
+.side-log div:last-child{border-bottom:none;}
+.side-log .empty{color:#a49c8c;font-style:italic;}
+
+/* شريط الدردشة العابر */
+.chat-strip{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#20343d;color:#fff;margin-top: 20px;
+  padding:5px 10px;border-radius:8px;font-size:20px;max-width:180px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;box-shadow:0 6px 14px rgba(0,0,0,.3);animation:stripPop .25s ease-out;z-index:6;
+}
+.chat-strip::after{
+  content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#20343d;
+}
+@keyframes stripPop{from{opacity:0;transform:translateX(-50%) translateY(6px) scale(.9);}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}
+.chat-strip.fading{animation:stripFade .4s ease-in forwards;}
+@keyframes stripFade{to{opacity:0;transform:translateX(-50%) translateY(-6px) scale(.9);}}
+
+/* عمود اللوحة — مربع 1:1 يملأ المساحة */
+.board-col{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  align-items:center;
+  height:90%;
+  justify-content:flex-start;
+  min-width:0;
+}
+.board-wrap{
+  background:linear-gradient(160deg, var(--wood), var(--wood-dark));
+  padding:12px;
+  border-radius:18px;
+  box-shadow:var(--shadow);
+  position:relative;
+  width:100%;
+  height:85%;
+  aspect-ratio:1/1;
+  display:flex;
+   align-items:center;
+  justify-content:center;
+  }
+
+.board-wrap.shake{animation:shakeBoard .4s;}
+@keyframes shakeBoard{0%,100%{transform:translate(0,0);}25%{transform:translate(-4px,2px);}50%{transform:translate(4px,-2px);}75%{transform:translate(-3px,-2px);}}
+.board{
+  position:relative;
+  width:100%;
+  height:100%;
+  border-radius:10px;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  grid-template-rows:repeat(10,1fr);
+  box-shadow:inset 0 0 0 4px rgba(0,0,0,.15);
+  /* مهم: نثبّت اتجاه اللوحة LTR بصرف النظر عن اتجاه الصفحة، كي يتطابق ترقيم
+     المربعات (Grid) تمامًا مع إحداثيات الحية/السلم/القطع (SVG فيزيائية من اليسار).
+     هذا يمنع أي انعكاس بصري بين الأرقام وحركة اللعب. */
+  direction:ltr;
+}
+/* الأرقام كبيرة وواضحة */
+.cell{
+  display:flex;align-items:flex-start;justify-content:flex-end;
+  font-size:clamp(11px, 1.3vw, 17px);
+  font-weight:800;
+  color:rgba(20,30,30,.45);
+  padding:3px 5px;
+  font-family:'Baloo Bhaijaan 2';
+}
+.cell.a{background:var(--cell-a);}
+.cell.b{background:var(--cell-b);}
+.cell.start{color:#fff;background:linear-gradient(135deg,var(--snake-a),var(--snake-b));}
+.cell.goal{color:#fff;background:linear-gradient(135deg,#FFD54F,#F2B705);}
+.overlay-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.token{
+  position:absolute;
+  width:6%;
+  height:8%;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:20px;
+  font-weight:800;
+  font-family:'Baloo Bhaijaan 2';
+  box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 -2px 0 rgba(0,0,0,.25);
+  transition:top .35s ease, left .35s ease;
+  z-index:5;
+  border:2px solid rgba(255,255,255,.85);
+  background-size:cover;
+  background-position:center;
+}
+
+/* جسيمات التفاعل */
+.reaction-particle{position:absolute;font-size:22px;pointer-events:none;z-index:9;animation:burst .9s cubic-bezier(.2,.8,.3,1) forwards;}
+@keyframes burst{0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0deg);}15%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(var(--rot));}}
+
+/* شريط الدور القديم — استُبدل بفقاعة الدور العائمة فوق اللوحة */
+.turn-banner{ display:none !important; }
+
+/* السجل (غير مستخدم بعد نقل الأحداث إلى بطاقة كل لاعب) */
+.log{
+  max-height:70px;
+  overflow-y:auto;
+  background:var(--paper);
+  border-radius:12px;
+  padding:8px 10px;
+  font-size:11.5px;
+  line-height:1.8;
+  width:100%;
+  max-width:100%;
+  box-shadow:var(--shadow);
+  flex-shrink:0;
+}
+.log div{border-bottom:1px dashed #e2d9c4;padding:2px 0;}
+.log div:last-child{border-bottom:none;}
+
+/* فقاعة الدور — تظهر فوق اللوحة لمدة ثانية ثم تختفي تلقائيًا */
+.turn-bubble{
+  position:absolute;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%) translateY(-10px) scale(.85);
+  background:#20343d;
+  color:#fff;
+  padding:9px 20px;
+  border-radius:999px;
+  font-family:'Baloo Bhaijaan 2';
+  font-size:15px;
+  font-weight:700;
+  white-space:nowrap;
+  box-shadow:0 8px 20px rgba(0,0,0,.4);
+  z-index:8;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .28s ease, transform .28s ease;
+}
+.turn-bubble::after{
+  content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:#20343d;
+}
+.turn-bubble.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0) scale(1);
+}
+
+/* واجهة رمي النرد المكبّرة — تظهر أمام المستخدم أثناء الرمي */
+.dice-roll-overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:7;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+  background:radial-gradient(circle at center, rgba(0,0,0,.28), rgba(0,0,0,0) 70%);
+}
+.dice-roll-overlay.show{opacity:1;}
+.dro-value{
+  width:96px;height:96px;border-radius:22px;background:var(--paper);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Baloo Bhaijaan 2';font-size:52px;font-weight:800;color:var(--ink);
+  box-shadow:0 16px 34px rgba(0,0,0,.45);
+  transform:scale(.8);
+  transition:transform .18s ease;
+}
+.dice-roll-overlay.show .dro-value{transform:scale(1);}
+
+/* شريط الدردشة السفلي */
+.composer-bottom{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  z-index:40;
+  display:none;
+  gap:10px;
+  background:rgba(20,30,36,.92);
+  backdrop-filter:blur(10px);
+  padding:10px 14px;
+  box-shadow:0 -8px 24px rgba(0,0,0,.35);
+}
+.composer-bottom .inner{max-width:960px;margin:0 auto;display:flex;gap:10px;width:100%;}
+.composer-bottom input{flex:1;border:none;border-radius:12px;padding:10px 14px;font-family:'Cairo';font-size:14px;outline:none;}
+.composer-bottom button{background:var(--coral);border:none;color:#fff;border-radius:12px;padding:0 18px;
+  font-size:15px;cursor:pointer;font-family:'Baloo Bhaijaan 2';font-weight:700;transition:.15s;}
+.composer-bottom button:hover{filter:brightness(1.1);}
+
+.global-counter{color:#79726a;font-size:11.5px;margin-top:10px;text-align:center;}
+
+/* جدول جولاتي السابقة (محفوظ محليًا) */
+.history-section{margin-top:18px;padding-top:14px;border-top:1px dashed #e2d9c4;}
+.history-section h4{font-family:'Baloo Bhaijaan 2';font-size:14px;color:#3a4750;margin-bottom:8px;text-align:center;}
+.history-table{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;}
+.history-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:#F5F0E3;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:#5a544a;
+}
+.history-row.win{border-right:4px solid var(--snake-a);}
+.history-row.lose{border-right:4px solid var(--p1);}
+.history-row .h-date{font-size:10.5px;color:#948c7c;font-weight:600;flex-shrink:0;}
+.history-row .h-opp{flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.history-row .h-status{flex-shrink:0;}
+.history-row.win .h-status{color:#1E6B4A;}
+.history-row.lose .h-status{color:#B3261E;}
+
+/* النوافذ المنبثقة */
+.modal-bg{position:fixed;inset:0;background:rgba(6,14,20,.65);display:none;align-items:center;
+  justify-content:center;z-index:50;padding:20px;}
+.modal{background:var(--paper);border-radius:22px;padding:30px 26px;max-width:340px;width:100%;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.modal.wide{max-width:380px;}
+.modal .trophy{font-size:56px;}
+.modal h2{margin:8px 0 4px;font-size:24px;font-family:'Baloo Bhaijaan 2';}
+.modal p{font-size:14px;color:#6a655c;margin-bottom:18px;}
+.modal .btns{display:flex;gap:8px;}
+
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
+.footer-note{margin-top:10px;color:rgba(255,255,255,.55);font-size:11px;text-align:center;}
+
+/* ========== استجابة الشاشات الصغيرة ========== */
+@media (max-width:900px){
+  .arena{
+    grid-template-columns:1fr;
+    grid-template-rows:auto 1fr auto;
+    gap:6px;
+    padding:0 8px 8px;
+    overflow-y:auto;
+  }
+  .side-panel{
+    flex-direction:row;
+    justify-content:flex-start;
+    text-align:right;
+    padding:8px 10px;
+    gap:8px;
+    border-radius:12px;
+    max-height:none;
+    overflow-y:visible;
+  }
+  .player-row{flex-direction:row;gap:8px;}
+  .side-panel .avatar-big{width:80px;height:80px;font-size:16px;flex-shrink:0;border-width:3px;}
+  .side-panel .info-col{align-items:flex-start;flex:1;gap:0px;}
+  .side-panel .p-name{font-size:13px;max-width:120px;}
+  .side-dice-zone{flex-direction:row;margin-top:0;gap:6px;align-items:center;}
+  .cube-wrap{width:36px;height:36px;}
+  .cube{transform:rotateX(-18deg) rotateY(24deg) scale(.7);}
+  .face{width:36px;height:36px;border-radius:7px;padding:4px;}
+  .f-front{transform:translateZ(18px);}
+  .f-back{transform:translateZ(-18px) rotateY(180deg);}
+  .f-right{transform:rotateY(90deg) translateZ(18px);}
+  .f-left{transform:rotateY(-90deg) translateZ(18px);}
+  .f-top{transform:rotateX(90deg) translateZ(18px);}
+  .f-bottom{transform:rotateX(-90deg) translateZ(18px);}
+  .side-reactions{display:none;}
+  .side-log{max-height:40px;font-size:10px;margin-top:4px;padding-top:4px;}
+  .chat-strip{top:auto;bottom:-10px;}
+  .dro-value{width:70px;height:70px;font-size:36px;border-radius:16px;}
+  .turn-bubble{font-size:12.5px;padding:7px 14px;top:6px;}
+  .board-wrap{padding:8px;border-radius:14px;}
+  .board{max-height:55vh;}
+  .cell{font-size:10px;padding:2px 3px;}
+  .turn-banner{font-size:12px;padding:6px 10px;}
+  .log{max-height:50px;font-size:11px;}
+  .game-topbar{margin:6px 8px;padding:6px;}
+  .tb-btn{width:32px;height:32px;font-size:14px;}
+  .tb-link-input{font-size:10px;}
+  .tb-copy-btn{padding:3px 6px;font-size:10px;}
+}
+
+@media (min-width:901px){
+  .side-panel .info-col{display:flex;flex-direction:column;align-items:center;}
+}

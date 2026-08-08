@@ -1,0 +1,500 @@
+/* =====================================================================
+   الحية والسلم — إعدادات عرض الهاتف المحترفة (Mobile-First)
+   ===================================================================== */
+
+/* ─── إعادة تعيين أساسية للهاتف ─── */
+html{
+  -webkit-text-size-adjust:100%;
+  -ms-text-size-adjust:100%;
+  text-size-adjust:100%;
+  touch-action:manipulation;
+}
+html, body{
+  overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-touch-callout:none;
+}
+body{
+  padding:0;
+  margin:0;
+  min-height:100dvh;
+  min-height:100vh;
+  /* خلفية أغمق وأكثر تماسكاً للهاتف */
+  background:
+    radial-gradient(600px 400px at 10% -5%, rgba(255,111,89,.22), transparent 55%),
+    radial-gradient(700px 500px at 95% 5%, rgba(47,125,225,.18), transparent 50%),
+    linear-gradient(180deg, #091828 0%, #0f3a52 50%, #0d4f4a 100%);
+}
+
+/* ─── Stage عام للهاتف ─── */
+.stage{
+  width:100%;
+  max-width:100%;
+  padding:0;
+  align-items:stretch;
+}
+
+/* ─── الهيدر في الهاتف ─── */
+.site-header{
+  max-width:100%;
+  padding:10px 14px 6px;
+  margin-bottom:6px;
+}
+.brand .logo-mark{width:38px;height:38px;}
+.brand .titles h1{font-size:18px;}
+.brand .titles small{font-size:9.5px;}
+.mini-userbar b{font-size:11px;}
+.mini-userbar .avatar-wrap .edit-badge{width:16px;height:16px;font-size:9px;}
+.iraq-badge{
+  font-size:10px;
+  padding:4px 10px;
+  margin-bottom:8px;
+}
+.conn-pill{
+  margin:0 10px 10px;
+  padding:5px 12px;
+  font-size:10.5px;
+  gap:10px;
+}
+
+/* ─── البطاقات العامة ─── */
+.card{
+  max-width:100%;
+  margin:0 10px 12px;
+  padding:18px 16px;
+  border-radius:18px;
+  border-width:3px;
+}
+.card::before{inset:-3px;border-radius:20px;}
+.tabs{
+  margin-bottom:14px;
+  padding:5px;
+  border-radius:12px;
+  gap:5px;
+}
+.tab{
+  padding:8px 4px;
+  font-size:13px;
+  border-radius:8px;
+}
+.field{margin-bottom:10px;}
+.field label{font-size:11.5px;margin-bottom:4px;}
+.field input[type=text]{
+  padding:11px 12px;
+  border-radius:10px;
+  font-size:15px;
+  border-width:1.5px;
+}
+.btn{
+  padding:12px;
+  border-radius:12px;
+  font-size:16px;
+  box-shadow:0 4px 0 var(--coral-dark);
+}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--coral-dark);}
+.hint{font-size:11.5px;margin-top:6px;}
+.error-msg{padding:8px 10px;font-size:12px;margin-bottom:10px;}
+
+/* ─── Onboarding ─── */
+#screen-onboarding .avatar-picker{margin-bottom:12px;gap:8px;}
+#screen-onboarding .avatar-preview{width:80px;height:80px;font-size:28px;}
+.upload-btn{padding:7px 12px;font-size:12px;border-radius:8px;}
+
+/* ─── Home Screen ─── */
+#screen-home .global-counter{font-size:10.5px;margin-top:8px;}
+.history-section{margin-top:12px;padding-top:10px;}
+.history-section h4{font-size:12.5px;margin-bottom:6px;}
+.history-table{gap:5px;max-height:150px;}
+.history-row{padding:6px 10px;font-size:11px;}
+.history-row .h-date{font-size:9.5px;}
+
+/* ─── Matching Screen ─── */
+#screen-matching{padding:20px 16px;}
+.match-spinner{width:44px;height:44px;border-width:4px;margin-bottom:12px;}
+.match-vs{gap:12px;margin:10px 0;}
+.match-vs .av{width:48px;height:48px;font-size:18px;}
+.match-timer{font-size:13px;margin-bottom:8px;}
+.row-actions{gap:8px;margin-top:8px;}
+
+/* ═══════════════════════════════════════════════════════════════════
+   شاشة اللعب (GAME) — التحسين الأهم للهاتف
+   ═══════════════════════════════════════════════════════════════════ */
+
+body.in-game{
+  padding:0;
+  overflow:hidden;
+  height:100dvh;
+  height:100vh;
+}
+body.in-game .stage{
+  height:100dvh;
+  height:100vh;
+}
+
+/* ─── الشريط العلوي المدمج ─── */
+.game-topbar{
+  margin:6px 8px 4px;
+  padding:5px 8px;
+  border-radius:12px;
+  gap:6px;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.tb-btn{
+  width:34px;
+  height:34px;
+  border-radius:9px;
+  font-size:15px;
+}
+.tb-link-wrap{
+  padding:3px 6px;
+  border-radius:8px;
+  gap:4px;
+}
+.tb-link-input{
+  font-size:10px;
+  letter-spacing:0.5px;
+}
+.tb-copy-btn{
+  padding:3px 8px;
+  font-size:10px;
+  border-radius:6px;
+}
+
+/* ─── ساحة اللعب: تخطيط عمودي للهاتف ─── */
+.arena{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:0 8px 8px;
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+}
+
+/* ─── عمود اللوحة: الأولوية القصوى ─── */
+.board-col{
+  order:1;
+  flex:1;
+  min-height:0;
+  width:100%;
+  gap:4px;
+}
+.board-wrap{
+  padding:8px;
+  border-radius:14px;
+  width:100%;
+  height:auto;
+  aspect-ratio:1 / 1;
+  max-height:calc(100dvh - 240px);
+  box-shadow:0 8px 24px rgba(4,14,22,.5);
+}
+.board{
+  border-radius:8px;
+  box-shadow:inset 0 0 0 3px rgba(0,0,0,.18);
+}
+.cell{
+  font-size:clamp(8px, 2.8vw, 14px);
+  padding:1px 3px;
+  font-weight:700;
+}
+
+/* ─── القطع (Tokens) بحجم مناسب للهاتف ─── */
+.token{
+  width:7.5%;
+  height:7.5%;
+  font-size:clamp(10px, 3vw, 16px);
+  border-width:2px;
+  box-shadow:0 2px 5px rgba(0,0,0,.45), inset 0 -2px 0 rgba(0,0,0,.2);
+}
+
+/* ─── فقاعة الدور ─── */
+.turn-bubble{
+  top:6px;
+  padding:6px 14px;
+  font-size:12.5px;
+  border-radius:999px;
+  max-width:85%;
+  text-align:center;
+}
+
+/* ─── واجهة رمي النرد المكبّرة ─── */
+.dice-roll-overlay{
+  border-radius:14px;
+}
+.dro-value{
+  width:72px;
+  height:72px;
+  border-radius:18px;
+  font-size:38px;
+}
+
+/* ─── لوحات اللاعبين: شريطان أفقيان مدمجان ─── */
+.side-panel{
+  order:2;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  padding:8px 10px;
+  gap:8px;
+  border-radius:14px;
+  max-height:none;
+  overflow:visible;
+  margin-top:0;
+  height:auto;
+  width:100%;
+}
+#panelP1{order:2;}
+#panelP2{order:3;}
+
+/* صف اللاعب: أفقي مدمج */
+.player-row{
+  flex-direction:row;
+  align-items:center;
+  gap:8px;
+  width:auto;
+  flex:1;
+}
+.side-panel .avatar-big{
+  width:52px;
+  height:52px;
+  font-size:18px;
+  border-width:3px;
+  margin-top:0;
+  flex-shrink:0;
+}
+.side-panel.active-turn .avatar-big{
+  box-shadow:0 0 0 4px rgba(62,160,107,.35), 0 4px 12px rgba(0,0,0,.25);
+}
+.side-panel .info-col{
+  align-items:flex-start;
+  flex:1;
+  gap:1px;
+  min-width:0;
+}
+.side-panel .p-name{
+  font-size:13px;
+  max-width:none;
+  width:100%;
+}
+.side-panel .p-pos{font-size:11px;}
+.side-panel .role-tag{
+  font-size:9px;
+  padding:2px 8px;
+  margin-top:2px;
+}
+
+/* منطقة النرد في البطاقة */
+.side-dice-zone{
+  flex-direction:column;
+  gap:4px;
+  margin-top:0;
+  align-items:center;
+  flex-shrink:0;
+}
+.cube-wrap{
+  width:40px;
+  height:40px;
+  order:1;
+}
+.cube{transform:rotateX(-18deg) rotateY(24deg) scale(.78);}
+.face{
+  width:40px;
+  height:40px;
+  border-radius:8px;
+  padding:5px;
+}
+.pip{width:6px;height:6px;}
+.f-front{transform:translateZ(20px);}
+.f-back{transform:translateZ(-20px) rotateY(180deg);}
+.f-right{transform:rotateY(90deg) translateZ(20px);}
+.f-left{transform:rotateY(-90deg) translateZ(20px);}
+.f-top{transform:rotateX(90deg) translateZ(20px);}
+.f-bottom{transform:rotateX(-90deg) translateZ(20px);}
+
+.roll-btn{
+  padding:7px 12px;
+  font-size:12px;
+  border-radius:9px;
+  box-shadow:0 3px 0 var(--coral-dark);
+  order:2;
+  white-space:nowrap;
+}
+.roll-btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--coral-dark);}
+.opp-dice-label{font-size:9px;order:2;}
+
+/* تفاعلات البطاقة — صف واحد مدمج */
+.side-reactions{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:3px;
+  justify-content:center;
+  margin-top:0;
+  padding-top:0;
+  border-top:none;
+  flex-shrink:0;
+}
+.side-reactions button{
+  padding:5px 0;
+  font-size:15px;
+  border-radius:8px;
+  flex:0 0 36px;
+  min-width:36px;
+  height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* سجل الأحداث المدمج */
+.side-log{
+  display:none; /* مخفي افتراضياً في الهاتف لتوفير المساحة */
+}
+
+/* شريط الدردشة العابر */
+.chat-strip{
+  top:auto;
+  bottom:-8px;
+  font-size:11px;
+  padding:4px 10px;
+  max-width:160px;
+  border-radius:8px;
+}
+
+/* ─── شريط الدردشة السفلي ─── */
+.composer-bottom{
+  padding:8px 10px;
+  gap:8px;
+}
+.composer-bottom .inner{gap:8px;}
+.composer-bottom input{
+  padding:9px 12px;
+  border-radius:10px;
+  font-size:13px;
+}
+.composer-bottom button{
+  padding:0 14px;
+  font-size:13px;
+  border-radius:10px;
+}
+
+/* ─── النوافذ المنبثقة للهاتف ─── */
+.modal-bg{padding:16px;}
+.modal{
+  padding:22px 18px;
+  border-radius:18px;
+  max-width:92vw;
+}
+.modal.wide{max-width:94vw;}
+.modal .trophy{font-size:44px;}
+.modal h2{font-size:20px;margin:6px 0 4px;}
+.modal p{font-size:13px;margin-bottom:14px;}
+.modal .btns{gap:6px;}
+.modal .btns .btn{font-size:14px;padding:11px;}
+
+/* نافذة تعديل الملف الشخصي */
+#editModal .avatar-picker{margin-bottom:10px;}
+#editModal .avatar-preview{width:72px;height:72px;font-size:24px;}
+#editModal .palette{gap:6px;}
+#editModal .palette .sw{width:26px;height:26px;border-width:2px;}
+
+/* ─── تحسينات الأداء للهاتف ─── */
+.token, .cube, .face, .cell, .reaction-particle{
+  will-change:auto;
+}
+.aurora i{
+  filter:blur(30px);
+  opacity:.25;
+}
+
+/* ─── دعم الشاشات الصغيرة جداً (<=360px) ─── */
+@media (max-width:360px){
+  .brand .titles h1{font-size:16px;}
+  .tab{font-size:11.5px;padding:7px 2px;}
+  .btn{font-size:14px;padding:10px;}
+  .board-wrap{padding:6px;border-radius:12px;}
+  .cell{font-size:7px;padding:1px 2px;}
+  .token{font-size:9px;border-width:1.5px;}
+  .side-panel{padding:6px 8px;gap:6px;border-radius:12px;}
+  .side-panel .avatar-big{width:44px;height:44px;font-size:14px;}
+  .side-panel .p-name{font-size:11.5px;}
+  .cube-wrap{width:34px;height:34px;}
+  .face{width:34px;height:34px;border-radius:6px;padding:4px;}
+  .pip{width:5px;height:5px;}
+  .f-front{transform:translateZ(17px);}
+  .f-back{transform:translateZ(-17px) rotateY(180deg);}
+  .f-right{transform:rotateY(90deg) translateZ(17px);}
+  .f-left{transform:rotateY(-90deg) translateZ(17px);}
+  .f-top{transform:rotateX(90deg) translateZ(17px);}
+  .f-bottom{transform:rotateX(-90deg) translateZ(17px);}
+  .roll-btn{padding:6px 10px;font-size:11px;}
+  .side-reactions button{flex:0 0 30px;min-width:30px;height:30px;font-size:13px;}
+  .tb-btn{width:30px;height:30px;font-size:13px;}
+  .dro-value{width:60px;height:60px;font-size:32px;border-radius:14px;}
+  .turn-bubble{font-size:11px;padding:5px 10px;}
+}
+
+/* ─── دعم الهواتف الطويلة (>=700px ارتفاع) ─── */
+@media (max-width:900px) and (min-height:700px){
+  .board-wrap{
+    max-height:calc(100dvh - 260px);
+  }
+  .side-panel{padding:10px 12px;}
+  .side-panel .avatar-big{width:56px;height:56px;}
+}
+
+/* ─── دعم الوضع الأفقي للهاتف ─── */
+@media (max-width:900px) and (orientation:landscape){
+  body.in-game{overflow:hidden;}
+  .arena{
+    flex-direction:row;
+    gap:8px;
+    padding:0 8px;
+  }
+  .board-col{
+    order:2;
+    flex:1;
+    height:100%;
+  }
+  .board-wrap{
+    max-height:calc(100dvh - 70px);
+    aspect-ratio:auto;
+    height:100%;
+  }
+  #panelP1{order:1;width:160px;flex-direction:column;}
+  #panelP2{order:3;width:160px;flex-direction:column;}
+  .side-panel{height:auto;}
+  .player-row{flex-direction:column;}
+  .side-panel .avatar-big{width:48px;height:48px;}
+  .side-dice-zone{flex-direction:column;}
+  .side-reactions{flex-wrap:wrap;}
+  .side-reactions button{flex:0 0 calc(50% - 2px);}
+}
+
+/* ─── منع التكبير غير المرغوب في حقول الإدخال ─── */
+input, textarea, select{
+  font-size:16px; /* يمنع iOS من التكبير التلقائي */
+}
+
+/* ─── تحسين التمرير ─── */
+.side-log, .history-table, .log{
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.side-log::-webkit-scrollbar,
+.history-table::-webkit-scrollbar,
+.log::-webkit-scrollbar{
+  display:none;
+}
+
+/* ─── تحسين أزرار اللمس ─── */
+button, .tab, .upload-btn, .tb-btn, .tb-copy-btn{
+  touch-action:manipulation;
+  -webkit-user-select:none;
+  user-select:none;
+}
+
+/* ─── إخفاء عناصر سطح المكتب غير الضرورية في الهاتف ─── */
+@media (max-width:900px){
+  .footer-note{display:none;}
+}

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>الحية والسلم — جولة عالمية مباشرة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<base target="_blank">
+</head>
+<body>
+
+<div class="aurora"><i></i><i></i><i></i></div>
+
+<div class="stage">
+
+  <div class="site-header">
+    <div class="brand">
+      <svg class="logo-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#FF6F59"/><stop offset="1" stop-color="#F2B705"/>
+          </linearGradient>
+          <linearGradient id="lg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3EA06B"/><stop offset="1" stop-color="#1E6B4A"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#lg1)"/>
+        <rect x="16" y="10" width="6" height="44" rx="3" fill="#fff" opacity=".85"/>
+        <rect x="30" y="10" width="6" height="44" rx="3" fill="#fff" opacity=".85"/>
+        <rect x="14" y="18" width="24" height="4" rx="2" fill="#fff" opacity=".85"/>
+        <rect x="14" y="30" width="24" height="4" rx="2" fill="#fff" opacity=".85"/>
+        <rect x="14" y="42" width="24" height="4" rx="2" fill="#fff" opacity=".85"/>
+        <path d="M46 12c6 2 9 8 6 14s-10 6-8 12 8 6 6 12" stroke="url(#lg2)" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <circle cx="46" cy="12" r="4.2" fill="#1E6B4A"/>
+        <circle cx="45" cy="11" r="0.8" fill="#fff"/>
+      </svg>
+      <div class="titles">
+        <h1>الحية والسلم</h1>
+        <small>جولة عالمية مباشرة — بث حي عبر سوبابيس</small>
+      </div>
+    </div>
+    <div class="mini-userbar">
+      <b id="miniUsername">—</b>
+      <div class="avatar-wrap">
+        <div class="avatar-big" id="miniAvatar" style="width:36px;height:36px;font-size:15px;">?</div>
+        <div class="edit-badge">✏️</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="iraq-badge">🇮🇶 صُنع بفخر في العراق</div>
+
+  <div class="conn-pill">
+    <div class="seg"><span class="dot" id="dbDot"></span> قاعدة البيانات</div>
+    <div class="seg" id="rtSeg" style="display:none;"><span class="dot" id="rtDot"></span> البث الحي</div>
+  </div>
+
+  <div class="setup-warning" id="setupWarning">
+    ⚠️ لم يتم ربط اللعبة بمشروع سوبابيس بعد.<br>
+    افتح <code>app.js</code> وضع <code>SUPABASE_URL</code> و <code>SUPABASE_ANON_KEY</code> في أعلى الملف،
+    ونفّذ ملف <code>schema.sql</code> في SQL Editor.
+  </div>
+
+  <!-- ===================== الإعداد الأول: اسم + صورة ===================== -->
+  <div class="card" id="screen-onboarding" style="display:none;">
+    <h3 style="text-align:center;margin-top:0;font-family:'Baloo Bhaijaan 2';">أهلًا بك 👋</h3>
+    <p class="hint" style="margin-top:0;">اختر اسمًا وصورة رمزية لتبدأ اللعب — يُحفظان تلقائيًا في متصفحك.</p>
+    <div class="avatar-picker">
+      <div class="avatar-preview" id="obAvatarPreview">؟</div>
+      <label class="upload-btn">📷 اختر صورة
+        <input type="file" accept="image/*" id="obPhotoInput" style="display:none;">
+      </label>
+    </div>
+    <div class="field"><label>اسمك</label><input type="text" id="obName" maxlength="16" placeholder="مثال: أحمد_بغداد"></div>
+    <div class="error-msg" id="obError"></div>
+    <button class="btn" id="btnObSave">🎮 ابدأ اللعب</button>
+  </div>
+
+  <!-- ===================== شاشة البداية ===================== -->
+  <div class="card" id="screen-home" style="display:none;">
+    <div class="tabs">
+      <div class="tab active" data-tab="create">إنشاء جولة</div>
+      <div class="tab" data-tab="join">الانضمام</div>
+      <div class="tab" data-tab="quick">🔍 بحث تلقائي</div>
+    </div>
+    <div id="pane-create">
+      <p class="hint" style="margin-top:0;">ستدخل جولتك مباشرة، وسيظهر رابط الدعوة أعلى الشاشة لمشاركته فورًا.</p>
+      <button class="btn" id="btnCreate">🎲 ابدأ جولة جديدة</button>
+    </div>
+    <div id="pane-join" style="display:none;">
+      <div class="field">
+        <label>رمز الجولة (أو افتح رابط الدعوة مباشرة)</label>
+        <input type="text" id="joinCode" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-weight:700;text-align:center;" placeholder="XXXXXX">
+      </div>
+      <div class="error-msg" id="joinError"></div>
+      <button class="btn blue" id="btnJoin">🚪 انضم إلى الجولة</button>
+    </div>
+    <div id="pane-quick" style="display:none;">
+      <p class="hint" style="margin-top:0;">سنبحث لك تلقائيًا عن لاعب آخر متاح الآن، ويبدأ اللعب فور موافقة الطرفين.</p>
+      <button class="btn green" id="btnQuickMatch">🔍 ابحث عن لاعب الآن</button>
+    </div>
+    <div class="global-counter" id="globalCounter"></div>
+    <div class="history-section" id="historySection">
+      <h4>🗂️ جولاتك السابقة</h4>
+      <div class="history-table" id="historyTable"></div>
+    </div>
+  </div>
+
+  <!-- ===================== شاشة البحث التلقائي ===================== -->
+  <div class="card" id="screen-matching" style="display:none;">
+    <div id="matchSearching" class="match-search">
+      <div class="match-spinner"></div>
+      <h3 style="font-family:'Baloo Bhaijaan 2';margin:0 0 6px;">جاري البحث عن لاعب…</h3>
+      <p class="hint">قد يستغرق هذا بضع ثوانٍ</p>
+      <button class="btn grey" id="btnCancelMatch">إلغاء البحث</button>
+    </div>
+    <div id="matchFound" class="match-found" style="display:none;">
+      <h3 style="font-family:'Baloo Bhaijaan 2';margin:0 0 4px;">🎉 تم العثور على لاعب!</h3>
+      <div class="match-vs">
+        <div class="av" id="matchMeAvatar">؟</div>
+        <span style="font-family:'Baloo Bhaijaan 2';color:#b7ac95;">VS</span>
+        <div class="av" id="matchOppAvatar">؟</div>
+      </div>
+      <p style="font-weight:700;margin:0 0 10px;" id="matchOppName">—</p>
+      <div class="match-timer" id="matchTimer">⏱ 20 ثانية للموافقة</div>
+      <div class="row-actions">
+        <button class="btn green" id="btnAcceptMatch">✅ موافق، ابدأ اللعب</button>
+        <button class="btn grey" id="btnDeclineMatch">❌ رفض</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== شاشة اللعب ===================== -->
+  <div id="screen-game">
+
+    <!-- شريط علوي موحّد -->
+    <div class="game-topbar">
+      <button class="tb-btn" id="btnLeave" title="مغادرة الجولة">🚪</button>
+
+      <div class="tb-link-wrap">
+        <input class="tb-link-input" id="tbLinkInput" readonly value="" placeholder="رابط الدعوة…">
+        <button class="tb-copy-btn" id="btnTbCopy">📋 نسخ</button>
+      </div>
+
+      <div class="tb-actions">
+        <button class="tb-btn" id="btnHelp" title="مساعدة">❓</button>
+        <button class="tb-btn" id="btnSound" title="تشغيل/كتم الصوت">🔊</button>
+      </div>
+    </div>
+
+    <div class="arena">
+
+      <!-- لوحة اللاعب الأول (يسار) -->
+      <div class="side-panel" id="panelP1">
+        <div class="edit-badge-side" id="editBadgeP1" style="display:none;">✏️</div>
+        <div class="player-row">
+          <div class="avatar-big" id="avatarP1">?<span class="live" id="liveP1" style="display:none;"></span></div>
+          <div class="info-col">
+            <div class="p-name" id="nameP1">—</div>
+            <div class="p-pos" id="posP1">المربع 0</div>
+            <div class="role-tag" id="roleTagP1">لاعب 1</div>
+          </div>
+          <div class="side-dice-zone">
+            <div class="cube-wrap"><div class="cube" id="cubeP1">
+              <div class="face f-front" data-n="1"></div><div class="face f-back" data-n="6"></div>
+              <div class="face f-right" data-n="2"></div><div class="face f-left" data-n="5"></div>
+              <div class="face f-top" data-n="3"></div><div class="face f-bottom" data-n="4"></div>
+            </div></div>
+            <button class="roll-btn" id="btnRollP1">ارمِ النرد</button>
+            <div class="opp-dice-label" id="oppLabelP1" style="display:none;">آخر نتيجة</div>
+          </div>
+        </div>
+        <div class="side-reactions">
+          <button data-e="👍" title="إعجاب">👍</button>
+          <button data-e="🔥" title="نار">🔥</button>
+          <button data-e="😂" title="ضحك">😂</button>
+          <button data-e="😮" title="مفاجأة">😮</button>
+          <button data-e="💪" title="قوة">💪</button>
+          <button data-e="🎯" title="هدف">🎯</button>
+          <button data-e="🎉" title="احتفال">🎉</button>
+          <button data-e="🐍" title="حية">🐍</button>
+        </div>
+        <div class="side-log" id="logBoxP1"></div>
+      </div>
+
+      <!-- الوسط: اللوحة المربعة -->
+      <div class="board-col">
+        <div class="board-wrap">
+          <div class="turn-bubble" id="turnBubble"></div>
+          <div class="dice-roll-overlay" id="diceRollOverlay"><div class="dro-value" id="droValue">1</div></div>
+          <div class="board" id="board">
+            <svg class="overlay-svg" id="overlaySvg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+            <div id="tokenP1" class="token">1</div>
+            <div id="tokenP2" class="token">2</div>
+          </div>
+        </div>
+        <div class="turn-banner" id="turnBanner">بانتظار البدء…</div>
+      </div>
+
+      <!-- لوحة اللاعب الثاني (يمين) -->
+      <div class="side-panel" id="panelP2">
+        <div class="edit-badge-side" id="editBadgeP2" style="display:none;">✏️</div>
+        <div class="player-row">
+          <div class="avatar-big" id="avatarP2">?<span class="live" id="liveP2" style="display:none;"></span></div>
+          <div class="info-col">
+            <div class="p-name" id="nameP2">—</div>
+            <div class="p-pos" id="posP2">المربع 0</div>
+            <div class="role-tag" id="roleTagP2">لاعب 2</div>
+          </div>
+          <div class="side-dice-zone">
+            <div class="cube-wrap"><div class="cube" id="cubeP2">
+              <div class="face f-front" data-n="1"></div><div class="face f-back" data-n="6"></div>
+              <div class="face f-right" data-n="2"></div><div class="face f-left" data-n="5"></div>
+              <div class="face f-top" data-n="3"></div><div class="face f-bottom" data-n="4"></div>
+            </div></div>
+            <button class="roll-btn" id="btnRollP2">ارمِ النرد</button>
+            <div class="opp-dice-label" id="oppLabelP2" style="display:none;">آخر نتيجة</div>
+          </div>
+        </div>
+        <div class="side-reactions">
+          <button data-e="👍" title="إعجاب">👍</button>
+          <button data-e="🔥" title="نار">🔥</button>
+          <button data-e="😂" title="ضحك">😂</button>
+          <button data-e="😮" title="مفاجأة">😮</button>
+          <button data-e="💪" title="قوة">💪</button>
+          <button data-e="🎯" title="هدف">🎯</button>
+          <button data-e="🎉" title="احتفال">🎉</button>
+          <button data-e="🐍" title="حية">🐍</button>
+        </div>
+        <div class="side-log" id="logBoxP2"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer-note">الحية والسلم © جولة حيّة مبنية على Supabase Realtime + PostgreSQL</div>
+</div>
+
+<!-- شريط الدردشة السفلي -->
+<div class="composer-bottom" id="composerBottom">
+  <div class="inner">
+    <input id="chatInput" maxlength="200" placeholder="اكتب رسالة سريعة للطرف الآخر…">
+    <button id="btnSendChat">إرسال ➤</button>
+  </div>
+</div>
+
+<!-- نافذة تعديل الملف الشخصي -->
+<div class="modal-bg" id="editModal">
+  <div class="modal wide">
+    <h2 style="text-align:center;">✏️ تعديل الاسم والصورة</h2>
+    <div class="avatar-picker">
+      <div class="avatar-preview" id="editAvatarPreview">؟</div>
+      <div style="display:flex;gap:8px;">
+        <label class="upload-btn">📷 تغيير الصورة
+          <input type="file" accept="image/*" id="editPhotoInput" style="display:none;">
+        </label>
+        <button class="upload-btn" id="btnRemovePhoto">🗑 إزالة الصورة</button>
+      </div>
+    </div>
+    <div class="field" style="text-align:right;"><label>اسم المستخدم</label><input type="text" id="editName" maxlength="16"></div>
+    <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#3a4750;text-align:right;">اللون الرمزي (عند عدم وجود صورة)</label>
+    <div class="palette" id="editPalette"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#F5F0E3;border-radius:10px;padding:10px 14px;margin:6px 0 16px;font-size:13.5px;font-weight:700;color:#3a4750;">
+      <span>🔊 تفعيل الأصوات</span><input type="checkbox" id="editSound" checked style="width:20px;height:20px;">
+    </div>
+    <div class="error-msg" id="editError"></div>
+    <div class="btns">
+      <button class="btn" id="btnSaveEdit">💾 حفظ</button>
+      <button class="btn grey" id="btnCloseEdit">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة الفوز -->
+<div class="modal-bg" id="winModal">
+  <div class="modal">
+    <div class="trophy">🏆</div>
+    <h2 id="winTitle">مبروك!</h2>
+    <p id="winText">وصل إلى المربع 100 أولًا</p>
+    <div class="btns">
+      <button class="btn blue" id="btnRematch">🔁 إعادة بنفس الغرفة</button>
+      <button class="btn grey" id="btnPlayAgain">🏠 الرئيسية</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script src="app.js"></script>
+</body>
+</html>
