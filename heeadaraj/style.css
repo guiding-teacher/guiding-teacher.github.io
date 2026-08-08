@@ -607,7 +607,6 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
     padding:0 8px 8px;
     overflow:hidden;
     height:100%;
-    margin-top: -65px;
   }
   
   .token{
@@ -672,7 +671,7 @@ canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
       "name   role btn";
     align-items:center;
     justify-items:center;
-    column-gap:8px;
+    column-gap:25px;
     row-gap:2px;
     width:100%;
   }
