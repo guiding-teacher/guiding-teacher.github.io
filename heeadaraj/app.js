@@ -1202,10 +1202,12 @@ async function boot(){
     }
 
     // أولوية 2: الانضمام عبر رابط
+    // أولوية 2: الانضمام عبر رابط
     if(pendingLinkCode){
       document.getElementById('joinCode').value = pendingLinkCode;
       document.querySelector('[data-tab="join"]').click();
       showScreen('home'); loadGlobalCounter();
+      initBoardUI();                              // ← السطر المُضاف: يبني اللوحة قبل الدخول للعبة
       document.getElementById('btnJoin').click();
     } else {
       afterProfileReady();
