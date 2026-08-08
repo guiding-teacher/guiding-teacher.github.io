@@ -175,12 +175,10 @@ body.in-game .stage{
 
 /* ─── عمود اللوحة: الأولوية القصوى ─── */
 .board-col{
-  order:1;
-  flex:1;
-  min-height:0;
+  order:2;
+ height:100px;
   width:100%;
-  gap:4px;
-}
+ }
 .board-wrap{
   padding:8px;
   border-radius:14px;
@@ -245,8 +243,77 @@ body.in-game .stage{
   height:auto;
   width:100%;
 }
-#panelP1{order:2;}
-#panelP2{order:3;}
+#panelP1{order:1;
+height: 22%;
+
+}
+ 
+#panelP2{order:3;
+margin-top: 60%;
+height: 22%;
+
+}
+
+
+
+
+.log-toggle{
+  position:absolute;
+  top:4px;
+  right:4px;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  background:#f5f0e3;
+  border:1px solid #e2d9c4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  cursor:pointer;
+  z-index:5;
+  box-shadow:0 2px 5px rgba(0,0,0,.12);
+  transition:.15s;
+}
+.log-toggle:hover{transform:scale(1.15);background:#e8e0cc;}
+.log-toggle:active{transform:scale(.95);}
+
+/* ═══════ لوحة سجل الأحداث (منبثقة داخل البطاقة) ═══════ */
+.side-log{
+  display:none;
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  right:0;
+  background:var(--paper);
+  border-radius:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+  z-index:20;
+  max-height:140px;
+  overflow-y:auto;
+  padding:10px 12px;
+  font-size:11px;
+  line-height:1.7;
+  color:#5a544a;
+  text-align:center;
+  border:2px solid #e2d9c4;
+}
+.side-log.show{display:block;animation:logPop .2s ease-out;}
+@keyframes logPop{
+  from{opacity:0;transform:translateY(-6px) scale(.97);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+.side-log div{border-bottom:1px dashed #efe8d6;padding:3px 0;}
+.side-log div:last-child{border-bottom:none;}
+.side-log .empty{color:#a49c8c;font-style:italic;}
+
+
+
+
+
+.log-toggle{
+    margin-bottom: 36%;
+}
 
 /* صف اللاعب: أفقي مدمج */
 .player-row{
@@ -254,16 +321,17 @@ body.in-game .stage{
   align-items:center;
   gap:8px;
   width:auto;
-  flex:1;
-}
+    margin-left: -16%;
+    margin-bottom: 4%;
+ }
 .side-panel .avatar-big{
-  width:52px;
-  height:52px;
+  width:60px;
+  height:60px;
   font-size:18px;
-  border-width:3px;
+  border-width:4px;
   margin-top:0;
-  flex-shrink:0;
-}
+    margin-right: 21%;
+ }
 .side-panel.active-turn .avatar-big{
   box-shadow:0 0 0 4px rgba(62,160,107,.35), 0 4px 12px rgba(0,0,0,.25);
 }
@@ -287,9 +355,9 @@ body.in-game .stage{
 
 /* منطقة النرد في البطاقة */
 .side-dice-zone{
-  flex-direction:column;
-  gap:4px;
-  margin-top:0;
+ flex-wrap:nowrap;
+   gap:20px;
+  margin-top:-35px;
   align-items:center;
   flex-shrink:0;
 }
@@ -319,6 +387,7 @@ body.in-game .stage{
   border-radius:9px;
   box-shadow:0 3px 0 var(--coral-dark);
   order:2;
+    
   white-space:nowrap;
 }
 .roll-btn:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--coral-dark);}
@@ -330,21 +399,17 @@ body.in-game .stage{
   flex-wrap:nowrap;
   gap:3px;
   justify-content:center;
-  margin-top:0;
-  padding-top:0;
-  border-top:none;
-  flex-shrink:0;
+   border-top:none;
+ margin: 22% -70% -14% -15%;
+   
 }
 .side-reactions button{
   padding:5px 0;
   font-size:15px;
-  border-radius:8px;
-  flex:0 0 36px;
-  min-width:36px;
-  height:36px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  border-radius:10px;
+   min-width:36px;
+  height:53px;
+
 }
 
 /* سجل الأحداث المدمج */
@@ -428,7 +493,7 @@ body.in-game .stage{
   .f-left{transform:rotateY(-90deg) translateZ(17px);}
   .f-top{transform:rotateX(90deg) translateZ(17px);}
   .f-bottom{transform:rotateX(-90deg) translateZ(17px);}
-  .roll-btn{padding:6px 10px;font-size:11px;}
+  .roll-btn{padding:5px 10px;font-size:11px; }
   .side-reactions button{flex:0 0 30px;min-width:30px;height:30px;font-size:13px;}
   .tb-btn{width:30px;height:30px;font-size:13px;}
   .dro-value{width:60px;height:60px;font-size:32px;border-radius:14px;}
