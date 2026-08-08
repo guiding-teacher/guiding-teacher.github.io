@@ -472,6 +472,8 @@ async function mmStopInternal(){ clearTimeout(mmSearchTimer); clearTimeout(mmAcc
 const session = { code:null, role:null };
 let currentRoom = null, realtimeChannel = null, presenceChannel = null, animating = false;
 let lastTurnKey = null;
+let turnTimer = null, turnCountdownInterval = null;
+const TURN_TIME_LIMIT = 15; // ثانية — مهلة الدور قبل الرمي التلقائي
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function buildRoomLink(code){ const url=new URL(location.href); url.search=''; url.hash=''; url.searchParams.set('r',code); return url.toString(); }
 
@@ -576,6 +578,13 @@ function renderRoom(room, opts={}){
   myLabel.style.display='none'; oppLabel.style.display='block';
   myRollBtn.disabled = !(room.status==='playing' && room.turn===session.role) || animating;
 
+  // مؤقّت الدور 15 ثانية: يبدأ عند بدء دوري، ويُلغى إن لم يعد دوري
+  if(room.status==='playing' && room.turn===session.role && !animating){
+    if(!turnTimer) armTurnTimer();
+  } else {
+    clearTurnTimer();
+  }
+
   showDiceValue('p1', room.p1_dice||1, false);
   showDiceValue('p2', room.p2_dice||1, false);
 
@@ -603,6 +612,31 @@ function renderPerPlayerLogs(room){
   boxP2.innerHTML = p2Lines.length
     ? p2Lines.slice(-6).reverse().map(l=>`<div>${l}</div>`).join('')
     : '<div class="empty">لا أحداث بعد</div>';
+}
+
+/* ====== مؤقّت الدور: رمي تلقائي إذا لم يرمِ اللاعب خلال 15 ثانية ====== */
+function clearTurnTimer(){
+  clearTimeout(turnTimer); turnTimer = null;
+  clearInterval(turnCountdownInterval); turnCountdownInterval = null;
+  const btn = document.getElementById(session.role==='p1' ? 'btnRollP1':'btnRollP2');
+  if(btn && !btn.disabled) btn.textContent = 'ارمِ النرد';
+}
+function armTurnTimer(){
+  clearTurnTimer();
+  let remaining = TURN_TIME_LIMIT;
+  const btn = document.getElementById(session.role==='p1' ? 'btnRollP1':'btnRollP2');
+  if(btn) btn.textContent = `ارمِ النرد (${remaining})`;
+  turnCountdownInterval = setInterval(()=>{
+    remaining--;
+    if(btn) btn.textContent = remaining>0 ? `ارمِ النرد (${remaining})` : 'ارمِ النرد';
+    if(remaining<=0) clearInterval(turnCountdownInterval);
+  }, 1000);
+  turnTimer = setTimeout(()=>{
+    turnTimer = null;
+    if(!animating && currentRoom && currentRoom.status==='playing' && currentRoom.turn===session.role){
+      rollDice(); // انتهى الوقت — رمي تلقائي للاعب
+    }
+  }, TURN_TIME_LIMIT*1000);
 }
 
 function openWinModal(room){
@@ -659,6 +693,7 @@ async function rollDice(){
   const { data: room } = await sb.from('rooms').select('*').eq('code', session.code).single();
   if(!room || room.status!=='playing' || room.turn!==session.role) return;
 
+  clearTurnTimer();
   animating = true;
   document.getElementById(session.role==='p1'?'btnRollP1':'btnRollP2').disabled = true;
 
@@ -848,6 +883,7 @@ function leaveRoom(){
   if(realtimeChannel){ sb.removeChannel(realtimeChannel); realtimeChannel=null; }
   if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
   clearAllChatStrips();
+  clearTurnTimer();
   session.code=null; session.role=null; currentRoom=null;
   lastMessageId = 0; seenMessageIds.clear(); lastTurnKey = null;
   clearSession();
@@ -1053,7 +1089,32 @@ document.getElementById('btnRollP1').addEventListener('click', ()=>{ if(session.
 document.getElementById('btnRollP2').addEventListener('click', ()=>{ if(session.role==='p2') rollDice(); });
 document.getElementById('btnPlayAgain').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; resetToHome(); });
 document.getElementById('btnRematch').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; rematch(); });
-document.getElementById('btnLeave').addEventListener('click', ()=>{ if(confirm('هل تريد مغادرة الجولة؟')) resetToHome(); });
+document.getElementById('btnLeave').addEventListener('click', async ()=>{
+  if(!confirm('هل تريد مغادرة الجولة؟ ستُحتسب خسارة لك في سجلك.')) return;
+  await handleLeaveAsLoss();
+  resetToHome();
+});
+/* ====== مغادرة بزر الخروج أثناء جولة نشطة = خسارة تُسجَّل محليًا، وفوز فوري للخصم ====== */
+async function handleLeaveAsLoss(){
+  if(session.code && currentRoom && currentRoom.status==='playing' && session.role){
+    const oppRole = session.role==='p1' ? 'p2' : 'p1';
+    const oppName = session.role==='p1' ? currentRoom.p2_name : currentRoom.p1_name;
+    const myName  = session.role==='p1' ? currentRoom.p1_name : currentRoom.p2_name;
+    try{
+      await sb.from('rooms').update({
+        status:'finished',
+        winner: oppRole,
+        log:[...(currentRoom.log||[]), `🚪 ${myName} غادر الجولة — الفوز لـ ${oppName}`].slice(-40),
+        rev:(currentRoom.rev||0)+1
+      }).eq('code', session.code).eq('rev', currentRoom.rev);
+    }catch(e){}
+    saveHistoryEntry({
+      date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
+      opponent: oppName || 'خصم',
+      result: 'lose'
+    });
+  }
+}
 document.getElementById('btnSound').addEventListener('click', (e)=>{ soundOn = !soundOn; e.target.textContent = soundOn ? '🔊' : '🔇'; e.target.title = soundOn ? 'كتم الصوت' : 'تشغيل الصوت'; });
 document.getElementById('btnHelp').addEventListener('click', ()=>{
   alert('🎯 كيف تلعب:\n- كل لاعب يرمي نرده الخاص بجانبه بدوره (نرد عشوائي 100% مثل لودو).\n- سلّم = صعود، حية = نزول.\n- يجب الوصول للمربع 100 بالضبط للفوز.\n- استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.\n- أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!');
