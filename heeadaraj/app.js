@@ -1,10 +1,5 @@
 // ====================================================================== 
-// الحية والسلم — نسخة محسّنة ومحترفة v4
-// الإصلاحات:
-// 1) تسلسل أرقام صحيح RTL (1 في اليسار-الأسفل)
-// 2) بطاقات أعرض أفقية مع 8 إيموجيات
-// 3) أرقام مربعات كبيرة وواضحة
-// 4) استعادة الجلسة بدون "الجولة مكتملة"
+// الحية والسلم — نسخة محسّنة ومحترفة v5
 // ====================================================================== 
 
 /* ===================== 1) الاتصال بسوبابيس ===================== */
@@ -75,23 +70,49 @@ function applyAvatarVisual(el, color, dataUrl, initial){
 
 /* ===================== 3) اللوحة والرسم — تسلسل RTL صحيح ===================== */
 const LADDERS = {4:14, 9:31, 20:38, 28:84, 40:59, 51:67, 63:81, 71:91};
-const SNAKES  = {17:7, 54:34, 62:19, 64:60, 87:24, 93:73, 95:75, 99:78};
+const SNAKES  = {17:7, 54:34, 62:19, 64:60, 87:24, 95:75, 99:78};
 
-/*
-   ملاحظة مهمة: اللوحة (#board) مضبوطة بـ direction:ltr صراحةً في CSS،
-   بصرف النظر عن اتجاه الصفحة (rtl). هذا يضمن أن ترقيم المربعات (شبكة CSS Grid)
-   والرموز/السلالم/الحيات المرسومة فوقها (SVG بإحداثيات فيزيائية من اليسار)
-   تستخدم نفس نظام الإحداثيات تمامًا، فلا يحدث أي انعكاس بين الأرقام والحركة.
-   الترقيم كلاسيكي (كما في اللوحة الحقيقية):
-   الصف السفلي: 1→2→...→10 (من اليسار لليمين)
-   الصف الذي فوقه: 11←...←20 (من اليمين لليسار)
-   وهكذا تصاعديًا حتى المربع 100 أعلى اليسار.
-*/
+/* ===================== 3ب) وسائل الحظ العشوائية (مرة واحدة لكل جولة) ===================== */
+/* ⭐ مربع حظ: يمنح رمية نرد إضافية فورًا لمن يقف عليه.
+   🕳️ مربع حفرة: يلغي الرمية التي أوصلت اللاعب إليه ويعيده لمكانه السابق قبلها.
+   تُختار 3 مربعات لكل نوع عشوائيًا عند إنشاء كل جولة، وتختفي فور استخدامها من أي لاعب. */
+function pickSpecialCells(count, excludeSet){
+  const cells = [];
+  let guard = 0;
+  while(cells.length < count && guard < 800){
+    guard++;
+    const n = 2 + Math.floor(Math.random()*97); // 2..98 (تجنّب 1 والـ100)
+    if(excludeSet.has(n) || cells.includes(n)) continue;
+    cells.push(n);
+  }
+  return cells;
+}
+function generateSpecialCells(){
+  const exclude = new Set([1,100]);
+  Object.keys(LADDERS).forEach(k=>{ exclude.add(+k); exclude.add(LADDERS[k]); });
+  Object.keys(SNAKES).forEach(k=>{ exclude.add(+k); exclude.add(SNAKES[k]); });
+  const bonus = pickSpecialCells(3, exclude);
+  bonus.forEach(n=>exclude.add(n));
+  const penalty = pickSpecialCells(3, exclude);
+  return { bonus, penalty };
+}
+function renderSpecialCells(room){
+  document.querySelectorAll('.cell-icon').forEach(el=>{ el.textContent=''; });
+  (room.bonus_cells||[]).forEach(n=>{
+    const el = document.getElementById('cellIcon-'+n);
+    if(el) el.textContent = '⭐';
+  });
+  (room.penalty_cells||[]).forEach(n=>{
+    const el = document.getElementById('cellIcon-'+n);
+    if(el) el.textContent = '🕳️';
+  });
+}
+
 function cellRC(n){
-  const band = Math.floor((n-1)/10);      // 0 = الشريط السفلي (1-10) ... 9 = الشريط العلوي (91-100)
-  const pos  = (n-1) % 10;                // 0-9 موضع داخل الشريط
-  const row  = 9 - band;                  // 0 = أعلى اللوحة، 9 = أسفل اللوحة
-  const col  = (band % 2 === 0) ? pos : (9 - pos); // عمود فيزيائي من اليسار، 0-9
+  const band = Math.floor((n-1)/10);
+  const pos  = (n-1) % 10;
+  const row  = 9 - band;
+  const col  = (band % 2 === 0) ? pos : (9 - pos);
   return {row, col};
 }
 
@@ -102,7 +123,6 @@ function cellCenterPct(n){
 
 function buildBoard(){
   const boardEl = document.getElementById('board');
-  // إزالة الخلايا القديمة فقط
   const oldCells = boardEl.querySelectorAll('.cell');
   oldCells.forEach(c => c.remove());
 
@@ -115,8 +135,8 @@ function buildBoard(){
     if(n===100) div.classList.add('goal');
     div.style.gridRowStart = row + 1;
     div.style.gridColumnStart = col + 1;
-    div.textContent = n;
-    // أدخل قبل SVG والرموز
+    div.dataset.num = n;
+    div.innerHTML = `<span class="cell-num">${n}</span><span class="cell-icon" id="cellIcon-${n}"></span>`;
     boardEl.insertBefore(div, boardEl.firstChild);
   }
   drawLaddersSnakes();
@@ -235,7 +255,6 @@ function snakeArt(a,b,idx){
 
 function placeToken(el, pos){
   if(pos<=0){ 
-    // وضع افتراضي عند البداية
     el.style.left = (el.id==='tokenP1' ? '2%':'10%'); 
     el.style.top = '90%'; 
     return; 
@@ -274,7 +293,7 @@ function showTurnBubble(text){
   if(!bubble || !text) return;
   bubble.textContent = text;
   bubble.classList.remove('show');
-  void bubble.offsetWidth; // إعادة تشغيل الانتقال
+  void bubble.offsetWidth;
   bubble.classList.add('show');
   clearTimeout(turnBubbleTimer);
   turnBubbleTimer = setTimeout(()=> bubble.classList.remove('show'), 1000);
@@ -284,18 +303,32 @@ function showTurnBubble(text){
 function showDiceOverlay(){ document.getElementById('diceRollOverlay')?.classList.add('show'); }
 function hideDiceOverlay(){ document.getElementById('diceRollOverlay')?.classList.remove('show'); }
 function setDiceOverlayValue(v){ const el = document.getElementById('droValue'); if(el) el.textContent = v; }
-/* رمي نرد احترافي: يستخدم مولّد أرقام عشوائية آمن التشفير (CSPRNG) مع
-   "رفض العينات" (rejection sampling) لضمان توزيع منتظم 100% بلا أي انحياز
-   (تجنّب انحياز باقي القسمة modulo bias) — بمعيار عالمي كما في أنظمة الكازينوهات. */
 function rollFairDice(){
   if(window.crypto && crypto.getRandomValues){
     const buf = new Uint32Array(1);
-    const limit = Math.floor(0xFFFFFFFF / 6) * 6; // أكبر مضاعف لـ6 ضمن مدى 32-bit
+    const limit = Math.floor(0xFFFFFFFF / 6) * 6;
     let x;
     do{ crypto.getRandomValues(buf); x = buf[0]; } while(x >= limit);
     return 1 + (x % 6);
   }
   return 1 + Math.floor(Math.random()*6);
+}
+
+/* ====== محاكاة دوران نرد الطرف الآخر — تُبث لحظيًا وتُشغَّل محليًا لدى المشاهدين ====== */
+let remoteShuffleTimers = { p1:null, p2:null };
+function playRemoteDiceShuffle(role){
+  if(role === session.role) return; // تجاهل حدثي أنا نفسي (عندي أصلًا الرسوم المتحركة المحلية)
+  const cube = document.getElementById(role==='p1' ? 'cubeP1' : 'cubeP2');
+  if(!cube) return;
+  clearInterval(remoteShuffleTimers[role]);
+  remoteShuffleTimers[role] = setInterval(()=>{
+    const rv = 1+Math.floor(Math.random()*6);
+    showDiceValue(role, rv, true);
+  }, 90);
+  setTimeout(()=>{ clearInterval(remoteShuffleTimers[role]); remoteShuffleTimers[role]=null; }, 650);
+}
+function broadcastDiceRoll(role){
+  presenceChannel?.send({ type:'broadcast', event:'dice_roll', payload:{role} });
 }
 
 /* ===================== 5) المؤثرات ===================== */
@@ -361,10 +394,15 @@ function launchConfetti(){
 }
 window.addEventListener('resize', ()=>{ const c=document.getElementById('confetti'); if(c){c.width=innerWidth;c.height=innerHeight;} });
 
-/* ===================== 6) الدردشة العابرة ===================== */
+/* ===================== 6) الدردشة العابرة + سجل الدردشة ===================== */
 const activeStrips = { p1:null, p2:null };
 let lastMessageId = 0;
 const seenMessageIds = new Set();
+let chatHistory = []; // {role,name,content} — لعرضها في نافذة سجل الدردشة
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
 async function sendMessage(roomCode, role, name, content){
   const trimmed = content.trim(); if(!trimmed) return null;
   const { data, error } = await sb.from('messages').insert({ room_code:roomCode, sender_role:role, sender_name:name, content:trimmed }).select().single();
@@ -388,6 +426,48 @@ function clearAllChatStrips(){
   });
 }
 async function deleteRoomMessages(roomCode){ try{ await sb.from('messages').delete().eq('room_code', roomCode); }catch(e){} }
+
+/* ====== تنظيف الجولة المنتهية: تُحذف بعد مهلة قصيرة تكفي لوصول الطرف الآخر/المشاهدين
+   لحالة "انتهت" وتسجيل كل طرف لسجله الشخصي، بشرط ألا تكون قد أُعيد لعبها (إعادة الجولة) ====== */
+function scheduleRoomCleanup(code, delayMs = 8000){
+  setTimeout(()=> cleanupFinishedRoom(code), delayMs);
+}
+async function cleanupFinishedRoom(code){
+  try{
+    const { data: room } = await sb.from('rooms').select('status').eq('code', code).single();
+    if(!room || room.status !== 'finished') return; // أُعيد لعبها أو محذوفة مسبقًا — لا تحذف
+    await sb.from('messages').delete().eq('room_code', code);
+    await sb.from('rooms').delete().eq('code', code);
+  }catch(e){}
+}
+
+function renderChatSheetBody(){
+  const body = document.getElementById('chatSheetBody');
+  if(!body) return;
+  body.innerHTML = chatHistory.length
+    ? chatHistory.slice().reverse().map(m=>`<div><b>${escapeHtml(m.name||'')}:</b> ${escapeHtml(m.content)}</div>`).join('')
+    : '<div class="empty">لا توجد رسائل بعد</div>';
+}
+function openChatSheet(){
+  renderChatSheetBody();
+  document.getElementById('chatSheetBg').classList.add('show');
+}
+function closeChatSheet(){
+  document.getElementById('chatSheetBg').classList.remove('show');
+}
+async function loadChatHistory(code){
+  chatHistory = [];
+  seenMessageIds.clear(); lastMessageId = 0;
+  try{
+    const { data } = await sb.from('messages').select('*').eq('room_code', code).order('id', {ascending:true});
+    (data||[]).forEach(m=>{
+      chatHistory.push({role:m.sender_role, name:m.sender_name, content:m.content});
+      seenMessageIds.add(m.id);
+      if(m.id > lastMessageId) lastMessageId = m.id;
+    });
+  }catch(e){}
+  renderChatSheetBody();
+}
 
 /* ===================== 7) المطابقة التلقائية ===================== */
 let mmRow = null, mmOpponentRowId = null, mmChannel = null, mmSearchTimer = null, mmAcceptTimer = null, mmHandlers = {};
@@ -473,7 +553,7 @@ const session = { code:null, role:null };
 let currentRoom = null, realtimeChannel = null, presenceChannel = null, animating = false;
 let lastTurnKey = null;
 let turnTimer = null, turnCountdownInterval = null;
-const TURN_TIME_LIMIT = 15; // ثانية — مهلة الدور قبل الرمي التلقائي
+const TURN_TIME_LIMIT = 15;
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function buildRoomLink(code){ const url=new URL(location.href); url.search=''; url.hash=''; url.searchParams.set('r',code); return url.toString(); }
 
@@ -484,12 +564,14 @@ function clearSession(){ localStorage.removeItem('snl_session'); }
 
 async function createRoom(explicitCode){
   let code=explicitCode, ok=false, attempts=0;
+  const { bonus, penalty } = generateSpecialCells();
   while(!ok && attempts<5){
     if(!code || attempts>0) code = randCode();
     const { error } = await sb.from('rooms').insert({
       code, status:'waiting', turn:'p1', p1_dice:1, p2_dice:1,
       p1_user_id:myId, p1_name:profile.username, p1_avatar_color:profile.avatar_color, p1_avatar_data:profile.avatar_data,
-      p1_pos:0, p2_pos:0, log:[], rev:0
+      p1_pos:0, p2_pos:0, log:[], rev:0,
+      bonus_cells: bonus, penalty_cells: penalty
     });
     if(!error) ok=true; attempts++;
   }
@@ -501,16 +583,45 @@ async function createRoom(explicitCode){
   return { code, room };
 }
 
+/* ====== الانضمام لجولة: يدعم إعادة الدخول (نفس اللاعب) والمشاهدة عند اكتمال الجولة ====== */
 async function joinRoomByCode(code){
   const { data: room, error } = await sb.from('rooms').select('*').eq('code', code).single();
   if(error || !room) return { error:'لم يتم العثور على جولة بهذا الرمز' };
-  if(room.p2_name) return { error:'هذه الجولة مكتملة بالفعل' };
+
+  // إعادة دخول نفس اللاعب (منشئ الجولة أو من انضم سابقًا) عبر رابطه الخاص
+  if(room.p1_user_id === myId){
+    session.code=code; session.role='p1'; saveSession();
+    subscribeToRoom(code); subscribeToPresence(code);
+    return { room };
+  }
+  if(room.p2_user_id === myId){
+    session.code=code; session.role='p2'; saveSession();
+    subscribeToRoom(code); subscribeToPresence(code);
+    return { room };
+  }
+
+  // الجولة مكتملة بلاعبين اثنين وهذا زائر جديد ← يدخل كمشاهد
+  if(room.p2_name){
+    session.code=code; session.role='spectator'; saveSession();
+    subscribeToRoom(code); subscribeToPresence(code);
+    return { room };
+  }
+
   const newLog = [...(room.log||[]), `👋 ${profile.username} انضم إلى الجولة، لنبدأ اللعب!`];
   const { data: saved, error: err2 } = await sb.from('rooms').update({
     p2_user_id:myId, p2_name:profile.username, p2_avatar_color:profile.avatar_color, p2_avatar_data:profile.avatar_data,
     status:'playing', log:newLog, rev:(room.rev||0)+1
   }).eq('code', code).eq('rev', room.rev).select().single();
-  if(err2 || !saved) return { error:'انضم لاعب آخر للتو، جرّب جولة أخرى' };
+  if(err2 || !saved){
+    // ربما امتلأت الجولة للتو من طرف آخر — حاول الدخول كمشاهد بدلًا من الفشل الكامل
+    const { data: latest } = await sb.from('rooms').select('*').eq('code', code).single();
+    if(latest && latest.p2_name){
+      session.code=code; session.role='spectator'; saveSession();
+      subscribeToRoom(code); subscribeToPresence(code);
+      return { room: latest };
+    }
+    return { error:'تعذّر الانضمام، جرّب مرة أخرى' };
+  }
   session.code=code; session.role='p2';
   saveSession();
   subscribeToRoom(code); subscribeToPresence(code);
@@ -521,8 +632,9 @@ function initBoardUI(){ buildBoard(); buildFacePips(); }
 
 function renderRoom(room, opts={}){
   currentRoom = room;
+  const isSpectator = session.role === 'spectator';
+  document.body.classList.toggle('is-spectator', isSpectator);
 
-  // تحديث رابط الشريط العلوي
   const linkInput = document.getElementById('tbLinkInput');
   if(linkInput && room.code){
     linkInput.value = buildRoomLink(room.code);
@@ -538,13 +650,14 @@ function renderRoom(room, opts={}){
   applyAvatarVisual(document.getElementById('tokenP1'), room.p1_avatar_color, room.p1_avatar_data);
   applyAvatarVisual(document.getElementById('tokenP2'), room.p2_avatar_color, room.p2_avatar_data);
 
+  renderSpecialCells(room);
+
   document.getElementById('panelP1').classList.toggle('active-turn', room.turn==='p1' && room.status==='playing');
   document.getElementById('panelP2').classList.toggle('active-turn', room.turn==='p2' && room.status==='playing');
-  document.getElementById('roleTagP1').textContent = session.role==='p1' ? 'أنت' : 'الخصم';
-  document.getElementById('roleTagP2').textContent = session.role==='p2' ? 'أنت' : 'الخصم';
+  document.getElementById('roleTagP1').textContent = session.role==='p1' ? 'أنت' : (isSpectator ? 'لاعب 1' : 'الخصم');
+  document.getElementById('roleTagP2').textContent = session.role==='p2' ? 'أنت' : (isSpectator ? 'لاعب 2' : 'الخصم');
   document.getElementById('editBadgeP1').style.display = session.role==='p1' ? 'flex':'none';
   document.getElementById('editBadgeP2').style.display = session.role==='p2' ? 'flex':'none';
-  // تحديد "بطاقتي" و"بطاقة الخصم" لتصميم الهاتف (يتحكم بترتيب البطاقات حول الرسم)
   document.getElementById('panelP1').classList.toggle('me', session.role==='p1');
   document.getElementById('panelP1').classList.toggle('opponent', session.role!=='p1');
   document.getElementById('panelP2').classList.toggle('me', session.role==='p2');
@@ -563,28 +676,40 @@ function renderRoom(room, opts={}){
     const winnerName = room.winner==='p1' ? room.p1_name : room.p2_name;
     bannerText = '🏁 انتهت الجولة — الفائز: ' + winnerName;
   } else {
-    const isMyTurn = room.turn===session.role;
     const turnName = room.turn==='p1' ? room.p1_name : room.p2_name;
-    bannerText = isMyTurn ? '🎲 دورك أنت الآن!' : ('⏱ دور ' + turnName + '…');
+    if(isSpectator){
+      bannerText = '👀 دور ' + turnName + '…';
+    } else {
+      const isMyTurn = room.turn===session.role;
+      bannerText = isMyTurn ? '🎲 دورك أنت الآن!' : ('⏱ دور ' + turnName + '…');
+    }
   }
   banner.textContent = bannerText;
-  // فقاعة الدور: تظهر فقط عند تغيّر حالة الدور فعليًا، لثانية واحدة ثم تختفي
   const turnKey = room.status+'|'+room.turn+'|'+(room.winner||'');
   if(turnKey !== lastTurnKey){
     lastTurnKey = turnKey;
     showTurnBubble(bannerText);
   }
 
-  const myRollBtn = document.getElementById(session.role==='p1' ? 'btnRollP1':'btnRollP2');
-  const oppRollBtn = document.getElementById(session.role==='p1' ? 'btnRollP2':'btnRollP1');
-  const myLabel = document.getElementById(session.role==='p1' ? 'oppLabelP1':'oppLabelP2');
-  const oppLabel = document.getElementById(session.role==='p1' ? 'oppLabelP2':'oppLabelP1');
-  myRollBtn.style.display='inline-flex'; oppRollBtn.style.display='none';
-  myLabel.style.display='none'; oppLabel.style.display='block';
-  myRollBtn.disabled = !(room.status==='playing' && room.turn===session.role) || animating;
+  const rollP1 = document.getElementById('btnRollP1');
+  const rollP2 = document.getElementById('btnRollP2');
+  const labelP1El = document.getElementById('oppLabelP1');
+  const labelP2El = document.getElementById('oppLabelP2');
 
-  // مؤقّت الدور 15 ثانية: يبدأ عند بدء دوري، ويُلغى إن لم يعد دوري
-  if(room.status==='playing' && room.turn===session.role && !animating){
+  if(isSpectator){
+    rollP1.style.display='none'; rollP2.style.display='none';
+    labelP1El.style.display='block'; labelP2El.style.display='block';
+  } else {
+    const myRollBtn = session.role==='p1' ? rollP1 : rollP2;
+    const oppRollBtn = session.role==='p1' ? rollP2 : rollP1;
+    const myLabel = session.role==='p1' ? labelP1El : labelP2El;
+    const oppLabel = session.role==='p1' ? labelP2El : labelP1El;
+    myRollBtn.style.display='inline-flex'; oppRollBtn.style.display='none';
+    myLabel.style.display='none'; oppLabel.style.display='block';
+    myRollBtn.disabled = !(room.status==='playing' && room.turn===session.role) || animating;
+  }
+
+  if(!isSpectator && room.status==='playing' && room.turn===session.role && !animating){
     if(!turnTimer) armTurnTimer();
   } else {
     clearTurnTimer();
@@ -594,6 +719,12 @@ function renderRoom(room, opts={}){
   showDiceValue('p2', room.p2_dice||1, false);
 
   renderPerPlayerLogs(room);
+
+  // إخفاء إمكانية إرسال الدردشة للمشاهدين (يبقى بإمكانهم متابعة السجل)
+  const chatInputEl = document.getElementById('chatInput');
+  const sendBtnEl = document.getElementById('btnSendChat');
+  if(chatInputEl) chatInputEl.style.display = isSpectator ? 'none' : '';
+  if(sendBtnEl) sendBtnEl.style.display = isSpectator ? 'none' : '';
 
   if(room.status==='finished') openWinModal(room);
 }
@@ -618,7 +749,6 @@ function renderPerPlayerLogs(room){
     ? p2Lines.slice(-6).reverse().map(l=>`<div>${l}</div>`).join('')
     : '<div class="empty">لا أحداث بعد</div>';
 
-  // حفظ السجل الكامل (غير المختصر) لكل لاعب + اسمه، لعرضه في سلايد أحداث الهاتف
   fullPlayerLogs.p1 = p1Lines; fullPlayerLogs.p2 = p2Lines;
   fullPlayerNames.p1 = p1Name || 'اللاعب الأول'; fullPlayerNames.p2 = p2Name || 'اللاعب الثاني';
   if(openEventsRole) renderEventsSheetBody(openEventsRole);
@@ -649,12 +779,19 @@ document.getElementById('logBadgeP2').addEventListener('click', ()=> openEventsS
 document.getElementById('btnCloseEventsSheet').addEventListener('click', closeEventsSheet);
 document.getElementById('eventsSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='eventsSheetBg') closeEventsSheet(); });
 
+/* ====== نافذة سجل الدردشة (بنفس تصميم نافذة أحداث اللاعب) ====== */
+document.getElementById('btnChatHistory').addEventListener('click', openChatSheet);
+document.getElementById('btnCloseChatSheet').addEventListener('click', closeChatSheet);
+document.getElementById('chatSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='chatSheetBg') closeChatSheet(); });
+
 /* ====== مؤقّت الدور: رمي تلقائي إذا لم يرمِ اللاعب خلال 15 ثانية ====== */
 function clearTurnTimer(){
   clearTimeout(turnTimer); turnTimer = null;
   clearInterval(turnCountdownInterval); turnCountdownInterval = null;
-  const btn = document.getElementById(session.role==='p1' ? 'btnRollP1':'btnRollP2');
-  if(btn && !btn.disabled) btn.textContent = 'ارمِ النرد';
+  if(session.role==='p1' || session.role==='p2'){
+    const btn = document.getElementById(session.role==='p1' ? 'btnRollP1':'btnRollP2');
+    if(btn && !btn.disabled) btn.textContent = 'ارمِ النرد';
+  }
 }
 function armTurnTimer(){
   clearTurnTimer();
@@ -669,7 +806,7 @@ function armTurnTimer(){
   turnTimer = setTimeout(()=>{
     turnTimer = null;
     if(!animating && currentRoom && currentRoom.status==='playing' && currentRoom.turn===session.role){
-      rollDice(); // انتهى الوقت — رمي تلقائي للاعب
+      rollDice();
     }
   }, TURN_TIME_LIMIT*1000);
 }
@@ -677,20 +814,24 @@ function armTurnTimer(){
 function openWinModal(room){
   const modal = document.getElementById('winModal');
   if(modal.style.display==='flex') return;
+  const isSpectator = session.role === 'spectator';
   const isMe = room.winner===session.role;
   const winnerName = room.winner==='p1' ? room.p1_name : room.p2_name;
   document.getElementById('winTitle').textContent = isMe ? '🎉 أنت الفائز!' : ('فاز ' + winnerName);
   document.getElementById('winText').textContent = 'وصل إلى المربع 100 أولًا في هذه الجولة.';
+  document.getElementById('btnRematch').style.display = isSpectator ? 'none' : 'inline-flex';
   modal.style.display='flex';
   launchConfetti();
   beep(880,.2,'triangle'); setTimeout(()=>beep(1100,.25,'triangle'),150);
 
-  const oppName = session.role==='p1' ? room.p2_name : room.p1_name;
-  saveHistoryEntry({
-    date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
-    opponent: oppName || 'خصم',
-    result: isMe ? 'win' : 'lose'
-  });
+  if(!isSpectator){
+    const oppName = session.role==='p1' ? room.p2_name : room.p1_name;
+    saveHistoryEntry({
+      date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
+      opponent: oppName || 'خصم',
+      result: isMe ? 'win' : 'lose'
+    });
+  }
 }
 
 /* ===================== جدول الجولات المحفوظ محليًا لكل لاعب ===================== */
@@ -717,20 +858,26 @@ function renderHistoryTable(){
 }
 async function rematch(){
   if(!currentRoom) return;
+  if(session.role!=='p1' && session.role!=='p2') return; // المشاهد لا يملك صلاحية إعادة الجولة
+  const { bonus, penalty } = generateSpecialCells();
   const fresh = { status:'playing', turn:'p1', p1_dice:1, p2_dice:1, winner:null, p1_pos:0, p2_pos:0,
-    log:[`🔁 جولة جديدة بنفس الفريقين: ${currentRoom.p1_name} ضد ${currentRoom.p2_name}`], rev:(currentRoom.rev||0)+1 };
+    log:[`🔁 جولة جديدة بنفس الفريقين: ${currentRoom.p1_name} ضد ${currentRoom.p2_name}`], rev:(currentRoom.rev||0)+1,
+    bonus_cells: bonus, penalty_cells: penalty };
   const { data } = await sb.from('rooms').update(fresh).eq('code', session.code).select().single();
   if(data) renderRoom(data);
 }
 
 async function rollDice(){
   if(animating) return;
+  if(session.role!=='p1' && session.role!=='p2') return;
   const { data: room } = await sb.from('rooms').select('*').eq('code', session.code).single();
   if(!room || room.status!=='playing' || room.turn!==session.role) return;
 
   clearTurnTimer();
   animating = true;
   document.getElementById(session.role==='p1'?'btnRollP1':'btnRollP2').disabled = true;
+
+  broadcastDiceRoll(session.role); // يُبثّ لحظيًا حتى يرى الطرف الآخر والمشاهدون النرد وهو يدور
 
   showDiceOverlay();
   const shuffle = setInterval(()=>{
@@ -751,20 +898,27 @@ async function rollDice(){
   const diceKey = session.role==='p1' ? 'p1_dice' : 'p2_dice';
   const meName = session.role==='p1' ? room.p1_name : room.p2_name;
   const oppRole = session.role==='p1' ? 'p2' : 'p1';
+
   let myPos = room[meKey] || 0;
+  const posBeforeRoll = myPos;
   let newPos = myPos + value;
+
   let log = room.log || [];
   let update = { rev:(room.rev||0)+1 };
   update[diceKey] = value;
   let finished = false;
+  let bonusRoll = false;
+
+  let bonusCells = [...(room.bonus_cells||[])];
+  let penaltyCells = [...(room.penalty_cells||[])];
 
   if(newPos > 100){
     log.push(`🎲 ${meName} رمى ${value} — يحتاج رقمًا أدق للوصول إلى 100!`);
-    update.turn = oppRole;
   } else {
     await animateStep(session.role, myPos, newPos);
     myPos = newPos;
     log.push(`🎲 ${meName} رمى ${value} وتقدّم إلى المربع ${newPos}`);
+
     if(LADDERS[newPos]){
       const dest = LADDERS[newPos];
       await sleep(200); await animateJump(session.role, dest);
@@ -773,12 +927,32 @@ async function rollDice(){
       const dest = SNAKES[newPos];
       await sleep(200); await animateJump(session.role, dest);
       myPos = dest; log.push(`🐍 لدغته الحية! ${meName} نزل إلى المربع ${dest}`); beep(220,.2,'sawtooth');
+    } else if(bonusCells.includes(newPos)){
+      bonusCells = bonusCells.filter(c=>c!==newPos);
+      bonusRoll = true;
+      log.push(`⭐ ${meName} وقف على مربع الحظ ${newPos} — يحق له رمي النرد مرة أخرى!`);
+      beep(760,.18,'triangle');
+    } else if(penaltyCells.includes(newPos)){
+      penaltyCells = penaltyCells.filter(c=>c!==newPos);
+      await sleep(200); await animateJump(session.role, posBeforeRoll);
+      myPos = posBeforeRoll;
+      log.push(`🕳️ ${meName} وقع في حفرة عند المربع ${newPos} — رجع إلى مربعه السابق ${posBeforeRoll}!`);
+      beep(200,.22,'sawtooth');
     }
-    if(myPos===100){ update.status='finished'; update.winner=session.role; finished=true; bumpGlobalCounter(); }
-    else { update.turn = oppRole; }
   }
+
+  if(myPos===100){
+    update.status='finished'; update.winner=session.role; finished=true; bumpGlobalCounter();
+  } else if(bonusRoll){
+    update.turn = session.role; // دور إضافي — نفس اللاعب يرمي مجددًا
+  } else {
+    update.turn = oppRole;
+  }
+
   update[meKey] = myPos;
   update.log = log.slice(-40);
+  update.bonus_cells = bonusCells;
+  update.penalty_cells = penaltyCells;
 
   const { data: saved, error } = await sb.from('rooms').update(update).eq('code', session.code).eq('rev', room.rev).select().single();
   if(!saved || error){
@@ -786,7 +960,7 @@ async function rollDice(){
     if(refreshed) renderRoom(refreshed);
   } else {
     renderRoom(saved, {skipTokens:true});
-    if(finished) deleteRoomMessages(session.code);
+    if(finished) scheduleRoomCleanup(session.code);
   }
   animating = false;
 }
@@ -815,20 +989,26 @@ function fireReaction(role, emoji){
 }
 function broadcastReaction(emoji){ presenceChannel?.send({ type:'broadcast', event:'react', payload:{emoji, from:session.role} }); }
 async function sendChatMessage(text){
+  if(session.role!=='p1' && session.role!=='p2') return; // المشاهد لا يرسل رسائل
   const name = session.role==='p1' ? currentRoom.p1_name : currentRoom.p2_name;
   const saved = await sendMessage(session.code, session.role, name, text);
-  // عرض فوري (تفاؤلي) لدى المرسل بدل انتظار وصول الحدث اللحظي — يحل مشكلة عدم ظهور الرسالة أحيانًا
   if(saved){
     seenMessageIds.add(saved.id);
     if(saved.id > lastMessageId) lastMessageId = saved.id;
+    chatHistory.push({role:session.role, name, content:text});
+    if(document.getElementById('chatSheetBg').classList.contains('show')) renderChatSheetBody();
     showChatStrip(session.role, text, false);
   } else {
+    chatHistory.push({role:session.role, name, content:text});
+    if(document.getElementById('chatSheetBg').classList.contains('show')) renderChatSheetBody();
     showChatStrip(session.role, text, false);
   }
 }
 function handleIncomingMessage(msg){
   if(!msg || (msg.id!=null && seenMessageIds.has(msg.id))) return;
   if(msg.id!=null){ seenMessageIds.add(msg.id); if(msg.id > lastMessageId) lastMessageId = msg.id; }
+  chatHistory.push({role:msg.sender_role, name:msg.sender_name, content:msg.content});
+  if(document.getElementById('chatSheetBg').classList.contains('show')) renderChatSheetBody();
   showChatStrip(msg.sender_role, msg.content, msg.sender_role!==session.role);
 }
 /* شبكة أمان: استطلاع دوري للرسائل الفائتة في حال ضاع حدث البث اللحظي */
@@ -840,8 +1020,7 @@ async function pollMissedMessages(){
   }catch(e){}
 }
 
-/* ====== دمج آمن لحمولة التحديث اللحظي: يحمي من اختفاء الحقول الكبيرة (كالصور)
-   التي قد يُسقطها Postgres/Realtime من حمولة WAL عندما لا تتغيّر (TOAST) ====== */
+/* ====== دمج آمن لحمولة التحديث اللحظي ====== */
 function mergeRoomPayload(incoming, prev){
   if(!prev) return incoming;
   const merged = { ...incoming };
@@ -875,8 +1054,7 @@ function subscribeToRoom(code){
   }, 3000);
 }
 
-/* ====== إعادة الاتصال تلقائيًا عند عودة التبويب/الجهاز للنشاط — يحل مشاكل
-   اختفاء الرسائل والتفاعلات والصور أحيانًا بسبب انقطاع القنوات في الخلفية ====== */
+/* ====== إعادة الاتصال تلقائيًا عند عودة التبويب/الجهاز للنشاط ====== */
 async function refreshRoomNow(){
   if(!session.code) return;
   try{
@@ -902,7 +1080,8 @@ window.addEventListener('online', ()=>{
 
 function subscribeToPresence(code){
   if(presenceChannel) sb.removeChannel(presenceChannel);
-  presenceChannel = sb.channel('presence-'+code, { config:{ presence:{ key: session.role } } });
+  const presenceKey = session.role==='spectator' ? ('spectator-'+myId) : session.role;
+  presenceChannel = sb.channel('presence-'+code, { config:{ presence:{ key: presenceKey } } });
   presenceChannel
     .on('presence', {event:'sync'}, ()=>{
       const state = presenceChannel.presenceState();
@@ -910,6 +1089,7 @@ function subscribeToPresence(code){
       document.getElementById('liveP2').style.display = state['p2'] ? 'block':'none';
     })
     .on('broadcast', {event:'react'}, ({payload})=> fireReaction(payload.from, payload.emoji))
+    .on('broadcast', {event:'dice_roll'}, ({payload})=> playRemoteDiceShuffle(payload.role))
     .subscribe(async (status)=>{ if(status==='SUBSCRIBED') await presenceChannel.track({role:session.role, at:Date.now()}); });
 }
 
@@ -921,6 +1101,8 @@ function leaveRoom(){
   clearTurnTimer();
   session.code=null; session.role=null; currentRoom=null;
   lastMessageId = 0; seenMessageIds.clear(); lastTurnKey = null;
+  chatHistory = [];
+  document.body.classList.remove('is-spectator');
   clearSession();
 }
 
@@ -948,6 +1130,69 @@ function resetToHome(){
 
 function enterGameScreen(room){ showScreen('game'); renderRoom(room); }
 
+/* ====== نافذة "جولة منتهية/محذوفة" — تظهر عند فتح رابط لجولة لم تعد موجودة ====== */
+function showRoomEndedModal(){
+  showScreen('home'); loadGlobalCounter();
+  document.getElementById('roomEndedModal').style.display='flex';
+}
+document.getElementById('btnRoomEndedHome').addEventListener('click', ()=>{
+  document.getElementById('roomEndedModal').style.display='none';
+  resetToHome();
+});
+
+/* ====== استعادة جلسة محفوظة (لاعب أو مشاهد) لغرفة معيّنة؛ عند الفشل يمكن تمرير رابط بديل للمتابعة إليه ====== */
+async function resumeSavedSession(code, fallbackLinkCode){
+  try{
+    const { data:room } = await sb.from('rooms').select('*').eq('code', code).single();
+    const isP1 = room && room.p1_user_id === myId;
+    const isP2 = room && room.p2_user_id === myId;
+    const savedInfo = loadSession();
+    if(room && room.status !== 'finished' && (isP1 || isP2 || (savedInfo && savedInfo.role==='spectator'))){
+      session.code = code;
+      session.role = isP1 ? 'p1' : (isP2 ? 'p2' : 'spectator');
+      saveSession();
+      subscribeToRoom(code);
+      subscribeToPresence(code);
+      await loadChatHistory(code);
+      enterGameScreen(room);
+      return true;
+    }
+  }catch(e){}
+  clearSession();
+  if(fallbackLinkCode){
+    const { room, error } = await joinRoomByCode(fallbackLinkCode);
+    if(error){ showRoomEndedModal(); return false; }
+    await loadChatHistory(fallbackLinkCode);
+    enterGameScreen(room);
+    return false;
+  }
+  resetToHome();
+  return false;
+}
+
+/* ====== نافذة تعارض الجولات: لدى المستخدم جولة محفوظة ويحاول فتح رابط جولة أخرى ====== */
+function presentRoomConflict(myCode, newCode){
+  showScreen('home'); loadGlobalCounter();
+  const modal = document.getElementById('switchRoomModal');
+  modal.style.display = 'flex';
+  document.getElementById('btnGoToMyRoom').onclick = async ()=>{
+    modal.style.display='none';
+    if(history.replaceState) history.replaceState({}, '', location.pathname);
+    pendingLinkCode = null;
+    await resumeSavedSession(myCode);
+  };
+  document.getElementById('btnEndAndSwitch').onclick = async ()=>{
+    modal.style.display='none';
+    await endCurrentSessionAsLeave(myCode);
+    clearSession();
+    const { room, error } = await joinRoomByCode(newCode);
+    if(history.replaceState) history.replaceState({}, '', location.pathname);
+    if(error){ showRoomEndedModal(); return; }
+    await loadChatHistory(newCode);
+    enterGameScreen(room);
+  };
+}
+
 let localProfile = null, pendingLinkCode = null, onboardingPhotoDataUrl = null, editPhotoDataUrl = null, selectedColor = null, matchCountdownTimer = null;
 
 function paintMiniUserbar(){
@@ -956,7 +1201,10 @@ function paintMiniUserbar(){
 }
 
 /* ====== مستمعي أحداث التفاعلات في البطاقات ====== */
+let reactionButtonsInitialized = false;
 function initReactionButtons(){
+  if(reactionButtonsInitialized) return;
+  reactionButtonsInitialized = true;
   document.querySelectorAll('.side-reactions button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const emoji = btn.dataset.e;
@@ -1048,6 +1296,7 @@ document.querySelectorAll('[data-tab]').forEach(t=>{
 document.getElementById('btnCreate').addEventListener('click', async ()=>{
   const { code, room, error } = await createRoom();
   if(error){ alert(error); return; }
+  await loadChatHistory(code);
   enterGameScreen(room);
 });
 
@@ -1058,6 +1307,7 @@ document.getElementById('btnJoin').addEventListener('click', async ()=>{
   if(!code){ errBox.textContent='الرجاء إدخال رمز الجولة أو فتح رابط الدعوة'; errBox.style.display='block'; return; }
   const { room, error } = await joinRoomByCode(code);
   if(error){ errBox.textContent=error; errBox.style.display='block'; return; }
+  await loadChatHistory(code);
   enterGameScreen(room);
 });
 
@@ -1112,10 +1362,11 @@ async function onQuickMatchAccepted(info){
   clearInterval(matchCountdownTimer);
   if(info.isInitiator){
     const { code, room } = await createRoom(info.roomCode);
+    await loadChatHistory(code);
     enterGameScreen(room);
   } else {
     const { room, error } = await joinRoomByCode(info.roomCode);
-    if(!error) enterGameScreen(room);
+    if(!error){ await loadChatHistory(info.roomCode); enterGameScreen(room); }
   }
 }
 
@@ -1125,12 +1376,15 @@ document.getElementById('btnRollP2').addEventListener('click', ()=>{ if(session.
 document.getElementById('btnPlayAgain').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; resetToHome(); });
 document.getElementById('btnRematch').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; rematch(); });
 document.getElementById('btnLeave').addEventListener('click', async ()=>{
-  if(!confirm('هل تريد مغادرة الجولة؟ ستُحتسب خسارة لك في سجلك.')) return;
-  await handleLeaveAsLoss();
+  const isSpectator = session.role === 'spectator';
+  const msg = isSpectator ? 'هل تريد الخروج من وضع المشاهدة؟' : 'هل تريد مغادرة الجولة؟ ستُحتسب خسارة لك في سجلك.';
+  if(!confirm(msg)) return;
+  if(!isSpectator) await handleLeaveAsLoss();
   resetToHome();
 });
 /* ====== مغادرة بزر الخروج أثناء جولة نشطة = خسارة تُسجَّل محليًا، وفوز فوري للخصم ====== */
 async function handleLeaveAsLoss(){
+  if(session.role!=='p1' && session.role!=='p2') return;
   if(session.code && currentRoom && currentRoom.status==='playing' && session.role){
     const oppRole = session.role==='p1' ? 'p2' : 'p1';
     const oppName = session.role==='p1' ? currentRoom.p2_name : currentRoom.p1_name;
@@ -1148,11 +1402,43 @@ async function handleLeaveAsLoss(){
       opponent: oppName || 'خصم',
       result: 'lose'
     });
+    scheduleRoomCleanup(session.code);
   }
+}
+
+/* ====== إنهاء جولة أخرى محفوظة (غير المعروضة حاليًا) عند اختيار "إنهاء والمتابعة"
+   في نافذة تعارض الجولات — يُحتسب خسارة إن كانت قيد اللعب، أو تُحذف مباشرة إن كانت بانتظار لاعب ====== */
+async function endCurrentSessionAsLeave(code){
+  try{
+    const { data: room } = await sb.from('rooms').select('*').eq('code', code).single();
+    if(!room) return;
+    const myRole = room.p1_user_id===myId ? 'p1' : (room.p2_user_id===myId ? 'p2' : null);
+    if(!myRole) return; // لم يكن لاعبًا فيها (كان مشاهدًا مثلًا) — لا حاجة لأي إجراء
+    if(room.status==='playing'){
+      const oppRole = myRole==='p1' ? 'p2' : 'p1';
+      const oppName = myRole==='p1' ? room.p2_name : room.p1_name;
+      const myName  = myRole==='p1' ? room.p1_name : room.p2_name;
+      try{
+        await sb.from('rooms').update({
+          status:'finished', winner:oppRole,
+          log:[...(room.log||[]), `🚪 ${myName} غادر الجولة — الفوز لـ ${oppName}`].slice(-40),
+          rev:(room.rev||0)+1
+        }).eq('code', code).eq('rev', room.rev);
+      }catch(e){}
+      saveHistoryEntry({
+        date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
+        opponent: oppName || 'خصم',
+        result: 'lose'
+      });
+      scheduleRoomCleanup(code);
+    } else if(room.status==='waiting'){
+      try{ await sb.from('rooms').delete().eq('code', code); await deleteRoomMessages(code); }catch(e){}
+    }
+  }catch(e){}
 }
 document.getElementById('btnSound').addEventListener('click', (e)=>{ soundOn = !soundOn; e.target.textContent = soundOn ? '🔊' : '🔇'; e.target.title = soundOn ? 'كتم الصوت' : 'تشغيل الصوت'; });
 document.getElementById('btnHelp').addEventListener('click', ()=>{
-  alert('🎯 كيف تلعب:\n- كل لاعب يرمي نرده الخاص بجانبه بدوره (نرد عشوائي 100% مثل لودو).\n- سلّم = صعود، حية = نزول.\n- يجب الوصول للمربع 100 بالضبط للفوز.\n- استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.\n- أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!');
+  alert('🎯 كيف تلعب:\n- كل لاعب يرمي نرده الخاص بجانبه بدوره (نرد عشوائي 100% مثل لودو).\n- سلّم = صعود، حية = نزول.\n- ⭐ مربع الحظ: يمنحك رمية إضافية فورًا.\n- 🕳️ مربع الحفرة: يلغي رميتك الأخيرة ويعيدك لمكانك السابق.\n- كل نوع من هذه المربعات يظهر 3 مرات فقط في كل جولة، ويختفي فور استخدامه من أي لاعب.\n- يجب الوصول للمربع 100 بالضبط للفوز.\n- استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.\n- أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!\n- إن كانت الجولة مكتملة عند فتح رابط الدعوة، ستدخل تلقائيًا كمشاهد.\n- إن كانت لديك جولة مفتوحة وفتحت رابط جولة أخرى، سنسألك إن كنت تريد العودة لجولتك أو إنهاءها والانتقال.');
 });
 
 /* ====== الدردشة ====== */
@@ -1166,54 +1452,52 @@ async function sendChat(){
 
 function extractLinkCode(){ return new URLSearchParams(location.search).get('r'); }
 
-/* ====== الإقلاع المحسّن — حل مشكلة "الجولة مكتملة" ====== */
+/* ====== الإقلاع — يدعم الدخول المباشر عبر رابط دعوة بدون تسجيل مسبق،
+   ويكتشف وجود جولة مفتوحة أخرى قبل الانضمام لجولة جديدة عبر رابط ====== */
 async function boot(){
   if(!isConfigured){ document.getElementById('setupWarning').style.display='block'; setDbStatus(false); return; }
   setDbStatus(true);
   pendingLinkCode = extractLinkCode();
-  const existing = await loadExistingProfile();
-  if(existing){
-    localProfile = existing; soundOn = existing.sound_on!==false;
-    paintMiniUserbar();
-    initReactionButtons();
 
-    // أولوية 1: استعادة الجلسة المحفوظة
-    const saved = loadSession();
-    if(saved){
-      try{
-        const { data:room } = await sb.from('rooms').select('*').eq('code', saved.code).single();
-        if(room && room.status !== 'finished'){
-          // تحقق أن هذا اللاعب هو أحد اللاعبين في الغرفة
-          const isP1 = room.p1_user_id === myId;
-          const isP2 = room.p2_user_id === myId;
-          if(isP1 || isP2){
-            session.code = saved.code; 
-            session.role = isP1 ? 'p1' : 'p2';
-            saveSession();
-            initBoardUI(); // إعادة رسم اللوحة والرموز
-            subscribeToRoom(saved.code); 
-            subscribeToPresence(saved.code);
-            enterGameScreen(room);
-            return;
-          }
-        }
-        clearSession();
-      }catch(e){ clearSession(); }
-    }
+  let existing = await loadExistingProfile();
 
-    // أولوية 2: الانضمام عبر رابط
-    // أولوية 2: الانضمام عبر رابط
-    if(pendingLinkCode){
-      document.getElementById('joinCode').value = pendingLinkCode;
-      document.querySelector('[data-tab="join"]').click();
-      showScreen('home'); loadGlobalCounter();
-      initBoardUI();                              // ← السطر المُضاف: يبني اللوحة قبل الدخول للعبة
-      document.getElementById('btnJoin').click();
-    } else {
-      afterProfileReady();
-    }
+  // دخول مباشر عبر رابط دعوة دون تسجيل مسبق: أنشئ ملفًا شخصيًا تلقائيًا باسم افتراضي قابل للتعديل لاحقًا
+  if(!existing && pendingLinkCode){
+    const autoName = 'لاعب_' + Math.floor(100 + Math.random()*900);
+    const { data } = await createProfile(autoName, null);
+    if(data) existing = data;
+  }
+
+  if(!existing){ showScreen('onboarding'); return; }
+
+  localProfile = existing; soundOn = existing.sound_on!==false;
+  paintMiniUserbar();
+  initReactionButtons();
+  initBoardUI();
+
+  const saved = loadSession();
+
+  // إذا كانت لديه جولة محفوظة مختلفة عن الرابط الذي فتحه، اسأله: عودة أم إنهاء ومتابعة
+  if(saved && pendingLinkCode && saved.code !== pendingLinkCode){
+    presentRoomConflict(saved.code, pendingLinkCode);
+    return;
+  }
+
+  if(saved){
+    const resumed = await resumeSavedSession(saved.code);
+    if(resumed) return;
+    // فشلت الاستعادة (انتهت الجولة أو حُذفت) — تابع أدناه لمسار الرابط أو الشاشة الرئيسية
+  }
+
+  if(pendingLinkCode){
+    showScreen('home'); loadGlobalCounter();
+    const { room, error } = await joinRoomByCode(pendingLinkCode);
+    if(history.replaceState) history.replaceState({}, '', location.pathname);
+    if(error){ showRoomEndedModal(); return; }
+    await loadChatHistory(pendingLinkCode);
+    enterGameScreen(room);
   } else {
-    showScreen('onboarding');
+    afterProfileReady();
   }
 }
 
