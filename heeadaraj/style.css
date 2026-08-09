@@ -718,7 +718,7 @@ body.is-spectator .spectator-badge{display:flex;}
   .turn-banner{font-size:12px;padding:6px 10px;}
   .log{max-height:50px;font-size:11px;}
   .game-topbar{margin:6px 8px;padding:6px;}
-  .tb-btn{width:30px;height:32px;font-size:24px;}
+  .tb-btn{width:35px;height:30px;font-size:24px;}
   .tb-link-input{font-size:10px;}
   .tb-copy-btn{padding:3px 6px;font-size:10px;}
 }
