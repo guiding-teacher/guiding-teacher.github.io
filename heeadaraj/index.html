@@ -16,6 +16,8 @@
 
 <div class="aurora"><i></i><i></i><i></i></div>
 
+<div class="spectator-badge" id="spectatorBadge">👀 وضع المشاهدة</div>
+
 <div class="stage">
 
   <div class="site-header">
@@ -134,6 +136,31 @@
     </div>
   </div>
 
+  <!-- ===================== نافذة تعارض الجولات — لديك جولة مفتوحة بالفعل ===================== -->
+  <div class="modal-bg" id="switchRoomModal">
+    <div class="modal">
+      <div class="trophy">🔔</div>
+      <h2>لديك جولة مفتوحة</h2>
+      <p>لديك جولة نشطة حاليًا. هل تريد العودة إليها أم إنهاؤها والانتقال إلى الجولة الجديدة؟</p>
+      <div class="btns">
+        <button class="btn blue" id="btnGoToMyRoom">↩️ العودة لجولتي</button>
+        <button class="btn grey" id="btnEndAndSwitch">🚪 إنهاء والمتابعة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== نافذة جولة منتهية/محذوفة ===================== -->
+  <div class="modal-bg" id="roomEndedModal">
+    <div class="modal">
+      <div class="trophy">🏁</div>
+      <h2>انتهت هذه الجولة</h2>
+      <p>لم تعد هذه الجولة متاحة، فقد انتهت وتم حذف بياناتها.</p>
+      <div class="btns">
+        <button class="btn grey" id="btnRoomEndedHome">🏠 الرئيسية</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== شاشة اللعب ===================== -->
   <div id="screen-game">
 
@@ -248,6 +275,7 @@
   <div class="inner">
     <input id="chatInput" maxlength="200" placeholder="اكتب رسالة سريعة للطرف الآخر…">
     <button id="btnSendChat">إرسال ➤</button>
+    <button id="btnChatHistory" class="btn-chat-history" title="سجل الدردشة">📜</button>
   </div>
 </div>
 
@@ -298,6 +326,16 @@
     <h3 id="eventsSheetTitle">📜 أحداث اللاعب</h3>
     <div class="events-sheet-body" id="eventsSheetBody"></div>
     <button class="btn grey" id="btnCloseEventsSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة سجل الدردشة — بنفس تصميم نافذة أحداث اللاعب تمامًا -->
+<div class="events-sheet-bg" id="chatSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3 id="chatSheetTitle">💬 سجل الدردشة</h3>
+    <div class="events-sheet-body" id="chatSheetBody"></div>
+    <button class="btn grey" id="btnCloseChatSheet">إغلاق</button>
   </div>
 </div>
   
