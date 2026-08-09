@@ -699,7 +699,7 @@ body.is-spectator .spectator-badge{display:flex;}
   .side-panel .side-reactions{display:none;}
   .side-panel.me .side-reactions{ 
     display:flex;flex-wrap:nowrap;overflow-x:auto;justify-content:center;
-    gap:4px;margin-top:3px;padding-top:5px;
+    gap:3px;margin-top:5px;padding-top:5px;
   }
   .side-panel.me .side-reactions button{flex:0 0 20px;width:20px;height:40px;padding:0;font-size:14px;}
 
@@ -718,7 +718,7 @@ body.is-spectator .spectator-badge{display:flex;}
   .turn-banner{font-size:12px;padding:6px 10px;}
   .log{max-height:50px;font-size:11px;}
   .game-topbar{margin:6px 8px;padding:6px;}
-  .tb-btn{width:35px;height:30px;font-size:24px;}
+  .tb-btn{width:30px;height:30px;font-size:20px;}
   .tb-link-input{font-size:10px;}
   .tb-copy-btn{padding:3px 6px;font-size:10px;}
 }
