@@ -446,11 +446,28 @@ height: 75%;
 .cell.b{background:var(--cell-b);}
 .cell.start{color:#fff;background:linear-gradient(135deg,var(--snake-a),var(--snake-b));}
 .cell.goal{color:#fff;background:linear-gradient(135deg,#FFD54F,#F2B705);}
-.cell .cell-icon{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:1.5em;pointer-events:none;z-index:2;
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));
-  animation:iconPulse 1.8s ease-in-out infinite;
+ .cell .cell-icon{
+        color: #ffb709;/* ← بدل 1.1em */
+
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.1em;                 /* ← أكبر بكثير */
+  pointer-events: none;
+  z-index: 4;                       /* ← فوق كل شيء */
+  
+  /* هالة بيضاء ساطعة حول الرمز */
+  text-shadow:
+    0 0 6px rgba(255,255,255,1),
+    0 0 12px rgba(255,255,255,0.9),
+    0 0 20px rgba(255,255,255,0.6);
+  
+  /* ظل أسفل الرمز يفصله عن الخلفية */
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.6));
+  
+  animation: iconPulse 1.8s ease-in-out infinite;
 }
 .cell .cell-icon:empty{display:none;animation:none;}
 @keyframes iconPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.14);}}
@@ -714,7 +731,15 @@ body.is-spectator .spectator-badge{display:flex;}
   .board-wrap{padding:8px;border-radius:14px;}
   .board{max-height:60vh;}
   .cell{font-size:10px;padding:2px 3px;}
-  .cell .cell-icon{font-size:1.1em;}
+   .cell .cell-icon{
+  font-size: 1.5em;  
+     color: #ffb709;/* ← بدل 1.1em */
+     margin-top: 6px;
+   text-shadow:
+    0 0 4px rgb(249, 245, 245),
+     0 0 8px rgba(251, 250, 250, 0.9);
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
   .turn-banner{font-size:12px;padding:6px 10px;}
   .log{max-height:50px;font-size:11px;}
   .game-topbar{margin:6px 8px;padding:6px;}
