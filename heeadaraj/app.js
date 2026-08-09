@@ -316,19 +316,40 @@ function rollFairDice(){
 
 /* ====== محاكاة دوران نرد الطرف الآخر — تُبث لحظيًا وتُشغَّل محليًا لدى المشاهدين ====== */
 let remoteShuffleTimers = { p1:null, p2:null };
+let remoteShuffleSafety = { p1:null, p2:null };
+/* ====== دوران نرد الخصم/المشاهد — يستمر بلا توقف ذاتي حتى تصله النتيجة الحقيقية عبر playRemoteDiceResult
+   (بدل التوقف على مؤقّت ثابت 650ms الذي كان يجمّده على رقم عشوائي خاطئ قبل وصول الرقم الصحيح).
+   مؤقّت أمان طويل (4 ثوانٍ) فقط كشبكة أمان في حال ضاع حدث dice_result لأي سبب (فقدان اتصال مثلًا). ====== */
 function playRemoteDiceShuffle(role){
   if(role === session.role) return; // تجاهل حدثي أنا نفسي (عندي أصلًا الرسوم المتحركة المحلية)
   const cube = document.getElementById(role==='p1' ? 'cubeP1' : 'cubeP2');
   if(!cube) return;
   clearInterval(remoteShuffleTimers[role]);
+  clearTimeout(remoteShuffleSafety[role]);
   remoteShuffleTimers[role] = setInterval(()=>{
     const rv = 1+Math.floor(Math.random()*6);
     showDiceValue(role, rv, true);
   }, 90);
-  setTimeout(()=>{ clearInterval(remoteShuffleTimers[role]); remoteShuffleTimers[role]=null; }, 650);
+  // شبكة أمان فقط — لا تتوقف الدورة الطبيعية عندها، بل تحمي من دوران أبدي إذا ضاع البث
+  remoteShuffleSafety[role] = setTimeout(()=>{
+    clearInterval(remoteShuffleTimers[role]);
+    remoteShuffleTimers[role] = null;
+  }, 4000);
+}
+/* ====== النتيجة الحقيقية للنرد — تُبث فور احتسابها لدى الرامي، فيتوقف المشاهد فورًا على الرقم الصحيح
+   بالتزامن مع وصولها، بدل توقف عشوائي مبكر بزمن ثابت أو انتظار تحديث قاعدة البيانات المتأخر ====== */
+function playRemoteDiceResult(role, value){
+  if(role === session.role) return; // تجاهل صدى حدثي أنا نفسي
+  clearInterval(remoteShuffleTimers[role]);
+  clearTimeout(remoteShuffleSafety[role]);
+  remoteShuffleTimers[role] = null;
+  showDiceValue(role, value, false);
 }
 function broadcastDiceRoll(role){
   presenceChannel?.send({ type:'broadcast', event:'dice_roll', payload:{role} });
+}
+function broadcastDiceResult(role, value){
+  presenceChannel?.send({ type:'broadcast', event:'dice_result', payload:{role, value} });
 }
 
 /* ===================== 5) المؤثرات ===================== */
@@ -551,6 +572,9 @@ async function mmStopInternal(){ clearTimeout(mmSearchTimer); clearTimeout(mmAcc
 /* ===================== 8) منطق الجولات ===================== */
 const session = { code:null, role:null };
 let currentRoom = null, realtimeChannel = null, presenceChannel = null, animating = false;
+/* ====== حالة الرسوم المتحركة عند المشاهد/الخصم (بثّ خطة الحركة) — يمنع تحديث قاعدة البيانات
+   من "قفز" الرمز فورًا لموضعه النهائي أثناء تشغيل نفس الحركة خطوة بخطوة محليًا ====== */
+const remoteAnimating = { p1:false, p2:false };
 let lastTurnKey = null;
 let turnTimer = null, turnCountdownInterval = null;
 const TURN_TIME_LIMIT = 15;
@@ -663,8 +687,12 @@ function renderRoom(room, opts={}){
   document.getElementById('panelP2').classList.toggle('me', session.role==='p2');
   document.getElementById('panelP2').classList.toggle('opponent', session.role!=='p2');
 
-  if(!opts.skipTokens){
+  /* لا نقفز بالرمز فورًا لموضعه: لا عندما نحن (المتصفح المحلي) نقوم بنفس هذه الحركة (opts.skipTokens)،
+     ولا عندما تكون حركة الرمز قيد التشغيل محليًا بسبب بثّ خطة حركة من الطرف الآخر (remoteAnimating) */
+  if(!opts.skipTokens && !remoteAnimating.p1){
     placeToken(document.getElementById('tokenP1'), room.p1_pos||0);
+  }
+  if(!opts.skipTokens && !remoteAnimating.p2){
     placeToken(document.getElementById('tokenP2'), room.p2_pos||0);
   }
 
@@ -867,6 +895,41 @@ async function rematch(){
   if(data) renderRoom(data);
 }
 
+/* ====== تشغيل خطوات حركة الرمز (خطوة بخطوة + قفزة السلّم/الحية/الحفرة عند الحاجة) — دالة مشتركة
+   يستخدمها كلٌّ من الرامي نفسه ومَن يستقبل بثّ "move_plan" من الطرف الآخر ليريا نفس الحركة بالتزامن ====== */
+async function runTokenAnimation(role, plan){
+  if(plan.landedPos == null) return; // تجاوز 100 — لا حركة للرمز إطلاقًا
+  await animateStep(role, plan.posBefore, plan.landedPos);
+  if(plan.special === 'ladder'){
+    await sleep(200); await animateJump(role, plan.dest); beep(700,.15,'triangle');
+  } else if(plan.special === 'snake'){
+    await sleep(200); await animateJump(role, plan.dest); beep(220,.2,'sawtooth');
+  } else if(plan.special === 'bonus'){
+    beep(760,.18,'triangle');
+  } else if(plan.special === 'penalty'){
+    await sleep(200); await animateJump(role, plan.dest); beep(200,.22,'sawtooth');
+  }
+}
+function broadcastMovePlan(role, plan){
+  presenceChannel?.send({ type:'broadcast', event:'move_plan', payload:{role, plan} });
+}
+/* ====== استقبال خطة حركة من الطرف الآخر: نشغّل نفس الرسوم المتحركة محليًا لدى الخصم/المشاهد،
+   ونمنع renderRoom من "قفز" الرمز فورًا طوال مدة هذه الحركة عبر علم remoteAnimating ====== */
+async function playRemoteMovePlan(role, plan){
+  if(role === session.role) return; // تجاهل صدى حدثي أنا نفسي
+  remoteAnimating[role] = true;
+  try{
+    await runTokenAnimation(role, plan);
+  } finally {
+    // لا نُعيد ضبط موضع الرمز هنا استنادًا إلى currentRoom: فهو لا يزال يحمل بيانات الجولة القديمة
+    // (قبل الرمية) في هذه اللحظة تحديدًا، لأن تحديث القاعدة الحقيقي يصل لاحقًا عبر الشبكة.
+    // إعادة الضبط منه كانت تُرجع الرمز لموضعه السابق ثم تقفز به للأمام مجددًا عند وصول التحديث.
+    // خطة الحركة نفسها دقيقة ومطابقة لما سيُكتب في القاعدة، فنترك الرمز في نهاية حركته كما هو،
+    // وسيصل التحديث الحقيقي لاحقًا مطابقًا لنفس الموضع دون أي قفزة مرئية.
+    remoteAnimating[role] = false;
+  }
+}
+
 async function rollDice(){
   if(animating) return;
   if(session.role!=='p1' && session.role!=='p2') return;
@@ -894,6 +957,10 @@ async function rollDice(){
   beep(520,.1,'square');
   setTimeout(hideDiceOverlay, 600);
 
+  // نبثّ النتيجة الحقيقية فورًا حتى يتوقف نرد الخصم/المشاهد على الرقم الصحيح مباشرة
+  // بدل الانتظار لوصول تحديث القاعدة (الذي يتأخر لثوانٍ بسبب رسوم حركة الانتقال أدناه)
+  broadcastDiceResult(session.role, value);
+
   const meKey = session.role==='p1' ? 'p1_pos' : 'p2_pos';
   const diceKey = session.role==='p1' ? 'p1_dice' : 'p2_dice';
   const meName = session.role==='p1' ? room.p1_name : room.p2_name;
@@ -912,6 +979,23 @@ async function rollDice(){
   let bonusCells = [...(room.bonus_cells||[])];
   let penaltyCells = [...(room.penalty_cells||[])];
 
+  // نحسب خطة الحركة كاملةً أولًا، ثم نبثّها فورًا للطرف الآخر ليشغّل نفس الحركة بالتزامن،
+  // ثم ننفّذها محليًا لدينا (بدل حساب كل خطوة أثناء التنفيذ كما كان سابقًا)
+  const plan = { posBefore: posBeforeRoll, landedPos: null, special: null, dest: null };
+  if(newPos <= 100){
+    plan.landedPos = newPos;
+    if(LADDERS[newPos]){
+      plan.special = 'ladder'; plan.dest = LADDERS[newPos];
+    } else if(SNAKES[newPos]){
+      plan.special = 'snake'; plan.dest = SNAKES[newPos];
+    } else if(bonusCells.includes(newPos)){
+      plan.special = 'bonus';
+    } else if(penaltyCells.includes(newPos)){
+      plan.special = 'penalty'; plan.dest = posBeforeRoll;
+    }
+  }
+  broadcastMovePlan(session.role, plan);
+
   if(newPos > 100){
     log.push(`🎲 ${meName} رمى ${value} — يحتاج رقمًا أدق للوصول إلى 100!`);
   } else {
@@ -919,20 +1003,20 @@ async function rollDice(){
     myPos = newPos;
     log.push(`🎲 ${meName} رمى ${value} وتقدّم إلى المربع ${newPos}`);
 
-    if(LADDERS[newPos]){
-      const dest = LADDERS[newPos];
+    if(plan.special === 'ladder'){
+      const dest = plan.dest;
       await sleep(200); await animateJump(session.role, dest);
       myPos = dest; log.push(`🪜 سلّم! ${meName} صعد إلى المربع ${dest}`); beep(700,.15,'triangle');
-    } else if(SNAKES[newPos]){
-      const dest = SNAKES[newPos];
+    } else if(plan.special === 'snake'){
+      const dest = plan.dest;
       await sleep(200); await animateJump(session.role, dest);
       myPos = dest; log.push(`🐍 لدغته الحية! ${meName} نزل إلى المربع ${dest}`); beep(220,.2,'sawtooth');
-    } else if(bonusCells.includes(newPos)){
+    } else if(plan.special === 'bonus'){
       bonusCells = bonusCells.filter(c=>c!==newPos);
       bonusRoll = true;
       log.push(`⭐ ${meName} وقف على مربع الحظ ${newPos} — يحق له رمي النرد مرة أخرى!`);
       beep(760,.18,'triangle');
-    } else if(penaltyCells.includes(newPos)){
+    } else if(plan.special === 'penalty'){
       penaltyCells = penaltyCells.filter(c=>c!==newPos);
       await sleep(200); await animateJump(session.role, posBeforeRoll);
       myPos = posBeforeRoll;
@@ -1090,6 +1174,8 @@ function subscribeToPresence(code){
     })
     .on('broadcast', {event:'react'}, ({payload})=> fireReaction(payload.from, payload.emoji))
     .on('broadcast', {event:'dice_roll'}, ({payload})=> playRemoteDiceShuffle(payload.role))
+    .on('broadcast', {event:'dice_result'}, ({payload})=> playRemoteDiceResult(payload.role, payload.value))
+    .on('broadcast', {event:'move_plan'}, ({payload})=> playRemoteMovePlan(payload.role, payload.plan))
     .subscribe(async (status)=>{ if(status==='SUBSCRIBED') await presenceChannel.track({role:session.role, at:Date.now()}); });
 }
 
@@ -1099,6 +1185,11 @@ function leaveRoom(){
   if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
   clearAllChatStrips();
   clearTurnTimer();
+  clearInterval(remoteShuffleTimers.p1); clearInterval(remoteShuffleTimers.p2);
+  clearTimeout(remoteShuffleSafety.p1); clearTimeout(remoteShuffleSafety.p2);
+  remoteShuffleTimers.p1 = null; remoteShuffleTimers.p2 = null;
+  remoteShuffleSafety.p1 = null; remoteShuffleSafety.p2 = null;
+  remoteAnimating.p1 = false; remoteAnimating.p2 = false;
   session.code=null; session.role=null; currentRoom=null;
   lastMessageId = 0; seenMessageIds.clear(); lastTurnKey = null;
   chatHistory = [];
