@@ -575,6 +575,12 @@ let currentRoom = null, realtimeChannel = null, presenceChannel = null, animatin
 /* ====== حالة الرسوم المتحركة عند المشاهد/الخصم (بثّ خطة الحركة) — يمنع تحديث قاعدة البيانات
    من "قفز" الرمز فورًا لموضعه النهائي أثناء تشغيل نفس الحركة خطوة بخطوة محليًا ====== */
 const remoteAnimating = { p1:false, p2:false };
+
+/* ===================== 8ب) قائمة المشاهدين الحاليين ===================== */
+let spectatorNames = [];              // أسماء المشاهدين الحاليين للجولة
+let knownSpectatorKeys = new Set();   // مفاتيح المشاهدين المعروفين مسبقًا (لتفادي إشعار مكرر)
+let spectatorPresenceReady = false;   // يمنع إظهار إشعارات عند أول تحميل للحضور
+
 let lastTurnKey = null;
 let turnTimer = null, turnCountdownInterval = null;
 const TURN_TIME_LIMIT = 15;
@@ -811,6 +817,64 @@ document.getElementById('eventsSheetBg').addEventListener('click', (e)=>{ if(e.t
 document.getElementById('btnChatHistory').addEventListener('click', openChatSheet);
 document.getElementById('btnCloseChatSheet').addEventListener('click', closeChatSheet);
 document.getElementById('chatSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='chatSheetBg') closeChatSheet(); });
+
+/* ====== شارة عدد المشاهدين + نافذة قائمتهم ====== */
+function renderSpectatorBadge(){
+  const countEl = document.getElementById('spectatorCount');
+  if(!countEl) return;
+  const n = spectatorNames.length;
+  countEl.textContent = n;
+  countEl.style.display = n>0 ? 'flex' : 'none';
+  if(document.getElementById('spectatorsSheetBg')?.classList.contains('show')) renderSpectatorsSheetBody();
+}
+function renderSpectatorsSheetBody(){
+  const body = document.getElementById('spectatorsSheetBody');
+  if(!body) return;
+  body.innerHTML = spectatorNames.length
+    ? spectatorNames.map(n=>`<div>👀 ${escapeHtml(n)}</div>`).join('')
+    : '<div class="empty">لا يوجد مشاهدون حاليًا</div>';
+}
+function openSpectatorsSheet(){ renderSpectatorsSheetBody(); document.getElementById('spectatorsSheetBg').classList.add('show'); }
+function closeSpectatorsSheet(){ document.getElementById('spectatorsSheetBg').classList.remove('show'); }
+document.getElementById('btnSpectators').addEventListener('click', openSpectatorsSheet);
+document.getElementById('btnCloseSpectatorsSheet').addEventListener('click', closeSpectatorsSheet);
+document.getElementById('spectatorsSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='spectatorsSheetBg') closeSpectatorsSheet(); });
+
+/* ====== إشعار عابر أعلى الشاشة عند دخول مشاهد جديد ====== */
+let spectatorToastTimer = null;
+function showSpectatorToast(text){
+  const el = document.getElementById('spectatorToast');
+  if(!el) return;
+  el.textContent = text;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(spectatorToastTimer);
+  spectatorToastTimer = setTimeout(()=> el.classList.remove('show'), 2600);
+  beep(900,.08,'sine',.12);
+}
+
+/* ====== نافذة المساعدة (بنفس تصميم نافذة الأحداث/الدردشة بدل alert) ====== */
+const HELP_LINES = [
+  '🎲 كل لاعب يرمي نرده الخاص بجانبه بدوره (نرد عشوائي 100% مثل لودو).',
+  '🪜 سلّم = صعود، 🐍 حية = نزول.',
+  '⭐ مربع الحظ: يمنحك رمية إضافية فورًا.',
+  '🕳️ مربع الحفرة: يلغي رميتك الأخيرة ويعيدك لمكانك السابق.',
+  'كل نوع من هذه المربعات يظهر 3 مرات فقط في كل جولة، ويختفي فور استخدامه من أي لاعب.',
+  'يجب الوصول للمربع 100 بالضبط للفوز.',
+  'استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.',
+  'أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!',
+  'إن كانت الجولة مكتملة عند فتح رابط الدعوة، ستدخل تلقائيًا كمشاهد.',
+  '👀 يظهر عدد المشاهدين بجانب هذا الزر — اضغط عليه لرؤية أسمائهم.',
+  'إن كانت لديك جولة مفتوحة وفتحت رابط جولة أخرى، سنسألك إن كنت تريد العودة لجولتك أو إنهاءها والانتقال.'
+];
+function openHelpSheet(){
+  document.getElementById('helpSheetBody').innerHTML = HELP_LINES.map(l=>`<div>${l}</div>`).join('');
+  document.getElementById('helpSheetBg').classList.add('show');
+}
+function closeHelpSheet(){ document.getElementById('helpSheetBg').classList.remove('show'); }
+document.getElementById('btnCloseHelpSheet').addEventListener('click', closeHelpSheet);
+document.getElementById('helpSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='helpSheetBg') closeHelpSheet(); });
 
 /* ====== مؤقّت الدور: رمي تلقائي إذا لم يرمِ اللاعب خلال 15 ثانية ====== */
 function clearTurnTimer(){
@@ -1162,21 +1226,42 @@ window.addEventListener('online', ()=>{
   }
 });
 
+/* ====== اشتراك الحضور اللحظي: يتتبّع اللاعبين المتصلين ويكتشف دخول/خروج المشاهدين لعرض
+   عددهم وأسمائهم، ويُصدر إشعارًا عابرًا فور دخول مشاهد جديد بعد أول تحميل للحالة ====== */
 function subscribeToPresence(code){
   if(presenceChannel) sb.removeChannel(presenceChannel);
   const presenceKey = session.role==='spectator' ? ('spectator-'+myId) : session.role;
+  knownSpectatorKeys = new Set(); spectatorPresenceReady = false; spectatorNames = [];
   presenceChannel = sb.channel('presence-'+code, { config:{ presence:{ key: presenceKey } } });
   presenceChannel
     .on('presence', {event:'sync'}, ()=>{
       const state = presenceChannel.presenceState();
       document.getElementById('liveP1').style.display = state['p1'] ? 'block':'none';
       document.getElementById('liveP2').style.display = state['p2'] ? 'block':'none';
+
+      const spectatorEntries = Object.entries(state).filter(([key])=> key.startsWith('spectator-'));
+      const currentKeys = new Set(spectatorEntries.map(([k])=>k));
+
+      // إشعار فوري بأي مشاهد جديد ينضم بعد أول تحميل للحضور (لتفادي إشعارات وهمية عند أول اتصال)
+      if(spectatorPresenceReady){
+        spectatorEntries.forEach(([key, presences])=>{
+          if(!knownSpectatorKeys.has(key) && key !== presenceKey){
+            const name = presences?.[0]?.name || 'زائر';
+            showSpectatorToast(`👀 ${name} يشاهد الآن`);
+          }
+        });
+      }
+      knownSpectatorKeys = currentKeys;
+      spectatorPresenceReady = true;
+
+      spectatorNames = spectatorEntries.map(([,presences])=> presences?.[0]?.name || 'زائر');
+      renderSpectatorBadge();
     })
     .on('broadcast', {event:'react'}, ({payload})=> fireReaction(payload.from, payload.emoji))
     .on('broadcast', {event:'dice_roll'}, ({payload})=> playRemoteDiceShuffle(payload.role))
     .on('broadcast', {event:'dice_result'}, ({payload})=> playRemoteDiceResult(payload.role, payload.value))
     .on('broadcast', {event:'move_plan'}, ({payload})=> playRemoteMovePlan(payload.role, payload.plan))
-    .subscribe(async (status)=>{ if(status==='SUBSCRIBED') await presenceChannel.track({role:session.role, at:Date.now()}); });
+    .subscribe(async (status)=>{ if(status==='SUBSCRIBED') await presenceChannel.track({role:session.role, name:localProfile?.username||'', at:Date.now()}); });
 }
 
 function leaveRoom(){
@@ -1193,6 +1278,8 @@ function leaveRoom(){
   session.code=null; session.role=null; currentRoom=null;
   lastMessageId = 0; seenMessageIds.clear(); lastTurnKey = null;
   chatHistory = [];
+  spectatorNames = []; knownSpectatorKeys = new Set(); spectatorPresenceReady = false;
+  renderSpectatorBadge();
   document.body.classList.remove('is-spectator');
   clearSession();
 }
@@ -1528,9 +1615,7 @@ async function endCurrentSessionAsLeave(code){
   }catch(e){}
 }
 document.getElementById('btnSound').addEventListener('click', (e)=>{ soundOn = !soundOn; e.target.textContent = soundOn ? '🔊' : '🔇'; e.target.title = soundOn ? 'كتم الصوت' : 'تشغيل الصوت'; });
-document.getElementById('btnHelp').addEventListener('click', ()=>{
-  alert('🎯 كيف تلعب:\n- كل لاعب يرمي نرده الخاص بجانبه بدوره (نرد عشوائي 100% مثل لودو).\n- سلّم = صعود، حية = نزول.\n- ⭐ مربع الحظ: يمنحك رمية إضافية فورًا.\n- 🕳️ مربع الحفرة: يلغي رميتك الأخيرة ويعيدك لمكانك السابق.\n- كل نوع من هذه المربعات يظهر 3 مرات فقط في كل جولة، ويختفي فور استخدامه من أي لاعب.\n- يجب الوصول للمربع 100 بالضبط للفوز.\n- استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.\n- أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!\n- إن كانت الجولة مكتملة عند فتح رابط الدعوة، ستدخل تلقائيًا كمشاهد.\n- إن كانت لديك جولة مفتوحة وفتحت رابط جولة أخرى، سنسألك إن كنت تريد العودة لجولتك أو إنهاءها والانتقال.');
-});
+document.getElementById('btnHelp').addEventListener('click', openHelpSheet);
 
 /* ====== الدردشة ====== */
 document.getElementById('btnSendChat').addEventListener('click', sendChat);
