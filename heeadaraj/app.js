@@ -1236,8 +1236,13 @@ function subscribeToPresence(code){
   presenceChannel
     .on('presence', {event:'sync'}, ()=>{
       const state = presenceChannel.presenceState();
-      document.getElementById('liveP1').style.display = state['p1'] ? 'block':'none';
-      document.getElementById('liveP2').style.display = state['p2'] ? 'block':'none';
+      // إصلاح: liveP1/liveP2 قد يكونا قد أُزيلا من الـ DOM عبر applyAvatarVisual (el.textContent='')
+      // لأنهما ابنان لعنصر الأفاتار — لذلك يجب التحقق من وجودهما قبل الوصول لـ .style،
+      // وإلا يتوقف تنفيذ هذا المعالج بالكامل بخطأ TypeError قبل الوصول لحساب المشاهدين أدناه.
+      const liveP1El = document.getElementById('liveP1');
+      const liveP2El = document.getElementById('liveP2');
+      if(liveP1El) liveP1El.style.display = state['p1'] ? 'block':'none';
+      if(liveP2El) liveP2El.style.display = state['p2'] ? 'block':'none';
 
       const spectatorEntries = Object.entries(state).filter(([key])=> key.startsWith('spectator-'));
       const currentKeys = new Set(spectatorEntries.map(([k])=>k));
