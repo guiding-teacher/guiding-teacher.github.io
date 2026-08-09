@@ -174,10 +174,15 @@
       </div>
 
       <div class="tb-actions">
+        <button class="tb-btn" id="btnSpectators" title="المشاهدون">
+          👀<span class="spectator-count" id="spectatorCount">0</span>
+        </button>
         <button class="tb-btn" id="btnHelp" title="مساعدة">❓</button>
         <button class="tb-btn" id="btnSound" title="تشغيل/كتم الصوت">🔊</button>
       </div>
     </div>
+
+    <div class="spectator-toast" id="spectatorToast"></div>
 
     <div class="arena">
 
@@ -259,9 +264,12 @@
           <button data-e="😂" title="ضحك">😂</button>
           <button data-e="😮" title="مفاجأة">😮</button>
           <button data-e="💪" title="قوة">💪</button>
-          <button data-e="🎯" title="هدف">🎯</button>
-          <button data-e="🎉" title="احتفال">🎉</button>
           <button data-e="🐍" title="حية">🐍</button>
+          <button data-e="👻" title="تحيز">👻</button>
+          <button data-e="🤬" title="انزعاج">🤬</button>
+          <button data-e="🥹" title="حزن">🥹</button>
+          <button data-e="😢" title="اسف">😢</button>
+          <button data-e="😈" title="شرير">😈</button>
         </div>
         <div class="side-log" id="logBoxP2"></div>
       </div>
@@ -339,6 +347,26 @@
     <h3 id="chatSheetTitle">💬 سجل الدردشة</h3>
     <div class="events-sheet-body" id="chatSheetBody"></div>
     <button class="btn grey" id="btnCloseChatSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة قائمة المشاهدين — بنفس تصميم نافذة الأحداث/الدردشة -->
+<div class="events-sheet-bg" id="spectatorsSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3>👀 المشاهدون الآن</h3>
+    <div class="events-sheet-body" id="spectatorsSheetBody"></div>
+    <button class="btn grey" id="btnCloseSpectatorsSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة المساعدة — بنفس تصميم نافذة الأحداث/الدردشة -->
+<div class="events-sheet-bg" id="helpSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3>❓ كيف تلعب</h3>
+    <div class="events-sheet-body" id="helpSheetBody"></div>
+    <button class="btn grey" id="btnCloseHelpSheet">إغلاق</button>
   </div>
 </div>
   
