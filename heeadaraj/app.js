@@ -1,5 +1,5 @@
 // ====================================================================== 
-// الحية والسلم — نسخة محسّنة ومحترفة v5
+// الحية والسلم — نسخة محسّنة ومحترفة v5 + نظام المستويات
 // ====================================================================== 
 
 /* ===================== 1) الاتصال بسوبابيس ===================== */
@@ -8,9 +8,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const isConfigured = !SUPABASE_URL.includes("ضع_") && !SUPABASE_ANON_KEY.includes("ضع_");
 const sb = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-/* ===================== 2) الهوية المحلية ===================== */
+/* ===================== 2) الهوية المحلية + المصادقة المجهولة الحقيقية ===================== */
 const AVATAR_COLORS = ['#E5484D','#2F7DE1','#3EA06B','#F2B705','#8E5CF2','#FF6F59','#17A2B8','#D6336C'];
 let profile = null;
+let myAuthUid = null; // معرّف الجلسة الحقيقي الموقّع من Supabase Auth (لا يمكن تزويره من العميل)
 
 function getLocalUserId(){
   let id = localStorage.getItem('snl_user_id');
@@ -19,14 +20,41 @@ function getLocalUserId(){
 }
 const myId = getLocalUserId();
 
+// يضمن وجود جلسة anon حقيقية (يعيد استخدام الجلسة المحفوظة تلقائيًا في
+// المتصفح إن وُجدت، أو ينشئ واحدة جديدة). يُستدعى مرة واحدة عند الإقلاع
+// وقبل أي عملية كتابة (إنشاء غرفة/انضمام/دردشة...الخ).
+async function ensureAnonymousSession(){
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(session?.user?.id){ myAuthUid = session.user.id; return myAuthUid; }
+    const { data, error } = await sb.auth.signInAnonymously();
+    if(error){ console.error('فشل تسجيل الدخول المجهول:', error); return null; }
+    myAuthUid = data?.session?.user?.id || data?.user?.id || null;
+    return myAuthUid;
+  }catch(e){ console.error('ensureAnonymousSession:', e); return null; }
+}
+
+// يربط ملفًا شخصيًا قديمًا (أُنشئ قبل تفعيل المصادقة) بجلسة auth الحقيقية
+// الحالية، لمرة واحدة فقط. لا يحذف أو يغيّر أي بيانات أخرى في الملف.
+async function claimLegacyProfileIfNeeded(existingProfile){
+  if(!existingProfile || existingProfile.auth_uid || !myAuthUid) return existingProfile;
+  const { data, error } = await sb.from('profiles')
+    .update({ auth_uid: myAuthUid })
+    .eq('id', myId)
+    .is('auth_uid', null)
+    .select().single();
+  if(!error && data) return data;
+  return existingProfile; // فشل الربط (نادر) — يتابع التطبيق بالبيانات القديمة دون كسر شيء
+}
+
 async function loadExistingProfile(){
   const { data } = await sb.from('profiles').select('*').eq('id', myId).maybeSingle();
-  if(data){ profile = data; return profile; }
+  if(data){ profile = await claimLegacyProfileIfNeeded(data); return profile; }
   return null;
 }
 async function createProfile(username, avatarDataUrl){
   const color = AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
-  const { data, error } = await sb.from('profiles').insert({ id: myId, username, avatar_color: color, avatar_data: avatarDataUrl || null }).select().single();
+  const { data, error } = await sb.from('profiles').insert({ id: myId, auth_uid: myAuthUid, username, avatar_color: color, avatar_data: avatarDataUrl || null }).select().single();
   if(!error) profile = data;
   return { data, error };
 }
@@ -386,7 +414,7 @@ function burstReaction(anchorEl, emoji){
   }
   const boardWrap = document.querySelector('.board-wrap');
   if(boardWrap && ['🔥','😮','🐍'].includes(emoji)){ boardWrap.classList.add('shake'); setTimeout(()=>boardWrap.classList.remove('shake'),400); }
-  const freqMap = {'👍':600,'🔥':300,'😂':750,'😮':450,'💪':500,'🎯':700,'🎉':880,'🐍':250};
+  const freqMap = {'👍':600,'🔥':300,'😂':750,'😮':450,'💪':500,'🎯':700,'🎉':880,'🐍':250,'⚡':950};
   beep(freqMap[emoji]||500,.18,'triangle',.2);
 }
 function launchConfetti(){
@@ -426,7 +454,7 @@ function escapeHtml(str){
 }
 async function sendMessage(roomCode, role, name, content){
   const trimmed = content.trim(); if(!trimmed) return null;
-  const { data, error } = await sb.from('messages').insert({ room_code:roomCode, sender_role:role, sender_name:name, content:trimmed }).select().single();
+  const { data, error } = await sb.from('messages').insert({ room_code:roomCode, sender_role:role, sender_name:name, content:trimmed, sender_profile_id: myId }).select().single();
   return error ? null : data;
 }
 function showChatStrip(role, text, isIncoming){
@@ -514,15 +542,18 @@ async function mmTryClaimOlder(){
   if(!candidates || candidates.length===0) return;
   for(const cand of candidates){
     const roomCode = randCode();
-    const { data: claimed } = await sb.from('matchmaking_queue').update({ status:'matched', matched_with:mmRow.user_id, room_code:roomCode }).eq('id', cand.id).eq('status','waiting').select().single();
-    if(claimed){
-      await sb.from('matchmaking_queue').update({ status:'matched', matched_with:cand.user_id, room_code:roomCode }).eq('id', mmRow.id);
+    // مطابقة صفّين ملكهما مختلفان تتطلب دالة آمنة على الخادم (mm_claim_match)
+    // بعد أن أصبحت RLS تمنع تعديل أي عميل لصف لا يملكه.
+    const { data: claimed, error } = await sb.rpc('mm_claim_match', { p_candidate_row_id: cand.id, p_room_code: roomCode });
+    const row = Array.isArray(claimed) ? claimed[0] : claimed;
+    if(!error && row){
       mmRow = { ...mmRow, status:'matched', matched_with:cand.user_id, room_code:roomCode };
       mmOpponentRowId = cand.id;
       mmHandlers.onFound?.({ opponent:{username:cand.username, avatar_color:cand.avatar_color, avatar_data:cand.avatar_data}, isInitiator:true, roomCode });
       mmArmAcceptWindow();
       return;
     }
+    // فشلت (انتُزع المرشح للتو من طرف آخر) — جرّب المرشح التالي
   }
 }
 function mmHandleEvent(payload){
@@ -548,8 +579,7 @@ function mmArmAcceptWindow(){
 async function mmRespond(accept){
   if(!mmRow) return;
   if(!accept){
-    await sb.from('matchmaking_queue').update({status:'cancelled'}).eq('id', mmRow.id);
-    if(mmOpponentRowId) await sb.from('matchmaking_queue').update({status:'cancelled'}).eq('id', mmOpponentRowId);
+    await sb.rpc('mm_cancel_pair', { p_my_row_id: mmRow.id, p_opponent_row_id: mmOpponentRowId || null });
     mmHandlers.onCancelled?.('تم إلغاء المطابقة'); await mmStopInternal(); return;
   }
   const { data } = await sb.from('matchmaking_queue').update({accepted:true}).eq('id', mmRow.id).select().single();
@@ -563,7 +593,7 @@ async function mmCheckBothAccepted(opponentRow){
     const opp = await mmFetchOpponent(opponentRow.user_id);
     const isInitiator = mmRow.matched_with===opponentRow.user_id && mmRow.id<opponentRow.id;
     mmHandlers.onBothAccepted?.({opponent:opp, isInitiator, roomCode:mmRow.room_code});
-    try{ await sb.from('matchmaking_queue').delete().eq('id', mmRow.id); if(mmOpponentRowId) await sb.from('matchmaking_queue').delete().eq('id', mmOpponentRowId); }catch(e){}
+    try{ await sb.rpc('mm_delete_pair', { p_my_row_id: mmRow.id, p_opponent_row_id: mmOpponentRowId || null }); }catch(e){}
   }
 }
 async function mmCancelSearch(){ if(mmRow && mmRow.status==='waiting') await sb.from('matchmaking_queue').delete().eq('id', mmRow.id); await mmStopInternal(); }
@@ -575,6 +605,230 @@ let currentRoom = null, realtimeChannel = null, presenceChannel = null, animatin
 /* ====== حالة الرسوم المتحركة عند المشاهد/الخصم (بثّ خطة الحركة) — يمنع تحديث قاعدة البيانات
    من "قفز" الرمز فورًا لموضعه النهائي أثناء تشغيل نفس الحركة خطوة بخطوة محليًا ====== */
 const remoteAnimating = { p1:false, p2:false };
+
+/* ===================== 8أ) نظام المستويات — تتبع الجولة واحتساب الخبرة ===================== */
+let myLadderClimbs = 0;         // عدد مرات صعود السلّم لي خلال هذه الجولة (لحساب XP ولإنجاز "سيد السلالم")
+let myDiceRolls = 0;            // عدد رميات النرد لي خلال هذه الجولة (لإنجاز "البطل الخاطف")
+let myHadSnakeHit = false;      // هل لدغتني حية خلال هذه الجولة (لإنجاز "عودة أسطورية")
+let myBonusHits = 0;            // عدد مرات وقوفي على مربع الحظ ⭐ خلال هذه الجولة (لإنجاز "نجم الحظ")
+let xpAwardedRoundKey = null;   // يمنع احتساب XP أكثر من مرة لنفس الجولة
+let historySavedRoundKey = null; // يمنع تسجيل جولة السجل المحلي أكثر من مرة لنفس الجولة
+
+function resetRoundXPTracking(){
+  myLadderClimbs = 0;
+  myDiceRolls = 0;
+  myHadSnakeHit = false;
+  myBonusHits = 0;
+}
+
+function levelTierClass(level){
+  if(level>=20) return 'tier-platinum';
+  if(level>=10) return 'tier-gold';
+  if(level>=5)  return 'tier-silver';
+  return 'tier-bronze';
+}
+function renderLevelBadge(el, level, compact){
+  if(!el) return;
+  const lvl = level || 1;
+  el.textContent = compact ? String(lvl) : ('Lv.' + lvl);
+  el.classList.remove('tier-bronze','tier-silver','tier-gold','tier-platinum');
+  el.classList.add(levelTierClass(lvl));
+}
+/* ====== اللقب: أعلى شارة (من حيث قيمة XP) فتحها اللاعب — تُعرض كوسم صغير
+   بجانب شارة المستوى. لا تؤثر على المستوى إطلاقًا، فقط "داعمة" له بصريًا. ====== */
+function renderTitleBadge(el, titleAr, titleIcon){
+  if(!el) return;
+  if(!titleAr){ el.style.display='none'; el.textContent=''; return; }
+  el.textContent = (titleIcon ? titleIcon + ' ' : '') + titleAr;
+  el.style.display='inline-flex';
+}
+/* ====== عتبات المستوى مبنية على عدد الانتصارات الفعلي (تطابق صيغة add_xp في قاعدة البيانات):
+   كل مستوى L يتطلب (3×L) فوزًا إضافيًا للانتقال للمستوى التالي — تصاعديًا. ====== */
+function winThresholds(level){
+  const lvl = level || 1;
+  const floor = 3*(lvl-1)*lvl/2;
+  const next  = 3*lvl*(lvl+1)/2;
+  return { floor, next };
+}
+function renderXpBar(el, totalWins, level){
+  if(!el) return;
+  const { floor, next } = winThresholds(level);
+  const pct = Math.max(0, Math.min(100, ((totalWins-floor)/(next-floor))*100));
+  el.style.width = pct + '%';
+}
+function celebrateLevelUp(newLevel){
+  const inGame = document.body.classList.contains('in-game');
+  const anchor = inGame
+    ? document.getElementById(session.role==='p1' ? 'panelP1' : 'panelP2')
+    : document.getElementById('miniAvatar');
+  if(anchor) burstReaction(anchor, '⚡');
+  if(inGame) showTurnBubble(`🎉 وصلت للمستوى ${newLevel}!`);
+  beep(900,.15,'triangle'); setTimeout(()=>beep(1200,.18,'triangle'),140);
+}
+/* ====== استدعاء دالة add_xp على الخادم — التحديث يحدث في قاعدة البيانات وليس في المتصفح،
+   فيتجنب تضارب البيانات عند تحديث لاعبين لملفهما الشخصي في نفس اللحظة.
+   تحتسب الدالة أيضًا الإنجازات (الشارات) وتُعيد أي شارة جديدة فُتحت هذه المرة. ====== */
+async function awardGameXP(isWin, opponentId){
+  if(!isConfigured || !localProfile) return;
+  try{
+    const { data, error } = await sb.rpc('add_xp', {
+      p_user_id: myId,
+      p_opponent_id: opponentId || null,
+      p_ladder_climbs: myLadderClimbs,
+      p_is_win: isWin,
+      p_had_snake_hit: myHadSnakeHit,
+      p_dice_rolls: myDiceRolls,
+      p_bonus_hits: myBonusHits
+    });
+    if(error || !data || !data[0]) return;
+    const r = data[0];
+    localProfile.xp = r.new_xp;
+    localProfile.level = r.new_level;
+    localProfile.win_streak = r.new_win_streak;
+    localProfile.total_wins = r.total_wins;
+    localProfile.title_ar = r.title_ar;
+    localProfile.title_icon = r.title_icon;
+    if(profile){ profile.xp = r.new_xp; profile.level = r.new_level; profile.win_streak = r.new_win_streak; profile.total_wins = r.total_wins; profile.title_ar = r.title_ar; profile.title_icon = r.title_icon; }
+    paintMiniUserbar();
+    if(r.leveled_up) celebrateLevelUp(r.new_level);
+    const unlocked = Array.isArray(r.unlocked) ? r.unlocked : [];
+    if(unlocked.length) queueAchievementCelebrations(unlocked);
+  }catch(e){}
+}
+/* ====== يُستدعى مرة واحدة فقط عند وصول حالة الجولة إلى "finished" (وليس عند كل renderRoom) ====== */
+function maybeAwardGameXP(room){
+  if(session.role!=='p1' && session.role!=='p2') return; // لا XP ولا إنجازات للمشاهد
+  const key = room.code + '|' + room.rev;
+  if(xpAwardedRoundKey === key) return; // احتُسبت مسبقًا لهذه الجولة
+  xpAwardedRoundKey = key;
+  const opponentId = session.role==='p1' ? room.p2_user_id : room.p1_user_id;
+  awardGameXP(room.winner === session.role, opponentId);
+}
+
+/* ===================== 8ج) نظام الإنجازات (الشارات) — احتفال متتالٍ عند فتح شارة/شارات ===================== */
+/* ====== كتالوج الشارات محفوظ محليًا أيضًا كنسخة رجعة (Fallback) — يطابق تمامًا سطور
+   INSERT في achievements_schema.sql. يُستخدم لعرض جدول "إنجازاتي" فورًا حتى قبل وصول
+   استجابة قاعدة البيانات، أو في حال تعذّر الاتصال بها (مثلاً قبل تنفيذ ملف الـSQL). ====== */
+const ACHIEVEMENTS_CATALOG = [
+  { code:'social_5',     title_ar:'اجتماعي',       description_ar:'العب مع 5 لاعبين مختلفين',                    xp_reward:100, icon:'🤝', sort_order:10 },
+  { code:'social_10',    title_ar:'صانع صداقات',   description_ar:'العب مع 10 لاعبين مختلفين',                   xp_reward:250, icon:'🌍', sort_order:11 },
+  { code:'streak_3',     title_ar:'سلسلة النار',   description_ar:'حقّق 3 انتصارات متتالية',                     xp_reward:150, icon:'🔥', sort_order:20 },
+  { code:'streak_5',     title_ar:'لا يُقهر',      description_ar:'حقّق 5 انتصارات متتالية',                     xp_reward:400, icon:'⚔️', sort_order:21 },
+  { code:'games_25',     title_ar:'محارب مخضرم',   description_ar:'أكمل 25 جولة',                                 xp_reward:150, icon:'🎖️', sort_order:30 },
+  { code:'games_100',    title_ar:'أسطورة اللعبة', description_ar:'أكمل 100 جولة',                                xp_reward:500, icon:'👑', sort_order:31 },
+  { code:'ladders_20',   title_ar:'سيد السلالم',   description_ar:'اصعد 20 سلّمًا إجماليًا عبر كل جولاتك',        xp_reward:150, icon:'🪜', sort_order:40 },
+  { code:'speed_win',    title_ar:'البطل الخاطف',  description_ar:'فُز بجولة خلال 8 رميات نرد أو أقل',            xp_reward:200, icon:'⚡', sort_order:50 },
+  { code:'comeback_win', title_ar:'عودة أسطورية',  description_ar:'فُز بجولة بعد أن لدغتك حية فيها',              xp_reward:250, icon:'🐉', sort_order:51 },
+  { code:'lucky_10',     title_ar:'نجم الحظ',      description_ar:'استخدم مربعات الحظ ⭐ 10 مرات إجماليًا',       xp_reward:100, icon:'⭐', sort_order:60 },
+];
+
+let achievementQueue = [];
+let achievementShowing = false;
+function queueAchievementCelebrations(list){
+  achievementQueue.push(...list);
+  if(!achievementShowing) showNextAchievementToast();
+}
+function showNextAchievementToast(){
+  if(!achievementQueue.length){ achievementShowing = false; return; }
+  achievementShowing = true;
+  const ach = achievementQueue.shift();
+  const el = document.getElementById('achievementToast');
+  if(el){
+    const iconEl = document.getElementById('achToastIcon');
+    const titleEl = document.getElementById('achToastTitle');
+    const xpEl = document.getElementById('achToastXp');
+    if(iconEl) iconEl.textContent = ach.icon || '🏅';
+    if(titleEl) titleEl.textContent = ach.title || 'إنجاز جديد';
+    if(xpEl) xpEl.textContent = '+' + (ach.xp||0) + ' XP';
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+  }
+  burstReaction(document.getElementById(session.role==='p1' ? 'panelP1' : (session.role==='p2' ? 'panelP2' : 'miniAvatar')) || document.body, '🏅');
+  beep(950,.15,'triangle',.22); setTimeout(()=>beep(1250,.18,'triangle',.2),160);
+  setTimeout(()=>{
+    if(el) el.classList.remove('show');
+    setTimeout(showNextAchievementToast, 400);
+  }, 2700);
+}
+
+/* ====== خرائط "الشرط الحالي / الهدف" لكل شارة قابلة للقياس، مبنية على أعمدة profiles
+   (unique_opponents_count, best_streak, total_games, ladder_climbs_total, bonus_hits_total).
+   الشارات المرتبطة بحدث لحظي واحد (فوز خاطف/عودة أسطورية) لا تملك تقدمًا رقميًا ذا معنى،
+   فتُعرض كـ"مقفلة/مفتوحة" فقط دون شريط تقدّم. ====== */
+function computeAchievementProgress(code, stats){
+  const s = stats || {};
+  const table = {
+    social_5:    { cur:s.unique_opponents_count||0, target:5 },
+    social_10:   { cur:s.unique_opponents_count||0, target:10 },
+    streak_3:    { cur:s.best_streak||0, target:3 },
+    streak_5:    { cur:s.best_streak||0, target:5 },
+    games_25:    { cur:s.total_games||0, target:25 },
+    games_100:   { cur:s.total_games||0, target:100 },
+    ladders_20:  { cur:s.ladder_climbs_total||0, target:20 },
+    lucky_10:    { cur:s.bonus_hits_total||0, target:10 },
+  };
+  return table[code] || null;
+}
+
+/* ====== بطاقات "إنجازاتي" — كل شارة بطاقة مستقلة بشريط تقدّم، وتتحول لإطار أخضر
+   وعلامة ✔ فور اكتمالها، بترتيب sort_order ====== */
+function renderAchievementsCards(catalog, unlockedSet, stats){
+  const body = document.getElementById('achievementsSheetBody');
+  if(!body) return;
+  const cards = [...catalog].sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+  body.innerHTML = `
+    <div class="ach-grid">
+      ${cards.map(a=>{
+        const unlocked = unlockedSet.has(a.code);
+        const prog = computeAchievementProgress(a.code, stats);
+        let progressHtml;
+        if(prog){
+          const cur = Math.min(prog.cur, prog.target);
+          const pct = Math.max(0, Math.min(100, (cur/prog.target)*100));
+          progressHtml = `
+            <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
+            <div class="ach-progress-text">${cur} / ${prog.target}</div>`;
+        } else {
+          progressHtml = `<div class="ach-progress-text">${unlocked ? '✔ تم تحقيقه' : '🔒 يتحقق بجولة واحدة'}</div>`;
+        }
+        return `<div class="ach-card ${unlocked?'unlocked':'locked'}">
+          ${unlocked ? '<span class="ach-check">✔</span>' : ''}
+          <div class="ach-card-icon">${unlocked ? a.icon : '🔒'}</div>
+          <div class="ach-card-title">${escapeHtml(a.title_ar)}</div>
+          <div class="ach-card-desc">${escapeHtml(a.description_ar)}</div>
+          ${progressHtml}
+          <div class="ach-card-xp">+${a.xp_reward} XP</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+/* ====== نافذة "إنجازاتي" — تعرض البطاقات فورًا من الكتالوج المحلي (بلا انتظار، كلها مقفلة
+   بلا تقدّم)، ثم تجلب حالة الفتح الحقيقية + إحصاءات اللاعب الحالية من قاعدة البيانات
+   وتحدّث العرض بشريط تقدّم دقيق فور نجاح الاتصال ====== */
+async function openAchievementsSheet(){
+  document.getElementById('achievementsSheetBg').classList.add('show');
+  // عرض فوري من الكتالوج المحلي — كل الشارات تظهر مقفلة إلى أن تصل بيانات الفتح والتقدّم الحقيقية
+  renderAchievementsCards(ACHIEVEMENTS_CATALOG, new Set(), {});
+  if(!isConfigured) return;
+  try{
+    const [allRes, mineRes, statsRes] = await Promise.all([
+      sb.from('achievements').select('*').order('sort_order', {ascending:true}),
+      sb.from('player_achievements').select('achievement_code').eq('user_id', myId),
+      sb.from('profiles').select('unique_opponents_count, best_streak, total_games, ladder_climbs_total, bonus_hits_total').eq('id', myId).maybeSingle()
+    ]);
+    const catalog = (allRes.data && allRes.data.length) ? allRes.data : ACHIEVEMENTS_CATALOG;
+    const unlockedSet = new Set((mineRes.data||[]).map(m=>m.achievement_code));
+    renderAchievementsCards(catalog, unlockedSet, statsRes.data || {});
+  }catch(e){
+    // تعذّر الاتصال بقاعدة البيانات — العرض المحلي يبقى ظاهرًا بدل رسالة فارغة
+  }
+}
+function closeAchievementsSheet(){ document.getElementById('achievementsSheetBg').classList.remove('show'); }
+document.getElementById('btnAchievements').addEventListener('click', openAchievementsSheet);
+document.getElementById('btnCloseAchievementsSheet').addEventListener('click', closeAchievementsSheet);
+document.getElementById('achievementsSheetBg').addEventListener('click', (e)=>{ if(e.target.id==='achievementsSheetBg') closeAchievementsSheet(); });
 
 /* ===================== 8ب) قائمة المشاهدين الحاليين ===================== */
 let spectatorNames = [];              // أسماء المشاهدين الحاليين للجولة
@@ -600,6 +854,8 @@ async function createRoom(explicitCode){
     const { error } = await sb.from('rooms').insert({
       code, status:'waiting', turn:'p1', p1_dice:1, p2_dice:1,
       p1_user_id:myId, p1_name:profile.username, p1_avatar_color:profile.avatar_color, p1_avatar_data:profile.avatar_data,
+      p1_level: profile.level || 1,
+      p1_title_ar: profile.title_ar || null, p1_title_icon: profile.title_icon || null,
       p1_pos:0, p2_pos:0, log:[], rev:0,
       bonus_cells: bonus, penalty_cells: penalty
     });
@@ -608,6 +864,7 @@ async function createRoom(explicitCode){
   if(!ok) return { error:'تعذّر إنشاء الجولة' };
   session.code=code; session.role='p1';
   saveSession();
+  resetRoundXPTracking(); xpAwardedRoundKey = null; historySavedRoundKey = null;
   subscribeToRoom(code); subscribeToPresence(code);
   const { data: room } = await sb.from('rooms').select('*').eq('code', code).single();
   return { code, room };
@@ -621,11 +878,13 @@ async function joinRoomByCode(code){
   // إعادة دخول نفس اللاعب (منشئ الجولة أو من انضم سابقًا) عبر رابطه الخاص
   if(room.p1_user_id === myId){
     session.code=code; session.role='p1'; saveSession();
+    resetRoundXPTracking(); xpAwardedRoundKey = null; historySavedRoundKey = null;
     subscribeToRoom(code); subscribeToPresence(code);
     return { room };
   }
   if(room.p2_user_id === myId){
     session.code=code; session.role='p2'; saveSession();
+    resetRoundXPTracking(); xpAwardedRoundKey = null; historySavedRoundKey = null;
     subscribeToRoom(code); subscribeToPresence(code);
     return { room };
   }
@@ -637,11 +896,11 @@ async function joinRoomByCode(code){
     return { room };
   }
 
-  const newLog = [...(room.log||[]), `👋 ${profile.username} انضم إلى الجولة، لنبدأ اللعب!`];
-  const { data: saved, error: err2 } = await sb.from('rooms').update({
-    p2_user_id:myId, p2_name:profile.username, p2_avatar_color:profile.avatar_color, p2_avatar_data:profile.avatar_data,
-    status:'playing', log:newLog, rev:(room.rev||0)+1
-  }).eq('code', code).eq('rev', room.rev).select().single();
+  // الانضمام يمر الآن عبر دالة آمنة على الخادم (join_room_as_p2) تتحقق من
+  // هوية auth.uid() الحقيقية وتكتب فقط أعمدة p2 المحدّدة داخلها — بدل
+  // تحديث مباشر من العميل كان بالإمكان توجيهه لتعديل أي عمود آخر في الصف.
+  const { data: joinRows, error: err2 } = await sb.rpc('join_room_as_p2', { p_code: code, p_expected_rev: room.rev });
+  const saved = Array.isArray(joinRows) ? joinRows[0] : joinRows;
   if(err2 || !saved){
     // ربما امتلأت الجولة للتو من طرف آخر — حاول الدخول كمشاهد بدلًا من الفشل الكامل
     const { data: latest } = await sb.from('rooms').select('*').eq('code', code).single();
@@ -654,6 +913,7 @@ async function joinRoomByCode(code){
   }
   session.code=code; session.role='p2';
   saveSession();
+  resetRoundXPTracking(); xpAwardedRoundKey = null; historySavedRoundKey = null;
   subscribeToRoom(code); subscribeToPresence(code);
   return { room: saved };
 }
@@ -679,6 +939,13 @@ function renderRoom(room, opts={}){
   applyAvatarVisual(document.getElementById('avatarP2'), room.p2_avatar_color, room.p2_avatar_data, room.p2_name?room.p2_name[0]:'?');
   applyAvatarVisual(document.getElementById('tokenP1'), room.p1_avatar_color, room.p1_avatar_data);
   applyAvatarVisual(document.getElementById('tokenP2'), room.p2_avatar_color, room.p2_avatar_data);
+
+  renderLevelBadge(document.getElementById('levelBadgeP1'), room.p1_level, true);
+  renderLevelBadge(document.getElementById('levelBadgeP2'), room.p2_level, true);
+  renderLevelBadge(document.getElementById('nameLevelP1'), room.p1_level, false);
+  renderLevelBadge(document.getElementById('nameLevelP2'), room.p2_level, false);
+  renderTitleBadge(document.getElementById('nameTitleP1'), room.p1_title_ar, room.p1_title_icon);
+  renderTitleBadge(document.getElementById('nameTitleP2'), room.p2_title_ar, room.p2_title_icon);
 
   renderSpecialCells(room);
 
@@ -760,7 +1027,10 @@ function renderRoom(room, opts={}){
   if(chatInputEl) chatInputEl.style.display = isSpectator ? 'none' : '';
   if(sendBtnEl) sendBtnEl.style.display = isSpectator ? 'none' : '';
 
-  if(room.status==='finished') openWinModal(room);
+  if(room.status==='finished'){
+    openWinModal(room);
+    maybeAwardGameXP(room);
+  }
 }
 
 /* ====== توزيع أحداث السجل (صعود/نزول/رمي) على بطاقة كل لاعب حسب اسمه ====== */
@@ -862,6 +1132,8 @@ const HELP_LINES = [
   '🕳️ مربع الحفرة: يلغي رميتك الأخيرة ويعيدك لمكانك السابق.',
   'كل نوع من هذه المربعات يظهر 3 مرات فقط في كل جولة، ويختفي فور استخدامه من أي لاعب.',
   'يجب الوصول للمربع 100 بالضبط للفوز.',
+  '⭐ شارة مستواك تظهر بجانب اسمك، وتكسب خبرة (XP) عند إكمال كل جولة، أو صعود سلّم، أو الفوز.',
+  '🏅 افتح "إنجازاتي" من الشاشة الرئيسية لرؤية شارات مميزة (اللعب مع لاعبين مختلفين، سلاسل انتصارات، فوز خاطف، وغيرها) — كل شارة تمنحك خبرة إضافية دائمة.',
   'استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.',
   'أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!',
   'إن كانت الجولة مكتملة عند فتح رابط الدعوة، ستدخل تلقائيًا كمشاهد.',
@@ -918,11 +1190,15 @@ function openWinModal(room){
 
   if(!isSpectator){
     const oppName = session.role==='p1' ? room.p2_name : room.p1_name;
-    saveHistoryEntry({
-      date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
-      opponent: oppName || 'خصم',
-      result: isMe ? 'win' : 'lose'
-    });
+    const roundKey = room.code + '|' + room.rev;
+    if(historySavedRoundKey !== roundKey){
+      historySavedRoundKey = roundKey;
+      saveHistoryEntry({
+        date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
+        opponent: oppName || 'خصم',
+        result: isMe ? 'win' : 'lose'
+      });
+    }
   }
 }
 
@@ -956,7 +1232,11 @@ async function rematch(){
     log:[`🔁 جولة جديدة بنفس الفريقين: ${currentRoom.p1_name} ضد ${currentRoom.p2_name}`], rev:(currentRoom.rev||0)+1,
     bonus_cells: bonus, penalty_cells: penalty };
   const { data } = await sb.from('rooms').update(fresh).eq('code', session.code).select().single();
-  if(data) renderRoom(data);
+  if(data){
+    resetRoundXPTracking();
+    xpAwardedRoundKey = null; historySavedRoundKey = null;
+    renderRoom(data);
+  }
 }
 
 /* ====== تشغيل خطوات حركة الرمز (خطوة بخطوة + قفزة السلّم/الحية/الحفرة عند الحاجة) — دالة مشتركة
@@ -1003,6 +1283,7 @@ async function rollDice(){
   clearTurnTimer();
   animating = true;
   document.getElementById(session.role==='p1'?'btnRollP1':'btnRollP2').disabled = true;
+  myDiceRolls++; // يُحتسب لإنجاز "البطل الخاطف" عند نهاية الجولة
 
   broadcastDiceRoll(session.role); // يُبثّ لحظيًا حتى يرى الطرف الآخر والمشاهدون النرد وهو يدور
 
@@ -1071,13 +1352,16 @@ async function rollDice(){
       const dest = plan.dest;
       await sleep(200); await animateJump(session.role, dest);
       myPos = dest; log.push(`🪜 سلّم! ${meName} صعد إلى المربع ${dest}`); beep(700,.15,'triangle');
+      myLadderClimbs++; // يُحتسب لخبرة صعود السلالم عند نهاية الجولة
     } else if(plan.special === 'snake'){
       const dest = plan.dest;
       await sleep(200); await animateJump(session.role, dest);
       myPos = dest; log.push(`🐍 لدغته الحية! ${meName} نزل إلى المربع ${dest}`); beep(220,.2,'sawtooth');
+      myHadSnakeHit = true; // يُحتسب لإنجاز "عودة أسطورية" إن فزت بعد ذلك في نفس الجولة
     } else if(plan.special === 'bonus'){
       bonusCells = bonusCells.filter(c=>c!==newPos);
       bonusRoll = true;
+      myBonusHits++; // يُحتسب لإنجاز "نجم الحظ"
       log.push(`⭐ ${meName} وقف على مربع الحظ ${newPos} — يحق له رمي النرد مرة أخرى!`);
       beep(760,.18,'triangle');
     } else if(plan.special === 'penalty'){
@@ -1121,9 +1405,7 @@ async function animateJump(role, dest){
   placeToken(el, dest); await sleep(350);
 }
 async function bumpGlobalCounter(){
-  try{ const { data } = await sb.from('global_stats').select('games_played').eq('id',1).single();
-    await sb.from('global_stats').update({games_played:(data?.games_played||0)+1}).eq('id',1);
-  }catch(e){}
+  try{ await sb.rpc('bump_global_games_played'); }catch(e){}
 }
 async function loadGlobalCounter(){
   try{ const { data } = await sb.from('global_stats').select('games_played').eq('id',1).single();
@@ -1284,6 +1566,7 @@ function leaveRoom(){
   lastMessageId = 0; seenMessageIds.clear(); lastTurnKey = null;
   chatHistory = [];
   spectatorNames = []; knownSpectatorKeys = new Set(); spectatorPresenceReady = false;
+  resetRoundXPTracking(); xpAwardedRoundKey = null; historySavedRoundKey = null;
   renderSpectatorBadge();
   document.body.classList.remove('is-spectator');
   clearSession();
@@ -1334,6 +1617,7 @@ async function resumeSavedSession(code, fallbackLinkCode){
       session.code = code;
       session.role = isP1 ? 'p1' : (isP2 ? 'p2' : 'spectator');
       saveSession();
+      if(session.role==='p1' || session.role==='p2'){ resetRoundXPTracking(); xpAwardedRoundKey = null; historySavedRoundKey = null; }
       subscribeToRoom(code);
       subscribeToPresence(code);
       await loadChatHistory(code);
@@ -1381,6 +1665,9 @@ let localProfile = null, pendingLinkCode = null, onboardingPhotoDataUrl = null, 
 function paintMiniUserbar(){
   document.getElementById('miniUsername').textContent = localProfile.username;
   applyAvatarVisual(document.getElementById('miniAvatar'), localProfile.avatar_color, localProfile.avatar_data, localProfile.username[0]);
+  renderLevelBadge(document.getElementById('miniLevelBadge'), localProfile.level, false);
+  renderTitleBadge(document.getElementById('miniTitleBadge'), localProfile.title_ar, localProfile.title_icon);
+  renderXpBar(document.getElementById('miniXpFill'), localProfile.total_wins||0, localProfile.level||1);
 }
 
 /* ====== مستمعي أحداث التفاعلات في البطاقات ====== */
@@ -1565,7 +1852,9 @@ document.getElementById('btnLeave').addEventListener('click', async ()=>{
   if(!isSpectator) await handleLeaveAsLoss();
   resetToHome();
 });
-/* ====== مغادرة بزر الخروج أثناء جولة نشطة = خسارة تُسجَّل محليًا، وفوز فوري للخصم ====== */
+/* ====== مغادرة بزر الخروج أثناء جولة نشطة = خسارة تُسجَّل محليًا، وفوز فوري للخصم
+   (لا XP يُمنح للمغادر: leaveRoom تُستدعى عبر resetToHome فورًا بعد هذا، فلا يصل المتصفح
+   المحلي إلى حالة "finished" عبر renderRoom إطلاقًا، وبالتالي لا يُستدعى maybeAwardGameXP) ====== */
 async function handleLeaveAsLoss(){
   if(session.role!=='p1' && session.role!=='p2') return;
   if(session.code && currentRoom && currentRoom.status==='playing' && session.role){
@@ -1640,6 +1929,7 @@ async function boot(){
   setDbStatus(true);
   pendingLinkCode = extractLinkCode();
 
+  await ensureAnonymousSession();
   let existing = await loadExistingProfile();
 
   // دخول مباشر عبر رابط دعوة دون تسجيل مسبق: أنشئ ملفًا شخصيًا تلقائيًا باسم افتراضي قابل للتعديل لاحقًا
