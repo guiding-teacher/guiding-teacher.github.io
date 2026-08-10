@@ -634,8 +634,9 @@ function renderLevelBadge(el, level, compact){
   el.classList.remove('tier-bronze','tier-silver','tier-gold','tier-platinum');
   el.classList.add(levelTierClass(lvl));
 }
-/* ====== اللقب: أعلى شارة (من حيث قيمة XP) فتحها اللاعب — تُعرض كوسم صغير
-   بجانب شارة المستوى. لا تؤثر على المستوى إطلاقًا، فقط "داعمة" له بصريًا. ====== */
+/* ====== اللقب: آخر شارة فتحها اللاعب فعليًا (وليس الأعلى قيمة) — تُعرض كوسم صغير
+   بجانب شارة المستوى. القيمة تصل جاهزة من add_xp (title_ar/title_icon)، فلا شيء
+   يُحسب هنا على العميل. لا تؤثر على المستوى إطلاقًا، فقط "داعمة" له بصريًا. ====== */
 function renderTitleBadge(el, titleAr, titleIcon){
   if(!el) return;
   if(!titleAr){ el.style.display='none'; el.textContent=''; return; }
@@ -838,6 +839,14 @@ let spectatorPresenceReady = false;   // يمنع إظهار إشعارات عن
 let lastTurnKey = null;
 let turnTimer = null, turnCountdownInterval = null;
 const TURN_TIME_LIMIT = 15;
+/* ====== الحارس الاحتياطي: أي متصفح متصل (خصم أو مشاهد) يراقب دور الطرف الآخر، ويرمي نيابةً عنه
+   إذا لم يفعل خلال هذه المهلة الإضافية — يحل مشكلة تعليق الجولة حين يُغلق صاحب الدور صفحته فعليًا
+   فلا يعود مؤقّته الشخصي (armTurnTimer) قادرًا على العمل من جهته إطلاقًا ====== */
+const WATCHDOG_GRACE = 6; // ثوانٍ إضافية فوق مهلة الدور العادية قبل أن يتدخل متصفح آخر
+let watchdogTimer = null, watchdogRevKey = null;
+/* ====== إذا رمى لاعب النرد تلقائيًا (بلا ضغط يدوي) 6 مرات متتالية بينما خصمه يضغط بصورة طبيعية،
+   تُعتبر الجولة متروكة وتُمنح تلقائيًا للخصم الحاضر ====== */
+const AUTO_FORFEIT_STREAK = 6;
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function buildRoomLink(code){ const url=new URL(location.href); url.search=''; url.hash=''; url.searchParams.set('r',code); return url.toString(); }
 
@@ -1016,6 +1025,12 @@ function renderRoom(room, opts={}){
     clearTurnTimer();
   }
 
+  if(room.status==='playing' && room.turn!==session.role && !animating){
+    armWatchdogTimer(room);
+  } else {
+    clearWatchdogTimer();
+  }
+
   showDiceValue('p1', room.p1_dice||1, false);
   showDiceValue('p2', room.p2_dice||1, false);
 
@@ -1170,9 +1185,30 @@ function armTurnTimer(){
   turnTimer = setTimeout(()=>{
     turnTimer = null;
     if(!animating && currentRoom && currentRoom.status==='playing' && currentRoom.turn===session.role){
-      rollDice();
+      rollDice(session.role, true); // رمية تلقائية بسبب انتهاء وقت الدور — تُحتسب ضمن سلسلة الرمي التلقائي
     }
   }, TURN_TIME_LIMIT*1000);
+}
+
+/* ====== الحارس الاحتياطي (watchdog): يعمل في كل متصفح متصل ليس دوره الآن (خصم أو مشاهد)،
+   ويرمي النرد نيابةً عن صاحب الدور تلقائيًا إن لم يفعل حتى بعد مهلة إضافية — فيبقي الجولة تعمل
+   حتى إن حذف صاحب الدور صفحته فعليًا ولم يعد مؤقّته الشخصي (armTurnTimer) موجودًا إطلاقًا ====== */
+function clearWatchdogTimer(){
+  clearTimeout(watchdogTimer); watchdogTimer = null; watchdogRevKey = null;
+}
+function armWatchdogTimer(room){
+  const key = room.code + '|' + room.rev + '|' + room.turn;
+  if(watchdogRevKey === key) return; // مضبوط بالفعل لهذا الدور بعينه، لا داعٍ لإعادة الضبط عند كل تحديث عرض
+  clearWatchdogTimer();
+  watchdogRevKey = key;
+  const turnRole = room.turn, expectedRev = room.rev;
+  watchdogTimer = setTimeout(async ()=>{
+    watchdogTimer = null;
+    const { data: fresh } = await sb.from('rooms').select('*').eq('code', session.code).single();
+    if(fresh && fresh.status==='playing' && fresh.turn===turnRole && fresh.rev===expectedRev){
+      await rollDice(turnRole, true);
+    }
+  }, (TURN_TIME_LIMIT + WATCHDOG_GRACE) * 1000);
 }
 
 function openWinModal(room){
@@ -1230,7 +1266,7 @@ async function rematch(){
   const { bonus, penalty } = generateSpecialCells();
   const fresh = { status:'playing', turn:'p1', p1_dice:1, p2_dice:1, winner:null, p1_pos:0, p2_pos:0,
     log:[`🔁 جولة جديدة بنفس الفريقين: ${currentRoom.p1_name} ضد ${currentRoom.p2_name}`], rev:(currentRoom.rev||0)+1,
-    bonus_cells: bonus, penalty_cells: penalty };
+    bonus_cells: bonus, penalty_cells: penalty, p1_auto_streak:0, p2_auto_streak:0 };
   const { data } = await sb.from('rooms').update(fresh).eq('code', session.code).select().single();
   if(data){
     resetRoundXPTracking();
@@ -1274,42 +1310,86 @@ async function playRemoteMovePlan(role, plan){
   }
 }
 
-async function rollDice(){
+/* ====== رمي النرد. forRole: صاحب الدور الذي يُرمى نيابةً عنه (افتراضيًا أنا). isAuto: هل هذه رمية
+   تلقائية (بسبب انتهاء الوقت) أم ضغطة يدوية حقيقية — تُستخدم لتتبّع سلسلة الرمي التلقائي أدناه.
+   حين forRole يخالف session.role فهذا يعني أن هذا المتصفح (خصم أو مشاهد) ينفّذ رمية احتياطية
+   نيابةً عن صاحب الدور الغائب (انظر armWatchdogTimer)، فتُعرض الحركة هنا بنفس طريقة عرض حركة الطرف
+   الآخر عادةً (dice شبح + runTokenAnimation) بدل واجهة "ردّي أنا" المخصّصة للرامي الحقيقي ====== */
+async function rollDice(forRole, isAuto=false){
   if(animating) return;
-  if(session.role!=='p1' && session.role!=='p2') return;
+  const actingRole = forRole || session.role;
+  if(actingRole!=='p1' && actingRole!=='p2') return;
+  // الرمي اليدوي (ضغطة زر حقيقية) مسموح فقط لصاحب الدور نفسه؛ أما الرمي التلقائي (isAuto) فقد
+  // ينفّذه أي متصفح متصل (خصم أو مشاهد) كخطة احتياطية إذا أغلق صاحب الدور صفحته فعليًا
+  if(!isAuto && session.role!==actingRole) return;
   const { data: room } = await sb.from('rooms').select('*').eq('code', session.code).single();
-  if(!room || room.status!=='playing' || room.turn!==session.role) return;
+  if(!room || room.status!=='playing' || room.turn!==actingRole) return;
 
-  clearTurnTimer();
+  const streakKey = actingRole==='p1' ? 'p1_auto_streak' : 'p2_auto_streak';
+  const oppStreakKey = actingRole==='p1' ? 'p2_auto_streak' : 'p1_auto_streak';
+  const priorStreak = room[streakKey] || 0;
+  const oppStreak = room[oppStreakKey] || 0;
+  const forfeitOppRole = actingRole==='p1' ? 'p2' : 'p1';
+
+  // قانون الانسحاب التلقائي: 6 رميات تلقائية متتالية بلا أي ضغط يدوي من هذا اللاعب، بينما خصمه
+  // يضغط بصورة طبيعية (سلسلته صفر) — تُنهى الجولة فورًا ويُمنح الفوز للخصم الحاضر دون رمي فعلي
+  if(isAuto && (priorStreak+1) >= AUTO_FORFEIT_STREAK && oppStreak===0){
+    clearTurnTimer(); clearWatchdogTimer();
+    const forfeitName = actingRole==='p1' ? room.p1_name : room.p2_name;
+    const winnerName = forfeitOppRole==='p1' ? room.p1_name : room.p2_name;
+    const forfeitLog = [...(room.log||[]), `⏱️ ${forfeitName} غاب عن اللعب 6 أدوار متتالية — الفوز يُمنح تلقائيًا لـ ${winnerName}`];
+    const forfeitUpdate = { rev:(room.rev||0)+1, status:'finished', winner:forfeitOppRole, log:forfeitLog.slice(-40) };
+    const { data: savedForfeit } = await sb.from('rooms').update(forfeitUpdate).eq('code', session.code).eq('rev', room.rev).select().single();
+    if(savedForfeit){ renderRoom(savedForfeit); bumpGlobalCounter(); scheduleRoomCleanup(session.code); }
+    else {
+      const { data: refreshed } = await sb.from('rooms').select('*').eq('code', session.code).single();
+      if(refreshed) renderRoom(refreshed);
+    }
+    return;
+  }
+
+  const isSelf = actingRole===session.role; // هل أنا صاحب الدور فعلًا، أم أنفّذ رمية احتياطية نيابةً عن الطرف الآخر؟
+
+  clearTurnTimer(); clearWatchdogTimer();
   animating = true;
-  document.getElementById(session.role==='p1'?'btnRollP1':'btnRollP2').disabled = true;
-  myDiceRolls++; // يُحتسب لإنجاز "البطل الخاطف" عند نهاية الجولة
+  if(isSelf){
+    document.getElementById(actingRole==='p1'?'btnRollP1':'btnRollP2').disabled = true;
+    myDiceRolls++; // يُحتسب لإنجاز "البطل الخاطف" عند نهاية الجولة (فقط عند رمية حقيقية لي أنا)
+  }
 
-  broadcastDiceRoll(session.role); // يُبثّ لحظيًا حتى يرى الطرف الآخر والمشاهدون النرد وهو يدور
+  broadcastDiceRoll(actingRole); // يُبثّ لحظيًا حتى يرى الطرف الآخر والمشاهدون النرد وهو يدور
 
-  showDiceOverlay();
-  const shuffle = setInterval(()=>{
-    const rv = 1+Math.floor(Math.random()*6);
-    showDiceValue(session.role, rv, true);
-    setDiceOverlayValue(rv);
-  }, 90);
-  await sleep(700);
-  clearInterval(shuffle);
-
-  const value = rollFairDice();
-  showDiceValue(session.role, value, false);
-  setDiceOverlayValue(value);
-  beep(520,.1,'square');
-  setTimeout(hideDiceOverlay, 600);
+  let value;
+  if(isSelf){
+    showDiceOverlay();
+    const shuffle = setInterval(()=>{
+      const rv = 1+Math.floor(Math.random()*6);
+      showDiceValue(actingRole, rv, true);
+      setDiceOverlayValue(rv);
+    }, 90);
+    await sleep(700);
+    clearInterval(shuffle);
+    value = rollFairDice();
+    showDiceValue(actingRole, value, false);
+    setDiceOverlayValue(value);
+    beep(520,.1,'square');
+    setTimeout(hideDiceOverlay, 600);
+  } else {
+    // رمية احتياطية نيابة عن الطرف الآخر: نعرضها بنفس طريقة عرض نرد الخصم المعتادة بدل الواجهة الخاصة بي
+    playRemoteDiceShuffle(actingRole);
+    await sleep(700);
+    value = rollFairDice();
+    playRemoteDiceResult(actingRole, value);
+  }
 
   // نبثّ النتيجة الحقيقية فورًا حتى يتوقف نرد الخصم/المشاهد على الرقم الصحيح مباشرة
   // بدل الانتظار لوصول تحديث القاعدة (الذي يتأخر لثوانٍ بسبب رسوم حركة الانتقال أدناه)
-  broadcastDiceResult(session.role, value);
+  broadcastDiceResult(actingRole, value);
 
-  const meKey = session.role==='p1' ? 'p1_pos' : 'p2_pos';
-  const diceKey = session.role==='p1' ? 'p1_dice' : 'p2_dice';
-  const meName = session.role==='p1' ? room.p1_name : room.p2_name;
-  const oppRole = session.role==='p1' ? 'p2' : 'p1';
+  const meKey = actingRole==='p1' ? 'p1_pos' : 'p2_pos';
+  const diceKey = actingRole==='p1' ? 'p1_dice' : 'p2_dice';
+  const meName = actingRole==='p1' ? room.p1_name : room.p2_name;
+  const oppRole = actingRole==='p1' ? 'p2' : 'p1';
 
   let myPos = room[meKey] || 0;
   const posBeforeRoll = myPos;
@@ -1339,34 +1419,34 @@ async function rollDice(){
       plan.special = 'penalty'; plan.dest = posBeforeRoll;
     }
   }
-  broadcastMovePlan(session.role, plan);
+  broadcastMovePlan(actingRole, plan);
 
   if(newPos > 100){
     log.push(`🎲 ${meName} رمى ${value} — يحتاج رقمًا أدق للوصول إلى 100!`);
   } else {
-    await animateStep(session.role, myPos, newPos);
+    await animateStep(actingRole, myPos, newPos);
     myPos = newPos;
     log.push(`🎲 ${meName} رمى ${value} وتقدّم إلى المربع ${newPos}`);
 
     if(plan.special === 'ladder'){
       const dest = plan.dest;
-      await sleep(200); await animateJump(session.role, dest);
+      await sleep(200); await animateJump(actingRole, dest);
       myPos = dest; log.push(`🪜 سلّم! ${meName} صعد إلى المربع ${dest}`); beep(700,.15,'triangle');
-      myLadderClimbs++; // يُحتسب لخبرة صعود السلالم عند نهاية الجولة
+      if(isSelf) myLadderClimbs++; // يُحتسب لخبرة صعود السلالم عند نهاية الجولة
     } else if(plan.special === 'snake'){
       const dest = plan.dest;
-      await sleep(200); await animateJump(session.role, dest);
+      await sleep(200); await animateJump(actingRole, dest);
       myPos = dest; log.push(`🐍 لدغته الحية! ${meName} نزل إلى المربع ${dest}`); beep(220,.2,'sawtooth');
-      myHadSnakeHit = true; // يُحتسب لإنجاز "عودة أسطورية" إن فزت بعد ذلك في نفس الجولة
+      if(isSelf) myHadSnakeHit = true; // يُحتسب لإنجاز "عودة أسطورية" إن فزت بعد ذلك في نفس الجولة
     } else if(plan.special === 'bonus'){
       bonusCells = bonusCells.filter(c=>c!==newPos);
       bonusRoll = true;
-      myBonusHits++; // يُحتسب لإنجاز "نجم الحظ"
+      if(isSelf) myBonusHits++; // يُحتسب لإنجاز "نجم الحظ"
       log.push(`⭐ ${meName} وقف على مربع الحظ ${newPos} — يحق له رمي النرد مرة أخرى!`);
       beep(760,.18,'triangle');
     } else if(plan.special === 'penalty'){
       penaltyCells = penaltyCells.filter(c=>c!==newPos);
-      await sleep(200); await animateJump(session.role, posBeforeRoll);
+      await sleep(200); await animateJump(actingRole, posBeforeRoll);
       myPos = posBeforeRoll;
       log.push(`🕳️ ${meName} وقع في حفرة عند المربع ${newPos} — رجع إلى مربعه السابق ${posBeforeRoll}!`);
       beep(200,.22,'sawtooth');
@@ -1374,9 +1454,9 @@ async function rollDice(){
   }
 
   if(myPos===100){
-    update.status='finished'; update.winner=session.role; finished=true; bumpGlobalCounter();
+    update.status='finished'; update.winner=actingRole; finished=true; bumpGlobalCounter();
   } else if(bonusRoll){
-    update.turn = session.role; // دور إضافي — نفس اللاعب يرمي مجددًا
+    update.turn = actingRole; // دور إضافي — نفس اللاعب يرمي مجددًا
   } else {
     update.turn = oppRole;
   }
@@ -1385,6 +1465,7 @@ async function rollDice(){
   update.log = log.slice(-40);
   update.bonus_cells = bonusCells;
   update.penalty_cells = penaltyCells;
+  update[streakKey] = isAuto ? priorStreak+1 : 0; // يتصفّر عند أي ضغطة يدوية، ويتراكم فقط مع الرمي التلقائي المتتالي
 
   const { data: saved, error } = await sb.from('rooms').update(update).eq('code', session.code).eq('rev', room.rev).select().single();
   if(!saved || error){
@@ -1557,6 +1638,7 @@ function leaveRoom(){
   if(presenceChannel){ sb.removeChannel(presenceChannel); presenceChannel=null; }
   clearAllChatStrips();
   clearTurnTimer();
+  clearWatchdogTimer();
   clearInterval(remoteShuffleTimers.p1); clearInterval(remoteShuffleTimers.p2);
   clearTimeout(remoteShuffleSafety.p1); clearTimeout(remoteShuffleSafety.p2);
   remoteShuffleTimers.p1 = null; remoteShuffleTimers.p2 = null;
@@ -1841,8 +1923,8 @@ async function onQuickMatchAccepted(info){
 }
 
 /* ====== أزرار اللعب ====== */
-document.getElementById('btnRollP1').addEventListener('click', ()=>{ if(session.role==='p1') rollDice(); });
-document.getElementById('btnRollP2').addEventListener('click', ()=>{ if(session.role==='p2') rollDice(); });
+document.getElementById('btnRollP1').addEventListener('click', ()=>{ if(session.role==='p1') rollDice('p1', false); });
+document.getElementById('btnRollP2').addEventListener('click', ()=>{ if(session.role==='p2') rollDice('p2', false); });
 document.getElementById('btnPlayAgain').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; resetToHome(); });
 document.getElementById('btnRematch').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; rematch(); });
 document.getElementById('btnLeave').addEventListener('click', async ()=>{
