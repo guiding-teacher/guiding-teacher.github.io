@@ -47,7 +47,14 @@
       </div>
     </div>
     <div class="mini-userbar">
-      <b id="miniUsername">—</b>
+      <div class="mini-name-col">
+        <div class="mini-name-row">
+          <b id="miniUsername">—</b>
+          <span class="level-badge inline-level-badge tier-bronze" id="miniLevelBadge">Lv.1</span>
+          <span class="title-badge" id="miniTitleBadge" style="display:none;"></span>
+        </div>
+        <div class="xp-bar"><div class="xp-bar-fill" id="miniXpFill"></div></div>
+      </div>
       <div class="avatar-wrap">
         <div class="avatar-big" id="miniAvatar" style="width:36px;height:36px;font-size:15px;">?</div>
         <div class="edit-badge">✏️</div>
@@ -106,6 +113,7 @@
       <button class="btn green" id="btnQuickMatch">🔍 ابحث عن لاعب الآن</button>
     </div>
     <div class="global-counter" id="globalCounter"></div>
+    <button class="btn grey" id="btnAchievements" style="margin-top:12px;">🏅 إنجازاتي</button>
     <div class="history-section" id="historySection">
       <h4>🗂️ جولاتك السابقة</h4>
       <div class="history-table" id="historyTable"></div>
@@ -191,9 +199,9 @@
         <div class="edit-badge-side" id="editBadgeP1" style="display:none;">✏️</div>
         <div class="log-badge-side" id="logBadgeP1" title="أحداث اللاعب">📜</div>
         <div class="player-row">
-          <div class="avatar-big" id="avatarP1">?<span class="live" id="liveP1" style="display:none;"></span></div>
+          <div class="avatar-big" id="avatarP1">?<span class="live" id="liveP1" style="display:none;"></span><span class="level-badge avatar-level-badge tier-bronze" id="levelBadgeP1">1</span></div>
           <div class="info-col">
-            <div class="p-name" id="nameP1">—</div>
+            <div class="p-name"><span id="nameP1">—</span><span class="level-badge inline-level-badge tier-bronze" id="nameLevelP1">Lv.1</span><span class="title-badge" id="nameTitleP1" style="display:none;"></span></div>
             <div class="p-pos" id="posP1">المربع 0</div>
             <div class="role-tag" id="roleTagP1">لاعب 1</div>
           </div>
@@ -242,9 +250,9 @@
         <div class="edit-badge-side" id="editBadgeP2" style="display:none;">✏️</div>
         <div class="log-badge-side" id="logBadgeP2" title="أحداث اللاعب">📜</div>
         <div class="player-row">
-          <div class="avatar-big" id="avatarP2">?<span class="live" id="liveP2" style="display:none;"></span></div>
+          <div class="avatar-big" id="avatarP2">?<span class="live" id="liveP2" style="display:none;"></span><span class="level-badge avatar-level-badge tier-bronze" id="levelBadgeP2">1</span></div>
           <div class="info-col">
-            <div class="p-name" id="nameP2">—</div>
+            <div class="p-name"><span id="nameP2">—</span><span class="level-badge inline-level-badge tier-bronze" id="nameLevelP2">Lv.1</span><span class="title-badge" id="nameTitleP2" style="display:none;"></span></div>
             <div class="p-pos" id="posP2">المربع 0</div>
             <div class="role-tag" id="roleTagP2">لاعب 2</div>
           </div>
@@ -278,7 +286,7 @@
 
   </div>
 
-  <div class="footer-note">الحية والسلم © جولة حيّة مبنية على Supabase Realtime + PostgreSQL</div>
+  <div class="footer-note">الحية والسلم © تطوير أ. ابراهيم</div>
 </div>
 
 <!-- شريط الدردشة السفلي -->
@@ -368,6 +376,26 @@
     <div class="events-sheet-body" id="helpSheetBody"></div>
     <button class="btn grey" id="btnCloseHelpSheet">إغلاق</button>
   </div>
+</div>
+
+<!-- نافذة "إنجازاتي" — كتالوج الشارات مع تمييز المفتوح منها -->
+<div class="events-sheet-bg" id="achievementsSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3>🏅 إنجازاتي</h3>
+    <div class="events-sheet-body ach-sheet-body" id="achievementsSheetBody"></div>
+    <button class="btn grey" id="btnCloseAchievementsSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- إشعار احتفالي عند فتح شارة جديدة -->
+<div class="achievement-toast" id="achievementToast">
+  <span class="ach-toast-icon" id="achToastIcon">🏅</span>
+  <div class="ach-toast-text">
+    <b>إنجاز جديد!</b>
+    <span id="achToastTitle">—</span>
+  </div>
+  <span class="ach-toast-xp" id="achToastXp">+0 XP</span>
 </div>
   
   
