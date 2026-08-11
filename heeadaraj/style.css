@@ -681,6 +681,10 @@ body.is-spectator .spectator-badge{display:flex;}
   background-position:center;
 }
   
+  .board-wrap{
+   width:98%;
+  }
+  
   .composer-bottom{
   position:fixed;
   bottom:0;
@@ -703,7 +707,7 @@ body.is-spectator .spectator-badge{display:flex;}
   .board-wrap{height:auto;}
   .side-panel.opponent{order:1;}
   .board-col{order:2;}
-  .side-panel.me{order:3;}
+  .side-panel.me{order:3; }
 
   .side-panel{
     flex-direction:column;
