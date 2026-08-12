@@ -945,6 +945,7 @@ function initBoardUI(){ buildBoard(); buildFacePips(); }
 
 function renderRoom(room, opts={}){
   currentRoom = room;
+  hideOfflineSpinner(); // وصول تحديث فعلي يعني أن الاتصال عاد، مهما كانت حالة حدث 'online' نفسه
   const isSpectator = session.role === 'spectator';
   document.body.classList.toggle('is-spectator', isSpectator);
 
@@ -1330,6 +1331,19 @@ async function playRemoteMovePlan(role, plan){
    حين forRole يخالف session.role فهذا يعني أن هذا المتصفح (خصم أو مشاهد) ينفّذ رمية احتياطية
    نيابةً عن صاحب الدور الغائب (انظر armWatchdogTimer)، فتُعرض الحركة هنا بنفس طريقة عرض حركة الطرف
    الآخر عادةً (dice شبح + runTokenAnimation) بدل واجهة "ردّي أنا" المخصّصة للرامي الحقيقي ====== */
+/* ====== سهم انقطاع الإنترنت فوق زري النرد: يظهر فقط عند فقدان الاتصال الفعلي بالشبكة (حدث
+   'offline')، ليعرف المستخدم أن التوقّف الحالي سببه انقطاع الإنترنت لديه — بينما تستمر اللعبة
+   من جهتها عبر آلية الرمي التلقائي (watchdog) نيابةً عنه إن طال الانقطاع. يختفي فورًا إما عند
+   عودة الاتصال (حدث 'online') أو عند وصول أول تحديث فعلي لحالة الغرفة (renderRoom) أيّهما أسبق. ====== */
+function showOfflineSpinner(){
+  ['rollSpinnerP1','rollSpinnerP2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('show'); });
+}
+function hideOfflineSpinner(){
+  ['rollSpinnerP1','rollSpinnerP2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.remove('show'); });
+}
+if(!navigator.onLine) showOfflineSpinner();
+window.addEventListener('offline', showOfflineSpinner);
+
 async function rollDice(forRole, isAuto=false){
   if(animating) return;
   const actingRole = forRole || session.role;
@@ -1541,6 +1555,7 @@ document.addEventListener('visibilitychange', ()=>{
   }
 });
 window.addEventListener('online', ()=>{
+  hideOfflineSpinner();
   if(session.code){
     subscribeToRoom(session.code);
     subscribeToPresence(session.code);
