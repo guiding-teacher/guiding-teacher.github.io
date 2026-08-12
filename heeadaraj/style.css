@@ -360,6 +360,22 @@ height: 75%;
 .roll-btn:disabled{opacity:.4;cursor:not-allowed;}
 .roll-btn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--coral-dark);}
 .roll-btn:hover:not(:disabled){filter:brightness(1.1);}
+
+/* ====== سهم دائري فوق زر النرد أثناء انتظار رد الخادم — يوضّح للاعب أن أي توقّف مؤقّت
+   سببه بطء/انقطاع الاتصال بالإنترنت، وليس عطلاً في اللعبة نفسها ====== */
+.roll-btn-wrap{position:relative;display:inline-flex;order:1;}
+.roll-spinner{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+  border-radius:12px;background:rgba(0,0,0,.22);pointer-events:none;
+}
+.roll-spinner.show{display:flex;}
+.roll-spinner-icon{
+  width:20px;height:20px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.35);border-top-color:#fff;
+  animation:roll-spin .7s linear infinite;
+}
+@keyframes roll-spin{to{transform:rotate(360deg);}}
+
 .opp-dice-label{font-size:10px;color:#8a8378;font-weight:700;}
 
 /* تفاعلات البطاقة — صفّان مدمجان بدل شريط طويل */
@@ -736,7 +752,8 @@ body.is-spectator .spectator-badge{display:flex;}
   .side-panel .role-tag{grid-area:role;font-size:8.5px;padding:1px 2px;}
   .side-dice-zone{display:contents;}
   .cube-wrap{grid-area:dice;width:30px;height:30px;justify-self:center;}
-  .roll-btn{grid-area:btn;justify-self:center;padding:5px 12px;font-size:11px;}
+  .roll-btn-wrap{grid-area:btn;justify-self:center;}
+  .roll-btn{padding:5px 12px;font-size:11px;}
   .opp-dice-label{grid-area:btn;justify-self:center;}
   .cube{transform:rotateX(-18deg) rotateY(24deg) scale(.56);}
   .face{width:30px;height:30px;border-radius:6px;padding:3px;}
