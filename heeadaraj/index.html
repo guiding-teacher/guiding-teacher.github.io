@@ -10,7 +10,6 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <base target="_blank">
-<base target="_blank">
 </head>
 <body>
 
@@ -203,9 +202,11 @@
         <div class="player-row">
           <div class="avatar-big" id="avatarP1">?<span class="live" id="liveP1" style="display:none;"></span><span class="level-badge avatar-level-badge tier-bronze" id="levelBadgeP1">1</span></div>
           <div class="info-col">
-            <div class="p-name"><span id="nameP1">—</span><span class="level-badge inline-level-badge tier-bronze" id="nameLevelP1">Lv.1</span></div>
+            <div class="p-name"><span id="nameP1">—</span><span class="level-badge inline-level-badge tier-bronze" id="nameLevelP1">Lv.1</span>
+             <span class="title-badge" id="nameTitleP1" style="display:none;"></span>
+            </div>
             
-            <span class="title-badge" id="nameTitleP1" style="display:none;"></span>
+           
             
             <div class="p-pos" id="posP1">المربع 0</div>
             <div class="role-tag" id="roleTagP1">لاعب 1</div>
@@ -216,7 +217,10 @@
               <div class="face f-right" data-n="2"></div><div class="face f-left" data-n="5"></div>
               <div class="face f-top" data-n="3"></div><div class="face f-bottom" data-n="4"></div>
             </div></div>
-            <button class="roll-btn" id="btnRollP1">ارمِ النرد</button>
+            <div class="roll-btn-wrap">
+              <button class="roll-btn" id="btnRollP1">ارمِ النرد</button>
+              <div class="roll-spinner" id="rollSpinnerP1"><div class="roll-spinner-icon"></div></div>
+            </div>
             <div class="opp-dice-label" id="oppLabelP1" style="display:none;">آخر نتيجة</div>
           </div>
         </div>
@@ -270,7 +274,10 @@
               <div class="face f-right" data-n="2"></div><div class="face f-left" data-n="5"></div>
               <div class="face f-top" data-n="3"></div><div class="face f-bottom" data-n="4"></div>
             </div></div>
-            <button class="roll-btn" id="btnRollP2">ارمِ النرد</button>
+            <div class="roll-btn-wrap">
+              <button class="roll-btn" id="btnRollP2">ارمِ النرد</button>
+              <div class="roll-spinner" id="rollSpinnerP2"><div class="roll-spinner-icon"></div></div>
+            </div>
             <div class="opp-dice-label" id="oppLabelP2" style="display:none;">آخر نتيجة</div>
           </div>
         </div>
