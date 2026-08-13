@@ -681,7 +681,6 @@ body.is-spectator .spectator-badge{display:flex;}
   }
   
    #panelP2{
-  margin-top:-10px;
   padding-top:6px; /* اضبط حسب الرغبة */
   }
 
@@ -708,8 +707,8 @@ body.is-spectator .spectator-badge{display:flex;}
   
   .board-wrap{
    width:98%;
-    margin-bottom: 5px;
-    margin-top: 5px;
+    margin-bottom: 3px;
+    margin-top: 3px;
   }
   
   .composer-bottom{
