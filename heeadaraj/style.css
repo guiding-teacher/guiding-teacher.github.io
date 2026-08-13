@@ -680,6 +680,11 @@ body.is-spectator .spectator-badge{display:flex;}
     height:100%;
   }
   
+   #panelP2{
+  margin-top:-10px;
+  padding-top:6px;        /* اضبط حسب الرغبة */
+}
+  
   .token{
   position:absolute;
   width:7%;
@@ -747,7 +752,7 @@ body.is-spectator .spectator-badge{display:flex;}
   
   .side-panel .info-col{display:contents;}
   .side-panel .avatar-big{grid-area:avatar;width:46px;height:46px;font-size:16px;flex-shrink:0;border-width:2px;margin-top:0;margin-left: 15px}
-  .side-panel .p-name{grid-area:name;font-size:11.5px;width:112px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right: -10px}
+  .side-panel .p-name{grid-area:name;font-size:11.5px;width:112px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-right: -5px}
   .side-panel .p-pos{grid-area:pos;font-size:10.5px;}
   .side-panel .role-tag{grid-area:role;font-size:8.5px;padding:1px 2px;}
   .side-dice-zone{display:contents;}
@@ -777,6 +782,10 @@ body.is-spectator .spectator-badge{display:flex;}
   .side-panel .edit-badge-side{display:none !important;}
   .side-panel .log-badge-side{display:flex !important;}
 
+  .tb-link-wrap{
+  height: 25px;
+}
+  
   .chat-strip{font-size:13px;padding:5px 10px;max-width:150px;}
   .dro-value{width:70px;height:70px;font-size:36px;border-radius:16px;}
   .turn-bubble{font-size:12.5px;padding:7px 14px;top:6px;}
@@ -794,11 +803,11 @@ body.is-spectator .spectator-badge{display:flex;}
 }
   .turn-banner{font-size:12px;padding:6px 10px;}
   .log{max-height:50px;font-size:11px;}
-  .game-topbar{margin:5px 8px;padding:6px;}
-  .tb-btn{width:30px;height:30px;font-size:20px;}
+  .game-topbar{margin:5px 8px;padding:6px;height: 4% }
+  .tb-btn{width:24px;height:24px;font-size:20px;}
   .tb-link-input{font-size:10px;}
   .tb-copy-btn{padding:3px 6px;font-size:10px;}
-  .spectator-toast{top:48px;font-size:12px;padding:6px 14px;}
+  .spectator-toast{top:20px;font-size:12px;padding:6px 14px;}
 }
 
 .chat-toggle-btn{
