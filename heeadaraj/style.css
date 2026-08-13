@@ -770,7 +770,7 @@ body.is-spectator .spectator-badge{display:flex;}
     display:flex;flex-wrap:nowrap;overflow-x:auto;justify-content:center;
     gap:3px;margin-top:5px;padding-top:5px;
   }
-  .side-panel.me .side-reactions button{flex:0 0 20px;width:20px;height:20px;padding:0;font-size:14px;}
+  .side-panel.me .side-reactions button{flex:0 0 20px;width:24px;height:24px;padding:0;font-size:18px;}
 
   .side-log{display:none;}
 
