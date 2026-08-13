@@ -943,6 +943,43 @@ async function joinRoomByCode(code){
 
 function initBoardUI(){ buildBoard(); buildFacePips(); }
 
+/* ====== أزرار النرد والمؤقتات (دور اللاعب/مراقبة الخصم) — دالة مستقلة عن renderRoom حتى يمكن
+   إعادة استدعائها بمفردها بعد اكتمال حركة الرمز محليًا (عندما يصبح animating=false فعليًا)، بدل
+   الاعتماد فقط على القيمة اللحظية لـ animating وقت استدعاء renderRoom نفسها (وهي وقتها لا تزال
+   true دومًا عند اكتمال رميتي الخاصة — فتبقى أزرار "دور إضافي" من مربع الحظ ⭐ معطّلة للأبد بلا
+   هذا الاستدعاء الإضافي، وهذا بالضبط سبب تجمّد اللعبة بعد أخذ نجمة). ====== */
+function syncTurnControls(room, isSpectatorArg){
+  const isSpectator = isSpectatorArg !== undefined ? isSpectatorArg : (session.role === 'spectator');
+  const rollP1 = document.getElementById('btnRollP1');
+  const rollP2 = document.getElementById('btnRollP2');
+  const labelP1El = document.getElementById('oppLabelP1');
+  const labelP2El = document.getElementById('oppLabelP2');
+
+  if(isSpectator){
+    rollP1.style.display='none'; rollP2.style.display='none';
+    labelP1El.style.display='block'; labelP2El.style.display='block';
+  } else {
+    const myRollBtn = session.role==='p1' ? rollP1 : rollP2;
+    const oppRollBtn = session.role==='p1' ? rollP2 : rollP1;
+    const myLabel = session.role==='p1' ? labelP1El : labelP2El;
+    const oppLabel = session.role==='p1' ? labelP2El : labelP1El;
+    myRollBtn.style.display='inline-flex'; oppRollBtn.style.display='none';
+    myLabel.style.display='none'; oppLabel.style.display='block';
+    myRollBtn.disabled = !(room.status==='playing' && room.turn===session.role) || animating;
+  }
+
+  if(!isSpectator && room.status==='playing' && room.turn===session.role && !animating){
+    if(!turnTimer) armTurnTimer();
+  } else {
+    clearTurnTimer();
+  }
+
+  if(room.status==='playing' && room.turn!==session.role && !animating){
+    armWatchdogTimer(room);
+  } else {
+    clearWatchdogTimer();
+  }
+}
 function renderRoom(room, opts={}){
   currentRoom = room;
   hideOfflineSpinner(); // وصول تحديث فعلي يعني أن الاتصال عاد، مهما كانت حالة حدث 'online' نفسه
@@ -1016,35 +1053,8 @@ function renderRoom(room, opts={}){
     showTurnBubble(bannerText);
   }
 
-  const rollP1 = document.getElementById('btnRollP1');
-  const rollP2 = document.getElementById('btnRollP2');
-  const labelP1El = document.getElementById('oppLabelP1');
-  const labelP2El = document.getElementById('oppLabelP2');
+  syncTurnControls(room, isSpectator);
 
-  if(isSpectator){
-    rollP1.style.display='none'; rollP2.style.display='none';
-    labelP1El.style.display='block'; labelP2El.style.display='block';
-  } else {
-    const myRollBtn = session.role==='p1' ? rollP1 : rollP2;
-    const oppRollBtn = session.role==='p1' ? rollP2 : rollP1;
-    const myLabel = session.role==='p1' ? labelP1El : labelP2El;
-    const oppLabel = session.role==='p1' ? labelP2El : labelP1El;
-    myRollBtn.style.display='inline-flex'; oppRollBtn.style.display='none';
-    myLabel.style.display='none'; oppLabel.style.display='block';
-    myRollBtn.disabled = !(room.status==='playing' && room.turn===session.role) || animating;
-  }
-
-  if(!isSpectator && room.status==='playing' && room.turn===session.role && !animating){
-    if(!turnTimer) armTurnTimer();
-  } else {
-    clearTurnTimer();
-  }
-
-  if(room.status==='playing' && room.turn!==session.role && !animating){
-    armWatchdogTimer(room);
-  } else {
-    clearWatchdogTimer();
-  }
 
   showDiceValue('p1', room.p1_dice||1, false);
   showDiceValue('p2', room.p2_dice||1, false);
@@ -1313,16 +1323,16 @@ function broadcastMovePlan(role, plan){
    ونمنع renderRoom من "قفز" الرمز فورًا طوال مدة هذه الحركة عبر علم remoteAnimating ====== */
 async function playRemoteMovePlan(role, plan){
   if(role === session.role) return; // تجاهل صدى حدثي أنا نفسي
+  cancelPendingRender(); // وصل بثّ الحركة فعليًا — لا حاجة لخطة العرض الاحتياطية المؤجَّلة بعد الآن
   remoteAnimating[role] = true;
   try{
     await runTokenAnimation(role, plan);
   } finally {
-    // لا نُعيد ضبط موضع الرمز هنا استنادًا إلى currentRoom: فهو لا يزال يحمل بيانات الجولة القديمة
-    // (قبل الرمية) في هذه اللحظة تحديدًا، لأن تحديث القاعدة الحقيقي يصل لاحقًا عبر الشبكة.
-    // إعادة الضبط منه كانت تُرجع الرمز لموضعه السابق ثم تقفز به للأمام مجددًا عند وصول التحديث.
-    // خطة الحركة نفسها دقيقة ومطابقة لما سيُكتب في القاعدة، فنترك الرمز في نهاية حركته كما هو،
-    // وسيصل التحديث الحقيقي لاحقًا مطابقًا لنفس الموضع دون أي قفزة مرئية.
     remoteAnimating[role] = false;
+    // مزامنة بقية الواجهة (الأزرار/المؤقتات/السجل/الشارات/نافذة الفوز) بعد اكتمال حركة الطرف الآخر —
+    // بلا لمس مواضع الرموز (skipTokens) لأنها استقرّت بالفعل في نهاية الحركة أعلاه؛ ونستخدم أحدث حالة
+    // معروفة للغرفة (قد تكون وصلت عبر تحديث قاعدة البيانات أثناء الحركة، أو تبقى كما هي إن لم تصل بعد)
+    if(currentRoom) renderRoom(currentRoom, {skipTokens:true});
   }
 }
 
@@ -1377,6 +1387,7 @@ async function rollDice(forRole, isAuto=false){
     const { data: refreshed } = await sb.from('rooms').select('*').eq('code', session.code).single();
     if(refreshed) renderRoom(refreshed);
     animating = false;
+    if(refreshed) syncTurnControls(refreshed);
     return;
   }
 
@@ -1384,6 +1395,7 @@ async function rollDice(forRole, isAuto=false){
     // تغيّرت الحالة لدى طرف آخر قبل وصول طلبنا (تعارض rev طبيعي) — لا رسم متحرك بدأ بعد، فلا قفزة تُرى
     renderRoom(result.out_room);
     animating = false;
+    syncTurnControls(result.out_room);
     return;
   }
 
@@ -1393,6 +1405,7 @@ async function rollDice(forRole, isAuto=false){
     renderRoom(room);
     bumpGlobalCounter(); scheduleRoomCleanup(session.code);
     animating = false;
+    syncTurnControls(room);
     return;
   }
 
@@ -1449,6 +1462,7 @@ async function rollDice(forRole, isAuto=false){
   renderRoom(room, {skipTokens:true});
   if(room.status==='finished') scheduleRoomCleanup(session.code);
   animating = false;
+  syncTurnControls(room); // renderRoom أعلاه نُفِّذت وanimating لا يزال true (رمية دور إضافي مثلًا) — نعيد فحص الزر/المؤقت الآن بعد ضبطه false فعليًا
 }
 async function animateStep(role, from, to){
   const el = document.getElementById(role==='p1'?'tokenP1':'tokenP2');
@@ -1505,6 +1519,28 @@ async function pollMissedMessages(){
 }
 
 /* ====== دمج آمن لحمولة التحديث اللحظي ====== */
+/* ====== حاجز تأجيل قصير لتحديثات قاعدة البيانات اللحظية: عندما يصل تحديث "إصدار" (rev) جديد
+   عبر postgres_changes قبل وصول بثّ حركة الرمز (move_plan) الموافق له للطرف الآخر (سباق توقيت
+   طبيعي بين قناتين منفصلتين)، كنا نرسم الرمز فورًا في مكانه النهائي مباشرة، ثم عندما يصل البثّ
+   لاحقًا يُعيد playRemoteMovePlan تشغيل نفس الحركة من البداية (من الموضع القديم) فوق الرمز الذي
+   استقرّ بالفعل — فيظهر وكأنه "يطفر لمكانه ثم يعود إليه درجة درجة". الحل: نمنح البثّ مهلة قصيرة
+   (350ms) ليبدأ الحركة أولًا (فتتولى renderRoom تجاهل قفز الرمز بفضل remoteAnimating كالمعتاد)،
+   وإن لم يصل خلالها (رسالة بث مفقودة/شبكة بطيئة) نعرض الحالة النهائية مباشرة بدل تجميد اللعبة. ====== */
+let pendingRoomToRender = null;
+let pendingRenderTimer = null;
+function cancelPendingRender(){
+  if(pendingRenderTimer){ clearTimeout(pendingRenderTimer); pendingRenderTimer = null; }
+  pendingRoomToRender = null;
+}
+function scheduleDeferredRender(room){
+  pendingRoomToRender = room;
+  clearTimeout(pendingRenderTimer);
+  pendingRenderTimer = setTimeout(()=>{
+    pendingRenderTimer = null;
+    if(pendingRoomToRender){ const r=pendingRoomToRender; pendingRoomToRender=null; renderRoom(r); }
+  }, 350);
+}
+
 function mergeRoomPayload(incoming, prev){
   if(!prev) return incoming;
   const merged = { ...incoming };
@@ -1520,7 +1556,19 @@ function subscribeToRoom(code){
   realtimeChannel = sb.channel('room-changes-'+code)
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'rooms', filter:`code=eq.${code}` }, (payload)=>{
       const room = mergeRoomPayload(payload.new, currentRoom);
-      if(!animating) renderRoom(room); else currentRoom = room;
+      const isNewMove = currentRoom && room.rev !== currentRoom.rev;
+      const anyRemoteAnimating = remoteAnimating.p1 || remoteAnimating.p2;
+      if(animating || anyRemoteAnimating){
+        // حركة جارية بالفعل (رمّينا نحن، أو حركة الطرف الآخر قيد التشغيل بالفعل) — لا نتدخّل الآن
+        currentRoom = room;
+      } else if(isNewMove && room.status==='playing'){
+        // إصدار جديد ولم تبدأ أي حركة له بعد — قد يكون بثّ move_plan في طريقه، نمهله فرصة قصيرة أولًا
+        currentRoom = room;
+        scheduleDeferredRender(room);
+      } else {
+        cancelPendingRender();
+        renderRoom(room);
+      }
     })
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'messages', filter:`room_code=eq.${code}` }, (payload)=> handleIncomingMessage(payload.new))
     .subscribe((status)=>{ setRtStatus(status==='SUBSCRIBED'); });
@@ -1530,7 +1578,7 @@ function subscribeToRoom(code){
     if(!session.code) return;
     try{
       const { data:room } = await sb.from('rooms').select('*').eq('code', session.code).single();
-      if(room && !animating && (!currentRoom || currentRoom.rev !== room.rev || currentRoom.status !== room.status)){
+      if(room && !animating && !remoteAnimating.p1 && !remoteAnimating.p2 && (!currentRoom || currentRoom.rev !== room.rev || currentRoom.status !== room.status)){
         renderRoom(room);
       }
     }catch(e){}
@@ -1543,7 +1591,7 @@ async function refreshRoomNow(){
   if(!session.code) return;
   try{
     const { data:room } = await sb.from('rooms').select('*').eq('code', session.code).single();
-    if(room && !animating) renderRoom(room);
+    if(room && !animating && !remoteAnimating.p1 && !remoteAnimating.p2) renderRoom(room);
   }catch(e){}
   pollMissedMessages();
 }
@@ -1618,6 +1666,7 @@ function leaveRoom(){
   remoteShuffleTimers.p1 = null; remoteShuffleTimers.p2 = null;
   remoteShuffleSafety.p1 = null; remoteShuffleSafety.p2 = null;
   remoteAnimating.p1 = false; remoteAnimating.p2 = false;
+  cancelPendingRender();
   session.code=null; session.role=null; currentRoom=null;
   lastMessageId = 0; seenMessageIds.clear(); lastTurnKey = null;
   chatHistory = [];
@@ -1914,16 +1963,12 @@ document.getElementById('btnLeave').addEventListener('click', async ()=>{
 async function handleLeaveAsLoss(){
   if(session.role!=='p1' && session.role!=='p2') return;
   if(session.code && currentRoom && currentRoom.status==='playing' && session.role){
-    const oppRole = session.role==='p1' ? 'p2' : 'p1';
     const oppName = session.role==='p1' ? currentRoom.p2_name : currentRoom.p1_name;
-    const myName  = session.role==='p1' ? currentRoom.p1_name : currentRoom.p2_name;
+    // لا نشترط أي رقم rev هنا (خلافًا للرمي العادي) — المغادرة يجب أن تنجح دومًا حتى لو تغيّرت
+    // حالة الغرفة للتو (كأن يرمي الخصم النرد في نفس اللحظة)، وإلا تُسجَّل خسارة محليًا للمغادر
+    // دون أن تصل حالة "انتهت الجولة" لجهاز الخصم إطلاقًا، فلا يظهر له أي إشعار فوز.
     try{
-      await sb.from('rooms').update({
-        status:'finished',
-        winner: oppRole,
-        log:[...(currentRoom.log||[]), `🚪 ${myName} غادر الجولة — الفوز لـ ${oppName}`].slice(-40),
-        rev:(currentRoom.rev||0)+1
-      }).eq('code', session.code).eq('rev', currentRoom.rev);
+      await sb.rpc('leave_room_as_loss', { p_code: session.code, p_role: session.role });
     }catch(e){}
     saveHistoryEntry({
       date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
@@ -1943,15 +1988,9 @@ async function endCurrentSessionAsLeave(code){
     const myRole = room.p1_user_id===myId ? 'p1' : (room.p2_user_id===myId ? 'p2' : null);
     if(!myRole) return; // لم يكن لاعبًا فيها (كان مشاهدًا مثلًا) — لا حاجة لأي إجراء
     if(room.status==='playing'){
-      const oppRole = myRole==='p1' ? 'p2' : 'p1';
       const oppName = myRole==='p1' ? room.p2_name : room.p1_name;
-      const myName  = myRole==='p1' ? room.p1_name : room.p2_name;
       try{
-        await sb.from('rooms').update({
-          status:'finished', winner:oppRole,
-          log:[...(room.log||[]), `🚪 ${myName} غادر الجولة — الفوز لـ ${oppName}`].slice(-40),
-          rev:(room.rev||0)+1
-        }).eq('code', code).eq('rev', room.rev);
+        await sb.rpc('leave_room_as_loss', { p_code: code, p_role: myRole });
       }catch(e){}
       saveHistoryEntry({
         date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
