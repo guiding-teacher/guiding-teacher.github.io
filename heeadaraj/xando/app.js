@@ -942,25 +942,36 @@ async function autoPlayForRole(forRole){
 
 /* ====== مؤقّت دوري شخصي: حركة تلقائية إذا لم ألعب خلال 15 ثانية ====== */
 let autoMoveTimer = null, autoMoveCountdownInterval = null;
-function clearAutoMoveTimer(){
+
+ function clearAutoMoveTimer(){
   clearTimeout(autoMoveTimer); autoMoveTimer = null;
   clearInterval(autoMoveCountdownInterval); autoMoveCountdownInterval = null;
-  const badge = document.getElementById('turnCountdown');
-  if(badge) badge.textContent = '';
+
+  const bubble = document.getElementById('timerBubble');
+  if(bubble) bubble.classList.remove('visible');
 }
-function armAutoMoveTimer(){
+
+ function armAutoMoveTimer(){
   clearAutoMoveTimer();
   if(gameState.mode !== GAME_MODES.ONLINE || gameState.status !== 'playing') return;
   if(session.role !== 'p1' && session.role !== 'p2') return;
   if(gameState.turn !== session.roleSymbol) return;
+
   let remaining = TURN_TIME_LIMIT;
-  const badge = document.getElementById('turnCountdown');
-  if(badge) badge.textContent = `⏳ ${remaining}`;
+  const bubble = document.getElementById('timerBubble');
+  const numberEl = document.getElementById('timerNumber');
+
+  if(bubble) bubble.classList.add('visible');
+  if(numberEl) numberEl.textContent = remaining;
+  tickSound();
+
   autoMoveCountdownInterval = setInterval(()=>{
     remaining--;
-    if(badge) badge.textContent = remaining>0 ? `⏳ ${remaining}` : '';
-    if(remaining<=0) clearInterval(autoMoveCountdownInterval);
+    if(numberEl) numberEl.textContent = remaining > 0 ? remaining : 0;
+    if(remaining > 0) tickSound();
+    if(remaining <= 0) clearInterval(autoMoveCountdownInterval);
   }, 1000);
+
   autoMoveTimer = setTimeout(()=>{
     autoMoveTimer = null;
     if(currentRoom && currentRoom.status==='playing' && gameState.turn===session.roleSymbol){
@@ -1819,5 +1830,28 @@ async function boot(){
     showScreen('home'); loadGlobalCounter();
   }
 }
+
+function tickSound(){
+  if(!soundOn) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    // "تك" عالية
+    const o1 = actx.createOscillator(), g1 = actx.createGain();
+    o1.type = 'sine'; o1.frequency.value = 880; g1.gain.value = 0.1;
+    o1.connect(g1); g1.connect(actx.destination); o1.start();
+    g1.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.05);
+    o1.stop(actx.currentTime + 0.05);
+    // "تك" ثانية أخفض بعد 120ms
+    setTimeout(()=>{
+      const o2 = actx.createOscillator(), g2 = actx.createGain();
+      o2.type = 'sine'; o2.frequency.value = 700; g2.gain.value = 0.08;
+      o2.connect(g2); g2.connect(actx.destination); o2.start();
+      g2.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.05);
+      o2.stop(actx.currentTime + 0.05);
+    }, 120);
+  }catch(e){}
+}
+
+
 
 boot();
