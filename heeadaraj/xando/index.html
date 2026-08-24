@@ -442,5 +442,37 @@
 <canvas id="confetti"></canvas>
 
 <script src="app.js"></script>
+
+<!-- ===== جسر إبلاغ الصفحة الأم (نخلة وسفورة) بحالة الجولة ===== -->
+<script>
+(function(){
+  function isVisible(el){
+    if(!el) return false;
+    var cs = getComputedStyle(el);
+    if(cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+  var target = document.getElementById('screen-game');
+  if(!target) return;
+  var last = null;
+  function report(){
+    var v = isVisible(target);
+    if(v !== last){
+      last = v;
+      try{ window.parent.postMessage({source:'gameBridge', type:'roundState', active: v}, '*'); }catch(e){}
+    }
+  }
+  // يراقب أي تغيير في الصفحة كلها (style/class) لأننا لا نعرف مسبقًا
+  // أي عنصر بالضبط يتحكم بإخفاء/إظهار #screen-game داخل app.js
+  var mo = new MutationObserver(report);
+  mo.observe(document.body, {attributes:true, attributeFilter:['style','class'], subtree:true, childList:true});
+  window.addEventListener('load', report);
+  document.addEventListener('DOMContentLoaded', report);
+  report();
+  // شبكة أمان احتياطية في حال فاتت الملاحظة تغييرًا (مثلاً تأخر تحميل)
+  setInterval(report, 400);
+})();
+</script>
 </body>
 </html>
