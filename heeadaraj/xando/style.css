@@ -20,9 +20,7 @@ body{
   display:flex;flex-direction:column;align-items:center;padding:16px 12px 90px;
   overflow-x:hidden;position:relative;
 }
-#boardInfoBar{
-  display: none;
-}
+
 .aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
 .aurora i{position:absolute;border-radius:50%;filter:blur(46px);opacity:.35;animation:drift 22s ease-in-out infinite;}
 .aurora i:nth-child(1){width:280px;height:280px;background:var(--coral);top:-60px;right:-40px;}
@@ -445,7 +443,7 @@ body.is-spectator .spectator-badge{display:flex;}
   .side-panel .avatar-big{grid-area:avatar;width:46px;height:46px;font-size:16px;border-width:2px;}
   .side-panel .info-col{grid-area:info;align-items:flex-start;text-align:right;}
   .side-panel .p-name{font-size:13px;justify-content:flex-start;}
-  .side-panel .p-pos{font-size:11px;}
+  .side-panel .p-pos{font-size:12px; width: }
   .side-panel .role-tag{font-size:8.5px;padding:1px 6px;}
   .side-stats{grid-area:stats;flex-direction:column;gap:4px;}
   .stat-box{padding:3px 8px;font-size:10px;}
@@ -458,7 +456,8 @@ body.is-spectator .spectator-badge{display:flex;}
   .tb-link-input{font-size:10px;}
   .tb-copy-btn{padding:3px 6px;font-size:10px;}
   .spectator-toast{top:20px;font-size:12px;padding:6px 14px;}
-  .board-info-bar{font-size:11px;padding:4px 12px;}
+  .board-info-bar{font-size:10px;padding:4px 30px;flex-wrap:wrap;gap:6px;}
+.turn-countdown{font-size:10px;min-width:auto;}
   .game-controls{gap:6px;}
   .ctrl-btn{padding:6px 10px;font-size:11px;}
   .turn-bubble{font-size:12px;padding:6px 14px;top:6px;}
