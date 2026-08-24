@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حية وسلم — نُصقل اللوح الآن</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-1:#0B1E33; --sky-2:#123B57; --sky-3:#0F5C57;
+    --cell-a:#FFF4D6; --cell-b:#BFE8E0;
+    --wood:#E2A65B; --wood-dark:#B9803A;
+    --snake-a:#4CB37A; --snake-b:#1E6B4A;
+    --coral:#FF6F59; --coral-dark:#E5543E;
+    --paper:#FFFBF2;
+    --p1:#E5484D; --gold:#F2B705;
+    --glass:rgba(255,255,255,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    min-height:100vh; min-height:100dvh; font-family:'Cairo',sans-serif; color:var(--paper);
+    background:
+      radial-gradient(900px 520px at 14% -6%, rgba(255,111,89,.20), transparent 60%),
+      radial-gradient(1000px 640px at 90% 6%, rgba(47,125,225,.16), transparent 55%),
+      radial-gradient(700px 480px at 50% 108%, rgba(242,183,5,.14), transparent 60%),
+      linear-gradient(180deg, var(--sky-1), var(--sky-2) 55%, var(--sky-3));
+    display:flex; align-items:center; justify-content:center;
+    padding:28px 18px; overflow:hidden; position:relative;
+  }
+
+  /* توهّج خلفي متحرك بهدوء، كخلفية اللعبة الأصلية */
+  .aurora{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;}
+  .aurora i{position:absolute; border-radius:50%; filter:blur(50px); opacity:.30; animation:drift 24s ease-in-out infinite;}
+  .aurora i:nth-child(1){width:300px; height:300px; background:var(--coral); top:-70px; right:-50px;}
+  .aurora i:nth-child(2){width:240px; height:240px; background:#2F7DE1; bottom:-40px; left:-60px; animation-duration:29s; animation-delay:-6s;}
+  .aurora i:nth-child(3){width:190px; height:190px; background:var(--gold); top:44%; left:46%; animation-duration:27s; animation-delay:-13s;}
+  @keyframes drift{0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(28px,-22px) scale(1.1);}}
+
+  .card{
+    position:relative; z-index:1; width:100%; max-width:620px;
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;
+  }
+
+  .badge{
+    display:inline-flex; align-items:center; gap:8px; padding:7px 16px; border-radius:999px;
+    background:var(--glass); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.18);
+    font-weight:700; font-size:13px; letter-spacing:.2px; color:#eef; margin-bottom:18px;
+  }
+  .badge .dot{width:7px; height:7px; border-radius:50%; background:var(--gold); box-shadow:0 0 10px var(--gold); animation:pulse 1.8s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+
+  h1{
+    font-family:'Baloo Bhaijaan 2', 'Cairo', sans-serif; font-weight:800;
+    font-size:clamp(26px, 5.4vw, 42px); line-height:1.25;
+    text-shadow:0 4px 0 rgba(0,0,0,.28);
+    background:linear-gradient(180deg, #FFFDF8, #FFE9C7 70%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    margin-bottom:10px;
+  }
+
+  p.lead{
+    font-size:clamp(14.5px, 2.4vw, 17px); font-weight:600; color:rgba(255,251,242,.86);
+    max-width:480px; line-height:1.9; margin-bottom:26px;
+  }
+
+  /* ===== مشهد اللوح: خلايا صاعدة + سلّم يتسلّقه القرص + أفعى نائمة ===== */
+  .scene-wrap{
+    width:100%; max-width:540px; margin-bottom:30px; padding:22px 18px 14px;
+    border-radius:26px; background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(10px);
+    box-shadow:0 22px 44px rgba(4,14,22,.45), inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  .scene-wrap svg{width:100%; height:auto; display:block; overflow:visible;}
+
+  .cell-num{font-family:'Cairo',sans-serif; font-weight:800; font-size:13px; fill:rgba(22,35,43,.55);}
+  .zzz{font-family:'Baloo Bhaijaan 2', sans-serif; font-weight:700; fill:rgba(255,251,242,.85);}
+
+  .snake-sway{transform-origin:474px 145px; animation:sway 4.2s ease-in-out infinite;}
+  @keyframes sway{0%,100%{transform:rotate(-2.5deg);} 50%{transform:rotate(2.5deg);}}
+
+  .token{transform-box:fill-box; transform-origin:center; animation:tokenPulse 5.6s steps(9) infinite;}
+  @keyframes tokenPulse{
+    0%,9%,18%,27%,36%,45%,54%,63%{transform:scale(1);}
+    4%,13%,22%,31%,40%,49%,58%,67%{transform:scale(1.18,.82);}
+    72%,100%{transform:scale(1);}
+  }
+  .token-shadow{transform-box:fill-box; transform-origin:center; animation:shadowPulse 5.6s steps(9) infinite;}
+  @keyframes shadowPulse{
+    0%,9%,18%,27%,36%,45%,54%,63%{opacity:.35; transform:scale(1);}
+    4%,13%,22%,31%,40%,49%,58%,67%{opacity:.15; transform:scale(1.5,.6);}
+    72%,100%{opacity:.35; transform:scale(1);}
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .token-motion{ animation:none; }
+    .zzz-1{animation:floatZ 2.6s ease-in-out infinite;}
+    .zzz-2{animation:floatZ 2.6s ease-in-out .5s infinite;}
+    .zzz-3{animation:floatZ 2.6s ease-in-out 1s infinite;}
+  }
+  @keyframes floatZ{
+    0%{opacity:0; transform:translateY(0);}
+    15%{opacity:1;}
+    80%{opacity:0; transform:translateY(-14px);}
+    100%{opacity:0;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .aurora i{animation:none;}
+    .badge .dot{animation:none;}
+    .snake-sway{animation:none;}
+    .token{animation:none;}
+    .token-shadow{animation:none;}
+  }
+
+  .actions{display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center;}
+  .btn{
+    appearance:none; border:none; cursor:pointer; font-family:'Cairo',sans-serif; font-weight:800; font-size:15px;
+    padding:13px 28px; border-radius:14px; display:inline-flex; align-items:center; gap:9px;
+    background:linear-gradient(180deg, #FFD65C, var(--gold));
+    color:#3A2600; box-shadow:0 10px 22px rgba(242,183,5,.28), inset 0 -3px 0 rgba(0,0,0,.14);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn:active{transform:translateY(0);}
+  .btn:focus-visible{outline:3px solid #fff; outline-offset:3px;}
+
+  footer{margin-top:30px; font-size:12.5px; font-weight:600; color:rgba(255,251,242,.55);}
+</style>
+</head>
+<body>
+
+  <div class="aurora"><i></i><i></i><i></i></div>
+
+  <main class="card">
+    <span class="badge"><span class="dot"></span> حية وسلم</span>
+
+    <h1>الأفعى نائمة، والسلالم تُصقَل ✨</h1>
+    <p class="lead">نجري الآن بعض التحسينات على اللعبة لنعيدها إليكم بأداء أفضل. الطاولة لن تتأخر طويلًا — عودوا خلال قليل وستجدون كل شيء جاهزًا للعب.</p>
+
+    <div class="scene-wrap">
+      <svg viewBox="0 0 560 250" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="لوح لعبة حية وسلم، قرص يقفز درجة درجة على سلّم خشبي ثم يتزحلق للأسفل، وأفعى خضراء نائمة بجانبه">
+        <defs>
+          <radialGradient id="stageGlow" cx="45%" cy="35%" r="70%">
+            <stop offset="0%" stop-color="rgba(242,183,5,.20)"/>
+            <stop offset="100%" stop-color="rgba(242,183,5,0)"/>
+          </radialGradient>
+          <radialGradient id="tokenGrad" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FF8A7A"/>
+            <stop offset="100%" stop-color="var(--p1)"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="560" height="250" fill="url(#stageGlow)"/>
+        <g>
+          <rect x="24"  y="184" width="66" height="46" rx="10" fill="var(--cell-a)"/>
+          <text x="36" y="203" class="cell-num">١</text>
+
+          <rect x="112" y="150" width="66" height="46" rx="10" fill="var(--cell-b)"/>
+          <text x="124" y="169" class="cell-num">٢</text>
+
+          <rect x="200" y="116" width="66" height="46" rx="10" fill="var(--cell-a)"/>
+          <text x="212" y="135" class="cell-num">٣</text>
+
+          <rect x="288" y="82"  width="66" height="46" rx="10" fill="var(--cell-b)"/>
+          <text x="300" y="101" class="cell-num">٤</text>
+
+          <rect x="376" y="48"  width="70" height="46" rx="10" fill="var(--cell-a)"/>
+          <text x="388" y="67" class="cell-num">5</text>
+        </g>
+
+        <!-- السلّم -->
+        <g stroke="var(--wood-dark)" stroke-width="7" stroke-linecap="round">
+          <line x1="70"  y1="222" x2="404" y2="60"/>
+          <line x1="96"  y1="222" x2="430" y2="60"/>
+        </g>
+        <g stroke="var(--wood)" stroke-width="5" stroke-linecap="round">
+          <line x1="103.4" y1="205.8" x2="129.4" y2="205.8"/>
+          <line x1="143.5" y1="186.4" x2="169.5" y2="186.4"/>
+          <line x1="183.6" y1="166.9" x2="209.6" y2="166.9"/>
+          <line x1="223.6" y1="147.5" x2="249.6" y2="147.5"/>
+          <line x1="263.7" y1="128.0" x2="289.7" y2="128.0"/>
+          <line x1="303.8" y1="108.6" x2="329.8" y2="108.6"/>
+          <line x1="343.9" y1="89.2"  x2="369.9" y2="89.2"/>
+        </g>
+
+        <!-- الأفعى النائمة -->
+        <g class="snake-sway">
+          <path d="M470 218 C 452 284, 452 152, 472 142 C 492 132, 494 110, 458 100"
+                fill="none" stroke="var(--snake-b)" stroke-width="50" stroke-linecap="round"/>
+          <path d="M470 190 C 452 176, 452 152, 472 142 C 492 132, 494 110, 476 100"
+                fill="none" stroke="var(--snake-a)" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="474" cy="97" r="13" fill="var(--snake-b)"/>
+          <line x1="468" y1="94" x2="474" y2="97" class="snake-eye" stroke="#16232B" stroke-width="2.4" stroke-linecap="round"/>
+          <line x1="474" y1="97" x2="480" y2="94" class="snake-eye" stroke="#16232B" stroke-width="2.4" stroke-linecap="round"/>
+          <text x="486" y="76"  class="zzz zzz-1" font-size="15">z</text>
+          <text x="498" y="60"  class="zzz zzz-2" font-size="12">z</text>
+          <text x="507" y="48"  class="zzz zzz-3" font-size="9">z</text>
+        </g>
+
+        <!-- مسار القفز (مخفي، يُستخدم لتحريك القرص وظلّه) -->
+        <path id="hopPath" fill="none" opacity="0"
+          d="M 83,222 Q 99.7,199.9 116.4,205.8 Q 136.4,182.1 156.5,186.4 Q 176.6,162.7 196.6,166.9 Q 216.6,143.2 236.6,147.5 Q 256.6,123.8 276.7,128.0 Q 296.8,104.3 316.8,108.6 Q 336.9,84.9 356.9,89.2 Q 373.6,67.1 390.3,73.0 Q 236.65,202.5 83,222"/>
+
+        <!-- آثار هبوط خفيفة عند كل درجة -->
+        <g fill="rgba(22,35,43,.16)">
+          <ellipse cx="116.4" cy="209" rx="9" ry="3"/>
+          <ellipse cx="156.5" cy="189.6" rx="9" ry="3"/>
+          <ellipse cx="196.6" cy="170.1" rx="9" ry="3"/>
+          <ellipse cx="236.6" cy="150.7" rx="9" ry="3"/>
+          <ellipse cx="276.7" cy="131.2" rx="9" ry="3"/>
+          <ellipse cx="316.8" cy="111.8" rx="9" ry="3"/>
+          <ellipse cx="356.9" cy="92.4"  rx="9" ry="3"/>
+        </g>
+
+        <!-- ظل القرص، يتبع نفس مسار القفز بإزاحة بسيطة للأسفل -->
+        <ellipse rx="12" ry="4" fill="rgba(6,14,20,.35)" class="token-shadow">
+          <animateMotion dur="5.6s" repeatCount="indefinite" rotate="0">
+            <mpath href="#hopPath" xlink:href="#hopPath"/>
+          </animateMotion>
+        </ellipse>
+
+        <!-- القرص المتسلّق -->
+        <g class="token">
+          <circle r="13" fill="url(#tokenGrad)" stroke="#7A1F1F" stroke-width="2"/>
+          <circle r="5.6" cx="-4" cy="-4" fill="rgba(255,255,255,.55)"/>
+          <animateMotion dur="5.8s" repeatCount="indefinite" keyPoints="0;0.051;0.113;0.175;0.236;0.298;0.360;0.422;0.473;1"
+            keyTimes="0;0.09;0.18;0.27;0.36;0.45;0.54;0.63;0.72;1" calcMode="linear">
+            <mpath href="#hopPath" xlink:href="#hopPath"/>
+          </animateMotion>
+        </g>
+      </svg>
+    </div>
+
+    <div class="actions">
+      <button class="btn" onclick="location.reload()">🔄 تحديث الصفحة</button>
+    </div>
+
+    <footer>شكرًا لصبركم — نراكم عند الطاولة قريبًا 🎲</footer>
+  </main>
+
+  <script>
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('svg').forEach(svg => { try { svg.pauseAnimations(); } catch(e){} });
+    }
+  </script>
+</body>
+</html>
