@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎨 عالم الألعاب الكرتوني</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Baloo+Bhaijaan+2:wght@600;700;800&family=Changa:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-1:#4FC3F7; --sky-2:#81D4FA; --sky-3:#B3E5FC;
+    --grass-1:#66BB6A; --grass-2:#43A047; --grass-3:#2E7D32;
+    --sun:#FFEB3B; --sun-glow:#FFF176;
+    --cloud:#FFFFFF;
+    --ink:#3E2723;
+    --paper:#FFFDE7;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%; overflow:hidden;}
+
+  body{
+    font-family:'Changa','Cairo',sans-serif;
+    background:linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 35%, var(--sky-3) 60%, var(--grass-1) 60%, var(--grass-2) 80%, var(--grass-3) 100%);
+    color:var(--ink);
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* ===== مشهد كرتوني مرسوم ===== */
+  .scene{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    overflow:hidden;
+  }
+
+  /* شمس كرتونية مع وجه */
+  .sun{
+    position:absolute; top:25px; left:25px;
+    width:85px; height:85px;
+    background:var(--sun);
+    border-radius:50%;
+    border:4px solid var(--ink);
+    box-shadow:
+      0 0 0 10px var(--sun-glow),
+      0 0 0 14px rgba(255,235,59,.3);
+    animation:sunPulse 3s ease-in-out infinite;
+    z-index:1;
+  }
+  .sun-face{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-size:32px;
+  }
+  .sun-rays{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:130px; height:130px;
+    animation:sunSpin 20s linear infinite;
+  }
+  .sun-ray{
+    position:absolute; width:6px; height:16px;
+    background:var(--sun); border:3px solid var(--ink); border-radius:3px;
+    left:50%; top:0; transform-origin:50% 65px;
+  }
+  @keyframes sunPulse{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.1);}
+  }
+  @keyframes sunSpin{
+    from{transform:translate(-50%,-50%) rotate(0deg);}
+    to{transform:translate(-50%,-50%) rotate(360deg);}
+  }
+
+  /* غيوم كرتونية */
+  .cloud{
+    position:absolute; background:var(--cloud);
+    border:3px solid var(--ink); border-radius:50px;
+    animation:cloudFloat ease-in-out infinite;
+    z-index:1;
+  }
+  .cloud::before,.cloud::after{
+    content:''; position:absolute; background:var(--cloud);
+    border:3px solid var(--ink); border-radius:50%;
+  }
+  .cloud-1{width:110px;height:42px;top:50px;right:0%;animation-duration:18s;}
+  .cloud-1::before{width:55px;height:55px;top:-30px;left:15px;border-bottom:none;}
+  .cloud-1::after{width:45px;height:45px;top:-22px;right:18px;border-bottom:none;}
+  .cloud-2{width:90px;height:38px;top:130px;right:12%;animation-duration:22s;animation-delay:-6s;}
+  .cloud-2::before{width:48px;height:48px;top:-26px;left:12px;border-bottom:none;}
+  .cloud-2::after{width:38px;height:38px;top:-20px;right:14px;border-bottom:none;}
+  .cloud-3{width:130px;height:48px;top:100px;right:31%;animation-duration:16s;animation-delay:-12s;}
+  .cloud-3::before{width:65px;height:65px;top:-38px;left:22px;border-bottom:none;}
+  .cloud-3::after{width:55px;height:55px;top:-30px;right:22px;border-bottom:none;}
+
+  @keyframes cloudFloat{
+    0%,100%{transform:translateX(0);}
+    50%{transform:translateX(-25px);}
+  }
+
+  /* طيور */
+  .bird{
+    position:absolute; z-index:2; pointer-events:none;
+    font-size:22px; opacity:.7;
+    animation:birdFly linear infinite;
+  }
+  .bird-1{top:12%;animation-duration:14s;}
+  .bird-2{top:22%;animation-duration:17s;animation-delay:-7s;}
+  .bird-3{top:18%;animation-duration:20s;animation-delay:-3s;}
+  @keyframes birdFly{
+    0%{left:-8%; transform:translateY(0) scaleX(1);}
+    45%{transform:translateY(-12px) scaleX(1);}
+    50%{transform:translateY(5px) scaleX(-1);}
+    95%{transform:translateY(-8px) scaleX(-1);}
+    100%{left:108%; transform:translateY(0) scaleX(-1);}
+  }
+
+  /* تلال */
+  .hill{
+    position:absolute; bottom:38%;
+    border-radius:50% 50% 0 0;
+    border:3px solid var(--ink); border-bottom:none;
+    z-index:1;
+  }
+  .hill-1{width:220px;height:90px;left:-40px;background:#8BC34A;}
+  .hill-2{width:280px;height:110px;right:-50px;background:#7CB342;}
+  .hill-3{width:200px;height:80px;left:28%;background:#9CCC65;}
+
+  /* أشجار كرتونية */
+  .tree{
+    position:absolute; bottom:38%; z-index:2;
+  }
+  .tree-trunk{
+    width:12px; height:35px; background:#795548;
+    border:2px solid var(--ink); border-radius:3px;
+    margin:0 auto;
+  }
+  .tree-leaves{
+    width:55px; height:55px; background:#4CAF50;
+    border:3px solid var(--ink); border-radius:50%;
+    margin-bottom:-12px; position:relative;
+  }
+  .tree-leaves::before{
+    content:''; position:absolute;
+    width:38px; height:38px; background:#66BB6A;
+    border:2px solid var(--ink); border-radius:50%;
+    top:-18px; left:6px;
+  }
+  .tree-leaves::after{
+    content:''; position:absolute;
+    width:28px; height:28px; background:#81C784;
+    border:2px solid var(--ink); border-radius:50%;
+    top:-8px; right:-5px;
+  }
+  .tree-1{left:6%; transform:scale(1);}
+  .tree-2{right:10%; transform:scale(.9);}
+  .tree-3{left:52%; transform:scale(.75);}
+  .tree-4{left:75%; transform:scale(.6);}
+
+  /* زهور */
+  .flower{
+    position:absolute; bottom:38%; z-index:2;
+    font-size:20px;
+    animation:flowerSway 2.5s ease-in-out infinite;
+  }
+  .flower:nth-of-type(1){left:18%;animation-delay:0s;}
+  .flower:nth-of-type(2){left:38%;animation-delay:.4s;}
+  .flower:nth-of-type(3){left:58%;animation-delay:.8s;}
+  .flower:nth-of-type(4){left:78%;animation-delay:1.2s;}
+  .flower:nth-of-type(5){left:88%;animation-delay:1.6s;}
+  @keyframes flowerSway{
+    0%,100%{transform:rotate(-6deg);}
+    50%{transform:rotate(6deg);}
+  }
+
+  /* فراشات */
+  .butterfly{
+    position:absolute; z-index:3; pointer-events:none;
+    font-size:18px;
+    animation:butterflyFly 8s ease-in-out infinite;
+  }
+  .bf-1{top:45%;left:20%;animation-delay:0s;}
+  .bf-2{top:50%;left:60%;animation-delay:3s;}
+  @keyframes butterflyFly{
+    0%,100%{transform:translate(0,0) scaleX(1);}
+    25%{transform:translate(30px,-20px) scaleX(1);}
+    50%{transform:translate(60px,0) scaleX(-1);}
+    75%{transform:translate(30px,20px) scaleX(-1);}
+  }
+
+  /* ===== الشعار ===== */
+  .hero-header{
+    position:relative; z-index:10;
+    text-align:center; padding:12px 10px 4px;
+    margin-top: 45%;
+  }
+  .title-sign{
+    display:inline-block;
+    background:var(--paper);
+    border:4px solid var(--ink);
+    border-radius:24px;
+    padding:10px 28px;
+    box-shadow:5px 5px 0 var(--ink), 0 8px 20px rgba(0,0,0,.15);
+    transform:rotate(-1.5deg);
+    animation:signWiggle 2.5s ease-in-out infinite;
+    position:relative;
+  }
+  .title-sign::before{
+    content:''; position:absolute;
+    top:-12px; left:20px;
+    width:8px; height:16px; background:#8D6E63;
+    border:2px solid var(--ink); border-radius:2px;
+    box-shadow:60px 0 0 -2px #8D6E63, 60px 0 0 0 var(--ink);
+  }
+  @keyframes signWiggle{
+    0%,100%{transform:rotate(-1.5deg) translateY(0);}
+    50%{transform:rotate(1.5deg) translateY(-3px);}
+  }
+  .hero-title{
+    font-family:'Baloo Bhaijaan 2','Changa',sans-serif;
+    font-size:clamp(22px, 5.5vw, 40px);
+    font-weight:800;
+    color:var(--ink);
+    text-shadow:2px 2px 0 rgba(0,0,0,.08);
+    line-height:1.2;
+  }
+  .hero-subtitle{
+    font-size:clamp(11px, 2.8vw, 15px);
+    color:var(--ink);
+    margin-top:10px;
+    font-weight:600;
+    background:rgba(255,255,255,.85);
+    display:inline-block;
+    padding:5px 18px;
+    border-radius:20px;
+    border:2px solid var(--ink);
+    box-shadow:2px 2px 0 rgba(0,0,0,.1);
+  }
+
+  /* ===== شبكة الألعاب ===== */
+  .games-grid{
+    position:relative; z-index:10;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:clamp(10px, 2.5vw, 20px);
+    padding:8px 14px 15px;
+    max-width:680px;
+    margin:0 auto;
+    margin-top: 10px;
+    height:calc(85% - 125px);
+    overflow-y:auto;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .games-grid::-webkit-scrollbar{display:none;}
+
+  /* ===== بطاقة اللعبة الكرتونية ===== */
+  .game-card{
+    position:relative;
+    border-radius:22px;
+    padding:clamp(12px, 2.5vw, 18px);
+    cursor:pointer;
+    user-select:none;
+    transition:all .2s cubic-bezier(.34,1.56,.64,1);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:clamp(130px, 25vh, 195px);
+    overflow:visible;
+    border:3px solid var(--ink);
+    clip-path:polygon(
+      3% 4%, 18% 1%, 38% 3%, 58% 0%, 78% 2%, 96% 1%, 99% 14%,
+      100% 34%, 98% 54%, 100% 74%, 99% 96%, 84% 99%, 64% 97%,
+      44% 100%, 24% 98%, 4% 99%, 1% 84%, 0% 64%, 2% 44%, 0% 24%
+    );
+  }
+
+  /* ظل كرتوني */
+  .game-card::before{
+    content:''; position:absolute;
+    inset:0;
+    border-radius:22px;
+    background:var(--ink);
+    transform:translate(5px, 5px);
+    z-index:-1;
+    clip-path:polygon(
+      3% 4%, 18% 1%, 38% 3%, 58% 0%, 78% 2%, 96% 1%, 99% 14%,
+      100% 34%, 98% 54%, 100% 74%, 99% 96%, 84% 99%, 64% 97%,
+      44% 100%, 24% 98%, 4% 99%, 1% 84%, 0% 64%, 2% 44%, 0% 24%
+    );
+    transition:transform .2s ease;
+  }
+
+  .game-card .spot{
+    position:absolute; width:10px; height:10px;
+    border-radius:50%; opacity:.2; background:#fff;
+  }
+
+  .card-snl{background:linear-gradient(145deg, #FF5252, #E53935);}
+  .card-maze{background:linear-gradient(145deg, #26C6DA, #00ACC1);}
+  .card-xo{background:linear-gradient(145deg, #42A5F5, #1E88E5);}
+  .card-ludo{background:linear-gradient(145deg, #FFCA28, #FFB300);}
+
+  .game-card:hover{transform:translateY(-5px) scale(1.05);}
+  .game-card:hover::before{transform:translate(7px, 7px);}
+  .game-card:active{transform:translateY(2px) scale(.96);}
+  .game-card:active::before{transform:translate(2px, 2px);}
+
+  .card-icon-wrap{
+    position:relative; z-index:2;
+    width:clamp(60px, 13vw, 85px);
+    height:clamp(60px, 13vw, 85px);
+    background:rgba(255,255,255,.3);
+    border:3px solid var(--ink);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 0 rgba(0,0,0,.15);
+    animation: iconBounce 2.5s ease-in-out infinite;
+  }
+  .card-snl .card-icon-wrap{animation-delay:0s;}
+  .card-maze .card-icon-wrap{animation-delay:.6s;}
+  .card-xo .card-icon-wrap{animation-delay:1.2s;}
+  .card-ludo .card-icon-wrap{animation-delay:1.8s;}
+
+  @keyframes iconBounce{
+    0%,100%{transform:rotate(-3deg) translateY(0);}
+    50%{transform:rotate(3deg) translateY(-5px);}
+  }
+
+  .card-icon{
+    font-size:clamp(30px, 6.5vw, 45px);
+    line-height:1;
+    filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));
+  }
+
+  .card-name{
+    font-family:'Baloo Bhaijaan 2','Changa',sans-serif;
+    font-size:clamp(15px, 3.5vw, 21px);
+    font-weight:800;
+    color:#fff;
+    text-shadow:0 2px 0 rgba(0,0,0,.25), 0 3px 5px rgba(0,0,0,.15);
+    position:relative; z-index:2;
+    text-align:center;
+    line-height:1.2;
+    background:rgba(0,0,0,.12);
+    padding:4px 14px;
+    border-radius:14px;
+    border:2px solid rgba(255,255,255,.35);
+    box-shadow:0 2px 0 rgba(0,0,0,.1);
+  }
+
+  .card-badge{
+    position:absolute; top:-10px; left:-10px;
+    background:#FF1744;
+    color:#fff;
+    font-size:11px; font-weight:800;
+    padding:5px 12px;
+    border-radius:14px;
+    border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+    z-index:5;
+    transform:rotate(-12deg);
+    animation: badgeJump 1.4s ease-in-out infinite;
+  }
+  @keyframes badgeJump{
+    0%,100%{transform:rotate(-12deg) scale(1) translateY(0);}
+    50%{transform:rotate(-8deg) scale(1.12) translateY(-3px);}
+  }
+
+  /* ===== شاشة اللعبة ===== */
+  .game-screen{
+    position:fixed; inset:0; z-index:100;
+    background:linear-gradient(180deg, var(--sky-1), var(--sky-3));
+    display:none; flex-direction:column;
+    animation: screenIn .25s ease-out;
+  }
+  .game-screen.active{display:flex;}
+  @keyframes screenIn{
+    from{opacity:0; transform:scale(.92) translateY(15px);}
+    to{opacity:1; transform:scale(1) translateY(0);}
+  }
+
+  /* شريط اللعبة العلوي - يختفي عند الدخول للجولة */
+  .game-screen-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px;
+    background:var(--paper);
+    border-bottom:3px solid var(--ink);
+    flex-shrink:0;
+    box-shadow:0 4px 0 rgba(0,0,0,.08);
+    transition:all .35s cubic-bezier(.4,0,.2,1);
+    transform:translateY(0);
+    opacity:1;
+  }
+  .game-screen-header.hidden{
+    transform:translateY(-100%);
+    opacity:0;
+    pointer-events:none;
+    height:0; padding:0; border:none; overflow:hidden;
+  }
+
+  .game-screen-title{
+    font-family:'Baloo Bhaijaan 2',sans-serif;
+    font-size:clamp(15px, 4vw, 21px); font-weight:800;
+    display:flex; align-items:center; gap:8px;
+    color:var(--ink);
+  }
+  .back-btn{
+    display:flex; align-items:center; gap:5px;
+    background:#FF5252;
+    color:#fff; border:none;
+    padding:7px 15px; border-radius:14px;
+    font-family:'Cairo',sans-serif; font-size:13px; font-weight:700;
+    cursor:pointer;
+    border:3px solid var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+    transition:all .15s ease;
+  }
+  .back-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .back-btn:active{
+    transform:translateY(1px);
+    box-shadow:1px 1px 0 var(--ink);
+  }
+
+  .game-iframe{
+    flex:1; width:100%; border:none;
+    background:var(--paper);
+    transition:margin-top .35s ease;
+  }
+
+  /* ===== تأثيرات ===== */
+  .sparkle{
+    position:absolute; pointer-events:none;
+    font-size:20px; animation: sparkleAnim .9s ease-out forwards;
+    z-index:50;
+  }
+  @keyframes sparkleAnim{
+    0%{opacity:1; transform:translate(0,0) scale(1) rotate(0deg);}
+    100%{opacity:0; transform:translate(var(--tx), var(--ty)) scale(0) rotate(360deg);}
+  }
+
+  @media(min-width:600px){.games-grid{max-width:580px;}}
+  @media(min-width:900px){.games-grid{grid-template-columns:repeat(4, 1fr); max-width:900px;}}
+
+  *{touch-action:manipulation;}
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<!-- ===== المشهد الكرتوني ===== -->
+<div class="scene">
+  <div class="sun">
+    <div class="sun-face">😊</div>
+    <div class="sun-rays">
+      <div class="sun-ray" style="transform:rotate(0deg)"></div>
+      <div class="sun-ray" style="transform:rotate(45deg)"></div>
+      <div class="sun-ray" style="transform:rotate(90deg)"></div>
+      <div class="sun-ray" style="transform:rotate(135deg)"></div>
+      <div class="sun-ray" style="transform:rotate(180deg)"></div>
+      <div class="sun-ray" style="transform:rotate(225deg)"></div>
+      <div class="sun-ray" style="transform:rotate(270deg)"></div>
+      <div class="sun-ray" style="transform:rotate(315deg)"></div>
+    </div>
+  </div>
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <div class="cloud cloud-3"></div>
+  <div class="bird bird-1">🐦</div>
+  <div class="bird bird-2">🐦</div>
+  <div class="bird bird-3">🐦</div>
+  <div class="hill hill-1"></div>
+  <div class="hill hill-2"></div>
+  <div class="hill hill-3"></div>
+  <div class="tree tree-1"><div class="tree-leaves"></div><div class="tree-trunk"></div></div>
+  <div class="tree tree-2"><div class="tree-leaves"></div><div class="tree-trunk"></div></div>
+  <div class="tree tree-3"><div class="tree-leaves"></div><div class="tree-trunk"></div></div>
+  <div class="tree tree-4"><div class="tree-leaves"></div><div class="tree-trunk"></div></div>
+  <div class="flower">🌸</div>
+  <div class="flower">🌼</div>
+  <div class="flower">🌺</div>
+  <div class="flower">🌻</div>
+  <div class="flower">🌷</div>
+  <div class="butterfly bf-1">🦋</div>
+  <div class="butterfly bf-2">🦋</div>
+</div>
+
+<!-- ===== الشعار ===== -->
+<div class="hero-header">
+  <div class="title-sign">
+    <div class="hero-title">🎮 نخلة وسفورة 🎯</div>
+  </div>
+</div>
+
+<!-- ===== شبكة الألعاب ===== -->
+<div class="games-grid" id="gamesGrid">
+  <div class="game-card card-snl" onclick="openGame('snl', 'حية ودرج', '🐍')">
+    <div class="spot" style="top:18px;right:22px;"></div>
+    <div class="spot" style="bottom:22px;left:28px;width:8px;height:8px;"></div>
+    <div class="spot" style="top:42%;right:12px;width:6px;height:6px;"></div>
+    <div class="card-icon-wrap"><div class="card-icon">🐍</div></div>
+    <div class="card-name">حية ودرج</div>
+  </div>
+  
+  <div class="game-card card-xo" onclick="openGame('xo', 'إكس أو', '⭕')">
+    <div class="card-badge">جديد!</div>
+    <div class="spot" style="top:14px;right:18px;"></div>
+    <div class="spot" style="bottom:28px;left:22px;width:7px;height:7px;"></div>
+    <div class="spot" style="top:48%;right:14px;width:6px;height:6px;"></div>
+    <div class="card-icon-wrap"><div class="card-icon">⭕</div></div>
+    <div class="card-name">إكس أو</div>
+  </div>
+  
+  <div class="game-card card-maze" onclick="openGame('maze', 'المتاهة', '🌀')">
+    <div class="card-badge">قريبا!</div>
+    <div class="spot" style="top:22px;left:20px;"></div>
+    <div class="spot" style="bottom:18px;right:24px;width:9px;height:9px;"></div>
+    <div class="spot" style="top:52%;left:10px;width:5px;height:5px;"></div>
+    <div class="card-icon-wrap"><div class="card-icon">🌀</div></div>
+    <div class="card-name">المتاهة</div>
+  </div>
+   
+  <div class="game-card card-ludo" onclick="openGame('ludo', 'لودو', '🎲')">
+    <div class="card-badge">قريبا!</div>
+    <div class="spot" style="top:20px;left:24px;"></div>
+    <div class="spot" style="bottom:20px;right:20px;width:8px;height:8px;"></div>
+    <div class="spot" style="top:38%;left:12px;width:5px;height:5px;"></div>
+    <div class="card-icon-wrap"><div class="card-icon">🎲</div></div>
+    <div class="card-name">لودو</div>
+  </div>
+</div>
+
+<!-- ===== شاشة اللعبة ===== -->
+<div class="game-screen" id="gameScreen">
+  <div class="game-screen-header" id="gameHeader">
+    <div class="game-screen-title">
+      <span id="gameTitleIcon">🎮</span>
+      <span id="gameTitleText">اللعبة</span>
+    </div>
+    <button class="back-btn" onclick="closeGame()">
+      <span>🔙</span><span>رجوع</span>
+    </button>
+  </div>
+  <iframe class="game-iframe" id="gameFrame" src=""></iframe>
+</div>
+
+<script>
+const gameUrls = {
+  snl: 'heeadarj.html',
+  maze: '',
+  xo: 'xando/index.html',
+  ludo: ''
+};
+
+function openGame(gameId, title, icon){
+  const url = gameUrls[gameId];
+  if(!url) return;
+  createSparkles(event);
+  document.getElementById('gameTitleText').textContent = title;
+  document.getElementById('gameTitleIcon').textContent = icon;
+  document.getElementById('gameFrame').src = url;
+  document.getElementById('gameScreen').classList.add('active');
+
+  // إعادة تعيين الشريط عند فتح اللعبة (يظهر)
+  document.getElementById('gameHeader').classList.remove('hidden');
+
+  try{localStorage.setItem('last_game', gameId);}catch(e){}
+}
+
+function closeGame(){
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('gameFrame').src = '';
+  document.getElementById('gameHeader').classList.remove('hidden');
+}
+
+function createSparkles(e){
+  if(!e) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  const emojis = ['✨','⭐','🌟','💫','🎉','🎊','💥'];
+  for(let i=0; i<10; i++){
+    const spark = document.createElement('div');
+    spark.className = 'sparkle';
+    spark.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    spark.style.left = cx + 'px';
+    spark.style.top = cy + 'px';
+    const angle = (Math.PI*2/10)*i + Math.random()*0.4;
+    const dist = 55 + Math.random()*55;
+    spark.style.setProperty('--tx', Math.cos(angle)*dist + 'px');
+    spark.style.setProperty('--ty', Math.sin(angle)*dist + 'px');
+    document.body.appendChild(spark);
+    setTimeout(()=>spark.remove(), 900);
+  }
+}
+
+/* ===== إخفاء أشرطة التمرير + إخفاء الشريط العلوي عند الدخول للجولة ===== */
+(function() {
+  // 1. إخفاء أشرطة التمرير
+  const style = document.createElement('style');
+  style.id = 'global-hide-scrollbars';
+  style.textContent = `
+    * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+    *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; background: transparent !important; }
+    html, body { overflow: auto !important; }
+  `;
+  document.head.appendChild(style);
+
+  function applyToIframes() {
+    const iframes = document.querySelectorAll('iframe');
+    iframes.forEach(iframe => {
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc) return;
+        if (doc.getElementById('global-hide-scrollbars')) return;
+        doc.head.appendChild(style.cloneNode(true));
+      } catch (e) {}
+    });
+  }
+  applyToIframes();
+  const observer = new MutationObserver(applyToIframes);
+  observer.observe(document.body, { childList: true, subtree: true });
+  setInterval(applyToIframes, 1000);
+
+  // 2. إخفاء الشريط العلوي عند الدخول للجولة داخل اللعبة
+  const gameHeader = document.getElementById('gameHeader');
+  const gameFrame  = document.getElementById('gameFrame');
+
+  function checkGameRound() {
+    if (!gameFrame || !gameHeader) return;
+    let isRoundActive = false;
+    try {
+      const doc = gameFrame.contentDocument;
+      if (doc) {
+        // البحث عن شاشة اللعب داخل اللعبة
+        const screenGame = doc.getElementById('screen-game');
+        if (screenGame) {
+          const cs = window.getComputedStyle(screenGame);
+          isRoundActive = cs.display !== 'none' && cs.visibility !== 'hidden';
+        }
+      }
+    } catch (e) {}
+
+    if (isRoundActive) {
+      gameHeader.classList.add('hidden');
+    } else {
+      gameHeader.classList.remove('hidden');
+    }
+  }
+
+  // فحص دوري كل 300 مللي ثانية
+  setInterval(checkGameRound, 300);
+
+  // فحص عند تحميل الإطار
+  if (gameFrame) {
+    gameFrame.addEventListener('load', () => {
+      applyToIframes();
+      setTimeout(checkGameRound, 500);
+    });
+  }
+
+  console.log('✅ تم تفعيل إخفاء الشريط العلوي عند الدخول للجولة');
+})();
+
+document.addEventListener('gesturestart', e=>e.preventDefault());
+document.addEventListener('dblclick', e=>e.preventDefault());
+</script>
+
+</body>
+</html>

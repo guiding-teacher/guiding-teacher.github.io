@@ -1,0 +1,516 @@
+:root{
+  --sky-1:#0B1E33; --sky-2:#123B57; --sky-3:#0F5C57;
+  --cell-a:#FFF4D6; --cell-b:#BFE8E0;
+  --wood:#E2A65B; --wood-dark:#B9803A;
+  --snake-a:#4CB37A; --snake-b:#1E6B4A;
+  --coral:#FF6F59; --coral-dark:#E5543E;
+  --ink:#16232B; --paper:#FFFBF2;
+  --p1:#E5484D; --p2:#2F7DE1; --gold:#F2B705;
+  --glass:rgba(255,255,255,.08);
+  --shadow: 0 14px 34px rgba(4,14,22,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  margin:0;min-height:100vh;font-family:'Cairo',sans-serif;color:var(--ink);
+  background:
+    radial-gradient(900px 500px at 12% -8%, rgba(255,111,89,.18), transparent 60%),
+    radial-gradient(1000px 650px at 92% 8%, rgba(47,125,225,.18), transparent 55%),
+    linear-gradient(180deg, var(--sky-1), var(--sky-2) 55%, var(--sky-3));
+  display:flex;flex-direction:column;align-items:center;padding:16px 12px 90px;
+  overflow-x:hidden;position:relative;
+}
+.aurora{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.aurora i{position:absolute;border-radius:50%;filter:blur(46px);opacity:.35;animation:drift 22s ease-in-out infinite;}
+.aurora i:nth-child(1){width:280px;height:280px;background:var(--coral);top:-60px;right:-40px;}
+.aurora i:nth-child(2){width:220px;height:220px;background:var(--p2);bottom:0;left:-60px;animation-duration:28s;animation-delay:-6s;}
+.aurora i:nth-child(3){width:180px;height:180px;background:var(--gold);top:40%;left:44%;animation-duration:26s;animation-delay:-12s;}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(30px,-24px) scale(1.12);}}
+
+.stage{position:relative;z-index:1;width:100%;display:flex;flex-direction:column;align-items:center;}
+
+body.in-game{padding:0;overflow:hidden;height:100vh;height:100dvh;}
+body.in-game .site-header,
+body.in-game .conn-pill,
+body.in-game .setup-warning,
+body.in-game .footer-note,
+body.in-game .mini-userbar{display:none !important;}
+body.in-game .stage{height:100vh;height:100dvh;max-width:none;}
+body.in-game #screen-game{
+  position:fixed;inset:0;max-width:none;height:100vh;height:100dvh;
+  padding:0;overflow:hidden;z-index:5;
+}
+
+.site-header{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:960px;margin-bottom:10px;}
+.brand{display:flex;align-items:center;gap:12px;color:#fff;}
+.brand .logo-mark{width:46px;height:46px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));flex-shrink:0;}
+.brand .titles h1{font-family:'Baloo Bhaijaan 2';font-size:24px;margin:0;letter-spacing:.3px;text-shadow:0 3px 0 rgba(0,0,0,.3);}
+.brand .titles small{display:block;font-weight:700;font-size:10.5px;opacity:.8;margin-top:2px;}
+.mini-userbar{display:none;align-items:center;gap:8px;}
+.mini-userbar .avatar-wrap{position:relative;cursor:pointer;}
+.mini-userbar .avatar-wrap .edit-badge{position:absolute;bottom:-3px;left:-3px;background:#fff;border-radius:50%;width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;box-shadow:0 2px 5px rgba(0,0,0,.3);}
+.mini-userbar b{color:#fff;font-size:12.5px;text-shadow:0 2px 4px rgba(0,0,0,.3);}
+.conn-pill{display:none;align-items:center;gap:14px;margin:0 0 14px;padding:7px 16px;border-radius:999px;
+  background:var(--glass);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);color:#dfe9ee;font-size:12px;font-weight:700;}
+.conn-pill .seg{display:none;align-items:center;gap:6px;}
+.dot{width:8px;height:8px;border-radius:50%;background:#8bd39a;box-shadow:0 0 0 0 rgba(139,211,154,.6);animation:pulse 1.8s infinite;}
+.dot.off{background:#e5484d;animation:none;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(139,211,154,.55)}70%{box-shadow:0 0 0 7px rgba(139,211,154,0)}100%{box-shadow:0 0 0 0 rgba(139,211,154,0)}}
+.setup-warning{max-width:460px;width:100%;background:#3a2a06;border:1px solid #7a5b00;color:#ffe6a8;
+  border-radius:16px;padding:16px 18px;font-size:13px;line-height:1.9;margin-bottom:14px;display:none;}
+.setup-warning code{background:rgba(0,0,0,.3);padding:1px 6px;border-radius:6px;}
+
+.card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);padding:26px;
+  width:100%;max-width:460px;border:4px solid rgba(255,255,255,.55);position:relative;}
+.card::before{content:"";position:absolute;inset:-4px;border-radius:26px;z-index:-1;opacity:.9;
+  background:repeating-linear-gradient(90deg, var(--gold) 0 14px, var(--coral) 14px 28px);}
+.tabs{display:flex;gap:8px;margin-bottom:20px;background:#eee7d6;padding:6px;border-radius:14px;}
+.tab{flex:1;text-align:center;padding:10px 8px;border-radius:10px;cursor:pointer;font-weight:700;
+  font-family:'Baloo Bhaijaan 2';color:#7a7263;transition:.2s;user-select:none;font-size:13px;}
+.tab.active{background:var(--coral);color:#fff;box-shadow:0 4px 0 var(--coral-dark);}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:#3a4750;}
+.field input[type=text]{width:100%;padding:13px 14px;border-radius:12px;border:2px solid #dfd6c0;
+  font-family:'Cairo';font-size:16px;background:#fff;outline:none;transition:.15s;}
+.field input:focus{border-color:var(--coral);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;
+  border:none;border-radius:14px;font-family:'Baloo Bhaijaan 2';font-size:18px;font-weight:700;color:#fff;
+  background:var(--coral);box-shadow:0 5px 0 var(--coral-dark);cursor:pointer;transition:.08s;}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--coral-dark);}
+.btn.blue{background:var(--p2);box-shadow:0 5px 0 #1a56a3;}
+.btn.green{background:var(--snake-a);box-shadow:0 5px 0 var(--snake-b);}
+.btn.grey{background:#8a8378;box-shadow:0 5px 0 #6d675e;}
+.btn.small{padding:9px 14px;font-size:13.5px;width:auto;box-shadow:0 3px 0 var(--coral-dark);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.hint{font-size:12.5px;color:#79726a;margin-top:10px;line-height:1.7;text-align:center;}
+.error-msg{background:#FDEBEA;color:#B3261E;border:1px solid #F4C7C4;border-radius:10px;
+  padding:10px 12px;font-size:13.5px;margin-bottom:14px;display:none;font-weight:600;}
+.avatar-picker{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:16px;}
+.avatar-preview{width:96px;height:96px;border-radius:50%;background:var(--p1);display:flex;align-items:center;
+  justify-content:center;color:#fff;font-size:36px;font-weight:800;font-family:'Baloo Bhaijaan 2';
+  box-shadow:0 8px 18px rgba(0,0,0,.25);background-size:cover;background-position:center;overflow:hidden;position:relative;}
+.upload-btn{background:#eee7d6;border:none;border-radius:10px;padding:8px 16px;font-family:'Cairo';
+  font-weight:700;font-size:13px;cursor:pointer;color:#5a544a;}
+.palette{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px;}
+.palette .sw{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;}
+.palette .sw.sel{border-color:var(--ink);}
+.row-actions{display:flex;gap:10px;margin-top:10px;}
+.match-search{text-align:center;padding:10px 0;}
+.match-spinner{width:56px;height:56px;border-radius:50%;border:5px solid #eee7d6;border-top-color:var(--coral);
+  margin:0 auto 16px;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.match-found{text-align:center;}
+.match-vs{display:flex;align-items:center;justify-content:center;gap:16px;margin:14px 0;}
+.match-vs .av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-family:'Baloo Bhaijaan 2';font-size:22px;background-size:cover;background-position:center;}
+.match-timer{font-family:'Baloo Bhaijaan 2';font-size:15px;color:var(--coral-dark);margin-bottom:10px;}
+.match-board-info{font-size:13px;color:#7a7263;margin-bottom:8px;}
+
+/* Board size selector */
+.board-size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.board-size-grid .size-btn,
+.win-length-grid .size-btn,
+.difficulty-grid .size-btn{
+  background:#eee7d6;border:none;border-radius:10px;padding:10px 4px;font-family:'Baloo Bhaijaan 2';
+  font-weight:700;font-size:14px;color:#5a544a;cursor:pointer;transition:.15s;text-align:center;
+}
+.board-size-grid .size-btn.active,
+.win-length-grid .size-btn.active,
+.difficulty-grid .size-btn.active{
+  background:var(--coral);color:#fff;box-shadow:0 3px 0 var(--coral-dark);
+}
+.symbol-choice{display:flex;gap:10px;justify-content:center;}
+.sym-btn{width:60px;height:60px;border-radius:14px;background:#eee7d6;border:none;font-size:28px;
+  cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center;}
+.sym-btn.active{background:var(--coral);color:#fff;box-shadow:0 4px 0 var(--coral-dark);}
+
+/* Game Screen */
+#screen-game{width:100%;max-width:none;display:none;flex-direction:column;gap:0;height:100%;}
+
+.game-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:rgba(255,255,255,.10);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);
+  border-radius:14px;padding:7px 10px;color:#fff;flex-shrink:0;margin:8px 12px;
+}
+.tb-btn{
+  position:relative;background:rgba(255,255,255,.14);border:none;color:#fff;width:38px;height:38px;border-radius:10px;
+  font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;
+}
+.tb-btn:hover{background:rgba(255,255,255,.24);transform:scale(1.08);}
+.tb-actions{display:flex;gap:6px;}
+.spectator-count{
+  position:absolute;top:-4px;left:-4px;background:var(--coral);color:#fff;
+  font-size:9.5px;font-weight:800;font-family:'Cairo';min-width:15px;height:15px;border-radius:999px;
+  display:none;align-items:center;justify-content:center;padding:0 3px;box-shadow:0 2px 4px rgba(0,0,0,.35);
+}
+.spectator-toast{
+  position:fixed;top:54px;left:50%;transform:translateX(-50%) translateY(-10px) scale(.9);
+  background:#20343d;color:#fff;padding:8px 18px;border-radius:999px;font-family:'Baloo Bhaijaan 2';
+  font-size:13.5px;font-weight:700;box-shadow:0 8px 20px rgba(0,0,0,.4);z-index:45;opacity:0;pointer-events:none;white-space:nowrap;
+  transition:opacity .25s ease, transform .25s ease;
+}
+.spectator-toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+
+.tb-link-wrap{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);border-radius:10px;padding:4px 8px;flex:1;min-width:0;}
+.tb-link-input{background:transparent;border:none;color:var(--gold);font-family:monospace;font-size:12px;font-weight:700;letter-spacing:1px;flex:1;min-width:0;outline:none;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;}
+.tb-copy-btn{background:var(--gold);border:none;color:#16232B;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:800;font-family:'Cairo';cursor:pointer;flex-shrink:0;transition:.15s;}
+.tb-copy-btn:hover{filter:brightness(1.15);transform:scale(1.05);}
+.tb-copy-btn.copied{background:#3EA06B;color:#fff;}
+
+/* Arena */
+.arena{
+  display:grid;grid-template-columns:minmax(210px, 24%) 1fr minmax(210px, 24%);gap:12px;
+  align-items:start;flex:1;padding:0 12px 12px;min-height:0;
+}
+
+.side-panel{
+  background:var(--paper);border-radius:20px;padding:16px 14px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;align-items:center;gap:8px;position:relative;border:3px solid transparent;
+  transition:.2s;overflow:hidden;width:100%;max-height:100%;overflow-y:auto;
+}
+/* شريط/فقاعة الدردشة العابرة فوق بطاقة اللاعب */
+.chat-strip{
+  position:absolute;top:6px;left:50%;transform:translateX(-50%);background:#20343d;color:#fff;
+  padding:5px 10px;border-radius:8px;font-size:13px;max-width:85%;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;box-shadow:0 6px 14px rgba(0,0,0,.3);animation:stripPop .25s ease-out;z-index:6;
+  pointer-events:none;
+}
+.chat-strip::after{
+  content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:#20343d;
+}
+@keyframes stripPop{from{opacity:0;transform:translateX(-50%) translateY(6px) scale(.9);}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}
+.chat-strip.fading{animation:stripFade .4s ease-in forwards;}
+@keyframes stripFade{to{opacity:0;transform:translateX(-50%) translateY(-6px) scale(.9);}}
+.side-panel.active-turn{
+  border-color:var(--snake-a);box-shadow:0 0 0 4px rgba(62,160,107,.30), var(--shadow);
+  animation:turnGlow 2s ease-in-out infinite;
+}
+@keyframes turnGlow{0%,100%{box-shadow:0 0 0 4px rgba(62,160,107,.20), var(--shadow);}50%{box-shadow:0 0 0 9px rgba(62,160,107,.38), var(--shadow);}}
+.side-panel .edit-badge-side{
+  position:absolute;top:8px;left:8px;background:#fff;border:1px solid #e2d9c4;border-radius:50%;width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.15);z-index:2;transition:.15s;
+}
+.side-panel .edit-badge-side:hover{transform:scale(1.15);}
+
+.player-row{
+  display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;justify-content:center;
+}
+.side-panel .avatar-big{
+  width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-family:'Baloo Bhaijaan 2';font-size:32px;background-size:cover;background-position:center;
+  box-shadow:0 8px 20px rgba(0,0,0,.28), inset 0 -3px 0 rgba(0,0,0,.15);position:relative;flex-shrink:0;
+  border:4px solid rgba(255,255,255,.95);outline:2px solid rgba(0,0,0,.06);transition:.2s;
+}
+.side-panel.active-turn .avatar-big{
+  border-color:var(--snake-a);box-shadow:0 0 0 6px rgba(62,160,107,.28), 0 8px 20px rgba(0,0,0,.28);
+}
+.side-panel .avatar-big .live{
+  position:absolute;bottom:4px;left:4px;width:14px;height:14px;border-radius:50%;
+  background:#8bd39a;border:2.5px solid var(--paper);box-shadow:0 0 5px rgba(139,211,154,.7);
+}
+.side-panel .info-col{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;min-width:0;width:100%;}
+.side-panel .p-name{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;display:flex;align-items:center;gap:6px;justify-content:center;}
+.side-panel .p-pos{font-size:14px;color:#7a7a7a;font-weight:700;}
+.side-panel .role-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:999px;background:#eee7d6;color:#7a7263;}
+
+.side-stats{display:flex;gap:8px;margin-top:4px;}
+.stat-box{background:#f5f0e3;border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:700;color:#5a544a;}
+
+.side-dice-zone{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:14px;perspective:700px;flex-shrink:0;margin-top:4px;flex-wrap:nowrap;width:100%;}
+
+.side-reactions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:4px;padding-top:8px;border-top:1px dashed #e8e0cc;width:100%;}
+.side-reactions button{background:#f5f0e3;border:none;border-radius:9px;padding:6px 0;font-size:12px;cursor:pointer;transition:.15s;flex:0 0 calc(25% - 4px);min-width:0;}
+.side-reactions button:hover{transform:scale(1.25);background:#e8e0cc;}
+
+/* Board */
+.board-col{display:flex;flex-direction:column;gap:8px;align-items:center;height:100%;justify-content:flex-start;min-width:0;}
+.board-info-bar{
+  display:flex;gap:12px;align-items:center;justify-content:center;background:rgba(255,255,255,.10);
+  backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:6px 18px;
+  color:#fff;font-family:'Baloo Bhaijaan 2';font-size:13px;font-weight:700;flex-shrink:0;
+}
+.board-wrap{
+  background:linear-gradient(160deg, var(--wood), var(--wood-dark));padding:12px;border-radius:18px;
+  box-shadow:var(--shadow);position:relative;width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.board-wrap.shake{animation:shakeBoard .4s;}
+@keyframes shakeBoard{0%,100%{transform:translate(0,0);}25%{transform:translate(-4px,2px);}50%{transform:translate(4px,-2px);}75%{transform:translate(-3px,-2px);}}
+.board{
+  position:relative;width:100%;height:100%;border-radius:10px;overflow:hidden;
+  display:grid;box-shadow:inset 0 0 0 4px rgba(0,0,0,.15);gap:4px;padding:4px;
+  background:rgba(0,0,0,.15);
+}
+.board-cell{
+  background:var(--paper);border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-family:'Baloo Bhaijaan 2';font-weight:800;cursor:pointer;transition:.12s;position:relative;
+  user-select:none;-webkit-user-select:none;overflow:hidden;
+}
+.board-cell:hover:not(.taken){filter:brightness(.95);transform:scale(.97);}
+.board-cell.taken{cursor:default;}
+.board-cell.winning{background:linear-gradient(135deg,#c8f5d8,#a3e8b8);box-shadow:inset 0 0 0 2px var(--snake-a);animation:winPulse 1.2s ease-in-out infinite;}
+@keyframes winPulse{0%,100%{filter:brightness(1);}50%{filter:brightness(1.08);}}
+.board-cell.hint-cell{box-shadow:inset 0 0 0 3px var(--gold);animation:hintPulse 1s ease-in-out infinite;}
+@keyframes hintPulse{0%,100%{box-shadow:inset 0 0 0 3px var(--gold);}50%{box-shadow:inset 0 0 0 5px var(--coral);}}
+
+.cell-x{color:var(--p1);}
+.cell-o{color:var(--p2);}
+
+.win-line-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+.win-line{stroke:var(--gold);stroke-width:2.5;stroke-linecap:round;fill:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));opacity:0;
+  animation:drawLine .5s ease forwards;
+}
+@keyframes drawLine{to{opacity:1;}}
+
+.reaction-particle{position:absolute;font-size:22px;pointer-events:none;z-index:9;animation:burst .9s cubic-bezier(.2,.8,.3,1) forwards;}
+@keyframes burst{0%{opacity:0;transform:translate(0,0) scale(.4) rotate(0deg);}15%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(var(--rot));}}
+
+.turn-banner{display:none !important;}
+
+.turn-bubble{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%) translateY(-10px) scale(.85);
+  background:#20343d;color:#fff;padding:9px 20px;border-radius:999px;font-family:'Baloo Bhaijaan 2';
+  font-size:15px;font-weight:700;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.4);z-index:8;
+  opacity:0;pointer-events:none;transition:opacity .28s ease, transform .28s ease;
+}
+.turn-bubble::after{content:"";position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#20343d;}
+.turn-bubble.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+
+.game-controls{
+  display:flex;gap:8px;justify-content:center;flex-shrink:0;margin-top:4px;
+}
+.ctrl-btn{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;
+  padding:8px 16px;border-radius:10px;font-family:'Cairo';font-weight:700;cursor:pointer;font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:.15s;backdrop-filter:blur(4px);
+}
+.ctrl-btn:hover{background:rgba(255,255,255,.24);transform:scale(1.05);}
+.ctrl-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+.chat-fab{
+  display:none;position:fixed;bottom:16px;left:16px;z-index:41;width:52px;height:52px;border-radius:50%;
+  background:var(--coral);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.35);
+  align-items:center;justify-content:center;transition:.2s;
+}
+.chat-fab.visible{display:flex;}
+.chat-fab:hover{transform:scale(1.08);filter:brightness(1.08);}
+.chat-fab:active{transform:scale(.94);}
+
+.composer-bottom{
+  position:fixed;bottom:0;left:0;right:0;z-index:40;display:flex;gap:10px;pointer-events:none;
+  background:rgba(20,30,36,.92);backdrop-filter:blur(10px);padding:10px 14px;box-shadow:0 -8px 24px rgba(0,0,0,.35);
+  transform:translateY(100%);opacity:0;transition:transform .22s ease,opacity .22s ease;
+}
+.composer-bottom.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+
+.composer-bottom .inner{max-width:960px;margin:0 auto;display:flex;gap:10px;width:100%;}
+.composer-bottom input{flex:1;border:none;border-radius:12px;padding:10px 14px;font-family:'Cairo';font-size:14px;outline:none;}
+.composer-bottom button{background:var(--coral);border:none;color:#fff;border-radius:12px;padding:0 18px;
+  font-size:15px;cursor:pointer;font-family:'Baloo Bhaijaan 2';font-weight:700;transition:.15s;}
+.composer-bottom button:hover{filter:brightness(1.1);}
+.composer-bottom button.btn-chat-history{background:#20343d;flex-shrink:0;padding:0 14px;}
+
+.global-counter{color:#79726a;font-size:11.5px;margin-top:10px;text-align:center;}
+.history-section{margin-top:18px;padding-top:14px;border-top:1px dashed #e2d9c4;}
+.history-section h4{font-family:'Baloo Bhaijaan 2';font-size:14px;color:#3a4750;margin-bottom:8px;text-align:center;}
+.history-table{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;}
+.history-row{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:#F5F0E3;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:700;color:#5a544a;
+}
+.history-row.win{border-right:4px solid var(--snake-a);}
+.history-row.lose{border-right:4px solid var(--p1);}
+.history-row.draw{border-right:4px solid var(--gold);}
+.history-row .h-date{font-size:10.5px;color:#948c7c;font-weight:600;flex-shrink:0;}
+.history-row .h-opp{flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.history-row .h-status{flex-shrink:0;}
+.history-row.win .h-status{color:#1E6B4A;}
+.history-row.lose .h-status{color:#B3261E;}
+.history-row.draw .h-status{color:#B8860B;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(6,14,20,.65);display:none;align-items:center;
+  justify-content:center;z-index:50;padding:20px;}
+.modal{background:var(--paper);border-radius:22px;padding:30px 26px;max-width:340px;width:100%;
+  text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.4);}
+.modal.wide{max-width:380px;}
+.modal .trophy{font-size:56px;}
+.modal h2{margin:8px 0 4px;font-size:24px;font-family:'Baloo Bhaijaan 2';}
+.modal p{font-size:14px;color:#6a655c;margin-bottom:18px;}
+.modal .btns{display:flex;gap:8px;}
+
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:60;}
+.footer-note{margin-top:10px;color:rgba(255,255,255,.55);font-size:11px;text-align:center;}
+
+.spectator-badge{
+  position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#20343d;color:#fff;
+  padding:6px 16px;border-radius:999px;font-family:'Baloo Bhaijaan 2';font-size:13px;font-weight:700;z-index:42;
+  box-shadow:0 6px 16px rgba(0,0,0,.35);display:none;align-items:center;gap:6px;
+}
+body.is-spectator .spectator-badge{display:flex;}
+
+/* Sheets */
+.events-sheet-bg{
+  position:fixed;inset:0;background:rgba(6,14,20,.6);z-index:55;
+  display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s ease;
+}
+.events-sheet-bg.show{opacity:1;pointer-events:auto;}
+.events-sheet{
+  background:var(--paper);width:100%;max-width:520px;border-radius:20px 20px 0 0;
+  padding:14px 18px 22px;box-shadow:0 -12px 30px rgba(0,0,0,.4);max-height:65vh;
+  display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.2,.9,.3,1.1);
+}
+.events-sheet-bg.show .events-sheet{transform:translateY(0);}
+.events-sheet-handle{width:40px;height:5px;background:#e2d9c4;border-radius:99px;margin:0 auto 12px;flex-shrink:0;}
+.events-sheet h3{font-family:'Baloo Bhaijaan 2';font-size:16.5px;text-align:center;margin-bottom:12px;flex-shrink:0;}
+.events-sheet-body{overflow-y:auto;flex:1;font-size:13px;line-height:1.9;color:#5a544a;text-align:center;margin-bottom:14px;}
+.events-sheet-body div{border-bottom:1px dashed #efe8d6;padding:5px 0;}
+.events-sheet-body div:last-child{border-bottom:none;}
+.events-sheet-body .empty{color:#a49c8c;font-style:italic;}
+.events-sheet .btn{flex-shrink:0;}
+
+/* Level system */
+.level-badge{
+  display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:999px;
+  font-family:'Baloo Bhaijaan 2';font-size:11px;font-weight:700;color:#fff;box-shadow:0 2px 5px rgba(0,0,0,.25);white-space:nowrap;
+}
+.level-badge.tier-bronze{background:linear-gradient(135deg,#C48A4A,#8A5A22);}
+.level-badge.tier-silver{background:linear-gradient(135deg,#C9D2DA,#8A97A3);}
+.level-badge.tier-gold{background:linear-gradient(135deg,#FFD54F,#C88A3D);}
+.level-badge.tier-platinum{background:linear-gradient(135deg,#9BE8FF,#3EA0C9);}
+.xp-bar{width:64px;height:5px;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden;}
+.xp-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--coral));transition:width .4s ease;}
+.title-badge{
+  display:inline-flex;align-items:center;justify-content:center;padding:1px 8px;border-radius:999px;
+  font-family:'Baloo Bhaijaan 2';font-size:9.5px;font-weight:700;color:#3a2a12;
+  background:linear-gradient(135deg,#FFE9B0,#FFD166);border:1px solid rgba(255,255,255,.6);
+  box-shadow:0 1px 3px rgba(0,0,0,.2);white-space:nowrap;flex-shrink:0;transform:translateY(-1px);
+}
+.avatar-level-badge{position:absolute;bottom:-4px;right:-4px;min-width:22px;height:22px;padding:0 5px;
+  display:flex;align-items:center;justify-content:center;font-size:10.5px;border:2px solid var(--paper);z-index:3;}
+.inline-level-badge{font-size:10px;padding:2px 8px;flex-shrink:0;transform:translateY(-1px);}
+.mini-name-col{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.mini-name-row{display:flex;align-items:center;gap:6px;}
+
+/* Achievements */
+.ach-sheet-body{text-align:right;}
+.ach-grid{display:grid;grid-template-columns:repeat(2, 1fr);gap:10px;}
+.ach-card{position:relative;background:#F5F0E3;border:2px solid transparent;border-radius:14px;padding:12px 10px 10px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;transition:.2s;}
+.ach-card.locked{opacity:.62;filter:grayscale(.35);}
+.ach-card.unlocked{border-color:var(--snake-a);background:linear-gradient(160deg,#eaf7ee,#F5F0E3);
+  box-shadow:0 0 0 3px rgba(62,160,107,.16), 0 6px 14px rgba(0,0,0,.08);opacity:1;filter:none;}
+.ach-card .ach-check{position:absolute;top:-7px;left:-7px;width:22px;height:22px;border-radius:50%;
+  background:var(--snake-a);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,.3);border:2px solid var(--paper);}
+.ach-card-icon{font-size:30px;line-height:1;margin-bottom:2px;}
+.ach-card-title{font-family:'Baloo Bhaijaan 2';font-weight:700;font-size:13px;color:#2a332e;}
+.ach-card-desc{font-size:10.5px;color:#79726a;line-height:1.5;min-height:28px;}
+.ach-progress-bar{width:100%;height:6px;border-radius:999px;background:rgba(0,0,0,.08);overflow:hidden;margin-top:2px;}
+.ach-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--snake-a));transition:width .4s ease;}
+.ach-card.unlocked .ach-progress-fill{background:var(--snake-a);}
+.ach-progress-text{font-size:10px;font-weight:700;color:#8a8378;}
+.ach-card.unlocked .ach-progress-text{color:#1E6B4A;}
+.ach-card-xp{margin-top:2px;font-family:'Baloo Bhaijaan 2';font-weight:700;font-size:11px;color:#1E6B4A;
+  background:#e2f2e8;padding:2px 10px;border-radius:999px;}
+.ach-card.locked .ach-card-xp{color:#8a8378;background:#eee7d6;}
+
+.achievement-toast{
+  position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-14px) scale(.9);
+  display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#2a1f0a,#1a1408);
+  border:1.5px solid var(--gold);color:#fff;padding:10px 18px 10px 14px;border-radius:16px;
+  box-shadow:0 12px 30px rgba(0,0,0,.5), 0 0 0 3px rgba(242,183,5,.15);z-index:70;opacity:0;pointer-events:none;white-space:nowrap;
+  transition:opacity .3s ease, transform .3s ease;
+}
+.achievement-toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+.achievement-toast .ach-toast-icon{font-size:28px;flex-shrink:0;filter:drop-shadow(0 0 6px rgba(242,183,5,.6));}
+.achievement-toast .ach-toast-text{display:flex;flex-direction:column;gap:1px;line-height:1.3;}
+.achievement-toast .ach-toast-text b{font-family:'Baloo Bhaijaan 2';font-size:12px;color:var(--gold);}
+.achievement-toast .ach-toast-text span{font-size:14px;font-weight:700;}
+.achievement-toast .ach-toast-xp{font-family:'Baloo Bhaijaan 2';font-weight:700;font-size:13px;color:#1E6B4A;
+  background:#c9f2d8;padding:3px 10px;border-radius:999px;flex-shrink:0;}
+
+@media (max-width:900px){
+  .arena{grid-template-columns:1fr;grid-template-rows:auto auto auto;align-content:center;gap:6px;padding:0 8px 8px;overflow:hidden;height:100%;}
+  .board-col{min-height:0;height:auto;justify-content:flex-start;order:2;}
+  .board-wrap{width:98%;margin:0 auto;height:auto;max-width:420px;}
+  .side-panel.opponent{order:1;}
+  .side-panel.me{order:3;}
+  .side-panel{flex-direction:column;justify-content:flex-start;text-align:center;padding:8px 10px 6px;gap:2px;border-radius:14px;max-height:none;overflow-y:visible;height:auto;}
+  .player-row{display:grid;grid-template-areas:"avatar info stats";grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:4px;align-items:center;width:100%;}
+  .side-panel .avatar-big{grid-area:avatar;width:46px;height:46px;font-size:16px;border-width:2px;}
+  .side-panel .info-col{grid-area:info;align-items:flex-start;text-align:right;}
+  .side-panel .p-name{font-size:13px;justify-content:flex-start;}
+  .side-panel .p-pos{font-size:11px;}
+  .side-panel .role-tag{font-size:8.5px;padding:1px 6px;}
+  .side-stats{grid-area:stats;flex-direction:column;gap:4px;}
+  .stat-box{padding:3px 8px;font-size:10px;}
+  .side-reactions{display:none;}
+  .side-panel.me .side-reactions{display:flex;flex-wrap:nowrap;overflow-x:auto;justify-content:center;gap:3px;margin-top:4px;padding-top:4px;border-top:1px dashed #e8e0cc;}
+  .side-panel.me .side-reactions button{flex:0 0 28px;width:28px;height:28px;padding:0;font-size:16px;}
+  .side-panel .edit-badge-side{display:none !important;}
+  .game-topbar{margin:5px 8px;padding:6px;}
+  .tb-btn{width:30px;height:30px;font-size:14px;}
+  .tb-link-input{font-size:10px;}
+  .tb-copy-btn{padding:3px 6px;font-size:10px;}
+  .spectator-toast{top:20px;font-size:12px;padding:6px 14px;}
+  .board-info-bar{font-size:11px;padding:4px 12px;}
+  .game-controls{gap:6px;}
+  .ctrl-btn{padding:6px 10px;font-size:11px;}
+  .turn-bubble{font-size:12px;padding:6px 14px;top:6px;}
+  .achievement-toast{top:10px;padding:8px 14px 8px 10px;gap:8px;}
+  .achievement-toast .ach-toast-icon{font-size:22px;}
+  .achievement-toast .ach-toast-text span{font-size:12.5px;}
+  .achievement-toast .ach-toast-xp{font-size:11px;padding:2px 8px;}
+  .avatar-level-badge{min-width:16px;height:16px;font-size:8px;bottom:-2px;right:-2px;border-width:1.5px;}
+  .mini-name-col .xp-bar{display:none;}
+  .inline-level-badge{font-size:8px;padding:1px 6px;}
+  .title-badge{font-size:8px;padding:1px 6px;}
+  .board-size-grid{grid-template-columns:repeat(4,1fr);}
+  .board-size-grid .size-btn{padding:8px 2px;font-size:12px;}
+}
+
+@media (max-width:480px){
+  .ach-grid{grid-template-columns:repeat(2, 1fr);gap:8px;}
+  .ach-card{padding:10px 8px 8px;}
+  .ach-card-icon{font-size:26px;}
+  .ach-card-title{font-size:12px;}
+  .ach-card-desc{font-size:9.5px;min-height:26px;}
+}
+/* ===================== قوى اللاعب + المباراة (أفضل من N) — إضافات ===================== */
+.frozen-cell{position:relative;}
+.frozen-cell:not(.taken){background:linear-gradient(135deg,#cfeeff,#9fd7f5) !important;cursor:not-allowed;}
+.frozen-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1.4em;animation:frozenPulse 1.4s ease-in-out infinite;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,80,120,.4));}
+@keyframes frozenPulse{0%,100%{opacity:.75;transform:scale(1);}50%{opacity:1;transform:scale(1.15);}}
+
+.board-cell.power-targeting:not(.invalid-target){box-shadow:inset 0 0 0 3px var(--gold);cursor:pointer;animation:hintPulse 1s ease-in-out infinite;}
+.board-cell.invalid-target{opacity:.45;cursor:not-allowed;}
+
+.powers-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 2px;}
+.power-btn{
+  background:linear-gradient(135deg,#2a3f48,#1a2b32);border:1px solid rgba(255,255,255,.18);color:#fff;
+  padding:8px 12px;border-radius:12px;font-family:'Cairo';font-weight:700;cursor:pointer;font-size:12px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:.15s;min-width:64px;
+}
+.power-btn span{font-size:10px;opacity:.85;}
+.power-btn:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.2);}
+.power-btn.active{box-shadow:0 0 0 2px var(--gold);background:linear-gradient(135deg,#b8860b,#8a6408);}
+.power-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+#matchScoreLabel{color:var(--gold);font-weight:800;}
+.turn-countdown{color:#E5484D;font-weight:800;min-width:34px;display:inline-block;animation:countdownPulse 1s ease-in-out infinite;}
+.turn-countdown:empty{display:none;animation:none;}
+@keyframes countdownPulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+
+.modal-bg.match-champion .modal{
+  background:linear-gradient(160deg,#fff8e6,var(--paper));box-shadow:0 0 0 3px var(--gold), 0 20px 50px rgba(0,0,0,.4);
+}
+.modal-bg.match-champion .trophy{font-size:72px;animation:crownBounce .9s ease-in-out infinite;}
+@keyframes crownBounce{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-8px) rotate(4deg);}}
+
+@media (max-width:640px){
+  .power-btn{min-width:56px;padding:6px 8px;font-size:11px;}
+  .power-btn span{font-size:9px;}
+}
