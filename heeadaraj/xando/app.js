@@ -1024,6 +1024,7 @@ function syncRoomState(room){
   if(gameState.status !== 'playing') stopGameTimer();
   // مؤقّت الحركة التلقائية (15 ثانية) + الحارس الاحتياطي — أونلاين فقط وأثناء اللعب
   if(gameState.mode === GAME_MODES.ONLINE && gameState.status === 'playing'){
+    startTurnTimer();      // ← أضف هذا السطر
     armAutoMoveTimer();
     armWatchdogTimer(room);
   } else {
