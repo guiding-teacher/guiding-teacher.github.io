@@ -267,7 +267,6 @@
     <span id="winLengthLabel">فوز بـ 3</span>
     <span id="gameModeLabel">أونلاين</span>
     <span id="matchScoreLabel" style="display:none;"></span>
-    <span id="turnCountdown" class="turn-countdown"></span>
   </div>
   <div class="center-reactions" id="centerReactions">
     <button data-e="👍" title="إعجاب">👍</button>
@@ -425,7 +424,11 @@
     <button class="btn grey" id="btnCloseAchievementsSheet">إغلاق</button>
   </div>
 </div>
-
+<!-- فقاعة مؤقت الضغط (الجهة المقابلة للدردشة) -->
+<div class="timer-bubble" id="timerBubble">
+  <span class="timer-icon">⏳</span>
+  <span class="timer-number" id="timerNumber">15</span>
+</div>
 <!-- Achievement Toast -->
 <div class="achievement-toast" id="achievementToast">
   <span class="ach-toast-icon" id="achToastIcon">🏅</span>
