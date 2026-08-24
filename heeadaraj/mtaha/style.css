@@ -9,6 +9,20 @@
   --shadow: 0 14px 34px rgba(4,14,22,.45);
   --wall:#16232B; --floor-a:#FFF4D6; --floor-b:#F3E7C3; --fog:#0B1E33;
 }
+/* منع تحديد النص والنسخ على كل العناصر التفاعلية */
+button, .dp, .tb-btn, .icon-btn, .btn, .diff-opt, .tab, .shout-btn, .shout-menu button, 
+.upload-btn, #joystick-zone, #joystick-base, #joystick-knob, #fire-btn-mobile,
+.slot-chip, .avatar-preview, .sw {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent !important;
+}
+* { -webkit-tap-highlight-color: transparent; }
+
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;}
 body{
