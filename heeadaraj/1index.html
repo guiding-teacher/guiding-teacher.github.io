@@ -188,9 +188,10 @@
   .hero-header{
     position:relative; z-index:10;
     text-align:center; padding:12px 10px 4px;
-    margin-top: 45%;
   }
   .title-sign{
+         margin-top: 10%;
+
     display:inline-block;
     background:var(--paper);
     border:4px solid var(--ink);
@@ -441,7 +442,28 @@
   }
 
   @media(min-width:600px){.games-grid{max-width:580px;}}
-  @media(min-width:900px){.games-grid{grid-template-columns:repeat(4, 1fr); max-width:900px;}}
+  @media(min-width:900px){
+    .games-grid{grid-template-columns:repeat(4, 1fr); max-width:900px;}}
+  
+  @media (max-width:900px){
+  
+    .title-sign{
+      margin-top: 50%;
+
+    display:inline-block;
+    background:var(--paper);
+    border:4px solid var(--ink);
+    border-radius:24px;
+    padding:10px -74px;
+    box-shadow:5px 5px 0 var(--ink), 0 8px 20px rgba(0,0,0,.15);
+    transform:rotate(-1.5deg);
+    animation:signWiggle 2.5s ease-in-out infinite;
+    position:relative;
+    }
+    
+}
+  
+  
 
   *{touch-action:manipulation;}
 </style>
