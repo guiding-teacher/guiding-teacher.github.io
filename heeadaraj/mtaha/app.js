@@ -29,6 +29,24 @@
   });
 })();
 
+/* ===================== 0.5) منع تحديد النص والنسخ على الأزرار ===================== */
+(function preventSelection(){
+  const style = document.createElement('style');
+  style.textContent = `
+    button, .dp, .tb-btn, .icon-btn, .btn, .diff-opt, .tab, .shout-btn, .shout-menu button, .upload-btn, #joystick-zone, #joystick-base, #joystick-knob, #fire-btn-mobile {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    * { -webkit-tap-highlight-color: transparent; }
+  `;
+  document.head.appendChild(style);
+})();
+
 /* ===================== 1) الاتصال بسوبابيس ===================== */
 const SUPABASE_URL      = "https://yebntvnbuufthdsjqwyx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllYm50dm5idXVmdGhkc2pxd3l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MjA4MDIsImV4cCI6MjEwMTQ5NjgwMn0.dtMOlp2jS8oRttfJjsMMZTUFprrAnbfNFiBpx__4lGE";
@@ -454,17 +472,22 @@ function subscribeRoomChanges(code, onUpdate){
   if(dbChannel){ sb.removeChannel(dbChannel); dbChannel = null; }
   dbChannel = sb.channel('maze-db-'+code)
     .on('postgres_changes', { event:'UPDATE', schema:'public', table:'maze_rooms', filter:`code=eq.${code}` },
-      async payload => await onUpdate(payload.new))
-    .subscribe();
+      async payload => { try{ await onUpdate(payload.new); }catch(e){ console.error('Room update error:', e); } })
+    .subscribe((status)=>{
+      console.log('Realtime channel status:', status);
+    });
   return dbChannel;
 }
 function cleanupChannels(){
   if(dbChannel){ sb.removeChannel(dbChannel); dbChannel = null; }
   if(liveChannel){ sb.removeChannel(liveChannel); liveChannel = null; }
+  if(pollInterval){ clearInterval(pollInterval); pollInterval = null; }
   roundStarted = false; 
   gameOver = false;
   maze = null; 
   players = {};
+  keyHolder = null;
+  doorOpen = false;
   const gc = document.getElementById('game-container');
   if(gc) gc.style.display = 'none';
 }
@@ -1237,10 +1260,12 @@ if(btnCancelWait){
   });
 }
 
+let pollInterval = null;
 async function handleRoomUpdate(newRoom){
   currentRoom = newRoom;
   if(newRoom.status==='waiting'){ renderSlots(newRoom); return; }
   if(newRoom.status==='playing' && !roundStarted){ 
+    if(pollInterval){ clearInterval(pollInterval); pollInterval = null; }
     await startRound(newRoom); 
     return; 
   }
@@ -1248,6 +1273,20 @@ async function handleRoomUpdate(newRoom){
     gameOver = true;
     showWinModal(newRoom.winner, newRoom.win_reason);
   }
+}
+
+// احتياط: استعلام دوري كل 2 ثانية أثناء الانتظار (في حال فشل Realtime)
+function startWaitingPoll(code){
+  if(pollInterval){ clearInterval(pollInterval); }
+  pollInterval = setInterval(async ()=>{
+    if(roundStarted || !currentRoom || currentRoom.status !== 'waiting'){
+      clearInterval(pollInterval); pollInterval = null; return;
+    }
+    try{
+      const { data, error } = await sb.from('maze_rooms').select('*').eq('code', code).single();
+      if(!error && data){ await handleRoomUpdate(data); }
+    }catch(e){ console.error('Poll error:', e); }
+  }, 2000);
 }
 
 const btnLeaveMaze = document.getElementById('btnLeaveMaze');
