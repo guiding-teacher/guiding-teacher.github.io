@@ -1363,6 +1363,8 @@ let reactionButtonsInitialized = false;
 function initReactionButtons(){
   if(reactionButtonsInitialized) return;
   reactionButtonsInitialized = true;
+  
+  // الكود الأصلي — شريط التفاعلات الجانبي (للديسكتوب)
   document.querySelectorAll('.side-reactions button').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const emoji = btn.dataset.e;
@@ -1372,6 +1374,19 @@ function initReactionButtons(){
       if(role === session.role) broadcastReaction(emoji);
     });
   });
+  
+  // الكود الجديد — شريط التفاعلات المركزي (للطرفين في الهاتف)
+  const centerReactions = document.getElementById('centerReactions');
+  if(centerReactions){
+    centerReactions.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const emoji = btn.dataset.e;
+        const role = session.role || 'p1';
+        fireReaction(role, emoji);
+        if(session.role) broadcastReaction(emoji);
+      });
+    });
+  }
 }
 
 function broadcastReaction(emoji){ presenceChannel?.send({ type:'broadcast', event:'react', payload:{emoji, from:session.role} }); }
