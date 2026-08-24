@@ -290,7 +290,7 @@ body.in-game #screen-game{
 .ctrl-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
 .chat-fab{
-  display:none;position:fixed;bottom:16px;left:16px;z-index:41;width:52px;height:52px;border-radius:50%;
+  display:none;position:fixed;bottom:16px;right:10px;z-index:41;width:52px;height:52px;border-radius:50%;
   background:var(--coral);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.35);
   align-items:center;justify-content:center;transition:.2s;
 }
