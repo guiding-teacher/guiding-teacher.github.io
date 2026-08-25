@@ -473,12 +473,20 @@ document.addEventListener('click', (e)=>{
   closeChatComposer();
 });
 
-function resetToHome(){
+ function resetToHome(){
   leaveRoom();
   document.getElementById('winModal').style.display='none';
   document.getElementById('winModal').classList.remove('match-champion');
   stopGameTimer();
-  gameState.powerMode = null; gameState.matchTarget = null; gameState.frozenIdx = null; gameState.frozenBlocksRole = null;
+  
+  // تصفير بيانات الجولة
+  gameState.powerMode = null; 
+  gameState.matchTarget = null; 
+  gameState.frozenIdx = null;
+  
+  // تصفير مفاتيح الحفظ لضمان عدم تداخل الجولات القادمة
+  resetRoundKeys(); 
+  
   showScreen('home');
   loadGlobalCounter();
   if(history.replaceState) history.replaceState({}, '', location.pathname);
@@ -796,14 +804,38 @@ function showTurnBubble(text){
   turnBubbleTimer = setTimeout(()=> bubble.classList.remove('show'), 1500);
 }
 
-function openWinModal(matchDone){
+ function openWinModal(matchDone){
   const modal = document.getElementById('winModal');
-  if(modal.style.display==='flex') return;
+  if(modal.style.display==='flex' && !matchDone) return; // منع التكرار إذا كانت النافذة مفتوحة بالفعل لجولة عادية
+
   const wasForfeit = lastMoveWasForfeit; lastMoveWasForfeit = false;
   const isSpectator = session.role === 'spectator';
   const mySymbol = gameState.mode === GAME_MODES.ONLINE ? session.roleSymbol : gameState.p1Symbol;
   let title, text, trophy = '🏆';
   const iWon = gameState.winner === mySymbol && !isSpectator;
+
+  // --- منطق الحفظ لمرة واحدة فقط ---
+  const currentKey = (currentRoom ? currentRoom.code + '_' + currentRoom.rev : 'local_' + Date.now());
+  if (!isSpectator && historySavedRoundKey !== currentKey) {
+    historySavedRoundKey = currentKey;
+    writeRoundFlag('xo_historySavedRoundKey', currentKey);
+
+    const opponent = gameState.mode === GAME_MODES.ONLINE
+      ? ((session.role === 'p1' ? currentRoom?.p2_name : currentRoom?.p1_name) || 'خصم')
+      : (gameState.mode === GAME_MODES.AI ? `🤖 الذكاء الاصطناعي (${AI_DIFFICULTY_LABELS[gameState.aiDifficulty] || ''})` : '👥 لعب محلي');
+    
+    const result = gameState.winner === 'draw' ? 'draw' : (iWon ? 'win' : 'lose');
+    
+    saveHistoryEntry({
+      date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
+      opp: opponent, 
+      size: gameState.boardSize, 
+      result, 
+      matchDone: !!matchDone,
+      id: currentKey // معرف فريد لمنع التكرار داخل المصفوفة أيضاً
+    });
+  }
+  // --------------------------------
 
   if(matchDone){
     trophy = '👑';
@@ -818,36 +850,26 @@ function openWinModal(matchDone){
     if(gameState.winner === 'draw'){ title = '🤝 تعادل!'; text = 'لم يفز أحد في هذه الجولة.'; }
     else if(wasForfeit){
       title = iWon ? '⏱️ فزت بسبب انسحاب الخصم' : '⏱️ خسرت بسبب تأخّرك';
-      text = iWon ? 'لم يلعب الخصم خلال الوقت المحدد 6 مرات متتالية.' : 'فاتتك مهلة الـ15 ثانية 6 مرات متتالية دون أن تلعب يدويًا.';
+      text = iWon ? 'لم يلعب الخصم خلال الوقت المحدد.' : 'فاتتك مهلة الـ15 ثانية عدة مرات.';
     }
     else if(iWon){ title = '🎉 أنت الفائز!'; text = 'لعبت ببراعة!'; }
     else if(isSpectator){ title = '🏁 انتهت الجولة'; text = 'فاز ' + (gameState.winner==='X'?'❌':'⭕'); }
     else { title = '😅 خسرت هذه المرة'; text = 'فاز ' + (gameState.winner==='X'?'❌':'⭕'); }
     if(gameState.mode === GAME_MODES.ONLINE && gameState.matchTarget){
-      text += ` — النتيجة ${gameState.p1Wins}:${gameState.p2Wins} (أفضل من ${gameState.matchTarget})`;
+      text += ` — النتيجة ${gameState.p1Wins}:${gameState.p2Wins}`;
     }
   }
-  if(!isSpectator && gameState.mode === GAME_MODES.ONLINE) saveWatchRoom();
+
   document.getElementById('winTrophy').textContent = trophy;
   document.getElementById('winTitle').textContent = title;
   document.getElementById('winText').textContent = text;
   document.getElementById('btnRematch').style.display = (isSpectator || (matchDone && gameState.mode===GAME_MODES.ONLINE)) ? 'none' : 'inline-flex';
+  
   modal.style.display='flex';
   modal.classList.toggle('match-champion', !!matchDone);
   launchConfetti();
-  if(matchDone && iWon){ setTimeout(launchConfetti, 350); setTimeout(launchConfetti, 700); if(navigator.vibrate) navigator.vibrate([80,60,80,60,160]); }
-  if(gameState.winner !== 'draw'){ beep(880,.2,'triangle'); setTimeout(()=>beep(1100,.25,'triangle'),150); if(matchDone && iWon) setTimeout(()=>beep(1400,.3,'triangle'),320); }
-
-  if(!isSpectator){
-    const opponent = gameState.mode === GAME_MODES.ONLINE
-      ? ((session.role==='p1' ? currentRoom?.p2_name : currentRoom?.p1_name) || 'خصم')
-      : (gameState.mode === GAME_MODES.AI ? `🤖 الذكاء الاصطناعي (${AI_DIFFICULTY_LABELS[gameState.aiDifficulty] || ''})` : '👥 لعب محلي');
-    const result = gameState.winner === 'draw' ? 'draw' : (iWon ? 'win' : 'lose');
-    saveHistoryEntry({
-      date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
-      opp: opponent, size: gameState.boardSize, result, matchDone: !!matchDone
-    });
-  }
+  if(matchDone && iWon){ setTimeout(launchConfetti, 350); setTimeout(launchConfetti, 700); }
+  if(gameState.winner !== 'draw') beep(880,.2,'triangle');
 }
 
 /* ===================== ONLINE GAME ===================== */
@@ -1014,66 +1036,61 @@ function armWatchdogTimer(room){
 
 let lastMoveWasForfeit = false;
 
-function syncRoomState(room){
-  const isFirstSync = !currentRoom;
-  const prevFrozen = gameState.frozenIdx;
+ function syncRoomState(room){
   const prevStatus = gameState.status;
-  const prevMovesLen = (gameState.moves || []).length;
+  const prevRev = currentRoom ? currentRoom.rev : -1;
   currentRoom = room;
+
+  // تحديث بيانات الحالة الأساسية
   gameState.boardSize = room.board_size || 3;
-  gameState.winLength = room.win_length || defaultWinLength(gameState.boardSize);
   gameState.board = room.board || createBoard(gameState.boardSize);
   gameState.turn = room.turn || 'X';
   gameState.winner = room.winner || null;
   gameState.winningLine = room.winning_line || null;
   gameState.status = room.status || 'playing';
-  gameState.moves = room.moves || [];
   gameState.p1Wins = room.p1_wins || 0;
   gameState.p2Wins = room.p2_wins || 0;
   gameState.matchTarget = room.match_target || null;
-  gameState.frozenIdx = (room.frozen_idx === undefined || room.frozen_idx === null) ? null : room.frozen_idx;
+
+  // إدارة القوى والتجميد
+  gameState.frozenIdx = room.frozen_idx ?? null;
   gameState.frozenBlocksRole = room.frozen_blocks_role || null;
   gameState.p1Powers = room.p1_powers || { freeze:true, extra:true, swap:true };
   gameState.p2Powers = room.p2_powers || { freeze:true, extra:true, swap:true };
-  if(gameState.frozenIdx !== prevFrozen && gameState.frozenIdx !== null && gameState.frozenBlocksRole === session.role){
-    showTurnBubble('❄️ الخصم جمّد خانة عليك — تجنّبها هذا الدور!');
-  }
-  // صوت وضع الرمز — لكل حركة جديدة تصل من أي طرف (نحن أو الخصم)
-  if(!isFirstSync && gameState.moves.length > prevMovesLen) beep(520,.08,'square');
-  // الوقت يبدأ فقط لحظة انضمام الخصم فعليًا (تحوّل حالة الغرفة من "بانتظار" إلى "قيد اللعب")
-  if(prevStatus !== 'playing' && gameState.status === 'playing') startTurnTimer();
-  if(gameState.status !== 'playing') stopGameTimer();
-  // مؤقّت الحركة التلقائية (15 ثانية) + الحارس الاحتياطي — أونلاين فقط وأثناء اللعب
-  if(gameState.mode === GAME_MODES.ONLINE && gameState.status === 'playing'){
-    startTurnTimer();      // ← أضف هذا السطر
-    armAutoMoveTimer();
-    armWatchdogTimer(room);
+
+  if(gameState.status === 'playing') {
+      startTurnTimer();
+      armAutoMoveTimer();
+      armWatchdogTimer(room);
   } else {
-    clearAutoMoveTimer(); clearWatchdogTimer();
-  }
-  const matchDone = isMatchDecided();
-  if(room.status === 'finished' && document.getElementById('winModal').style.display !== 'flex'
-     && document.getElementById('rematchWaitingModal')?.style.display !== 'flex'
-     && document.getElementById('rematchRequestModal')?.style.display !== 'flex'){
-    setTimeout(()=> openWinModal(matchDone), 400);
+      stopGameTimer();
+      clearAutoMoveTimer();
+      clearWatchdogTimer();
   }
 
-  /* ===== حالة طلب إعادة اللعب ===== */
-  if(session.role==='p1' || session.role==='p2'){
-    if(room.status === 'playing' && prevStatus !== 'playing'){
-      // بدأت جولة جديدة فعليًا (بعد الموافقة) — أخفِ أي نوافذ طلب/انتظار متبقية
-      hideRematchWaitingModal(); hideRematchRequestModal();
-      myPendingRematchRequest = false; clearWatchRoom();
-    } else if(room.rematch_status === 'pending' && room.rematch_by !== session.role){
-      showRematchRequestModal(room.code, room);
-    } else if(room.rematch_status !== 'pending'){
+  const matchDone = isMatchDecided();
+
+  // عرض نافذة الفوز فقط إذا انتهت الجولة ولم نقم بعرضها لهذه المراجعة المحددة
+  if (room.status === 'finished' && room.rev !== prevRev) {
+      setTimeout(() => openWinModal(matchDone), 400);
+  }
+
+  // معالجة تدفق طلب إعادة اللعب
+  if(session.role === 'p1' || session.role === 'p2') {
+    if(room.status === 'playing' && prevStatus !== 'playing') {
+      hideRematchWaitingModal(); 
       hideRematchRequestModal();
-      if(myPendingRematchRequest && room.status === 'finished'){
-        // كان لدينا طلب معلّق وعاد rematch_status إلى none دون أن تبدأ جولة جديدة ⇒ الخصم رفض
+      myPendingRematchRequest = false; 
+      clearWatchRoom();
+      // تصفير مفتاح الحفظ لبدء جولة جديدة
+      historySavedRoundKey = null;
+    } else if(room.rematch_status === 'pending' && room.rematch_by !== session.role) {
+      showRematchRequestModal(room.code, room);
+    } else if(room.rematch_status === 'none') {
+      hideRematchRequestModal();
+      if(myPendingRematchRequest) {
         myPendingRematchRequest = false;
         hideRematchWaitingModal();
-        showToast('🚫 رفض الخصم طلب إعادة اللعب');
-        setTimeout(()=> openWinModal(matchDone), 200);
       }
     }
   }
@@ -1520,9 +1537,18 @@ function closeAchievementsSheet(){ document.getElementById('achievementsSheetBg'
 
 /* ===================== HISTORY ===================== */
 function loadHistory(){ try{ return JSON.parse(localStorage.getItem('xo_history')||'[]'); }catch(e){ return []; } }
+
 function saveHistoryEntry(entry){
-  const hist = loadHistory(); hist.unshift(entry); localStorage.setItem('xo_history', JSON.stringify(hist.slice(0,50))); renderHistoryTable();
+  let hist = loadHistory();
+  // التأكد من أن هذه الجولة (بنفس الرمز والمراجعة) غير مسجلة مسبقاً في المصفوفة
+  const isDuplicate = hist.some(h => h.id === entry.id);
+  if (isDuplicate) return;
+
+  hist.unshift(entry); 
+  localStorage.setItem('xo_history', JSON.stringify(hist.slice(0, 50))); 
+  renderHistoryTable();
 }
+
 function renderHistoryTable(){
   const box = document.getElementById('historyTable'); if(!box) return;
   const hist = loadHistory();
