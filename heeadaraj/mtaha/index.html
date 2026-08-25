@@ -22,6 +22,11 @@
   <div id="catchFlash" class="catch-flash"></div>
   <div id="killFeed" class="kill-feed"></div>
   <div id="ammoBadge">3</div>
+  <div id="crosshair" class="crosshair">
+    <span class="ch-line ch-top"></span><span class="ch-line ch-bottom"></span>
+    <span class="ch-line ch-left"></span><span class="ch-line ch-right"></span>
+    <span class="ch-dot"></span>
+  </div>
 </div>
 
 <!-- مؤشر المفتاح -->
@@ -93,6 +98,18 @@
         <div class="tab" data-tab="join">انضمام برمز</div>
       </div>
 
+      <div class="field">
+        <label>🪖 شكل جنديّك</label>
+        <div class="diff-grid" id="genderGrid">
+          <div class="diff-opt sel" data-gender="male">
+            <b>👨 جندي</b><span>بنية عريضة وقصّة شعر قصيرة</span>
+          </div>
+          <div class="diff-opt" data-gender="female">
+            <b>👩 جنديّة</b><span>بنية أنحف وذيل حصان</span>
+          </div>
+        </div>
+      </div>
+
       <div id="tabpane-create">
         <div class="field">
           <label>👥 عدد اللاعبين</label>
@@ -157,17 +174,21 @@
       </div>
       <div class="mz-timer" id="mzTimer">04:00</div>
       <div class="tb-right">
+        <button class="tb-btn" id="btnScanMaze" title="ناظور الكشف">🔭<span class="hint-count" id="scanCooldownBadge" style="display:none;"></span></button>
         <button class="tb-btn" id="btnHintMaze" title="بوصلة الاتجاه">🧭<span class="hint-count" id="hintCount">3</span></button>
         <button class="tb-btn" id="btnHelpMaze" title="شرح اللعبة">❓</button>
       </div>
     </div>
 
+    <div class="scan-cone" id="scanCone"></div>
+    <div class="scan-blips" id="scanBlips"></div>
+    <div class="scan-status" id="scanStatus"></div>
+
     <div class="zone-warning" id="zoneWarning">⚠️ أنت خارج المنطقة الآمنة!</div>
 
     <canvas id="mazeCanvas" style="display:none;"></canvas>
 
-    <div class="controls-hint" style="position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:20;color:rgba(255,255,255,0.7);font-size:12px;text-align:center;pointer-events:none;">
-      <div>WASD — حركة | SHIFT — sprint | SPACE — إطلاق | MOUSE — نظر</div>
+    <div class="controls-hint" id="controlsHint" style="position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:20;color:rgba(255,255,255,0.7);font-size:12px;text-align:center;pointer-events:none;">
     </div>
 
     <div class="dpad" id="dpad" style="display:none;">
@@ -197,6 +218,7 @@
         <p><b>👮 الحرّاس:</b> كائنات حمراء متحركة. الاصطدام بها يكلفك ❤️ ويعيدك للبداية.</p>
         <p><b>🔫 القتال:</b> اجمع ذخيرة، اضغط SPACE أو انقر لإطلاق النار. إصابة خصم تُفقده ❤️.</p>
         <p><b>📢 النداءات:</b> استخدم زر 📢 لإرسال رسائل سريعة لخصمك!</p>
+        <p><b>🔭 ناظور الكشف:</b> اضغط 🔭 ليفتح مخروط رؤية أمامك لبضع ثوانٍ — أي خصم يقع داخل هذا المجال يظهر موقعه، ويدور المخروط تلقائيًا مع اتجاه نظرك (نفس مفتاح التصويب).</p>
         <p><b>⭐ المكافآت:</b> سرعة، درع، كشف، تجميد الحرّاس.</p>
         <p><b>🌀 المنطقة الآمنة:</b> تبدأ بالانكماش بعد فترة — البقاء خارجها يكلفك قلوبًا.</p>
         <p><b>🏆 الفوز:</b> الهروب بالمفتاح، أو أن تكون آخر الصامدين.</p>
@@ -222,5 +244,37 @@
 </div>
 
 <script src="app.js"></script>
+
+<!-- ===== جسر إبلاغ الصفحة الأم (نخلة وسفورة) بحالة الجولة ===== -->
+<script>
+(function(){
+  function isVisible(el){
+    if(!el) return false;
+    var cs = getComputedStyle(el);
+    if(cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+  var target = document.getElementById('screen-game');
+  if(!target) return;
+  var last = null;
+  function report(){
+    var v = isVisible(target);
+    if(v !== last){
+      last = v;
+      try{ window.parent.postMessage({source:'gameBridge', type:'roundState', active: v}, '*'); }catch(e){}
+    }
+  }
+  // يراقب أي تغيير في الصفحة كلها (style/class) لأننا لا نعرف مسبقًا
+  // أي عنصر بالضبط يتحكم بإخفاء/إظهار #screen-game داخل app.js
+  var mo = new MutationObserver(report);
+  mo.observe(document.body, {attributes:true, attributeFilter:['style','class'], subtree:true, childList:true});
+  window.addEventListener('load', report);
+  document.addEventListener('DOMContentLoaded', report);
+  report();
+  // شبكة أمان احتياطية في حال فاتت الملاحظة تغييرًا (مثلاً تأخر تحميل)
+  setInterval(report, 400);
+})();
+</script>
 </body>
 </html>
