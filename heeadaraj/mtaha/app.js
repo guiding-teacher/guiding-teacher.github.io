@@ -401,6 +401,7 @@ let localProfile = null;
 let soundOn = true;
 let currentDiff = 'normal';
 let currentPlayers = 2;
+let currentGender = localStorage.getItem('maze_gender') || 'male';
 let session = { code:null, role:null, slot:0 };
 let currentRoom = null;
 let dbChannel = null, liveChannel = null;
@@ -443,6 +444,7 @@ async function createMazeRoom(diff, maxPlayers){
     code, seed, difficulty: diff, max_players: maxPlayers, status:'waiting',
     p1_user_id: myId, p1_auth: myAuthUid,
     p1_name: localProfile.username, p1_avatar_color: localProfile.avatar_color, p1_avatar_data: localProfile.avatar_data,
+    p1_gender: currentGender,
   };
   const { data, error } = await sb.from('maze_rooms').insert(row).select().single();
   if(error) return { error };
@@ -454,7 +456,8 @@ async function joinMazeRoomByCode(code){
   code = code.trim().toUpperCase();
   const { data, error } = await sb.rpc('join_maze_room', {
     p_code: code, p_user_id: myId, p_auth: myAuthUid,
-    p_name: localProfile.username, p_avatar_color: localProfile.avatar_color, p_avatar_data: localProfile.avatar_data
+    p_name: localProfile.username, p_avatar_color: localProfile.avatar_color, p_avatar_data: localProfile.avatar_data,
+    p_gender: currentGender
   });
   if(error){ return { error }; }
   const rows = Array.isArray(data) ? data : [data];
@@ -488,6 +491,7 @@ function cleanupChannels(){
   players = {};
   keyHolder = null;
   doorOpen = false;
+  resetScanState();
   const gc = document.getElementById('game-container');
   if(gc) gc.style.display = 'none';
 }
@@ -572,6 +576,7 @@ function collectPlayersFromRoom(room){
       name: room['p'+(s+1)+'_name'] || '؟',
       color: room['p'+(s+1)+'_avatar_color'] || ROLE_COLORS[role],
       avatarData: room['p'+(s+1)+'_avatar_data'] || null,
+      gender: room['p'+(s+1)+'_gender'] || 'male',
       slot: s, pos: null, facing: 'S', lives: 3, eliminated:false, lastSeen: 0,
     };
   }
@@ -825,13 +830,21 @@ function computeClosestAliveRole(){
 }
 
 /* ===================== 15) الأضرار ===================== */
+let damageInvincibleUntil = 0;
 function applyDamage(source, shooterRole){
+  if(Date.now() < damageInvincibleUntil) return; // مهلة حماية قصيرة بعد كل إصابة
   if(activeEffects.shield){ activeEffects.shield=false; flashCatch(true); return; }
   myLives--;
   flashCatch(false);
+  damageInvincibleUntil = Date.now() + 1200; // 1.2 ثانية حصانة كي لا يُستهلك أكثر من قلب لنفس الاصطدام
   if(maze) {
     const starts = getStartPositions(maze.N, currentRoom.max_players);
     myPos = starts[session.slot % starts.length];
+    // نقل المجسّم المرئي فعليًا بعيدًا عن الحارس فورًا — بدون هذا يبقى المجسّم متراكبًا مع
+    // الحارس فيُعاد استدعاء applyDamage في كل إطار تالٍ (60 مرة/ثانية) فيستنزف كل الحيوات فورًا
+    if(playerMesh){
+      playerMesh.position.set(myPos[1] * CELL_SIZE, 0.8, myPos[0] * CELL_SIZE);
+    }
   }
   broadcastMove();
   broadcastHit(session.role, shooterRole, myLives, source);
@@ -995,32 +1008,28 @@ function tryMove(dirName){
 window.addEventListener('keydown', (e)=>{
   if(!document.getElementById('screen-game').classList.contains('active')) return;
 });
-const dpadEl = document.getElementById('dpad');
-if(dpadEl){
-  dpadEl.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.dp'); if(!btn) return;
-    tryMove(btn.dataset.dir);
+/* أزرار الاتجاهات (الدائرية اليسرى) — تُحرّك اللاعب الحقيقي في المشهد ثلاثي الأبعاد
+   عبر نفس متغيّرات لوحة المفاتيح (keys.w/a/s/d) التي تقرأها updatePlayerMovement كل إطار،
+   بدل النظام القديم tryMove() المرتبط بشبكة ثنائية الأبعاد ميتة لا تُحرّك المجسّم فعليًا */
+const DPAD_KEY_MAP = { up:'w', down:'s', left:'a', right:'d' };
+function wireDirectionalPad(container){
+  if(!container) return;
+  container.querySelectorAll('.dp').forEach(btn=>{
+    const key = DPAD_KEY_MAP[btn.dataset.dir];
+    if(!key) return;
+    const press = (e)=>{ e.preventDefault(); keys[key] = true; };
+    const release = (e)=>{ if(e) e.preventDefault(); keys[key] = false; };
+    btn.addEventListener('touchstart', press, { passive:false });
+    btn.addEventListener('touchend', release, { passive:false });
+    btn.addEventListener('touchcancel', release, { passive:false });
+    btn.addEventListener('mousedown', press);
+    btn.addEventListener('mouseup', release);
+    btn.addEventListener('mouseleave', release);
   });
 }
-const dpadExtra = document.getElementById('dpadExtra');
-if(dpadExtra){
-  dpadExtra.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.dp'); if(!btn) return;
-    tryMove(btn.dataset.dir);
-  });
-}
-(function initSwipe(){
-  let sx=0, sy=0, tracking=false;
-  const wrap = document.querySelector('.maze-stage-wrap');
-  if(!wrap) return;
-  wrap.addEventListener('touchstart', (e)=>{ tracking=true; sx=e.touches[0].clientX; sy=e.touches[0].clientY; }, {passive:true});
-  wrap.addEventListener('touchend', (e)=>{
-    if(!tracking) return; tracking=false;
-    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
-    if(Math.abs(dx)<24 && Math.abs(dy)<24) return;
-    if(Math.abs(dx) > Math.abs(dy)) tryMove(dx>0?'right':'left'); else tryMove(dy>0?'down':'up');
-  }, {passive:true});
-})();
+wireDirectionalPad(document.getElementById('dpad'));
+wireDirectionalPad(document.getElementById('dpadExtra'));
+
 
 /* ===================== 18) القتال — الإطلاق ===================== */
 function fireWeapon(){
@@ -1057,6 +1066,12 @@ function drawShotTrail(path){
 }
 const btnFireEl = document.getElementById('btnFire');
 if(btnFireEl) btnFireEl.addEventListener('click', fireWeapon);
+
+/* ===================== ناظور الكشف — الزر ===================== */
+const btnScanEl = document.getElementById('btnScanMaze');
+if(btnScanEl){
+  btnScanEl.addEventListener('click', activateScan);
+}
 
 /* ===================== 19) البوصلة ===================== */
 const btnHintEl = document.getElementById('btnHintMaze');
@@ -1188,6 +1203,18 @@ if(playerCountGrid){
     const opt = e.target.closest('.diff-opt'); if(!opt) return;
     document.querySelectorAll('#playerCountGrid .diff-opt').forEach(o=>o.classList.remove('sel'));
     opt.classList.add('sel'); currentPlayers = parseInt(opt.dataset.players,10);
+  });
+}
+const genderGrid = document.getElementById('genderGrid');
+if(genderGrid){
+  document.querySelectorAll('#genderGrid .diff-opt').forEach(o=>{
+    if(o.dataset.gender === currentGender) o.classList.add('sel'); else o.classList.remove('sel');
+  });
+  genderGrid.addEventListener('click', (e)=>{
+    const opt = e.target.closest('.diff-opt'); if(!opt) return;
+    document.querySelectorAll('#genderGrid .diff-opt').forEach(o=>o.classList.remove('sel'));
+    opt.classList.add('sel'); currentGender = opt.dataset.gender;
+    localStorage.setItem('maze_gender', currentGender);
   });
 }
 
@@ -1725,38 +1752,102 @@ function createAmmoItem(r, c) {
 
 /* ===================== 2) لاعب 3D ===================== */
 function createPlayer3D() {
+    const gender = (players[session.role] && players[session.role].gender) || currentGender || 'male';
+    const teamColor = ROLE_COLORS[session.role] || 0xffffff;
+    const isFemale = gender === 'female';
     const group = new THREE.Group();
-    const bodyMat = new THREE.MeshStandardMaterial({ 
-        color: ROLE_COLORS[session.role] || 0xffffff,
-        roughness: 0.5, metalness: 0.3
+
+    const uniformMat = new THREE.MeshStandardMaterial({ color: 0x3d4a3f, roughness: 0.7, metalness: 0.1 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xe8b98c, roughness: 0.8 });
+    const vestMat = new THREE.MeshStandardMaterial({ color: teamColor, roughness: 0.5, metalness: 0.3 });
+    const hairMat = new THREE.MeshStandardMaterial({ color: isFemale ? 0x2b1a10 : 0x1a1a1a, roughness: 0.9 });
+    const bootMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.8 });
+
+    // الأرجل
+    const legW = isFemale ? 0.11 : 0.13;
+    [-1, 1].forEach(side => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(legW, legW, 0.62, 8), uniformMat);
+        leg.position.set(side * 0.14, 0.31, 0);
+        leg.castShadow = true;
+        group.add(leg);
+        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.12, 0.26), bootMat);
+        boot.position.set(side * 0.14, 0.06, 0.03);
+        group.add(boot);
     });
-    const bodyGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.9, 8);
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.8;
-    body.castShadow = true;
-    group.add(body);
 
-    const capGeo2 = new THREE.SphereGeometry(0.35, 8, 8, 0, Math.PI * 2, 0, Math.PI/2);
-    const topCap2 = new THREE.Mesh(capGeo2, bodyMat);
-    topCap2.position.y = 0.8 + 0.45;
-    group.add(topCap2);
+    // الجذع — أعرض عند الرجل، بخصر أنحف عند المرأة
+    const chestW = isFemale ? 0.42 : 0.52, chestD = isFemale ? 0.26 : 0.30;
+    const chest = new THREE.Mesh(new THREE.BoxGeometry(chestW, 0.42, chestD), uniformMat);
+    chest.position.y = 0.84;
+    chest.castShadow = true;
+    group.add(chest);
+    const waistW = isFemale ? 0.30 : 0.42;
+    const waist = new THREE.Mesh(new THREE.BoxGeometry(waistW, 0.2, chestD - 0.02), uniformMat);
+    waist.position.y = 0.62;
+    group.add(waist);
 
-    const botCap2 = new THREE.Mesh(capGeo2, bodyMat);
-    botCap2.rotation.x = Math.PI;
-    botCap2.position.y = 0.8 - 0.45;
-    group.add(botCap2);
+    // صدرية الفريق (تلوّن بلون الفريق حتى يُعرف صاحبها فورًا)
+    const vest = new THREE.Mesh(new THREE.BoxGeometry(chestW - 0.06, 0.3, 0.08), vestMat);
+    vest.position.set(0, 0.9, -(chestD/2) + 0.02);
+    group.add(vest);
 
-    const headGeo = new THREE.SphereGeometry(0.25, 12, 12);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xffccaa, roughness: 0.8 });
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.position.y = 1.55;
+    // الذراعان
+    const armLen = 0.5, armR = isFemale ? 0.075 : 0.09;
+    [-1, 1].forEach(side => {
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(armR, armR, armLen, 8), uniformMat);
+        arm.position.set(side * (chestW/2 + 0.05), 0.82, 0.03);
+        arm.rotation.z = side * 0.18;
+        arm.castShadow = true;
+        group.add(arm);
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(armR + 0.01, 6, 6), skinMat);
+        hand.position.set(side * (chestW/2 + 0.09), 0.82 - armLen/2, 0.05);
+        group.add(hand);
+    });
+
+    // الرأس
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skinMat);
+    head.position.y = 1.32;
     group.add(head);
 
-    const weaponGeo = new THREE.BoxGeometry(0.1, 0.1, 0.6);
-    const weaponMat = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.9, roughness: 0.1 });
-    playerWeapon = new THREE.Mesh(weaponGeo, weaponMat);
-    playerWeapon.position.set(0.3, 1.1, 0.4);
-    group.add(playerWeapon);
+    // الشعر/الخوذة — أوضح فارق بصري بين الجندي والجندية
+    if(isFemale){
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.205, 12, 8, 0, Math.PI*2, 0, Math.PI*0.55), hairMat);
+        cap.position.y = 1.35;
+        group.add(cap);
+        // ذيل حصان يتدلّى خلف الرأس (خلف = +Z لأن الأمام هو -Z) — أسطوانة برأس كروي
+        // بدل CapsuleGeometry غير المتوفرة في نسخة three.js r128 المستخدمة هنا
+        const pony = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.03, 0.28, 6), hairMat);
+        pony.position.set(0, 1.22, 0.2);
+        pony.rotation.x = Math.PI/2.4;
+        group.add(pony);
+        const ponyTip = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), hairMat);
+        ponyTip.position.set(0, 1.08, 0.34);
+        group.add(ponyTip);
+    } else {
+        const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 8, 0, Math.PI*2, 0, Math.PI*0.5), hairMat);
+        helmet.position.y = 1.36;
+        group.add(helmet);
+        const brim = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.14), hairMat);
+        brim.position.set(0, 1.34, -0.15);
+        group.add(brim);
+    }
+
+    // السلاح — يمتد بوضوح للأمام (اتجاه -Z هو اتجاه حركة/نظر اللاعب) ليكون اتجاه
+    // الإطلاق مفهومًا بصريًا بمجرد النظر لمكان اتجاه فوهة البندقية
+    const gunGroup = new THREE.Group();
+    const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.5), new THREE.MeshStandardMaterial({ color: 0x2b2b2b, metalness: 0.85, roughness: 0.2 }));
+    barrel.position.z = -0.22;
+    gunGroup.add(barrel);
+    const stock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.16), new THREE.MeshStandardMaterial({ color: 0x4a2f1a, roughness: 0.7 }));
+    stock.position.z = 0.08;
+    gunGroup.add(stock);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 8), new THREE.MeshStandardMaterial({ color: 0x111111, metalness:0.9 }));
+    tip.rotation.x = -Math.PI/2;
+    tip.position.z = -0.48;
+    gunGroup.add(tip);
+    gunGroup.position.set(0.22, 0.82, -0.25);
+    group.add(gunGroup);
+    playerWeapon = gunGroup;
 
     scene.add(group);
     playerMesh = group;
@@ -1792,6 +1883,22 @@ function setupInput() {
     renderer.domElement.addEventListener('mousedown', (e) => {
         if(e.button === 0) fireWeapon3D();
     });
+
+    // سطح المكتب: اضغط مطولاً بالزر الأيمن (أو المسّاحة الوسطى) واسحب لتدوير اتجاه
+    // النظر/التصويب — نفس آلية السحب باللمس على الجوال بالضبط، لكن بزر بدل نصف الشاشة
+    let isDesktopAiming = false, aimStartX = 0, aimStartY = 0;
+    renderer.domElement.addEventListener('mousedown', (e) => {
+        if(e.button === 2){ isDesktopAiming = true; aimStartX = e.clientX; aimStartY = e.clientY; }
+    });
+    window.addEventListener('mousemove', (e) => {
+        if(!isDesktopAiming) return;
+        const dx = (e.clientX - aimStartX) * 0.005;
+        const dy = (e.clientY - aimStartY) * 0.005;
+        cameraOrbitYaw -= dx;
+        cameraOrbitPitch = Math.max(-0.5, Math.min(0.5, cameraOrbitPitch - dy));
+        aimStartX = e.clientX; aimStartY = e.clientY;
+    });
+    window.addEventListener('mouseup', (e) => { if(e.button === 2) isDesktopAiming = false; });
 
     let touchStartX = 0, touchStartY = 0;
     let isRightTouch = false;
@@ -2037,6 +2144,9 @@ function fireWeapon3D() {
     shakeCamera(0.3, 0.1);
     if(soundOn) playSound('shoot');
     broadcastShoot(myPos[0], myPos[1], myFacing);
+
+    const ch = document.getElementById('crosshair');
+    if(ch){ ch.classList.add('firing'); setTimeout(()=> ch.classList.remove('firing'), 120); }
 }
 
 function createProjectile(pos, dir, ownerRole) {
@@ -2376,6 +2486,23 @@ function applyCameraShake(delta) {
 }
 
 /* ===================== 11) نظام النداء ===================== */
+function positionBubbleAt3D(bubble, x, z){
+  if(!camera){ bubble.style.left = '50%'; bubble.style.top = '18%'; return; }
+  const vec = new THREE.Vector3(x, 2.2, z);
+  vec.project(camera);
+  // إن كانت النقطة خلف الكاميرا فعليًا، لا تُسقطها بإحداثيات معكوسة خاطئة — استخدم موضعًا
+  // ثابتًا مقروءًا أعلى الشاشة بدل فقاعة قد تظهر خارج حدود الشاشة تمامًا أو بمكان معكوس
+  if(vec.z > 1){
+    bubble.style.left = '50%'; bubble.style.top = '18%';
+    return;
+  }
+  const margin = 60;
+  const sx = Math.max(margin, Math.min(window.innerWidth - margin, (vec.x * 0.5 + 0.5) * window.innerWidth));
+  const sy = Math.max(margin, Math.min(window.innerHeight - margin, (-vec.y * 0.5 + 0.5) * window.innerHeight));
+  bubble.style.left = sx + 'px';
+  bubble.style.top = sy + 'px';
+}
+
 function showShoutBubble(role, message) {
     const p = players[role];
     if(!p) return;
@@ -2399,12 +2526,22 @@ function showShoutBubble(role, message) {
         box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         animation: shoutPop 0.3s ease;
         transition: opacity 0.3s, transform 0.3s;
+        transform: translate(-50%, -120%);
     `;
     document.body.appendChild(bubble);
 
+    // ضع الفقاعة في مكانها الصحيح فورًا (لا تنتظر إطار الرسم التالي) — نستخدم موضع
+    // اللاعب المحلي الفعلي (playerMesh) إن كان الشوط من نفسي لضمان دقة فورية
+    let x, z;
+    if(role === session.role && playerMesh){ x = playerMesh.position.x; z = playerMesh.position.z; }
+    else if(p.pos3D){ x = p.pos3D.x; z = p.pos3D.z; }
+    else if(p.pos){ x = p.pos[1] * CELL_SIZE; z = p.pos[0] * CELL_SIZE; }
+    if(x !== undefined) positionBubbleAt3D(bubble, x, z);
+    else { bubble.style.left = '50%'; bubble.style.top = '18%'; }
+
     setTimeout(() => {
         bubble.style.opacity = '0';
-        bubble.style.transform = 'translate(-50%, -120%) scale(0.8)';
+        bubble.style.transform = 'translate(-50%, -160%) scale(0.8)';
         setTimeout(() => bubble.remove(), 300);
     }, 3500);
 }
@@ -2416,18 +2553,12 @@ function updateShoutBubbles() {
         if(!p) return;
 
         let x, z;
-        if(p.pos3D) { x = p.pos3D.x; z = p.pos3D.z; }
+        if(role === session.role && playerMesh){ x = playerMesh.position.x; z = playerMesh.position.z; }
+        else if(p.pos3D) { x = p.pos3D.x; z = p.pos3D.z; }
         else if(p.pos) { x = p.pos[1] * CELL_SIZE; z = p.pos[0] * CELL_SIZE; }
         else return;
 
-        const vec = new THREE.Vector3(x, 2.2, z);
-        vec.project(camera);
-        const sx = (vec.x * 0.5 + 0.5) * window.innerWidth;
-        const sy = (-vec.y * 0.5 + 0.5) * window.innerHeight;
-
-        bubble.style.left = sx + 'px';
-        bubble.style.top = sy + 'px';
-        bubble.style.transform = 'translate(-50%, -120%)';
+        positionBubbleAt3D(bubble, x, z);
     });
 }
 
@@ -2558,6 +2689,94 @@ function initPhaserHUD() {
 }
 
 /* ===================== 13) حلقة اللعبة الرئيسية ===================== */
+/* ===================== ناظور الكشف — مخروط دوّار يكشف الخصوم في مجال الرؤية فقط ===================== */
+const SCAN_DURATION_MS = 4000, SCAN_COOLDOWN_MS = 12000;
+const SCAN_ANGLE_RAD = Math.PI / 3;   // 60° مجال رؤية
+const SCAN_RANGE = 12;                // بوحدات المشهد (CELL_SIZE لكل خانة)
+let scanActive = false, scanEndAt = 0, scanCooldownUntil = 0, scanCooldownInterval = null;
+
+function getForwardVector(){
+  const ry = playerMesh ? playerMesh.rotation.y : 0;
+  return { x: -Math.sin(ry), z: -Math.cos(ry) };
+}
+function playerWorldPos(p){
+  if(p.pos3D) return { x: p.pos3D.x, z: p.pos3D.z };
+  if(p.pos) return { x: p.pos[1]*CELL_SIZE, z: p.pos[0]*CELL_SIZE };
+  return null;
+}
+function isWithinScanCone(dx, dz){
+  const dist = Math.hypot(dx, dz);
+  if(dist < 0.001) return true;
+  if(dist > SCAN_RANGE) return false;
+  const fwd = getForwardVector();
+  const dot = fwd.x*(dx/dist) + fwd.z*(dz/dist);
+  return dot >= Math.cos(SCAN_ANGLE_RAD/2);
+}
+
+function activateScan(){
+  const now = Date.now();
+  if(scanActive || now < scanCooldownUntil || gameOver || !playerMesh) return;
+  scanActive = true;
+  scanEndAt = now + SCAN_DURATION_MS;
+  const cone = document.getElementById('scanCone'); if(cone) cone.classList.add('active');
+  const status = document.getElementById('scanStatus');
+  if(status){ status.textContent = '🔭 الناظور يكشف أمامك…'; status.classList.add('show'); }
+}
+function deactivateScan(){
+  scanActive = false;
+  scanCooldownUntil = Date.now() + SCAN_COOLDOWN_MS;
+  const cone = document.getElementById('scanCone'); if(cone) cone.classList.remove('active');
+  const status = document.getElementById('scanStatus'); if(status) status.classList.remove('show');
+  document.getElementById('scanBlips').innerHTML = '';
+  const badge = document.getElementById('scanCooldownBadge');
+  if(badge){
+    badge.style.display = 'flex';
+    clearInterval(scanCooldownInterval);
+    scanCooldownInterval = setInterval(()=>{
+      const remain = Math.ceil((scanCooldownUntil - Date.now())/1000);
+      if(remain <= 0){ badge.style.display = 'none'; clearInterval(scanCooldownInterval); }
+      else badge.textContent = remain;
+    }, 500);
+  }
+}
+function resetScanState(){
+  scanActive = false; scanCooldownUntil = 0;
+  clearInterval(scanCooldownInterval); scanCooldownInterval = null;
+  const cone = document.getElementById('scanCone'); if(cone) cone.classList.remove('active');
+  const status = document.getElementById('scanStatus'); if(status) status.classList.remove('show');
+  const badge = document.getElementById('scanCooldownBadge'); if(badge) badge.style.display = 'none';
+  const blips = document.getElementById('scanBlips'); if(blips) blips.innerHTML = '';
+}
+
+function updateScan(){
+  if(!scanActive) return;
+  if(Date.now() > scanEndAt){ deactivateScan(); return; }
+  if(!playerMesh) return;
+  const myX = playerMesh.position.x, myZ = playerMesh.position.z;
+  const blipsBox = document.getElementById('scanBlips');
+  const seenRoles = new Set();
+  for(const role of Object.keys(players)){
+    if(role === session.role) continue;
+    const p = players[role];
+    if(!p || p.eliminated) continue;
+    const wp = playerWorldPos(p);
+    if(!wp) continue;
+    const dx = wp.x - myX, dz = wp.z - myZ;
+    if(!isWithinScanCone(dx, dz)) continue;
+    seenRoles.add(role);
+    let blip = blipsBox.querySelector(`.scan-blip[data-role="${role}"]`);
+    if(!blip){
+      blip = document.createElement('div');
+      blip.className = 'scan-blip'; blip.dataset.role = role;
+      blip.style.color = p.color || '#5AE68C';
+      blip.innerHTML = `<span class="dot" style="background:${p.color||'#5AE68C'}"></span><span class="lbl">${p.name||'؟'}</span>`;
+      blipsBox.appendChild(blip);
+    }
+    positionBubbleAt3D(blip, wp.x, wp.z);
+  }
+  blipsBox.querySelectorAll('.scan-blip').forEach(el=>{ if(!seenRoles.has(el.dataset.role)) el.remove(); });
+}
+
 function gameLoop3D() {
     const delta = clock.getDelta();
 
@@ -2575,6 +2794,7 @@ function gameLoop3D() {
         regenAmmo();
         checkLastManStanding();
         updateShoutBubbles();
+        updateScan();
 
         const now = performance.now();
         if(now - lastPosBroadcast > 140) {
@@ -2590,6 +2810,7 @@ function gameLoop3D() {
     if(renderer && scene && camera) renderer.render(scene, camera);
     rafId = requestAnimationFrame(gameLoop3D);
 }
+
 
 /* ===================== 14) بدء الجولة 3D ===================== */
 async function startRound3D(room) {
@@ -2655,6 +2876,14 @@ async function startRound3D(room) {
     document.body.classList.add('in-game');
     const gameContainer = document.getElementById('game-container');
     if(gameContainer) gameContainer.style.display = 'block';
+
+    const hintEl = document.getElementById('controlsHint');
+    if(hintEl){
+      const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+      hintEl.textContent = isTouch
+        ? '🕹️ العصا للحركة · 🔫 للإطلاق نحو الشعرة الوسطى · اسحب يمين الشاشة للتصويب · 🔭 كشف الاتجاه'
+        : '⌨️ WASD للحركة · Space أو نقرة يسار للإطلاق نحو الشعرة الوسطى · اسحب بزر الفأرة الأيمن للتصويب · 🔭 كشف الاتجاه';
+    }
 
     document.getElementById('mazeCanvas').style.display = 'none';
     document.getElementById('dpad').style.display = 'none';
