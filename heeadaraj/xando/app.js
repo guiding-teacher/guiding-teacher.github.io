@@ -304,6 +304,13 @@ const TURN_TIME_LIMIT = 15;
 
 function defaultWinLength(size){ return size <= 3 ? 3 : (size === 4 ? 4 : 5); }
 
+// خيار "5×5" في واجهة الاختيار ينشئ فعليًا لوحة 10×10 (والفوز يبقى بـ5 متتالية).
+// السبب: لوحة 5×5 مع شرط فوز = 5 يعني تعبئة صف/عمود/قطر كامل بالضبط،
+// وهذا يجعل الخصم يلاحظ الخانة الأخيرة المتبقية دائمًا فيمنع الفوز عمليًا.
+// لوحة أكبر (10×10) مع نفس شرط "5 متتالية" تمنح مساحة حقيقية واحتمالات فوز فعلية،
+// دون التأثير على بقية الأحجام (3،4،6،7،8،9،10) التي تبقى كما هي تمامًا.
+function actualBoardSize(selectedSize){ return selectedSize === 5 ? 10 : selectedSize; }
+
 function createBoard(size){ return Array(size*size).fill(null); }
 
 function getCell(row, col, size, board){ return (row>=0 && row<size && col>=0 && col<size) ? board[row*size+col] : null; }
@@ -445,6 +452,7 @@ function showScreen(name){
   document.getElementById('composerBottom').classList.remove('open');
   document.getElementById('btnChatFab').classList.toggle('visible', chatUiEnabled);
   document.body.classList.toggle('in-game', name==='game');
+  if(name === 'home' && loadWatchRoom()) startHomeRematchWatch(); else stopHomeRematchWatch();
 }
 
 function openChatComposer(){
@@ -819,6 +827,7 @@ function openWinModal(matchDone){
       text += ` — النتيجة ${gameState.p1Wins}:${gameState.p2Wins} (أفضل من ${gameState.matchTarget})`;
     }
   }
+  if(!isSpectator && gameState.mode === GAME_MODES.ONLINE) saveWatchRoom();
   document.getElementById('winTrophy').textContent = trophy;
   document.getElementById('winTitle').textContent = title;
   document.getElementById('winText').textContent = text;
@@ -852,7 +861,8 @@ async function createRoom(boardSize, winLength, matchTarget){
       p1_user_id: myId, p1_name: profile.username, p1_avatar_color: profile.avatar_color, p1_avatar_data: profile.avatar_data,
       p1_symbol: p1Sym, p2_symbol: p2Sym, p1_level: profile.level || 1, p1_title_ar: profile.title_ar, p1_title_icon: profile.title_icon,
       board: createBoard(boardSize), moves: [], winner: null, p1_wins:0, p2_wins:0, rev:0,
-      p1_powers:{freeze:true,extra:true,swap:true}, p2_powers:{freeze:true,extra:true,swap:true}
+      p1_powers:{freeze:true,extra:true,swap:true}, p2_powers:{freeze:true,extra:true,swap:true},
+      rematch_status:'none', rematch_by:null
     });
     if(!error) ok=true; attempts++;
   }
@@ -1042,10 +1052,37 @@ function syncRoomState(room){
     clearAutoMoveTimer(); clearWatchdogTimer();
   }
   const matchDone = isMatchDecided();
-  if(room.status === 'finished' && document.getElementById('winModal').style.display !== 'flex'){
+  if(room.status === 'finished' && document.getElementById('winModal').style.display !== 'flex'
+     && document.getElementById('rematchWaitingModal')?.style.display !== 'flex'
+     && document.getElementById('rematchRequestModal')?.style.display !== 'flex'){
     setTimeout(()=> openWinModal(matchDone), 400);
   }
+
+  /* ===== حالة طلب إعادة اللعب ===== */
+  if(session.role==='p1' || session.role==='p2'){
+    if(room.status === 'playing' && prevStatus !== 'playing'){
+      // بدأت جولة جديدة فعليًا (بعد الموافقة) — أخفِ أي نوافذ طلب/انتظار متبقية
+      hideRematchWaitingModal(); hideRematchRequestModal();
+      myPendingRematchRequest = false; clearWatchRoom();
+    } else if(room.rematch_status === 'pending' && room.rematch_by !== session.role){
+      showRematchRequestModal(room.code, room);
+    } else if(room.rematch_status !== 'pending'){
+      hideRematchRequestModal();
+      if(myPendingRematchRequest && room.status === 'finished'){
+        // كان لدينا طلب معلّق وعاد rematch_status إلى none دون أن تبدأ جولة جديدة ⇒ الخصم رفض
+        myPendingRematchRequest = false;
+        hideRematchWaitingModal();
+        showToast('🚫 رفض الخصم طلب إعادة اللعب');
+        setTimeout(()=> openWinModal(matchDone), 200);
+      }
+    }
+  }
   renderGame();
+}
+
+function showToast(text){
+  if(typeof showTurnBubble === 'function'){ showTurnBubble(text); return; }
+  alert(text);
 }
 
 function applyExtraRoomFields(room){
@@ -1124,28 +1161,182 @@ function leaveRoom(){
   clearSession();
 }
 
-async function rematch(){
-  if(!currentRoom) return;
-  if(session.role!=='p1' && session.role!=='p2') return;
-  const matchDone = isMatchDecided();
-  const fresh = {
+/* ===================== REMATCH APPROVAL FLOW ===================== */
+// لا نعيد اللعبة مباشرة بعد الآن — نرسل طلبًا لموافقة الطرف الآخر أولًا،
+// ولا تُنفَّذ الجولة الجديدة إلا بعد موافقته الصريحة.
+let myPendingRematchRequest = false; // هل أنا من أرسل طلب إعادة اللعب وننتظر ردّ الخصم؟
+
+function buildFreshMatchState(room){
+  const matchDone = isMatchDecidedFor(room);
+  return {
     status:'playing', turn:'X', winner:null, winning_line:null,
-    board: createBoard(currentRoom.board_size || 3), moves: [], rev:(currentRoom.rev||0)+1,
+    board: createBoard(room.board_size || 3), moves: [], rev:(room.rev||0)+1,
     frozen_idx:null, frozen_blocks_role:null, p1_extra_pending:false, p2_extra_pending:false,
     // نتيجة المباراة تُصفَّر فقط عند بدء مباراة جديدة كاملة (بعد حسم المباراة السابقة)،
     // وتبقى قوى اللاعبين (p1_powers/p2_powers) كما هي طوال المباراة الواحدة عبر جولاتها
-    p1_wins: matchDone ? 0 : (currentRoom.p1_wins || 0), p2_wins: matchDone ? 0 : (currentRoom.p2_wins || 0),
-    ...(matchDone ? { p1_powers:{freeze:true,extra:true,swap:true}, p2_powers:{freeze:true,extra:true,swap:true} } : {})
+    p1_wins: matchDone ? 0 : (room.p1_wins || 0), p2_wins: matchDone ? 0 : (room.p2_wins || 0),
+    ...(matchDone ? { p1_powers:{freeze:true,extra:true,swap:true}, p2_powers:{freeze:true,extra:true,swap:true} } : {}),
+    rematch_status:'none', rematch_by:null
   };
-  const { data } = await sb.from('xo_rooms').update(fresh).eq('code', session.code).select().single();
-  if(data) syncRoomState(data);
+}
+function isMatchDecidedFor(room){
+  if(!room.match_target) return false;
+  const need = Math.ceil(room.match_target/2);
+  return (room.p1_wins||0) >= need || (room.p2_wins||0) >= need;
+}
+
+// الخطوة 1: طلب إعادة اللعب — لا يغيّر حالة اللوحة، فقط يعلّم الغرفة بوجود طلب معلّق
+async function requestRematch(){
+  if(!currentRoom) return;
+  if(session.role!=='p1' && session.role!=='p2') return;
+  myPendingRematchRequest = true;
+  saveWatchRoom();
+  document.getElementById('winModal').style.display='none';
+  showRematchWaitingModal();
+  const { data } = await sb.from('xo_rooms').update({
+    rematch_status:'pending', rematch_by: session.role, rev:(currentRoom.rev||0)+1
+  }).eq('code', session.code).select().single();
+  if(data) currentRoom = data;
+}
+
+// إلغاء الطلب من طرف مُرسِله قبل أن يردّ الخصم
+async function cancelRematchRequest(){
+  myPendingRematchRequest = false;
+  hideRematchWaitingModal();
+  if(!currentRoom || !session.code) return;
+  try{
+    await sb.from('xo_rooms').update({ rematch_status:'none', rematch_by:null, rev:(currentRoom.rev||0)+1 }).eq('code', session.code);
+  }catch(e){}
+}
+
+// الخطوة 2: ردّ الطرف الآخر على الطلب
+async function respondToRematchRequest(accept, codeOverride){
+  const code = codeOverride || session.code;
+  if(!code) return;
+  hideRematchRequestModal();
+  try{
+    const { data: room } = await sb.from('xo_rooms').select('*').eq('code', code).single();
+    if(!room || room.rematch_status !== 'pending'){ clearWatchRoom(); return; }
+    if(accept){
+      // إن كنّا قد غادرنا إلى الشاشة الرئيسية (لسنا مشتركين حاليًا بهذه الغرفة)، نعود إليها أولًا
+      if(!session.code || session.code !== code || !realtimeChannel){ await rejoinWatchedRoom(code); }
+      const fresh = buildFreshMatchState(room);
+      const { data } = await sb.from('xo_rooms').update(fresh).eq('code', code).select().single();
+      clearWatchRoom(); stopHomeRematchWatch();
+      if(data){ syncRoomState(data); enterGameScreen(); }
+    } else {
+      await sb.from('xo_rooms').update({ rematch_status:'none', rematch_by:null, rev:(room.rev||0)+1 }).eq('code', code);
+      clearWatchRoom(); stopHomeRematchWatch();
+    }
+  }catch(e){}
+}
+
+/* ----- تتبّع الغرفة حتى بعد الخروج إلى الرئيسية، لتصل موافقة/رفض إعادة اللعب دائمًا ----- */
+function saveWatchRoom(){
+  if(!session.code || (session.role!=='p1' && session.role!=='p2')) return;
+  try{ localStorage.setItem('xo_watch_room', JSON.stringify({code:session.code, role:session.role})); }catch(e){}
+}
+function loadWatchRoom(){ try{ return JSON.parse(localStorage.getItem('xo_watch_room')); }catch(e){ return null; } }
+function clearWatchRoom(){ try{ localStorage.removeItem('xo_watch_room'); }catch(e){} }
+
+async function rejoinWatchedRoom(code){
+  const watch = loadWatchRoom();
+  const { data: room } = await sb.from('xo_rooms').select('*').eq('code', code).single();
+  if(!room) return;
+  const isP1 = room.p1_user_id === myId, isP2 = room.p2_user_id === myId;
+  session.code = code; session.role = isP1 ? 'p1' : (isP2 ? 'p2' : (watch?.role || 'spectator'));
+  session.roleSymbol = session.role==='p1' ? (room.p1_symbol||'X') : (room.p2_symbol||'O');
+  saveSession();
+  gameState.mode = GAME_MODES.ONLINE;
+  subscribeToRoom(code); subscribeToPresence(code);
+  await loadChatHistory(code);
+}
+
+let homeWatchPollTimer = null;
+function startHomeRematchWatch(){
+  stopHomeRematchWatch();
+  homeWatchPollTimer = setInterval(async ()=>{
+    const watch = loadWatchRoom();
+    if(!watch){ stopHomeRematchWatch(); return; }
+    try{
+      const { data: room, error } = await sb.from('xo_rooms').select('*').eq('code', watch.code).single();
+      if(error || !room){ clearWatchRoom(); stopHomeRematchWatch(); return; }
+      if(room.rematch_status === 'pending' && room.rematch_by !== watch.role){
+        showRematchRequestModal(watch.code, room);
+      } else if(room.rematch_status !== 'pending'){
+        // انتهى الطلب (رُفض أو أُلغي) دون أن نتفاعل معه — نبقي المراقبة قائمة فقط إن كانت الجولة لا تزال صالحة
+        if(room.status === 'finished' && room.rematch_status === 'none'){ /* استمر بالمراقبة */ }
+      }
+    }catch(e){}
+  }, 4000);
+}
+function stopHomeRematchWatch(){ if(homeWatchPollTimer){ clearInterval(homeWatchPollTimer); homeWatchPollTimer=null; } }
+
+/* ----- واجهة نافذة "بانتظار الموافقة" (للطرف الذي أرسل الطلب) ----- */
+function showRematchWaitingModal(){
+  let modal = document.getElementById('rematchWaitingModal');
+  if(!modal) modal = buildRematchWaitingModal();
+  modal.style.display = 'flex';
+}
+function hideRematchWaitingModal(){
+  const modal = document.getElementById('rematchWaitingModal');
+  if(modal) modal.style.display = 'none';
+}
+function buildRematchWaitingModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg'; bg.id = 'rematchWaitingModal';
+  bg.innerHTML = `<div class="modal">
+      <div class="trophy">⏳</div>
+      <h2>بانتظار موافقة الخصم</h2>
+      <p>أرسلنا طلب إعادة اللعب — لن تبدأ الجولة الجديدة إلا بعد موافقته.</p>
+      <div class="btns"><button class="btn grey" id="btnCancelRematchRequest">إلغاء الطلب</button></div>
+    </div>`;
+  document.body.appendChild(bg);
+  document.getElementById('btnCancelRematchRequest').addEventListener('click', cancelRematchRequest);
+  return bg;
+}
+
+/* ----- واجهة نافذة "طلب إعادة لعب" (للطرف الذي يستقبل الطلب، من داخل اللعبة أو من الرئيسية) ----- */
+let rematchRequestModalCode = null;
+function showRematchRequestModal(code, room){
+  rematchRequestModalCode = code;
+  let modal = document.getElementById('rematchRequestModal');
+  if(!modal) modal = buildRematchRequestModal();
+  const nameEl = document.getElementById('rematchRequestFrom');
+  if(nameEl){
+    const requesterName = room.rematch_by === 'p1' ? room.p1_name : room.p2_name;
+    nameEl.textContent = requesterName ? `${requesterName} يريد إعادة اللعب.` : 'الخصم يريد إعادة اللعب.';
+  }
+  modal.style.display = 'flex';
+}
+function hideRematchRequestModal(){
+  const modal = document.getElementById('rematchRequestModal');
+  if(modal) modal.style.display = 'none';
+}
+function buildRematchRequestModal(){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg'; bg.id = 'rematchRequestModal';
+  bg.innerHTML = `<div class="modal">
+      <div class="trophy">🔁</div>
+      <h2>طلب إعادة لعب</h2>
+      <p id="rematchRequestFrom">الخصم يريد إعادة اللعب.</p>
+      <div class="btns">
+        <button class="btn blue" id="btnAcceptRematch">✅ موافق</button>
+        <button class="btn grey" id="btnDeclineRematch">🚫 رفض</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  document.getElementById('btnAcceptRematch').addEventListener('click', ()=> respondToRematchRequest(true, rematchRequestModalCode));
+  document.getElementById('btnDeclineRematch').addEventListener('click', ()=> respondToRematchRequest(false, rematchRequestModalCode));
+  return bg;
 }
 
 function scheduleRoomCleanup(code, delayMs=8000){
   setTimeout(async ()=>{
     try{
-      const { data: room } = await sb.from('xo_rooms').select('status').eq('code', code).single();
+      const { data: room } = await sb.from('xo_rooms').select('status,rematch_status').eq('code', code).single();
       if(!room || room.status !== 'finished') return;
+      if(room.rematch_status === 'pending'){ scheduleRoomCleanup(code, delayMs); return; } // أجّل الحذف طالما هناك طلب إعادة لعب معلّق
       await sb.from('xo_messages').delete().eq('room_code', code);
       await sb.from('xo_rooms').delete().eq('code', code);
     }catch(e){}
@@ -1408,7 +1599,7 @@ function renderSizeGrid(containerId, onSelect, defaultSize=3){
   const container = document.getElementById(containerId);
   if(!container) return;
   const sizes = [3,4,5,6,7,8,9,10];
-  container.innerHTML = sizes.map(s=>`<button class="size-btn ${s===defaultSize?'active':''}" data-size="${s}">${s}×${s}</button>`).join('');
+  container.innerHTML = sizes.map(s=>`<button class="size-btn ${s===defaultSize?'active':''}" data-size="${s}">${s===5 ? '5 متتالية 🎯<br><small style="font-weight:600;opacity:.75;">(لوحة 10×10)</small>' : `${s}×${s}`}</button>`).join('');
   container.querySelectorAll('.size-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       container.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
@@ -1674,12 +1865,13 @@ document.getElementById('btnLeave').addEventListener('click', async ()=>{
   if(!isSpectator && gameState.mode === GAME_MODES.ONLINE && currentRoom?.status==='playing'){
     await leaveRoomAsLoss(session.code, session.role);
   }
+  clearWatchRoom(); myPendingRematchRequest = false;
   resetToHome();
 });
 document.getElementById('btnPlayAgain').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; resetToHome(); });
 document.getElementById('btnRematch').addEventListener('click', ()=>{
+  if(gameState.mode === GAME_MODES.ONLINE){ requestRematch(); return; }
   document.getElementById('winModal').style.display='none';
-  if(gameState.mode === GAME_MODES.ONLINE){ rematch(); return; }
   if(isMatchDecided()){ gameState.p1Wins = 0; gameState.p2Wins = 0; gameState.draws = 0; }
   resetBoard();
 });
@@ -1802,9 +1994,9 @@ async function boot(){
   paintMiniUserbar(); initReactionButtons();
 
   // Init selectors
-  renderSizeGrid('boardSizeGrid', (s)=>{ selectedBoardSize = s; selectedWinLength = defaultWinLength(s); renderWinLengthGrid(s); document.getElementById('winLengthField').style.display = s>3 ? 'block' : 'none'; }, 3);
-  renderSizeGrid('quickSizeGrid', (s)=>{ selectedBoardSize = s; }, 3);
-  renderSizeGrid('aiSizeGrid', (s)=>{ selectedBoardSize = s; selectedWinLength = defaultWinLength(s); }, 3);
+  renderSizeGrid('boardSizeGrid', (s)=>{ selectedBoardSize = actualBoardSize(s); selectedWinLength = defaultWinLength(s); renderWinLengthGrid(s); document.getElementById('winLengthField').style.display = s>3 ? 'block' : 'none'; }, 3);
+  renderSizeGrid('quickSizeGrid', (s)=>{ selectedBoardSize = actualBoardSize(s); }, 3);
+  renderSizeGrid('aiSizeGrid', (s)=>{ selectedBoardSize = actualBoardSize(s); selectedWinLength = defaultWinLength(s); }, 3);
   renderWinLengthGrid(3);
   renderDifficultyGrid();
   renderMatchFormatGrid('matchFormatGrid', (v)=>{ selectedMatchFormat = v; }, null);
@@ -1851,7 +2043,6 @@ function tickSound(){
     }, 120);
   }catch(e){}
 }
-
 
 
 boot();
