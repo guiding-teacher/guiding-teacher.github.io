@@ -138,6 +138,37 @@ body.in-game #screen-game{
   font-weight:800;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center;}
 .mz-timer{font-family:'Baloo Bhaijaan 2';font-size:16px;background:rgba(0,0,0,.25);padding:5px 14px;border-radius:10px;}
 
+/* ===================== ناظور الكشف — مخروط اتجاهي دوّار يكشف من في مجال الرؤية ===================== */
+.scan-cone{
+  position:fixed; left:0; right:0; bottom:0; height:70vh;
+  background:conic-gradient(from -30deg at 50% 100%, transparent 0deg, rgba(90,230,140,.16) 0deg,
+    rgba(90,230,140,.16) 60deg, transparent 60deg);
+  clip-path:polygon(50% 100%, 0% 0%, 100% 0%);
+  transform-origin:50% 100%;
+  z-index:14; pointer-events:none; opacity:0; transition:opacity .25s;
+}
+.scan-cone.active{ opacity:1; animation:scanPulse 1.4s ease-in-out infinite; }
+@keyframes scanPulse{ 0%,100%{ filter:brightness(1); } 50%{ filter:brightness(1.5); } }
+
+.scan-status{
+  position:fixed; top:118px; left:50%; transform:translateX(-50%); z-index:22;
+  background:rgba(20,60,35,.85); color:#8CFFB0; font-family:'Cairo'; font-weight:800; font-size:12px;
+  padding:5px 14px; border-radius:999px; display:none; box-shadow:0 4px 10px rgba(0,0,0,.4);
+  border:1px solid rgba(140,255,176,.5);
+}
+.scan-status.show{ display:block; }
+
+.scan-blips{ position:fixed; inset:0; z-index:16; pointer-events:none; }
+.scan-blip{
+  position:fixed; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center;
+  gap:2px; animation:blipPop .2s ease;
+}
+.scan-blip .dot{ width:14px; height:14px; border-radius:50%; border:2px solid #fff;
+  box-shadow:0 0 10px 2px currentColor; animation:blipBlink 1s ease-in-out infinite; }
+.scan-blip .lbl{ background:rgba(0,0,0,.75); color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; white-space:nowrap; }
+@keyframes blipPop{ from{ transform:translate(-50%,-50%) scale(0); } to{ transform:translate(-50%,-50%) scale(1); } }
+@keyframes blipBlink{ 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+
 .race-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:0 12px 6px;flex-shrink:0;}
 .race-strip.p2{grid-template-columns:1fr 1fr;}
 .player-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);
@@ -223,6 +254,28 @@ body.in-game .maze-topbar { position: fixed; top: 8px; left: 12px; right: 12px; 
   border:2px solid rgba(255,255,255,.5); box-shadow:0 4px 10px rgba(0,0,0,.4);
 }
 @media (min-width:900px){ #ammoBadge{ bottom:auto; top:70px; right:20px; } }
+
+/* ===================== شعرة تصويب مركزية — لتوضيح اتجاه إطلاق النار ===================== */
+.crosshair{
+  position:fixed; top:50%; left:50%; width:34px; height:34px;
+  transform:translate(-50%,-50%); z-index:15; pointer-events:none;
+  display:none;
+}
+body.in-game .crosshair{ display:block; }
+.crosshair .ch-dot{
+  position:absolute; top:50%; left:50%; width:4px; height:4px; border-radius:50%;
+  background:#fff; transform:translate(-50%,-50%); box-shadow:0 0 4px rgba(0,0,0,.8);
+}
+.crosshair .ch-line{
+  position:absolute; background:rgba(255,255,255,.85); box-shadow:0 0 3px rgba(0,0,0,.9);
+}
+.crosshair .ch-top, .crosshair .ch-bottom{ width:2px; height:10px; left:50%; margin-left:-1px; }
+.crosshair .ch-left, .crosshair .ch-right{ height:2px; width:10px; top:50%; margin-top:-1px; }
+.crosshair .ch-top{ top:0; }
+.crosshair .ch-bottom{ bottom:0; }
+.crosshair .ch-left{ left:0; }
+.crosshair .ch-right{ right:0; }
+.crosshair.firing .ch-line{ background:#F2B705; }
 
 /* ===================== أزرار الاتجاهات الإضافية ===================== */
 .dpad-extra {
