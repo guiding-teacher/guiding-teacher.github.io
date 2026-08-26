@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🎨 عالم الألعاب الكرتوني</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Baloo+Bhaijaan+2:wght@600;700;800&family=Changa:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --sky-1:#4FC3F7; --sky-2:#81D4FA; --sky-3:#B3E5FC;
@@ -13,6 +14,9 @@
     --cloud:#FFFFFF;
     --ink:#3E2723;
     --paper:#FFFDE7;
+    --coral:#FF6F59; --coral-dark:#E5543E;
+    --p2:#2F7DE1;
+    --gold:#F2B705;
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
@@ -32,23 +36,17 @@
     overflow:hidden;
   }
 
-  /* شمس كرتونية مع وجه */
   .sun{
     position:absolute; top:25px; left:25px;
     width:85px; height:85px;
     background:var(--sun);
     border-radius:50%;
     border:4px solid var(--ink);
-    box-shadow:
-      0 0 0 10px var(--sun-glow),
-      0 0 0 14px rgba(255,235,59,.3);
+    box-shadow: 0 0 0 10px var(--sun-glow), 0 0 0 14px rgba(255,235,59,.3);
     animation:sunPulse 3s ease-in-out infinite;
     z-index:1;
   }
-  .sun-face{
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    font-size:32px;
-  }
+  .sun-face{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:32px; }
   .sun-rays{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
     width:130px; height:130px;
@@ -59,16 +57,9 @@
     background:var(--sun); border:3px solid var(--ink); border-radius:3px;
     left:50%; top:0; transform-origin:50% 65px;
   }
-  @keyframes sunPulse{
-    0%,100%{transform:scale(1);}
-    50%{transform:scale(1.1);}
-  }
-  @keyframes sunSpin{
-    from{transform:translate(-50%,-50%) rotate(0deg);}
-    to{transform:translate(-50%,-50%) rotate(360deg);}
-  }
+  @keyframes sunPulse{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+  @keyframes sunSpin{ from{transform:translate(-50%,-50%) rotate(0deg);} to{transform:translate(-50%,-50%) rotate(360deg);} }
 
-  /* غيوم كرتونية */
   .cloud{
     position:absolute; background:var(--cloud);
     border:3px solid var(--ink); border-radius:50px;
@@ -88,18 +79,9 @@
   .cloud-3{width:130px;height:48px;top:100px;right:31%;animation-duration:16s;animation-delay:-12s;}
   .cloud-3::before{width:65px;height:65px;top:-38px;left:22px;border-bottom:none;}
   .cloud-3::after{width:55px;height:55px;top:-30px;right:22px;border-bottom:none;}
+  @keyframes cloudFloat{ 0%,100%{transform:translateX(0);} 50%{transform:translateX(-25px);} }
 
-  @keyframes cloudFloat{
-    0%,100%{transform:translateX(0);}
-    50%{transform:translateX(-25px);}
-  }
-
-  /* طيور */
-  .bird{
-    position:absolute; z-index:2; pointer-events:none;
-    font-size:22px; opacity:.7;
-    animation:birdFly linear infinite;
-  }
+  .bird{ position:absolute; z-index:2; pointer-events:none; font-size:22px; opacity:.7; animation:birdFly linear infinite; }
   .bird-1{top:12%;animation-duration:14s;}
   .bird-2{top:22%;animation-duration:17s;animation-delay:-7s;}
   .bird-3{top:18%;animation-duration:20s;animation-delay:-3s;}
@@ -111,70 +93,34 @@
     100%{left:108%; transform:translateY(0) scaleX(-1);}
   }
 
-  /* تلال */
-  .hill{
-    position:absolute; bottom:38%;
-    border-radius:50% 50% 0 0;
-    border:3px solid var(--ink); border-bottom:none;
-    z-index:1;
-  }
+  .hill{ position:absolute; bottom:38%; border-radius:50% 50% 0 0; border:3px solid var(--ink); border-bottom:none; z-index:1; }
   .hill-1{width:220px;height:90px;left:-40px;background:#8BC34A;}
   .hill-2{width:280px;height:110px;right:-50px;background:#7CB342;}
   .hill-3{width:200px;height:80px;left:28%;background:#9CCC65;}
 
-  /* أشجار كرتونية */
-  .tree{
-    position:absolute; bottom:38%; z-index:2;
-  }
-  .tree-trunk{
-    width:12px; height:35px; background:#795548;
-    border:2px solid var(--ink); border-radius:3px;
-    margin:0 auto;
-  }
+  .tree{ position:absolute; bottom:38%; z-index:2; }
+  .tree-trunk{ width:12px; height:35px; background:#795548; border:2px solid var(--ink); border-radius:3px; margin:0 auto; }
   .tree-leaves{
     width:55px; height:55px; background:#4CAF50;
     border:3px solid var(--ink); border-radius:50%;
     margin-bottom:-12px; position:relative;
   }
-  .tree-leaves::before{
-    content:''; position:absolute;
-    width:38px; height:38px; background:#66BB6A;
-    border:2px solid var(--ink); border-radius:50%;
-    top:-18px; left:6px;
-  }
-  .tree-leaves::after{
-    content:''; position:absolute;
-    width:28px; height:28px; background:#81C784;
-    border:2px solid var(--ink); border-radius:50%;
-    top:-8px; right:-5px;
-  }
+  .tree-leaves::before{ content:''; position:absolute; width:38px; height:38px; background:#66BB6A; border:2px solid var(--ink); border-radius:50%; top:-18px; left:6px; }
+  .tree-leaves::after{ content:''; position:absolute; width:28px; height:28px; background:#81C784; border:2px solid var(--ink); border-radius:50%; top:-8px; right:-5px; }
   .tree-1{left:6%; transform:scale(1);}
   .tree-2{right:10%; transform:scale(.9);}
   .tree-3{left:52%; transform:scale(.75);}
   .tree-4{left:75%; transform:scale(.6);}
 
-  /* زهور */
-  .flower{
-    position:absolute; bottom:38%; z-index:2;
-    font-size:20px;
-    animation:flowerSway 2.5s ease-in-out infinite;
-  }
+  .flower{ position:absolute; bottom:38%; z-index:2; font-size:20px; animation:flowerSway 2.5s ease-in-out infinite; }
   .flower:nth-of-type(1){left:18%;animation-delay:0s;}
   .flower:nth-of-type(2){left:38%;animation-delay:.4s;}
   .flower:nth-of-type(3){left:58%;animation-delay:.8s;}
   .flower:nth-of-type(4){left:78%;animation-delay:1.2s;}
   .flower:nth-of-type(5){left:88%;animation-delay:1.6s;}
-  @keyframes flowerSway{
-    0%,100%{transform:rotate(-6deg);}
-    50%{transform:rotate(6deg);}
-  }
+  @keyframes flowerSway{ 0%,100%{transform:rotate(-6deg);} 50%{transform:rotate(6deg);} }
 
-  /* فراشات */
-  .butterfly{
-    position:absolute; z-index:3; pointer-events:none;
-    font-size:18px;
-    animation:butterflyFly 8s ease-in-out infinite;
-  }
+  .butterfly{ position:absolute; z-index:3; pointer-events:none; font-size:18px; animation:butterflyFly 8s ease-in-out infinite; }
   .bf-1{top:45%;left:20%;animation-delay:0s;}
   .bf-2{top:50%;left:60%;animation-delay:3s;}
   @keyframes butterflyFly{
@@ -184,14 +130,43 @@
     75%{transform:translate(30px,20px) scaleX(-1);}
   }
 
+  /* ===== الشريط العلوي — اسم + صورة + مستوى ===== */
+  .topbar{
+    position:relative; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px;
+   }
+  .topbar-brand{ display:flex; align-items:center; gap:8px; font-family:'Baloo Bhaijaan 2'; font-size:18px; font-weight:800; }
+  .topbar-user{
+    display:flex; align-items:center; gap:10px;
+    cursor:pointer;
+    background:rgba(252, 236, 149, 0.57);
+    padding:5px 12px 5px 6px;
+    border-radius:999px;
+    border:2px solid var(--ink);
+    transition:.15s;
+  }
+  .topbar-user:hover{ transform:scale(1.04); background:rgba(0,0,0,.1); }
+  .topbar-avatar{
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-family:'Baloo Bhaijaan 2'; font-size:15px;
+    background-size:cover; background-position:center;
+    border:2px solid var(--ink); flex-shrink:0;
+  }
+  .topbar-info{ display:flex; flex-direction:column; align-items:flex-start; line-height:1.2; }
+  .topbar-name{ font-size:13px; font-weight:800; color:var(--ink); max-width:120px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .topbar-level{ font-size:10.5px; font-weight:700; color:#666; }
+  .topbar-xp-bar{ width:50px; height:4px; border-radius:999px; background:rgba(0,0,0,.12); overflow:hidden; margin-top:2px; }
+  .topbar-xp-fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--coral)); transition:width .4s ease; }
+
   /* ===== الشعار ===== */
   .hero-header{
     position:relative; z-index:10;
     text-align:center; padding:12px 10px 4px;
   }
   .title-sign{
-         margin-top: 10%;
-
+    margin-top: 10%;
     display:inline-block;
     background:var(--paper);
     border:4px solid var(--ink);
@@ -273,8 +248,6 @@
       44% 100%, 24% 98%, 4% 99%, 1% 84%, 0% 64%, 2% 44%, 0% 24%
     );
   }
-
-  /* ظل كرتوني */
   .game-card::before{
     content:''; position:absolute;
     inset:0;
@@ -289,17 +262,14 @@
     );
     transition:transform .2s ease;
   }
-
   .game-card .spot{
     position:absolute; width:10px; height:10px;
     border-radius:50%; opacity:.2; background:#fff;
   }
-
   .card-snl{background:linear-gradient(145deg, #FF5252, #E53935);}
   .card-maze{background:linear-gradient(145deg, #26C6DA, #00ACC1);}
   .card-xo{background:linear-gradient(145deg, #42A5F5, #1E88E5);}
   .card-ludo{background:linear-gradient(145deg, #FFCA28, #FFB300);}
-
   .game-card:hover{transform:translateY(-5px) scale(1.05);}
   .game-card:hover::before{transform:translate(7px, 7px);}
   .game-card:active{transform:translateY(2px) scale(.96);}
@@ -320,18 +290,15 @@
   .card-maze .card-icon-wrap{animation-delay:.6s;}
   .card-xo .card-icon-wrap{animation-delay:1.2s;}
   .card-ludo .card-icon-wrap{animation-delay:1.8s;}
-
   @keyframes iconBounce{
     0%,100%{transform:rotate(-3deg) translateY(0);}
     50%{transform:rotate(3deg) translateY(-5px);}
   }
-
   .card-icon{
     font-size:clamp(30px, 6.5vw, 45px);
     line-height:1;
     filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));
   }
-
   .card-name{
     font-family:'Baloo Bhaijaan 2','Changa',sans-serif;
     font-size:clamp(15px, 3.5vw, 21px);
@@ -347,7 +314,6 @@
     border:2px solid rgba(255,255,255,.35);
     box-shadow:0 2px 0 rgba(0,0,0,.1);
   }
-
   .card-badge{
     position:absolute; top:-10px; left:-10px;
     background:#FF1744;
@@ -378,8 +344,6 @@
     from{opacity:0; transform:scale(.92) translateY(15px);}
     to{opacity:1; transform:scale(1) translateY(0);}
   }
-
-  /* شريط اللعبة العلوي - يختفي عند الدخول للجولة */
   .game-screen-header{
     display:flex; align-items:center; justify-content:space-between;
     padding:10px 14px;
@@ -397,7 +361,6 @@
     pointer-events:none;
     height:0; padding:0; border:none; overflow:hidden;
   }
-
   .game-screen-title{
     font-family:'Baloo Bhaijaan 2',sans-serif;
     font-size:clamp(15px, 4vw, 21px); font-weight:800;
@@ -415,19 +378,86 @@
     box-shadow:3px 3px 0 var(--ink);
     transition:all .15s ease;
   }
-  .back-btn:hover{
-    transform:translateY(-2px);
-    box-shadow:4px 4px 0 var(--ink);
-  }
-  .back-btn:active{
-    transform:translateY(1px);
-    box-shadow:1px 1px 0 var(--ink);
-  }
-
+  .back-btn:hover{ transform:translateY(-2px); box-shadow:4px 4px 0 var(--ink); }
+  .back-btn:active{ transform:translateY(1px); box-shadow:1px 1px 0 var(--ink); }
   .game-iframe{
     flex:1; width:100%; border:none;
     background:var(--paper);
     transition:margin-top .35s ease;
+  }
+
+  /* ===== نافذة تعديل الملف الشخصي ===== */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(6,14,20,.65);
+    display:none; align-items:center; justify-content:center;
+    z-index:50; padding:20px;
+  }
+  .modal-bg.show{ display:flex; }
+  .modal{
+    background:var(--paper); border-radius:22px; padding:26px;
+    max-width:380px; width:100%; text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+    border:4px solid var(--ink);
+  }
+  .modal h3{ font-family:'Baloo Bhaijaan 2'; font-size:20px; margin-bottom:12px; }
+  .modal .hint{ font-size:12.5px; color:#79726a; margin-bottom:14px; line-height:1.7; }
+  .field{ margin-bottom:14px; text-align:right; }
+  .field label{ display:block; font-size:13px; font-weight:700; margin-bottom:6px; color:#3a4750; }
+  .field input[type=text]{
+    width:100%; padding:12px 14px; border-radius:12px; border:2px solid #dfd6c0;
+    font-family:'Cairo'; font-size:15px; background:#fff; outline:none; transition:.15s;
+  }
+  .field input:focus{ border-color:var(--coral); }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%;
+    padding:13px; border:none; border-radius:14px;
+    font-family:'Baloo Bhaijaan 2'; font-size:17px; font-weight:700; color:#fff;
+    background:var(--coral); box-shadow:0 5px 0 var(--coral-dark); cursor:pointer; transition:.08s;
+  }
+  .btn:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--coral-dark); }
+  .btn.blue{ background:var(--p2); box-shadow:0 5px 0 #1a56a3; }
+  .btn.grey{ background:#8a8378; box-shadow:0 5px 0 #6d675e; }
+  .btn.small{ padding:9px 14px; font-size:13.5px; width:auto; box-shadow:0 3px 0 var(--coral-dark); }
+  .error-msg{
+    background:#FDEBEA; color:#B3261E; border:1px solid #F4C7C4; border-radius:10px;
+    padding:10px 12px; font-size:13.5px; margin-bottom:14px; display:none; font-weight:600;
+  }
+  .avatar-picker{ display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:16px; }
+  .avatar-preview{
+    width:90px; height:90px; border-radius:50%; background:var(--coral);
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    font-size:32px; font-weight:800; font-family:'Baloo Bhaijaan 2';
+    box-shadow:0 8px 18px rgba(0,0,0,.25); background-size:cover; background-position:center;
+    border:3px solid var(--ink);
+  }
+  .upload-btn{
+    background:#eee7d6; border:none; border-radius:10px; padding:8px 16px;
+    font-family:'Cairo'; font-weight:700; font-size:13px; cursor:pointer; color:#5a544a;
+  }
+  .palette{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:6px; }
+  .palette .sw{ width:28px; height:28px; border-radius:50%; cursor:pointer; border:3px solid transparent; }
+  .palette .sw.sel{ border-color:var(--ink); }
+  .recovery-box{
+    background:#16262e; border-radius:10px; padding:10px 12px; margin:10px 0; text-align:center;
+  }
+  .recovery-box label{ font-size:11px; color:#aaa; display:block; margin-bottom:4px; }
+  .recovery-code{
+    font-family:monospace; font-size:15px; font-weight:700; color:var(--gold); letter-spacing:1px;
+  }
+
+  /* ===== نافذة Onboarding / Recover ===== */
+  .onboarding-card{
+    position:fixed; inset:0; z-index:60;
+    background:rgba(6,14,20,.75);
+    display:none; align-items:center; justify-content:center;
+    padding:20px;
+  }
+  .onboarding-card.show{ display:flex; }
+  .onboarding-card .card-inner{
+    background:var(--paper); border-radius:22px; padding:26px;
+    max-width:420px; width:100%; text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+    border:4px solid var(--ink);
   }
 
   /* ===== تأثيرات ===== */
@@ -442,29 +472,11 @@
   }
 
   @media(min-width:600px){.games-grid{max-width:580px;}}
-  @media(min-width:900px){
-    .games-grid{grid-template-columns:repeat(4, 1fr); max-width:900px;}}
-  
+  @media(min-width:900px){ .games-grid{grid-template-columns:repeat(4, 1fr); max-width:900px;} }
   @media (max-width:900px){
-  
-    .title-sign{
-      margin-top: 50%;
-
-    display:inline-block;
-    background:var(--paper);
-    border:4px solid var(--ink);
-    border-radius:24px;
-    padding:10px -74px;
-    box-shadow:5px 5px 0 var(--ink), 0 8px 20px rgba(0,0,0,.15);
-    transform:rotate(-1.5deg);
-    animation:signWiggle 2.5s ease-in-out infinite;
-    position:relative;
-    }
-    
-}
-  
-  
-
+    .title-sign{ margin-top: 50%; padding:10px -74px; }
+    .topbar-name{ max-width:90px; font-size:12px; }
+  }
   *{touch-action:manipulation;}
 </style>
 <base target="_blank">
@@ -508,8 +520,20 @@
   <div class="butterfly bf-2">🦋</div>
 </div>
 
+<!-- ===== الشريط العلوي ===== -->
+<div class="topbar" id="topbar" style="display:none;">
+  <div class="topbar-user" id="topbarUser" onclick="openEditModal()">
+    <div class="topbar-avatar" id="topbarAvatar">?</div>
+    <div class="topbar-info">
+      <div class="topbar-name" id="topbarName">—</div>
+      <div class="topbar-level" id="topbarLevel">Lv.1</div>
+      <div class="topbar-xp-bar"><div class="topbar-xp-fill" id="topbarXpFill"></div></div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== الشعار ===== -->
-<div class="hero-header">
+<div class="hero-header" id="heroHeader">
   <div class="title-sign">
     <div class="hero-title">🎮 نخلة وسفورة 🎯</div>
   </div>
@@ -567,12 +591,293 @@
   <iframe class="game-iframe" id="gameFrame" src=""></iframe>
 </div>
 
+<!-- ===== نافذة تعديل الملف الشخصي ===== -->
+<div class="modal-bg" id="editModalBg">
+  <div class="modal">
+    <h3>✏️ ملفك الشخصي</h3>
+    <div class="avatar-picker">
+      <div class="avatar-preview" id="editAvatarPreview">؟</div>
+      <label class="upload-btn">📷 تغيير الصورة
+        <input type="file" accept="image/*" id="editPhotoInput" style="display:none;">
+      </label>
+    </div>
+    <div class="field"><label>اسمك</label><input type="text" id="editName" maxlength="16"></div>
+    <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#3a4750;text-align:right;">اللون الرمزي</label>
+    <div class="palette" id="editPalette"></div>
+    <div class="recovery-box">
+      <label>🔑 رمز استرداد حسابك (احفظه في مكان آمن)</label>
+      <div class="recovery-code" id="recoveryCodeDisplay">—</div>
+      <button class="btn small" id="btnCopyRecovery" style="margin-top:8px;width:auto;">📋 نسخ</button>
+    </div>
+    <div class="error-msg" id="editError"></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn" id="btnSaveEdit" style="flex:1;">💾 حفظ</button>
+      <button class="btn grey" id="btnCloseEdit" style="flex:1;">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Onboarding: إنشاء حساب ===== -->
+<div class="onboarding-card" id="screenOnboarding">
+  <div class="card-inner">
+    <h3>أهلًا بك 👋</h3>
+    <p class="hint">اختر اسمًا وصورة لتبدأ — يُستخدم نفس الحساب في جميع الألعاب.</p>
+    <div class="avatar-picker">
+      <div class="avatar-preview" id="obAvatarPreview">؟</div>
+      <label class="upload-btn">📷 اختر صورة
+        <input type="file" accept="image/*" id="obPhotoInput" style="display:none;">
+      </label>
+    </div>
+    <div class="field"><label>اسمك</label><input type="text" id="obName" maxlength="16" placeholder="مثال: أحمد"></div>
+    <div class="error-msg" id="obError"></div>
+    <button class="btn" id="btnObSave">🎮 ابدأ اللعب</button>
+    <button class="btn grey" id="btnObRecover" style="margin-top:10px;">🔑 لدي رمز استرداد</button>
+  </div>
+</div>
+
+<!-- ===== Recover: استعادة حساب ===== -->
+<div class="onboarding-card" id="screenRecover">
+  <div class="card-inner">
+    <h3>🔑 استعادة حسابك</h3>
+    <p class="hint">أدخل رمز الاسترداد الذي حفظته سابقاً.</p>
+    <div class="field">
+      <label>رمز الاسترداد</label>
+      <input type="text" id="recoverCode" maxlength="14" placeholder="مثال: LDO-A3B9-C7D2" style="text-transform:uppercase;letter-spacing:2px;text-align:center;font-weight:700;">
+    </div>
+    <div class="error-msg" id="recoverError"></div>
+    <button class="btn" id="btnRecover">🔓 استعادة</button>
+    <button class="btn grey" id="btnBackToOb" style="margin-top:10px;">⬅️ إنشاء حساب جديد</button>
+  </div>
+</div>
+
 <script>
+/* ===================== إعدادات سوبابيس الموحدة ===================== */
+const SUPABASE_URL = "https://yebntvnbuufthdsjqwyx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllYm50dm5idXVmdGhkc2pxd3l4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5MjA4MDIsImV4cCI6MjEwMTQ5NjgwMn0.dtMOlp2jS8oRttfJjsMMZTUFprrAnbfNFiBpx__4lGE";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const AVATAR_COLORS = ['#E5484D','#2F7DE1','#3EA06B','#F2B705','#8E5CF2','#FF6F59','#17A2B8','#D6336C'];
+let myAuthUid = null;
+let localProfile = null;
+let myId = null;
+
+/* ===================== هوية موحدة ===================== */
+function getLocalUserId(){
+  let id = localStorage.getItem('snl_user_id');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : ('u-'+Date.now()+'-'+Math.random().toString(16).slice(2)));
+    localStorage.setItem('snl_user_id', id);
+  }
+  return id;
+}
+
+async function ensureAnonymousSession(){
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if(session?.user?.id){ myAuthUid = session.user.id; return myAuthUid; }
+    const { data, error } = await sb.auth.signInAnonymously();
+    if(error) return null;
+    myAuthUid = data?.session?.user?.id || data?.user?.id || null;
+    return myAuthUid;
+  }catch(e){ return null; }
+}
+
+async function loadExistingProfile(){
+  const { data } = await sb.from('profiles').select('*').eq('id', myId).maybeSingle();
+  if(data){
+    if(!data.auth_uid && myAuthUid){
+      await sb.from('profiles').update({ auth_uid: myAuthUid }).eq('id', myId).is('auth_uid', null);
+    }
+    return data;
+  }
+  return null;
+}
+
+async function createProfile(username, avatarDataUrl){
+  const color = AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+  const code = 'LDO-'+Math.random().toString(36).substring(2,6).toUpperCase()+'-'+Math.random().toString(36).substring(2,6).toUpperCase();
+  const { data, error } = await sb.from('profiles').insert({
+    id: myId, auth_uid: myAuthUid, username, avatar_color: color, avatar_data: avatarDataUrl || null,
+    recovery_code: code
+  }).select().single();
+  return { data, error };
+}
+
+async function updateProfile(fields){
+  const { data, error } = await sb.from('profiles').update(fields).eq('id', myId).select().single();
+  return { data, error };
+}
+
+async function recoverProfileByCode(code){
+  const clean = code.trim().toUpperCase();
+  if(!clean || clean.length < 8) return { error: 'الرمز غير صالح' };
+  const { data, error } = await sb.rpc('recover_profile_by_code', { p_code: clean });
+  const row = Array.isArray(data) ? data[0] : data;
+  if(error || !row) return { error: 'لم يتم العثور على حساب بهذا الرمز.' };
+  localStorage.setItem('snl_user_id', row.id);
+  myId = row.id;
+  if(myAuthUid && !row.auth_uid){
+    await sb.from('profiles').update({ auth_uid: myAuthUid }).eq('id', row.id).is('auth_uid', null);
+  }
+  return { data: row };
+}
+
+function compressImageToDataUrl(file, maxSize=160, quality=0.72){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('تعذّرت قراءة الملف'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('تعذّر تحميل الصورة'));
+      img.onload = () => {
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side)/2, sy = (img.height - side)/2;
+        const canvas = document.createElement('canvas');
+        canvas.width = maxSize; canvas.height = maxSize;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, maxSize, maxSize);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function applyAvatarVisual(el, color, dataUrl, initial){
+  if(dataUrl){
+    el.style.backgroundImage = `url(${dataUrl})`;
+    el.style.backgroundColor = 'transparent';
+    el.textContent = '';
+  } else {
+    el.style.backgroundImage = 'none';
+    el.style.backgroundColor = color || '#E5484D';
+    if(initial !== undefined) el.textContent = initial;
+  }
+}
+
+function winThresholds(level){
+  const lvl = level || 1;
+  const floor = 3*(lvl-1)*lvl/2;
+  const next  = 3*lvl*(lvl+1)/2;
+  return { floor, next };
+}
+
+function paintTopbar(){
+  if(!localProfile){ document.getElementById('topbar').style.display='none'; return; }
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('topbarName').textContent = localProfile.username || '—';
+  applyAvatarVisual(document.getElementById('topbarAvatar'), localProfile.avatar_color, localProfile.avatar_data, (localProfile.username||'?')[0]);
+  document.getElementById('topbarLevel').textContent = 'Lv.' + (localProfile.level || 1);
+  const { floor, next } = winThresholds(localProfile.level);
+  const wins = localProfile.total_wins || 0;
+  const pct = Math.max(0, Math.min(100, ((wins-floor)/(next-floor))*100));
+  document.getElementById('topbarXpFill').style.width = pct + '%';
+}
+
+/* ===================== واجهة المستخدم ===================== */
+let onboardingPhoto = null, editPhoto = null, selectedColor = null;
+
+function showOnboarding(){ document.getElementById('screenOnboarding').classList.add('show'); }
+function hideOnboarding(){ document.getElementById('screenOnboarding').classList.remove('show'); }
+function showRecover(){ document.getElementById('screenRecover').classList.add('show'); }
+function hideRecover(){ document.getElementById('screenRecover').classList.remove('show'); }
+
+document.getElementById('obPhotoInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  onboardingPhoto = await compressImageToDataUrl(file);
+  const prev = document.getElementById('obAvatarPreview');
+  prev.style.backgroundImage = `url(${onboardingPhoto})`; prev.textContent='';
+});
+
+document.getElementById('btnObSave').addEventListener('click', async ()=>{
+  const name = document.getElementById('obName').value.trim();
+  const err = document.getElementById('obError'); err.style.display='none';
+  if(!name){ err.textContent='الرجاء إدخال اسمك'; err.style.display='block'; return; }
+  const { data, error } = await createProfile(name, onboardingPhoto);
+  if(error){ err.textContent='تعذّر الحفظ، حاول مرة أخرى'; err.style.display='block'; return; }
+  localProfile = data;
+  hideOnboarding();
+  paintTopbar();
+});
+
+document.getElementById('btnObRecover').addEventListener('click', ()=>{ hideOnboarding(); showRecover(); });
+
+document.getElementById('btnRecover').addEventListener('click', async ()=>{
+  const code = document.getElementById('recoverCode').value;
+  const errBox = document.getElementById('recoverError'); errBox.style.display='none';
+  const { data, error } = await recoverProfileByCode(code);
+  if(error){ errBox.textContent=error; errBox.style.display='block'; return; }
+  localProfile = data;
+  hideRecover();
+  paintTopbar();
+});
+
+document.getElementById('btnBackToOb').addEventListener('click', ()=>{ hideRecover(); showOnboarding(); });
+
+/* ===== تعديل الملف الشخصي ===== */
+function openEditModal(){
+  if(!localProfile) return;
+  editPhoto = localProfile.avatar_data || null;
+  document.getElementById('editName').value = localProfile.username || '';
+  applyAvatarVisual(document.getElementById('editAvatarPreview'), localProfile.avatar_color, localProfile.avatar_data, (localProfile.username||'?')[0]);
+  renderPalette(localProfile.avatar_color);
+  document.getElementById('recoveryCodeDisplay').textContent = localProfile.recovery_code || '—';
+  document.getElementById('editError').style.display='none';
+  document.getElementById('editModalBg').classList.add('show');
+}
+
+function closeEditModal(){ document.getElementById('editModalBg').classList.remove('show'); }
+
+document.getElementById('editPhotoInput').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  editPhoto = await compressImageToDataUrl(file);
+  const prev = document.getElementById('editAvatarPreview');
+  prev.style.backgroundImage = `url(${editPhoto})`; prev.textContent='';
+});
+
+function renderPalette(current){
+  selectedColor = current;
+  const box = document.getElementById('editPalette');
+  box.innerHTML = AVATAR_COLORS.map(c=>`<div class="sw ${c===current?'sel':''}" data-c="${c}" style="background:${c};"></div>`).join('');
+  box.querySelectorAll('.sw').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      box.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));
+      sw.classList.add('sel'); selectedColor = sw.dataset.c;
+      if(!editPhoto) applyAvatarVisual(document.getElementById('editAvatarPreview'), selectedColor, null, (localProfile.username||'?')[0]);
+    });
+  });
+}
+
+document.getElementById('btnCopyRecovery').addEventListener('click', ()=>{
+  const code = document.getElementById('recoveryCodeDisplay').textContent;
+  navigator.clipboard?.writeText(code).then(()=>{
+    const btn = document.getElementById('btnCopyRecovery');
+    btn.textContent = '✅ تم النسخ';
+    setTimeout(()=> btn.textContent = '📋 نسخ', 1500);
+  });
+});
+
+document.getElementById('btnSaveEdit').addEventListener('click', async ()=>{
+  const name = document.getElementById('editName').value.trim();
+  const err = document.getElementById('editError'); err.style.display='none';
+  if(!name){ err.textContent='الاسم مطلوب'; err.style.display='block'; return; }
+  const { data, error } = await updateProfile({ username:name, avatar_color:selectedColor, avatar_data:editPhoto });
+  if(error){ err.textContent='تعذّر الحفظ'; err.style.display='block'; return; }
+  localProfile = data;
+  paintTopbar();
+  closeEditModal();
+});
+
+document.getElementById('btnCloseEdit').addEventListener('click', closeEditModal);
+document.getElementById('editModalBg').addEventListener('click', (e)=>{ if(e.target===document.getElementById('editModalBg')) closeEditModal(); });
+
+/* ===================== فتح الألعاب ===================== */
 const gameUrls = {
   snl: 'heeadarj.html',
   maze: '',
   xo: 'xando/index.html',
-  ludo: ''
+  ludo: 'ludo.html'
 };
 
 function openGame(gameId, title, icon){
@@ -583,10 +888,7 @@ function openGame(gameId, title, icon){
   document.getElementById('gameTitleIcon').textContent = icon;
   document.getElementById('gameFrame').src = url;
   document.getElementById('gameScreen').classList.add('active');
-
-  // إعادة تعيين الشريط عند فتح اللعبة (يظهر)
   document.getElementById('gameHeader').classList.remove('hidden');
-
   try{localStorage.setItem('last_game', gameId);}catch(e){}
 }
 
@@ -617,9 +919,8 @@ function createSparkles(e){
   }
 }
 
-/* ===== إخفاء أشرطة التمرير + إخفاء الشريط العلوي عند الدخول للجولة ===== */
-(function() {
-  // 1. إخفاء أشرطة التمرير
+/* ===================== إخفاء أشرطة التمرير + الشريط العلوي للعبة ===================== */
+(function(){
   const style = document.createElement('style');
   style.id = 'global-hide-scrollbars';
   style.textContent = `
@@ -629,15 +930,13 @@ function createSparkles(e){
   `;
   document.head.appendChild(style);
 
-  function applyToIframes() {
-    const iframes = document.querySelectorAll('iframe');
-    iframes.forEach(iframe => {
-      try {
+  function applyToIframes(){
+    document.querySelectorAll('iframe').forEach(iframe=>{
+      try{
         const doc = iframe.contentDocument;
-        if (!doc) return;
-        if (doc.getElementById('global-hide-scrollbars')) return;
+        if(!doc || doc.getElementById('global-hide-scrollbars')) return;
         doc.head.appendChild(style.cloneNode(true));
-      } catch (e) {}
+      }catch(e){}
     });
   }
   applyToIframes();
@@ -645,48 +944,43 @@ function createSparkles(e){
   observer.observe(document.body, { childList: true, subtree: true });
   setInterval(applyToIframes, 1000);
 
-  // 2. إخفاء الشريط العلوي عند الدخول للجولة داخل اللعبة
   const gameHeader = document.getElementById('gameHeader');
   const gameFrame  = document.getElementById('gameFrame');
 
-  function checkGameRound() {
-    if (!gameFrame || !gameHeader) return;
-    let isRoundActive = false;
-    try {
-      const doc = gameFrame.contentDocument;
-      if (doc) {
-        // البحث عن شاشة اللعب داخل اللعبة
-        const screenGame = doc.getElementById('screen-game');
-        if (screenGame) {
-          const cs = window.getComputedStyle(screenGame);
-          isRoundActive = cs.display !== 'none' && cs.visibility !== 'hidden';
-        }
-      }
-    } catch (e) {}
+  window.addEventListener('message', (e)=>{
+    if(!e.data || e.data.source !== 'gameBridge' || e.data.type !== 'roundState') return;
+    if(e.source && gameFrame && e.source !== gameFrame.contentWindow) return;
+    if(e.data.active){ gameHeader.classList.add('hidden'); }
+    else { gameHeader.classList.remove('hidden'); }
+  });
 
-    if (isRoundActive) {
-      gameHeader.classList.add('hidden');
-    } else {
-      gameHeader.classList.remove('hidden');
-    }
-  }
-
-  // فحص دوري كل 300 مللي ثانية
-  setInterval(checkGameRound, 300);
-
-  // فحص عند تحميل الإطار
-  if (gameFrame) {
-    gameFrame.addEventListener('load', () => {
+  if(gameFrame){
+    gameFrame.addEventListener('load', ()=>{
       applyToIframes();
-      setTimeout(checkGameRound, 500);
+      gameHeader.classList.remove('hidden');
     });
   }
-
-  console.log('✅ تم تفعيل إخفاء الشريط العلوي عند الدخول للجولة');
 })();
 
 document.addEventListener('gesturestart', e=>e.preventDefault());
 document.addEventListener('dblclick', e=>e.preventDefault());
+
+/* ===================== الإقلاع ===================== */
+async function boot(){
+  await ensureAnonymousSession();
+  myId = getLocalUserId();
+  const existing = await loadExistingProfile();
+
+  if(!existing){
+    showOnboarding();
+    return;
+  }
+
+  localProfile = existing;
+  paintTopbar();
+}
+
+boot();
 </script>
 
 </body>
