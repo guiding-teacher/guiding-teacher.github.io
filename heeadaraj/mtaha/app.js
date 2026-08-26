@@ -836,6 +836,7 @@ function applyDamage(source, shooterRole){
   if(activeEffects.shield){ activeEffects.shield=false; flashCatch(true); return; }
   myLives--;
   flashCatch(false);
+  if(soundOn) playSound('hit');
   damageInvincibleUntil = Date.now() + 1200; // 1.2 ثانية حصانة كي لا يُستهلك أكثر من قلب لنفس الاصطدام
   if(maze) {
     const starts = getStartPositions(maze.N, currentRoom.max_players);
@@ -960,8 +961,6 @@ function applyRemotePickup(payload){
   if(payload.kind === 'key') {
     keyHolder = payload.role;
     pushKillFeed(`🔑 ${playerLabel(payload.role)} وجد المفتاح!`);
-    const indicator = document.getElementById('keyIndicator');
-    if(indicator) indicator.classList.add('show');
     return;
   }
   if(!ents) return;
@@ -1075,14 +1074,30 @@ if(btnScanEl){
 
 /* ===================== 19) البوصلة ===================== */
 const btnHintEl = document.getElementById('btnHintMaze');
+const DIR_VECTORS = { N:{dr:-1,dc:0}, E:{dr:0,dc:1}, S:{dr:1,dc:0}, W:{dr:0,dc:-1} };
+function updateCompassArrow(){
+  const arrow = document.getElementById('hintArrow');
+  if(!arrow || !playerMesh) return;
+  const icon = arrow.querySelector('.arrow-icon');
+  if(!maze){ icon.textContent = '🏁'; icon.style.transform = 'rotate(0deg)'; return; }
+  const pd = maze.parentDir ? maze.parentDir[maze.idx(...myPos)] : null;
+  if(!pd){ icon.textContent = '🏁'; icon.style.transform = 'rotate(0deg)'; return; }
+  icon.textContent = '➤';
+  // نحسب اتجاه الخلية التالية نحو الهدف بنفس نظام الإحداثيات العالمي المستخدم لموضع
+  // اللاعب فعليًا (بدل الاعتماد على تسميات N/E/S/W المتضاربة مع اتجاه myFacing)، ثم نطرح
+  // زاوية دوران اللاعب الحالية فنحصل على الاتجاه الصحيح على الشاشة أمامك مباشرة
+  const v = DIR_VECTORS[pd];
+  const worldAngle = Math.atan2(v.dc, v.dr);
+  const relative = worldAngle - playerMesh.rotation.y;
+  icon.style.transform = `rotate(${relative}rad)`;
+}
 if(btnHintEl){
   btnHintEl.addEventListener('click', ()=>{
     if(hintUsesLeft<=0 || gameOver || !maze) return;
     hintUsesLeft--; const hintCountEl = document.getElementById('hintCount'); if(hintCountEl) hintCountEl.textContent = hintUsesLeft;
-    const pd = maze.parentDir ? maze.parentDir[maze.idx(...myPos)] : null;
-    const ICON = { N:'⬆️', E:'➡️', S:'⬇️', W:'⬅️' };
+    updateCompassArrow();
     const arrow = document.getElementById('hintArrow');
-    if(arrow){ arrow.textContent = ICON[pd] || '🏁'; arrow.classList.add('show'); setTimeout(()=>arrow.classList.remove('show'), 1800); }
+    if(arrow){ arrow.classList.add('show'); setTimeout(()=>arrow.classList.remove('show'), 2500); }
   });
 }
 
@@ -1458,8 +1473,10 @@ function initThreeJS() {
         return;
     }
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a1a);
-    scene.fog = new THREE.FogExp2(0x0a0a1a, 0.035);
+    scene.background = new THREE.Color(0x05060d);
+    // ضباب حرب مكثّف: منطقة مرئية محدودة حول اللاعب، وظلام شبه تام خارجها — يتحرك تلقائيًا
+    // كل إطار لأنه محسوب بالنسبة للمسافة من الكاميرا نفسها (لا حاجة لتحديثه يدويًا)
+    scene.fog = new THREE.FogExp2(0x05060d, 0.07);
 
     camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 200);
     camera.position.set(0, 18, 12);
@@ -1500,7 +1517,9 @@ function setupLighting() {
     moon.shadow.camera.bottom = -60;
     scene.add(moon);
 
-    playerLight = new THREE.SpotLight(0xffaa44, 80, 35, Math.PI / 4, 0.6, 1.5);
+    // ضوء اللاعب (الشعلة) — نطاقه الآن متوافق مع حدود الضباب الجديد كي يبدو الانتقال
+    // من المنطقة المضاءة إلى الظلام طبيعيًا ومتماسكًا بصريًا
+    playerLight = new THREE.SpotLight(0xffaa44, 110, 20, Math.PI / 4, 0.6, 1.5);
     playerLight.castShadow = true;
     playerLight.shadow.mapSize.width = 1024;
     playerLight.shadow.mapSize.height = 1024;
@@ -1604,6 +1623,24 @@ function build3DSharedMaze(maze) {
 
     wallInstancedMesh.instanceMatrix.needsUpdate = true;
     mazeGroup.add(wallInstancedMesh);
+    rebuildDynamicWallMap();
+}
+
+// خريطة بحث سريعة (O(1)) للجدار الكانوني الفعلي لكل ضلع — كل جدار فعلي مُخزَّن مرة واحدة
+// فقط (من جهة N أو W لتفادي ازدواج نفس الجدار الفاصل بين خليتين)، فيُبنى هذا الفهرس
+// مرة واحدة عند إنشاء المتاهة بدل البحث الخطي في كل فحص تصادم (يحدث كل إطار لكل لاعب)
+let dynamicWallMap = new Map();
+function rebuildDynamicWallMap(){
+    dynamicWallMap = new Map();
+    dynamicWalls.forEach(dw => dynamicWallMap.set(dw.r+','+dw.c+','+dw.side, dw));
+}
+function isWallOpenAt(r, c, side){
+    let key;
+    if(side === 'N' || side === 'W') key = r+','+c+','+side;
+    else if(side === 'S') key = (r+1 < maze.N) ? (r+1)+','+c+',N' : r+','+c+',S';
+    else key = (c+1 < maze.N) ? r+','+(c+1)+',W' : r+','+c+',E';
+    const dw = dynamicWallMap.get(key);
+    return !!(dw && dw.isOpen);
 }
 
 function createKey3D(pos) {
@@ -1611,17 +1648,35 @@ function createKey3D(pos) {
     const cx = pos[1] * CELL_SIZE;
     const cz = pos[0] * CELL_SIZE;
 
-    const geo = new THREE.IcosahedronGeometry(0.4, 0);
-    const mat = new THREE.MeshStandardMaterial({
-        color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.6,
-        roughness: 0.2, metalness: 0.9
+    // مفتاح حقيقي الشكل: حلقة (bow) + ساق (shaft) + أسنان (bit) — بدل الجسم المجرّد السابق
+    const group = new THREE.Group();
+    const goldMat = new THREE.MeshStandardMaterial({
+        color: 0xffd700, emissive: 0xffaa00, emissiveIntensity: 0.7,
+        roughness: 0.25, metalness: 0.95
     });
-    key3DMesh = new THREE.Mesh(geo, mat);
-    key3DMesh.position.set(cx, 1.2, cz);
-    key3DMesh.castShadow = true;
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.06, 10, 20), goldMat);
+    bow.position.y = 0.32;
+    bow.rotation.x = Math.PI/2;
+    group.add(bow);
+
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.5, 10), goldMat);
+    shaft.position.y = -0.05;
+    group.add(shaft);
+
+    [-0.09, 0.03, 0.15].forEach((yOff, i) => {
+        const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.14 - i*0.03, 0.07, 0.07), goldMat);
+        tooth.position.set(0.09, -0.28 + yOff*0.4, 0);
+        group.add(tooth);
+    });
+
+    group.rotation.z = Math.PI/2.2;
+    group.position.set(cx, 1.2, cz);
+    group.castShadow = true;
+    group.traverse(o => { if(o.isMesh) o.castShadow = true; });
+    key3DMesh = group;
     scene.add(key3DMesh);
 
-    const light = new THREE.PointLight(0xffd700, 8, 6);
+    const light = new THREE.PointLight(0xffd700, 10, 7);
     light.position.set(cx, 1.5, cz);
     scene.add(light);
     key3DMesh.userData = { light, baseY: 1.2 };
@@ -1632,18 +1687,39 @@ function createDoor3D(pos) {
     const cx = pos[1] * CELL_SIZE;
     const cz = pos[0] * CELL_SIZE;
 
-    const geo = new THREE.BoxGeometry(CELL_SIZE * 0.8, WALL_HEIGHT * 1.2, CELL_SIZE * 0.3);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8, metalness: 0.2 });
-    door3DMesh = new THREE.Mesh(geo, mat);
-    door3DMesh.position.set(cx, WALL_HEIGHT * 0.6, cz);
-    scene.add(door3DMesh);
+    const group = new THREE.Group();
 
-    const lockGeo = new THREE.SphereGeometry(0.25, 8, 8);
-    const lockMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.5 });
+    // إطار الباب (حجر/خشب داكن)
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x3d2c1a, roughness: 0.85, metalness: 0.15 });
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(CELL_SIZE * 0.85, WALL_HEIGHT * 1.25, CELL_SIZE * 0.32), frameMat);
+    group.add(frame);
+
+    // لوح الباب نفسه — غائر قليلًا عن الإطار
+    const panelMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.7, metalness: 0.25 });
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(CELL_SIZE * 0.62, WALL_HEIGHT * 1.02, CELL_SIZE * 0.1), panelMat);
+    panel.position.z = CELL_SIZE * 0.09;
+    group.add(panel);
+
+    // ضوء حقيقي خلف الباب يتسرّب من حوافه — أحمر (مقفل) يتحوّل أخضر ساطع عند الفتح
+    const glowMat = new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xff2222, emissiveIntensity: 1.4 });
+    const glow = new THREE.Mesh(new THREE.BoxGeometry(CELL_SIZE * 0.7, WALL_HEIGHT * 1.1, 0.05), glowMat);
+    glow.position.z = -CELL_SIZE * 0.14;
+    group.add(glow);
+    const doorLight = new THREE.PointLight(0xff2222, 6, 8);
+    doorLight.position.set(0, WALL_HEIGHT * 0.5, -CELL_SIZE * 0.2);
+    group.add(doorLight);
+
+    const lockGeo = new THREE.SphereGeometry(0.25, 10, 10);
+    const lockMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.7, metalness: 0.8, roughness: 0.2 });
     const lock = new THREE.Mesh(lockGeo, lockMat);
-    lock.position.set(0, 0, CELL_SIZE * 0.2);
-    door3DMesh.add(lock);
-    door3DMesh.userData = { lock, isOpen: false };
+    lock.position.set(0, 0, CELL_SIZE * 0.22);
+    group.add(lock);
+
+    group.position.set(cx, WALL_HEIGHT * 0.6, cz);
+    group.traverse(o => { if(o.isMesh) o.castShadow = true; });
+    door3DMesh = group;
+    scene.add(door3DMesh);
+    door3DMesh.userData = { lock, isOpen: false, glow, glowMat, lockMat, doorLight };
 }
 
 function create3DSharedGuards(guardsList) {
@@ -1651,34 +1727,43 @@ function create3DSharedGuards(guardsList) {
     guards3D = [];
 
     guardsList.forEach((g, gi) => {
+        // حارس آلي مصفّح واضح المعالم — جذع صندوقي، دروع كتف، ورأس بشقّ رؤية أحمر متوهّج،
+        // بدل الكبسولة المجرّدة السابقة، ليكون العدو مميّزًا بصريًا بوضوح عن الجندي (اللاعب)
         const group = new THREE.Group();
-        const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2, 8);
-        const mat = new THREE.MeshStandardMaterial({ 
-            color: 0xff2244, emissive: 0xff0000, emissiveIntensity: 0.4,
-            roughness: 0.3, metalness: 0.7
+        const armorMat = new THREE.MeshStandardMaterial({
+            color: 0x3a1418, emissive: 0x660000, emissiveIntensity: 0.35,
+            roughness: 0.4, metalness: 0.75
         });
-        const body = new THREE.Mesh(bodyGeo, mat);
-        body.castShadow = true;
-        group.add(body);
+        const trimMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.6 });
+        const visorMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
 
-        const capGeo = new THREE.SphereGeometry(0.4, 8, 8, 0, Math.PI * 2, 0, Math.PI/2);
-        const topCap = new THREE.Mesh(capGeo, mat);
-        topCap.position.y = 0.6;
-        group.add(topCap);
+        const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.55, 8), trimMat);
+        legL.position.set(-0.16, 0.28, 0); group.add(legL);
+        const legR = legL.clone(); legR.position.x = 0.16; group.add(legR);
 
-        const botCap = new THREE.Mesh(capGeo, mat);
-        botCap.rotation.x = Math.PI;
-        botCap.position.y = -0.6;
-        group.add(botCap);
+        const torso = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.68, 0.4), armorMat);
+        torso.position.y = 0.95;
+        torso.castShadow = true;
+        group.add(torso);
 
-        const eyeGeo = new THREE.SphereGeometry(0.12, 8, 8);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-        leftEye.position.set(-0.15, 0.3, 0.35);
-        rightEye.position.set(0.15, 0.3, 0.35);
-        group.add(leftEye);
-        group.add(rightEye);
+        [-1, 1].forEach(side => {
+            const shoulder = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.24, 0.3), trimMat);
+            shoulder.position.set(side * 0.42, 1.22, 0);
+            group.add(shoulder);
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.55, 8), armorMat);
+            arm.position.set(side * 0.42, 0.85, 0);
+            group.add(arm);
+        });
+
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.32, 0.34), trimMat);
+        head.position.y = 1.5;
+        group.add(head);
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.02), visorMat);
+        visor.position.set(0, 1.52, 0.17);
+        group.add(visor);
+        const visorGlow = new THREE.PointLight(0xff2222, 3, 3);
+        visorGlow.position.set(0, 1.52, 0.2);
+        group.add(visorGlow);
 
         scene.add(group);
         guards3D.push({ mesh: group, guardData: g, index: gi, lastPos: [0, 0] });
@@ -1956,7 +2041,7 @@ function setupMobileJoystick() {
     if(!fireBtnMobile) {
         fireBtnMobile = document.createElement('div');
         fireBtnMobile.id = 'fire-btn-mobile';
-        fireBtnMobile.style.cssText = 'position:fixed;bottom:30px;right:30px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#ff6f59,#c0392b);border:3px solid rgba(255,255,255,0.4);z-index:30;display:none;align-items:center;justify-content:center;font-size:28px;touch-action:none;user-select:none;';
+        fireBtnMobile.style.cssText = 'position:fixed;bottom:170px;right:24px;width:74px;height:74px;border-radius:50%;background:radial-gradient(circle,#ff6f59,#c0392b);border:3px solid rgba(255,255,255,0.5);z-index:32;display:none;align-items:center;justify-content:center;font-size:30px;touch-action:none;user-select:none;box-shadow:0 6px 18px rgba(0,0,0,.45);';
         fireBtnMobile.innerHTML = '🔫';
         fireBtnMobile.addEventListener('touchstart', (e) => { e.preventDefault(); fireWeapon3D(); }, { passive: false });
         fireBtnMobile.addEventListener('mousedown', (e) => { e.preventDefault(); fireWeapon3D(); });
@@ -2108,10 +2193,12 @@ function checkWallCollision(x, z) {
     const localX = x - c * CELL_SIZE;
     const localZ = z - r * CELL_SIZE;
     const margin = 0.4;
-    if(cell.N && localZ < -CELL_SIZE/2 + margin) return true;
-    if(cell.S && localZ > CELL_SIZE/2 - margin) return true;
-    if(cell.W && localX < -CELL_SIZE/2 + margin) return true;
-    if(cell.E && localX > CELL_SIZE/2 - margin) return true;
+    // جدار متحرك ومفتوح حاليًا = يمكن المرور فعليًا (يطابق ما يراه اللاعب بصريًا وهو ينخفض
+    // للأرض)؛ من قبل كان الفحص يتجاهل حالة الفتح فتبقى كل الجدران صلبة رغم ظهورها مفتوحة
+    if(cell.N && !isWallOpenAt(r,c,'N') && localZ < -CELL_SIZE/2 + margin) return true;
+    if(cell.S && !isWallOpenAt(r,c,'S') && localZ > CELL_SIZE/2 - margin) return true;
+    if(cell.W && !isWallOpenAt(r,c,'W') && localX < -CELL_SIZE/2 + margin) return true;
+    if(cell.E && !isWallOpenAt(r,c,'E') && localX > CELL_SIZE/2 - margin) return true;
     return false;
 }
 
@@ -2133,11 +2220,15 @@ function fireWeapon3D() {
     myAmmo--;
     updateAmmoUI();
 
-    const startPos = playerMesh.position.clone();
-    startPos.y = 1.2;
+    // نقطة الانطلاق الحقيقية = فوهة البندقية فعليًا (وليس مركز الجسم) — بذلك تبدو الطلقة
+    // صادرة من السلاح أمام الجندي مباشرة، ويتبع اتجاهها اتجاه نظر الكاميرا (نفس ما تراه الشعرة)
+    const muzzleLocal = new THREE.Vector3(0.22, 0.82, -0.73);
+    const startPos = playerMesh.localToWorld(muzzleLocal.clone());
     const direction = new THREE.Vector3();
     camera.getWorldDirection(direction);
     direction.y = 0; direction.normalize();
+
+    spawnMuzzleFlash(startPos, direction);
 
     const projectile = createProjectile(startPos, direction, session.role);
     projectiles.push(projectile);
@@ -2147,6 +2238,35 @@ function fireWeapon3D() {
 
     const ch = document.getElementById('crosshair');
     if(ch){ ch.classList.add('firing'); setTimeout(()=> ch.classList.remove('firing'), 120); }
+}
+
+function spawnMuzzleFlash(pos, dir){
+    // وميض حقيقي: ضوء نقطي ساطع قصير جدًا + هالة مرئية متوهجة تختفي خلال أجزاء من الثانية
+    const flashLight = new THREE.PointLight(0xffdd88, 18, 6, 2);
+    flashLight.position.copy(pos);
+    scene.add(flashLight);
+
+    const flashGeo = new THREE.SphereGeometry(0.16, 8, 8);
+    const flashMat = new THREE.MeshBasicMaterial({ color: 0xfff3c0, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
+    const flashMesh = new THREE.Mesh(flashGeo, flashMat);
+    flashMesh.position.copy(pos).add(dir.clone().multiplyScalar(0.15));
+    scene.add(flashMesh);
+
+    const startTime = performance.now();
+    const DURATION = 90;
+    function animateFlash(){
+        const t = (performance.now() - startTime) / DURATION;
+        if(t >= 1){
+            scene.remove(flashLight);
+            scene.remove(flashMesh);
+            return;
+        }
+        flashLight.intensity = 18 * (1 - t);
+        flashMesh.scale.setScalar(1 + t * 1.8);
+        flashMat.opacity = 1 - t;
+        requestAnimationFrame(animateFlash);
+    }
+    requestAnimationFrame(animateFlash);
 }
 
 function createProjectile(pos, dir, ownerRole) {
@@ -2319,7 +2439,7 @@ function updateGuards3D(elapsed) {
         const tz = gr * CELL_SIZE;
         g.mesh.position.x = THREE.MathUtils.lerp(g.mesh.position.x, tx, 0.1);
         g.mesh.position.z = THREE.MathUtils.lerp(g.mesh.position.z, tz, 0.1);
-        g.mesh.position.y = 0.8;
+        g.mesh.position.y = 0; // المجسّم الجديد مبني بحيث تكون القدمان عند y=0 فعليًا (أرض المتاهة)
 
         const dx = tx - g.lastPos[0] * CELL_SIZE;
         const dz = tz - g.lastPos[1] * CELL_SIZE;
@@ -2369,6 +2489,16 @@ function updateItems3D(time) {
 }
 
 /* ===================== 8) تحديث المفتاح والباب ===================== */
+let keyMagicTimeout = null;
+function showKeyMagicPopup(){
+  const indicator = document.getElementById('keyIndicator');
+  if(!indicator) return;
+  clearTimeout(keyMagicTimeout);
+  indicator.classList.remove('magic-pop'); void indicator.offsetWidth; // إعادة تشغيل الأنيميشن حتى لو ظهرت من قبل
+  indicator.classList.add('show', 'magic-pop');
+  keyMagicTimeout = setTimeout(()=>{ indicator.classList.remove('show','magic-pop'); }, 3200);
+}
+
 function updateKey3D(time) {
     if(!key3DMesh || keyHolder) {
         if(key3DMesh) {
@@ -2390,9 +2520,7 @@ function updateKey3D(time) {
 
         pushKillFeed(`🔑 ${localProfile.username} وجد المفتاح! اذهب للباب!`);
         broadcastPickup('key', 0, 0);
-
-        const indicator = document.getElementById('keyIndicator');
-        if(indicator) indicator.classList.add('show');
+        showKeyMagicPopup();
 
         if(door3DMesh && door3DMesh.userData.lock) {
             door3DMesh.userData.lock.material.color.setHex(0x00ff00);
@@ -2407,6 +2535,12 @@ function updateDoor3D() {
     const dist = Math.hypot(playerMesh.position.x - door3DMesh.position.x, playerMesh.position.z - door3DMesh.position.z);
     if(dist < 1.5 && keyHolder === session.role && !gameOver) {
         door3DMesh.userData.isOpen = true;
+
+        // الضوء يتحوّل من أحمر (مقفل) إلى أخضر ساطع (مفتوح) لحظة الفتح — إحساس أوضح بالفعل
+        const { glowMat, lockMat, doorLight } = door3DMesh.userData;
+        if(glowMat){ glowMat.color.setHex(0x33ff66); glowMat.emissive.setHex(0x33ff66); glowMat.emissiveIntensity = 2; }
+        if(lockMat){ lockMat.color.setHex(0x33ff66); lockMat.emissive.setHex(0x33ff66); }
+        if(doorLight){ doorLight.color.setHex(0x33ff66); doorLight.intensity = 12; }
 
         const openAnim = () => {
             door3DMesh.position.y += 0.15;
@@ -2692,7 +2826,7 @@ function initPhaserHUD() {
 /* ===================== ناظور الكشف — مخروط دوّار يكشف الخصوم في مجال الرؤية فقط ===================== */
 const SCAN_DURATION_MS = 4000, SCAN_COOLDOWN_MS = 12000;
 const SCAN_ANGLE_RAD = Math.PI / 3;   // 60° مجال رؤية
-const SCAN_RANGE = 12;                // بوحدات المشهد (CELL_SIZE لكل خانة)
+const SCAN_RANGE = 26;                // أكبر قليلاً من مدى ضوء اللاعب/الضباب العادي (20) — بوحدات المشهد
 let scanActive = false, scanEndAt = 0, scanCooldownUntil = 0, scanCooldownInterval = null;
 
 function getForwardVector(){
@@ -2754,7 +2888,7 @@ function updateScan(){
   if(!playerMesh) return;
   const myX = playerMesh.position.x, myZ = playerMesh.position.z;
   const blipsBox = document.getElementById('scanBlips');
-  const seenRoles = new Set();
+  const seenKeys = new Set();
   for(const role of Object.keys(players)){
     if(role === session.role) continue;
     const p = players[role];
@@ -2763,18 +2897,34 @@ function updateScan(){
     if(!wp) continue;
     const dx = wp.x - myX, dz = wp.z - myZ;
     if(!isWithinScanCone(dx, dz)) continue;
-    seenRoles.add(role);
-    let blip = blipsBox.querySelector(`.scan-blip[data-role="${role}"]`);
+    const key = 'p:'+role;
+    seenKeys.add(key);
+    let blip = blipsBox.querySelector(`.scan-blip[data-key="${key}"]`);
     if(!blip){
       blip = document.createElement('div');
-      blip.className = 'scan-blip'; blip.dataset.role = role;
-      blip.style.color = p.color || '#5AE68C';
+      blip.className = 'scan-blip'; blip.dataset.key = key;
       blip.innerHTML = `<span class="dot" style="background:${p.color||'#5AE68C'}"></span><span class="lbl">${p.name||'؟'}</span>`;
       blipsBox.appendChild(blip);
     }
     positionBubbleAt3D(blip, wp.x, wp.z);
   }
-  blipsBox.querySelectorAll('.scan-blip').forEach(el=>{ if(!seenRoles.has(el.dataset.role)) el.remove(); });
+  // كشف الحرّاس أيضًا ضمن نفس مخروط الرؤية
+  guards3D.forEach((g, gi) => {
+    if(!g.mesh) return;
+    const dx = g.mesh.position.x - myX, dz = g.mesh.position.z - myZ;
+    if(!isWithinScanCone(dx, dz)) return;
+    const key = 'g:'+gi;
+    seenKeys.add(key);
+    let blip = blipsBox.querySelector(`.scan-blip[data-key="${key}"]`);
+    if(!blip){
+      blip = document.createElement('div');
+      blip.className = 'scan-blip'; blip.dataset.key = key;
+      blip.innerHTML = `<span class="dot" style="background:#ff3344"></span><span class="lbl">👮 حارس</span>`;
+      blipsBox.appendChild(blip);
+    }
+    positionBubbleAt3D(blip, g.mesh.position.x, g.mesh.position.z);
+  });
+  blipsBox.querySelectorAll('.scan-blip').forEach(el=>{ if(!seenKeys.has(el.dataset.key)) el.remove(); });
 }
 
 function gameLoop3D() {
@@ -2795,6 +2945,7 @@ function gameLoop3D() {
         checkLastManStanding();
         updateShoutBubbles();
         updateScan();
+        updateCompassArrow();
 
         const now = performance.now();
         if(now - lastPosBroadcast > 140) {
@@ -2914,8 +3065,48 @@ function pushKillFeed(text) {
     setTimeout(() => el.remove(), 2900);
 }
 
+let audioCtx = null;
+function getAudioCtx(){
+    if(!audioCtx){
+        try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; }
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
 function playSound(name) {
-    // Placeholder
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    try{
+        const now = ctx.currentTime;
+        if(name === 'shoot'){
+            // انفجار ضوضاء قصير يمثل طقّة الطلقة + دفعة تردد منخفض تمثّل الارتداد — بلا أي ملف صوتي خارجي
+            const bufferSize = Math.floor(ctx.sampleRate * 0.12);
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for(let i=0;i<bufferSize;i++){ data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 2); }
+            const noise = ctx.createBufferSource(); noise.buffer = buffer;
+            const noiseFilter = ctx.createBiquadFilter(); noiseFilter.type = 'bandpass';
+            noiseFilter.frequency.value = 1800; noiseFilter.Q.value = 0.7;
+            const noiseGain = ctx.createGain();
+            noiseGain.gain.setValueAtTime(0.9, now); noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(ctx.destination);
+            noise.start(now); noise.stop(now + 0.13);
+
+            const thump = ctx.createOscillator(); thump.type = 'sine';
+            thump.frequency.setValueAtTime(150, now); thump.frequency.exponentialRampToValueAtTime(40, now + 0.09);
+            const thumpGain = ctx.createGain();
+            thumpGain.gain.setValueAtTime(0.6, now); thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            thump.connect(thumpGain); thumpGain.connect(ctx.destination);
+            thump.start(now); thump.stop(now + 0.11);
+        } else if(name === 'hit'){
+            const osc = ctx.createOscillator(); osc.type = 'square';
+            osc.frequency.setValueAtTime(220, now); osc.frequency.exponentialRampToValueAtTime(70, now + 0.18);
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.4, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(now); osc.stop(now + 0.19);
+        }
+    }catch(e){}
 }
 
 /* ===================== 16) أحداث الأزرار الجديدة ===================== */
@@ -2950,11 +3141,40 @@ console.log('🌀 متاهة الهروب 3D — النسخة المشتركة �
 /* ===================== 25) الإقلاع ===================== */
 function extractLinkCode(){ return new URLSearchParams(location.search).get('r'); }
 
+function promptGenderBeforeJoin(){
+  return new Promise(resolve=>{
+    const modal = document.getElementById('genderPromptModal');
+    const grid = document.getElementById('genderPromptGrid');
+    if(!modal || !grid){ resolve(); return; }
+    grid.querySelectorAll('.diff-opt').forEach(o=>{
+      o.classList.toggle('sel', o.dataset.gender === currentGender);
+    });
+    const onGridClick = (e)=>{
+      const opt = e.target.closest('.diff-opt'); if(!opt) return;
+      grid.querySelectorAll('.diff-opt').forEach(o=>o.classList.remove('sel'));
+      opt.classList.add('sel');
+      currentGender = opt.dataset.gender;
+      localStorage.setItem('maze_gender', currentGender);
+    };
+    grid.addEventListener('click', onGridClick);
+    const btn = document.getElementById('btnConfirmGenderJoin');
+    const onConfirm = ()=>{
+      modal.classList.remove('show');
+      grid.removeEventListener('click', onGridClick);
+      btn.removeEventListener('click', onConfirm);
+      resolve();
+    };
+    btn.addEventListener('click', onConfirm);
+    modal.classList.add('show');
+  });
+}
+
 async function afterProfileReady(){
   showScreen('home');
   const pending = extractLinkCode();
   if(pending){
     history.replaceState && history.replaceState({}, '', location.pathname);
+    await promptGenderBeforeJoin();
     const { room, error } = await joinMazeRoomByCode(pending);
     if(!error){
       subscribeRoomChanges(room.code, (newRoom)=> handleRoomUpdate(newRoom));
