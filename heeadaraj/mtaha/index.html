@@ -180,6 +180,8 @@
       </div>
     </div>
 
+    <div class="hint-arrow" id="hintArrow"><span class="arrow-icon">➤</span></div>
+
     <div class="scan-cone" id="scanCone"></div>
     <div class="scan-blips" id="scanBlips"></div>
     <div class="scan-status" id="scanStatus"></div>
@@ -224,6 +226,23 @@
         <p><b>🏆 الفوز:</b> الهروب بالمفتاح، أو أن تكون آخر الصامدين.</p>
       </div>
       <button class="btn" id="btnCloseHelp">فهمت، لنقاتل!</button>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="genderPromptModal">
+    <div class="win-modal-box">
+      <div class="win-icon">🪖</div>
+      <h2>اختر شكل جنديّك</h2>
+      <p class="hint">قبل الانضمام لهذه المعركة — كيف تريد أن يظهر مقاتلك؟</p>
+      <div class="diff-grid" id="genderPromptGrid">
+        <div class="diff-opt sel" data-gender="male">
+          <b>👨 جندي</b><span>بنية عريضة وقصّة شعر قصيرة</span>
+        </div>
+        <div class="diff-opt" data-gender="female">
+          <b>👩 جنديّة</b><span>بنية أنحف وذيل حصان</span>
+        </div>
+      </div>
+      <button class="btn" id="btnConfirmGenderJoin" style="margin-top:14px;">✅ انضم الآن</button>
     </div>
   </div>
 
