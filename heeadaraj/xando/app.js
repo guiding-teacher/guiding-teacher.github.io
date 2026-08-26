@@ -11,14 +11,10 @@ const AVATAR_COLORS = ['#E5484D','#2F7DE1','#3EA06B','#F2B705','#8E5CF2','#FF6F5
 let profile = null, myAuthUid = null;
 
 function getLocalUserId(){
-  // نفس مفتاح التخزين المستخدم في الحية والدرج ولودو (snl_user_id) — بهذا يُصبح
-  // الجهاز/المتصفح نفسه هو نفس الحساب (نفس profiles.id) في الألعاب الثلاث دون أي
-  // تسجيل جديد. لو كان هناك معرّف قديم خاص بإكس أو فقط (xo_user_id) من نسخة سابقة
-  // نرحّله لمرة واحدة حفاظًا على تقدّم اللاعب القديم.
   let id = localStorage.getItem('snl_user_id');
   if(!id){
-    const legacy = localStorage.getItem('xo_user_id');
-    id = legacy || (crypto.randomUUID ? crypto.randomUUID() : ('u-'+Date.now()+'-'+Math.random().toString(16).slice(2)));
+    // إذا فُتحت اللعبة مباشرة بدون المرور بالشاشة الرئيسية
+    id = (crypto.randomUUID ? crypto.randomUUID() : ('u-'+Date.now()+'-'+Math.random().toString(16).slice(2)));
     localStorage.setItem('snl_user_id', id);
   }
   return id;
