@@ -469,10 +469,7 @@ body.is-spectator .spectator-badge{display:flex;}
   .side-panel .p-pos{
     width: 56px; height: 56px; font-size: 30px;left: 30%;
   
-  
-  
-  
-  
+
   }
   
   .side-panel .role-tag{font-size:10px;padding:1px 6px;}
@@ -618,3 +615,12 @@ body.is-spectator .spectator-badge{display:flex;}
   }
   .timer-bubble .timer-icon{font-size:18px;}
 }
+
+
+.game-screen-header{
+  display: none;
+}
+
+
+
+
