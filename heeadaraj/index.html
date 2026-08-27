@@ -19,6 +19,12 @@
     --gold:#F2B705;
   }
 
+  
+  
+  
+  
+  
+  
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{height:100%; overflow:hidden;}
 
@@ -345,7 +351,7 @@
     to{opacity:1; transform:scale(1) translateY(0);}
   }
   .game-screen-header{
-    display:flex; align-items:center; justify-content:space-between;
+    display:none; align-items:center; justify-content:space-between;
     padding:10px 14px;
     background:var(--paper);
     border-bottom:3px solid var(--ink);
@@ -947,12 +953,23 @@ function createSparkles(e){
   const gameHeader = document.getElementById('gameHeader');
   const gameFrame  = document.getElementById('gameFrame');
 
-  window.addEventListener('message', (e)=>{
-    if(!e.data || e.data.source !== 'gameBridge' || e.data.type !== 'roundState') return;
-    if(e.source && gameFrame && e.source !== gameFrame.contentWindow) return;
-    if(e.data.active){ gameHeader.classList.add('hidden'); }
-    else { gameHeader.classList.remove('hidden'); }
-  });
+ /* ===== استقبال أمر الرجوع من داخل الألعاب ===== */
+window.addEventListener('message', (e)=>{
+  if(!e.data || e.data.source !== 'gameBridge') return;
+  
+  // إخفاء/إظهار الشريط العلوي حسب حالة الجولة (موجود مسبقاً)
+  if(e.data.type === 'roundState'){
+    const gh = document.getElementById('gameHeader');
+    if(!gh) return;
+    if(e.data.active){ gh.classList.add('hidden'); }
+    else { gh.classList.remove('hidden'); }
+  }
+  
+  // ✅ جديد: إغلاق اللعبة والرجوع للمشغل
+  if(e.data.type === 'closeGame'){
+    closeGame();
+  }
+});
 
   if(gameFrame){
     gameFrame.addEventListener('load', ()=>{
