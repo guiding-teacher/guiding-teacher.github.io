@@ -10,9 +10,75 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <base target="_blank">
+  
+  <style>
+/* ===== شريط الواجهة الرئيسية ===== */
+.game-main-header{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #FFFDE7;
+  border-bottom: 3px solid #3E2723;
+  box-shadow: 0 4px 0 rgba(0,0,0,.08);
+  transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .35s ease;
+}
+.game-main-header.hidden{
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+body.header-padded .stage{
+  padding-top: 56px;
+}
+.game-main-title{
+  font-family:'Baloo Bhaijaan 2','Cairo',sans-serif;
+  font-size: clamp(15px, 4vw, 21px);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3E2723;
+}
+.back-to-hub-btn{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #FF5252;
+  color: #fff;
+  border: none;
+  padding: 7px 15px;
+  border-radius: 14px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 3px solid #3E2723;
+  box-shadow: 3px 3px 0 #3E2723;
+  transition: all .15s ease;
+}
+.back-to-hub-btn:hover{ transform: translateY(-2px); box-shadow: 4px 4px 0 #3E2723; }
+.back-to-hub-btn:active{ transform: translateY(1px); box-shadow: 1px 1px 0 #3E2723; }
+</style>
 </head>
 <body>
 
+  
+  <!-- شريط الواجهة الرئيسية — يظهر في Home ويختفي في Game -->
+<div class="game-main-header" id="gameMainHeader">
+  <div class="game-main-title">
+    <span id="mainHeaderIcon">⭕</span>
+    <span id="mainHeaderText">إكس أو برو</span>
+  </div>
+  <button class="back-to-hub-btn" onclick="backToHub()">
+    <span>🔙</span><span>رجوع</span>
+  </button>
+</div>
+  
+  
 <div class="aurora"><i></i><i></i><i></i></div>
 
 <div class="spectator-badge" id="spectatorBadge">👀 وضع المشاهدة</div>
@@ -471,6 +537,100 @@
   report();
   // شبكة أمان احتياطية في حال فاتت الملاحظة تغييرًا (مثلاً تأخر تحميل)
   setInterval(report, 400);
+})();
+</script>
+  
+  <script>
+/* ===== شريط الواجهة الرئيسية — يظهر في Home ويختفي في Game ===== */
+(function(){
+  const header = document.getElementById('gameMainHeader');
+  if(!header) return;
+
+  function isVisible(el){
+    if(!el) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== 'none' && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0;
+  }
+
+  function updateHeader(){
+    const home = document.getElementById('screen-home');
+    const onboarding = document.getElementById('screen-onboarding');
+    const game = document.getElementById('screen-game');
+    const matching = document.getElementById('screen-matching');
+
+    const inGame = isVisible(game) || isVisible(matching);
+
+    if(inGame){
+      header.classList.add('hidden');
+      document.body.classList.remove('header-padded');
+    } else {
+      header.classList.remove('hidden');
+      document.body.classList.add('header-padded');
+    }
+  }
+
+  const observer = new MutationObserver(updateHeader);
+  ['screen-home','screen-game','screen-onboarding','screen-matching'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) observer.observe(el, {attributes:true, attributeFilter:['style','class']});
+  });
+
+  window.addEventListener('load', updateHeader);
+  setInterval(updateHeader, 300);
+  updateHeader();
+})();
+
+/* ===== الرجوع إلى المشغل ===== */
+function backToHub(){
+  if(window.parent !== window){
+    window.parent.postMessage({source:'gameBridge', type:'closeGame'}, '*');
+  } else {
+    window.location.href = '../index.html';
+  }
+}
+</script>
+  <script>
+/* ===== منع التحديد والنسخ في كل مكان مع استثناء حقول الإدخال ===== */
+(function(){
+  const style = document.createElement('style');
+  style.textContent = `
+    * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+    input, textarea, [contenteditable="true"] {
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
+      -webkit-touch-callout: default !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.addEventListener('contextmenu', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+
+  document.addEventListener('selectstart', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+
+  document.addEventListener('copy', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+
+  document.addEventListener('cut', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
 })();
 </script>
 </body>
