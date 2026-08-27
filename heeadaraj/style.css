@@ -983,6 +983,10 @@ body.is-spectator .spectator-badge{display:flex;}
   .ach-card-desc{font-size:9.5px;min-height:26px;}
 }
 
+.game-screen-header{
+  display: none;
+}
+
 /* إشعار احتفالي علوي عند فتح شارة جديدة */
 .achievement-toast{
   position:fixed;top:16px;left:50%;
