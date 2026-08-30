@@ -15,7 +15,11 @@ let myAuthUid = null; // معرّف الجلسة الحقيقي الموقّع �
 
 function getLocalUserId(){
   let id = localStorage.getItem('snl_user_id');
-  if(!id){ id = (crypto.randomUUID ? crypto.randomUUID() : ('u-'+Date.now()+'-'+Math.random().toString(16).slice(2))); localStorage.setItem('snl_user_id', id); }
+  if(!id){
+    // إذا فُتحت اللعبة مباشرة بدون المرور بالشاشة الرئيسية
+    id = (crypto.randomUUID ? crypto.randomUUID() : ('u-'+Date.now()+'-'+Math.random().toString(16).slice(2)));
+    localStorage.setItem('snl_user_id', id);
+  }
   return id;
 }
 const myId = getLocalUserId();
@@ -1070,6 +1074,9 @@ function renderRoom(room, opts={}){
   if(room.status==='finished'){
     openWinModal(room);
     maybeAwardGameXP(room);
+  } else {
+    // الجولة أصبحت نشطة من جديد (بدأت جولة جديدة بموافقة الطرفين، أو غادر أحدهما) — أغلق نافذة الفوز إن كانت مفتوحة
+    closeWinModalIfOpen();
   }
 }
 
@@ -1238,30 +1245,87 @@ function armWatchdogTimer(room){
 
 function openWinModal(room){
   const modal = document.getElementById('winModal');
-  if(modal.style.display==='flex') return;
   const isSpectator = session.role === 'spectator';
-  const isMe = room.winner===session.role;
-  const winnerName = room.winner==='p1' ? room.p1_name : room.p2_name;
-  document.getElementById('winTitle').textContent = isMe ? '🎉 أنت الفائز!' : ('فاز ' + winnerName);
-  document.getElementById('winText').textContent = 'وصل إلى المربع 100 أولًا في هذه الجولة.';
-  document.getElementById('btnRematch').style.display = isSpectator ? 'none' : 'inline-flex';
-  modal.style.display='flex';
-  launchConfetti();
-  beep(880,.2,'triangle'); setTimeout(()=>beep(1100,.25,'triangle'),150);
+  const alreadyOpen = modal.style.display==='flex';
 
-  if(!isSpectator){
-    const oppName = session.role==='p1' ? room.p2_name : room.p1_name;
-    const roundKey = room.code + '|' + room.rev;
-    if(historySavedRoundKey !== roundKey){
-      historySavedRoundKey = roundKey;
-      writeRoundFlag('snl_historySavedRoundKey', roundKey);
-      saveHistoryEntry({
-        date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
-        opponent: oppName || 'خصم',
-        result: isMe ? 'win' : 'lose'
-      });
+  // الجزء الذي يُنفَّذ مرة واحدة فقط عند ظهور النافذة أول مرة لهذه الجولة
+  // (العنوان، الكونفيتي، الصوت، حفظ السجل) — لا يُعاد تنفيذه عند وصول
+  // تحديثات لاحقة للغرفة (مثل تغيّر أعلام طلب الإعادة) طالما النافذة مفتوحة بالفعل.
+  if(!alreadyOpen){
+    const isMe = room.winner===session.role;
+    const winnerName = room.winner==='p1' ? room.p1_name : room.p2_name;
+    document.getElementById('winTitle').textContent = isMe ? '🎉 أنت الفائز!' : ('فاز ' + winnerName);
+    document.getElementById('winText').textContent = 'وصل إلى المربع 100 أولًا في هذه الجولة.';
+    modal.style.display='flex';
+    launchConfetti();
+    beep(880,.2,'triangle'); setTimeout(()=>beep(1100,.25,'triangle'),150);
+
+    if(!isSpectator){
+      const oppName = session.role==='p1' ? room.p2_name : room.p1_name;
+      const roundKey = room.code + '|' + room.rev;
+      if(historySavedRoundKey !== roundKey){
+        historySavedRoundKey = roundKey;
+        writeRoundFlag('snl_historySavedRoundKey', roundKey);
+        saveHistoryEntry({
+          date: new Date().toLocaleString('ar', {dateStyle:'medium', timeStyle:'short'}),
+          opponent: oppName || 'خصم',
+          result: isMe ? 'win' : 'lose'
+        });
+      }
     }
   }
+
+  // يُنفَّذ في كل مرة (فتح أولي أو تحديث لاحق) ليعكس حالة طلب إعادة الجولة الحالية
+  syncRematchUI(room);
+}
+
+/* ====== يعكس حالة "طلب إعادة الجولة" على زر ونص نافذة الفوز: من طلب، ومن ننتظر
+   موافقته — بحيث لا تبدأ جولة جديدة إلا بعد ضغط اللاعبين كليهما على الزر ====== */
+function syncRematchUI(room){
+  const btn = document.getElementById('btnRematch');
+  const statusEl = document.getElementById('rematchStatus');
+  const isSpectator = session.role === 'spectator';
+
+  if(isSpectator){
+    btn.style.display = 'none';
+    if(statusEl) statusEl.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'inline-flex';
+
+  const myWants  = session.role==='p1' ? !!room.rematch_p1 : !!room.rematch_p2;
+  const oppWants = session.role==='p1' ? !!room.rematch_p2 : !!room.rematch_p1;
+
+  if(myWants && oppWants){
+    btn.disabled = true;
+    btn.textContent = '🔁 جارٍ بدء الجولة…';
+    if(statusEl){ statusEl.style.display='block'; statusEl.textContent = 'تمت الموافقة من الطرفين، الجولة الجديدة تبدأ الآن…'; }
+  } else if(myWants){
+    btn.disabled = true;
+    btn.textContent = '⏳ بانتظار موافقة الخصم';
+    if(statusEl){ statusEl.style.display='block'; statusEl.textContent = 'أرسلنا طلب إعادة الجولة إلى خصمك، بانتظار موافقته لبدء جولة جديدة بنفس الغرفة.'; }
+  } else if(oppWants){
+    btn.disabled = false;
+    btn.textContent = '✅ وافق على إعادة الجولة';
+    if(statusEl){ statusEl.style.display='block'; statusEl.textContent = 'طلب خصمك إعادة الجولة بنفس الغرفة — وافق لبدء جولة جديدة.'; }
+  } else {
+    btn.disabled = false;
+    btn.textContent = '🔁 طلب إعادة الجولة';
+    if(statusEl) statusEl.style.display = 'none';
+  }
+}
+
+/* ====== إخفاء نافذة الفوز وإعادة زر الإعادة لحالته الافتراضية — يُستدعى فور خروج
+   الغرفة من حالة "finished" (أي فور موافقة الطرفين وبدء الجولة الجديدة فعليًا) ====== */
+function closeWinModalIfOpen(){
+  const modal = document.getElementById('winModal');
+  if(modal.style.display !== 'flex') return;
+  modal.style.display = 'none';
+  const btn = document.getElementById('btnRematch');
+  btn.disabled = false;
+  btn.textContent = '🔁 طلب إعادة الجولة';
+  const statusEl = document.getElementById('rematchStatus');
+  if(statusEl) statusEl.style.display = 'none';
 }
 
 /* ===================== جدول الجولات المحفوظ محليًا لكل لاعب ===================== */
@@ -1286,14 +1350,42 @@ function renderHistoryTable(){
       <span class="h-status">${h.result==='win' ? '🏆 فوز' : '❌ خسارة'}</span>
     </div>`).join('');
 }
-async function rematch(){
+/* ====== طلب إعادة الجولة: لا تبدأ جولة جديدة فورًا عند الضغط، بل يُسجَّل طلب هذا اللاعب
+   فقط (rematch_p1/rematch_p2)، وتبدأ الجولة الجديدة تلقائيًا فقط بعد أن يوافق اللاعبان
+   كلاهما (أي يصبح كلا العلمين true) — سواء كان هذا اللاعب أول من طلب أو من وافق أخيرًا ====== */
+async function requestRematch(){
   if(!currentRoom) return;
   if(session.role!=='p1' && session.role!=='p2') return; // المشاهد لا يملك صلاحية إعادة الجولة
+  if(currentRoom.status!=='finished') return; // لا معنى لطلب إعادة قبل انتهاء الجولة الحالية
+
+  const myField = session.role==='p1' ? 'rematch_p1' : 'rematch_p2';
+  // تحديث تفاؤلي فوري للواجهة قبل وصول رد الخادم لمنع ضغطات متكررة على الزر
+  syncRematchUI({ ...currentRoom, [myField]: true });
+
+  const { data, error } = await sb.from('rooms').update({ [myField]: true }).eq('code', session.code).select().single();
+  if(error || !data) return;
+  currentRoom = data;
+  syncRematchUI(data);
+
+  // إذا أصبح كلا الطرفين موافقَين الآن، ابدأ جولة جديدة فعليًا بنفس الغرفة
+  if(data.rematch_p1 && data.rematch_p2){
+    await finalizeRematch(data);
+  }
+}
+
+/* ====== ينفّذ إعادة تعيين الغرفة لجولة جديدة فعليًا، بعد التأكد من موافقة الطرفين.
+   الشرط eq('status','finished') يضمن تنفيذ هذا مرة واحدة فقط حتى لو حاول كلا
+   المتصفحين تنفيذه في اللحظة نفسها (سباق): من يصل أولًا يُخرج الحالة من 'finished'،
+   فتفشل محاولة الطرف الآخر بصمت (0 صفوف محدَّثة) دون أي أثر إضافي ====== */
+async function finalizeRematch(room){
   const { bonus, penalty } = generateSpecialCells();
-  const fresh = { status:'playing', turn:'p1', p1_dice:1, p2_dice:1, winner:null, p1_pos:0, p2_pos:0,
-    log:[`🔁 جولة جديدة بنفس الفريقين: ${currentRoom.p1_name} ضد ${currentRoom.p2_name}`], rev:(currentRoom.rev||0)+1,
-    bonus_cells: bonus, penalty_cells: penalty, p1_auto_streak:0, p2_auto_streak:0 };
-  const { data } = await sb.from('rooms').update(fresh).eq('code', session.code).select().single();
+  const fresh = {
+    status:'playing', turn:'p1', p1_dice:1, p2_dice:1, winner:null, p1_pos:0, p2_pos:0,
+    log:[`🔁 جولة جديدة بنفس الفريقين: ${room.p1_name} ضد ${room.p2_name}`], rev:(room.rev||0)+1,
+    bonus_cells: bonus, penalty_cells: penalty, p1_auto_streak:0, p2_auto_streak:0,
+    rematch_p1:false, rematch_p2:false
+  };
+  const { data } = await sb.from('rooms').update(fresh).eq('code', room.code).eq('status','finished').select().maybeSingle();
   if(data){
     resetRoundXPTracking();
     resetRoundKeys();
@@ -1948,8 +2040,16 @@ async function onQuickMatchAccepted(info){
 /* ====== أزرار اللعب ====== */
 document.getElementById('btnRollP1').addEventListener('click', ()=>{ if(session.role==='p1') rollDice('p1', false); });
 document.getElementById('btnRollP2').addEventListener('click', ()=>{ if(session.role==='p2') rollDice('p2', false); });
-document.getElementById('btnPlayAgain').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; resetToHome(); });
-document.getElementById('btnRematch').addEventListener('click', ()=>{ document.getElementById('winModal').style.display='none'; rematch(); });
+document.getElementById('btnPlayAgain').addEventListener('click', ()=>{
+  // إن كان قد طلب إعادة الجولة ثم غيّر رأيه وعاد للرئيسية، أزل طلبه حتى لا يبقى الخصم منتظرًا رد فعل لن يأتي
+  if((session.role==='p1' || session.role==='p2') && currentRoom && currentRoom.status==='finished' && session.code){
+    const myField = session.role==='p1' ? 'rematch_p1' : 'rematch_p2';
+    sb.from('rooms').update({ [myField]: false }).eq('code', session.code).then(()=>{}).catch(()=>{});
+  }
+  document.getElementById('winModal').style.display='none';
+  resetToHome();
+});
+document.getElementById('btnRematch').addEventListener('click', ()=>{ requestRematch(); });
 document.getElementById('btnLeave').addEventListener('click', async ()=>{
   const isSpectator = session.role === 'spectator';
   const msg = isSpectator ? 'هل تريد الخروج من وضع المشاهدة؟' : 'هل تريد مغادرة الجولة؟ ستُحتسب خسارة لك في سجلك.';
