@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>توأمة الألوان — جولة عالمية مباشرة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<base target="_blank">
+
+  <style>
+/* ===== شريط الواجهة الرئيسية ===== */
+.game-main-header{
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #FFFDE7;
+  border-bottom: 3px solid #3E2723;
+  box-shadow: 0 4px 0 rgba(0,0,0,.08);
+  transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .35s ease;
+}
+.game-main-header.hidden{
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+body.header-padded .stage{
+  padding-top: 56px;
+}
+.game-main-title{
+  font-family:'Baloo Bhaijaan 2','Cairo',sans-serif;
+  font-size: clamp(15px, 4vw, 21px);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3E2723;
+}
+.back-to-hub-btn{
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #FF5252;
+  color: #fff;
+  border: none;
+  padding: 7px 15px;
+  border-radius: 14px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 3px solid #3E2723;
+  box-shadow: 3px 3px 0 #3E2723;
+  transition: all .15s ease;
+}
+.back-to-hub-btn:hover{ transform: translateY(-2px); box-shadow: 4px 4px 0 #3E2723; }
+.back-to-hub-btn:active{ transform: translateY(1px); box-shadow: 1px 1px 0 #3E2723; }
+
+/* ===================== أنماط خاصة بتوأمة الألوان (لا تمسّ style.css المشترك) ===================== */
+:root{
+  --pc-red:#E53935; --pc-blue:#1E88E5; --pc-green:#43A047;
+  --pc-yellow:#FDD835; --pc-black:#2b2b2b; --pc-white:#F5F5F5;
+}
+/* لوحة الخيارات (إنشاء جولة): اختيار حجم اللوحة */
+.size-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.size-tab{flex:1;text-align:center;padding:12px 6px;border-radius:12px;cursor:pointer;
+  background:#eee7d6;border:2px solid transparent;transition:.15s;}
+.size-tab b{display:block;font-family:'Baloo Bhaijaan 2';font-size:17px;color:#3a4750;}
+.size-tab span{display:block;font-size:11px;color:#8a8378;font-weight:700;margin-top:2px;}
+.size-tab.sel{background:#FFF4D6;border-color:var(--coral);}
+.size-tab.sel b{color:var(--coral-dark);}
+
+/* منطقة النرد الملوّن أعلى وسط اللوحة */
+.cm-dice-area{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin:2px 0 2px;flex-shrink:0;
+}
+.cm-dice-status{
+  font-family:'Baloo Bhaijaan 2';font-size:12px;color:#fff;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);
+  padding:6px 10px;border-radius:999px;text-align:center;
+}
+.cm-face{width:100%;height:100%;border-radius:8px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.15), 0 2px 6px rgba(0,0,0,.25);}
+.cm-face-red{background:var(--pc-red);} .cm-face-blue{background:var(--pc-blue);}
+.cm-face-green{background:var(--pc-green);} .cm-face-yellow{background:var(--pc-yellow);}
+.cm-face-black{background:var(--pc-black);} .cm-face-white{background:var(--pc-white);}
+
+/* اللوحة: شبكة مربعات فيها ثقوب/عرائس */
+.cm-board-wrap{width:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;}
+.cm-board{
+  display:grid;grid-template-columns:repeat(6, 1fr);
+  gap:clamp(3px,1vw,10px);width:100%;max-width:560px;margin:0 auto;
+  aspect-ratio:auto; padding:10px;
+  background:linear-gradient(160deg, var(--wood), var(--wood-dark));
+  border-radius:18px;box-shadow:var(--shadow);
+  border:5px solid var(--wood-dark);
+}
+/* تحديد حجم أقصى مختلف للوحة حسب عدد صفوفها كي لا تطغى اللوحات الكبيرة
+   (6×10) على عرض الهاتف وتدفع البطاقات خارج الشاشة، بينما تبقى اللوحات
+   الصغيرة (6×3) بحجم مريح مناسب لعدد صفوفها القليل */
+.cm-board.size-18{max-width:460px;}
+.cm-board.size-36{max-width:400px;}
+.cm-board.size-60{max-width:320px;gap:clamp(2px,.6vw,6px);}
+@media (max-width:900px){
+  .cm-board.size-18{max-width:380px;}
+  .cm-board.size-36{max-width:230px;}
+  .cm-board.size-60{max-width:290px;gap:2px;padding:6px;  display:grid;grid-template-columns:repeat(10, 1fr); }
+  
+}
+.cm-hole-wrap{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;}
+.cm-hole{
+  width:100%;height:100%;border-radius:50%;cursor:pointer;position:relative;
+  background:radial-gradient(circle at 35% 30%, #3a2a15, #16100a 70%);
+  box-shadow:inset 0 3px 6px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.08);
+  transition:transform .12s;
+  display:flex;align-items:center;justify-content:center;
+}
+.cm-hole:hover:not(.taken):not(.disabled){transform:scale(1.08);}
+.cm-hole.disabled{cursor:not-allowed;}
+.cm-peg{
+  width:64%;height:64%;border-radius:50%;position:relative;
+  box-shadow:0 3px 6px rgba(0,0,0,.4), inset 0 -4px 6px rgba(0,0,0,.2), inset 0 3px 5px rgba(255,255,255,.4);
+  transform:scale(0);transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index:1;
+}
+/* رأس بارز (لمعة صغيرة) ورقبة/جسد أسفل الرأس لإعطاء العروسة شكل دمية حقيقية */
+.cm-peg::before{
+  content:'';position:absolute;left:22%;top:14%;width:32%;height:22%;
+  background:rgba(255,255,255,.55);border-radius:50%;filter:blur(.5px);
+}
+.cm-peg::after{
+  content:'';position:absolute;left:50%;top:82%;width:44%;height:42%;
+  background-color:inherit;filter:brightness(.78);
+  border-radius:3px 3px 7px 7px;transform:translateX(-50%);z-index:-1;
+}
+.cm-hole.revealed .cm-peg, .cm-hole.taken .cm-peg{transform:scale(1);}
+.cm-hole.peek .cm-peg{transform:scale(1);}
+.cm-hole.match-flash{animation:cmMatchFlash .6s ease;}
+@keyframes cmMatchFlash{0%,100%{box-shadow:inset 0 3px 6px rgba(0,0,0,.6);}50%{box-shadow:0 0 0 6px rgba(62,160,107,.55), inset 0 3px 6px rgba(0,0,0,.6);}}
+.cm-hole.wrong-flash{animation:cmWrongFlash .6s ease;}
+@keyframes cmWrongFlash{0%,100%{box-shadow:inset 0 3px 6px rgba(0,0,0,.6);}50%{box-shadow:0 0 0 6px rgba(229,72,77,.5), inset 0 3px 6px rgba(0,0,0,.6);}}
+
+/* شارة صورة مصغّرة لهوية اللاعب الذي اكتشف هذه العروسة */
+.cm-claim-badge{
+  position:absolute;width:38%;height:38%;border-radius:50%;top:-8%;right:-8%;
+  border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);
+  background-size:cover;background-position:center;background-color:#999;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:800;color:#fff;z-index:4;
+  background-repeat:no-repeat;
+}
+
+/* تمييز منطقة تلميح المساعدة */
+.cm-hole-wrap.hint-zone .cm-hole{
+  animation:cmHintPulse 1s ease-in-out infinite;
+}
+@keyframes cmHintPulse{0%,100%{box-shadow:inset 0 3px 6px rgba(0,0,0,.6), 0 0 0 0 rgba(242,183,5,.6);}50%{box-shadow:inset 0 3px 6px rgba(0,0,0,.6), 0 0 0 5px rgba(242,183,5,.35);}}
+
+/* وسيلة المساعدة بجانب حالة النرد */
+.cm-hint-btn{
+  display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:999px;
+  padding:6px 12px;font-family:'Cairo';font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:.15s;
+}
+.cm-hint-btn:hover:not(:disabled){background:rgba(255,255,255,.24);}
+.cm-hint-btn:disabled,.cm-hint-btn.disabled{opacity:.4;cursor:not-allowed;}
+
+/* شرائح نقاط الألوان في بطاقة كل لاعب */
+.color-score-row{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;width:100%;margin-top:4px;}
+.color-chip{
+  display:flex;align-items:center;gap:4px;background:#f5f0e3;border-radius:999px;
+  padding:3px 8px 3px 4px;font-size:11px;font-weight:800;color:#3a4750;
+}
+.color-chip .dot{width:12px;height:12px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.15);}
+
+.cm-turn-hint{font-size:11.5px;color:#8a8378;font-weight:700;margin-top:2px;text-align:center;}
+
+/* دمج صف نقاط الألوان وتلميح الدور داخل نفس الشبكة المضغوطة لبطاقة اللاعب في عرض الهاتف
+   (بدل أن يفيضا كعنصرين غير معرّفين خارج مناطق الشبكة فيتمددان عموديًا بمساحة كبيرة) */
+@media (max-width:900px){
+  .player-row{
+    grid-template-areas:
+      "avatar pos  dice"
+      "name   role btn"
+      "hint   hint  hint"
+      "scores scores scores";
+  }
+  .cm-turn-hint{grid-area:hint;font-size:10px;margin-top:0;min-height:0;}
+  .color-score-row{
+    grid-area:scores;flex-wrap:nowrap;overflow-x:auto;justify-content:center;
+    gap:4px;margin-top:2px;-webkit-overflow-scrolling:touch;
+  }
+  .color-score-row::-webkit-scrollbar{display:none;}
+  .color-chip{flex:0 0 auto;font-size:9.5px;padding:2px 6px 2px 3px;}
+  .color-chip .dot{width:9px;height:9px;}
+}
+</style>
+
+</head>
+<body>
+
+  <!-- شريط الواجهة الرئيسية — يظهر في Home ويختفي في Game -->
+<div class="game-main-header" id="gameMainHeader">
+  <div class="game-main-title">
+    <span id="mainHeaderIcon">🎨</span>
+    <span id="mainHeaderText">توأمة الألوان</span>
+  </div>
+  <button class="back-to-hub-btn" onclick="backToHub()">
+    <span>🔙</span><span>رجوع</span>
+  </button>
+</div>
+
+<div class="aurora"><i></i><i></i><i></i></div>
+
+<div class="spectator-badge" id="spectatorBadge">👀 وضع المشاهدة</div>
+
+<div class="stage">
+
+  <div class="site-header">
+    <div class="brand">
+      <svg class="logo-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#FF6F59"/><stop offset="1" stop-color="#F2B705"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="18" fill="url(#lg1)"/>
+        <circle cx="20" cy="20" r="7" fill="#E53935"/>
+        <circle cx="44" cy="20" r="7" fill="#1E88E5"/>
+        <circle cx="20" cy="44" r="7" fill="#FDD835"/>
+        <circle cx="44" cy="44" r="7" fill="#43A047"/>
+        <circle cx="32" cy="32" r="7" fill="#fff"/>
+      </svg>
+      <div class="titles">
+        <h1>توأمة الألوان</h1>
+        <small>جولة عالمية مباشرة</small>
+      </div>
+    </div>
+    <div class="mini-userbar">
+      <div class="mini-name-col">
+        <div class="mini-name-row">
+          <b id="miniUsername">—</b>
+          <span class="level-badge inline-level-badge tier-bronze" id="miniLevelBadge">Lv.1</span>
+        </div>
+        <span class="title-badge" id="miniTitleBadge" style="display:none;"></span>
+        <div class="xp-bar"><div class="xp-bar-fill" id="miniXpFill"></div></div>
+      </div>
+      <div class="avatar-wrap">
+        <div class="avatar-big" id="miniAvatar" style="width:36px;height:36px;font-size:15px;">?</div>
+        <div class="edit-badge">✏️</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="conn-pill">
+    <div class="seg"><span class="dot" id="dbDot"></span> قاعدة البيانات</div>
+    <div class="seg" id="rtSeg" style="display:none;"><span class="dot" id="rtDot"></span> البث الحي</div>
+  </div>
+
+  <div class="setup-warning" id="setupWarning">
+    ⚠️ لم يتم ربط اللعبة بمشروع سوبابيس بعد.<br>
+    افتح <code>color-match-app.js</code> وضع <code>SUPABASE_URL</code> و <code>SUPABASE_ANON_KEY</code> في أعلى الملف،
+    ونفّذ ملف <code>color_match_database.sql</code> في SQL Editor.
+  </div>
+
+  <!-- ===================== الإعداد الأول: اسم + صورة ===================== -->
+  <div class="card" id="screen-onboarding" style="display:none;">
+    <h3 style="text-align:center;margin-top:0;font-family:'Baloo Bhaijaan 2';">أهلًا بك 👋</h3>
+    <p class="hint" style="margin-top:0;">اختر اسمًا وصورة رمزية لتبدأ اللعب — يُحفظان تلقائيًا في متصفحك.</p>
+    <div class="avatar-picker">
+      <div class="avatar-preview" id="obAvatarPreview">؟</div>
+      <label class="upload-btn">📷 اختر صورة
+        <input type="file" accept="image/*" id="obPhotoInput" style="display:none;">
+      </label>
+    </div>
+    <div class="field"><label>اسمك</label><input type="text" id="obName" maxlength="16" placeholder="مثال: أحمد_بغداد"></div>
+    <div class="error-msg" id="obError"></div>
+    <button class="btn" id="btnObSave">🎮 ابدأ اللعب</button>
+  </div>
+
+  <!-- ===================== شاشة البداية ===================== -->
+  <div class="card" id="screen-home" style="display:none;">
+    <div class="tabs">
+      <div class="tab active" data-tab="create">إنشاء جولة</div>
+      <div class="tab" data-tab="join">الانضمام</div>
+      <div class="tab" data-tab="quick">🔍 بحث تلقائي</div>
+    </div>
+    <div id="pane-create">
+      <p class="hint" style="margin-top:0;">اختر حجم اللوحة، ثم ابدأ — سيظهر رابط الدعوة أعلى الشاشة لمشاركته فورًا.</p>
+      <div class="size-tabs" id="sizeTabs">
+        <div class="size-tab sel" data-size="18"><b>18</b><span>6×3 صغيرة</span></div>
+        <div class="size-tab" data-size="36"><b>36</b><span>6×6 متوسطة</span></div>
+        <div class="size-tab" data-size="60"><b>60</b><span>6×10 كبيرة</span></div>
+      </div>
+      <button class="btn" id="btnCreate">🎲 ابدأ جولة جديدة</button>
+    </div>
+    <div id="pane-join" style="display:none;">
+      <div class="field">
+        <label>رمز الجولة (أو افتح رابط الدعوة مباشرة)</label>
+        <input type="text" id="joinCode" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-weight:700;text-align:center;" placeholder="XXXXXX">
+      </div>
+      <div class="error-msg" id="joinError"></div>
+      <button class="btn blue" id="btnJoin">🚪 انضم إلى الجولة</button>
+    </div>
+    <div id="pane-quick" style="display:none;">
+      <p class="hint" style="margin-top:0;">سنبحث لك تلقائيًا عن لاعب آخر متاح الآن على لوحة متوسطة (36)، ويبدأ اللعب فور موافقة الطرفين.</p>
+      <button class="btn green" id="btnQuickMatch">🔍 ابحث عن لاعب الآن</button>
+    </div>
+    <div class="global-counter" id="globalCounter"></div>
+    <button class="btn grey" id="btnAchievements" style="margin-top:12px;">🏅 إنجازاتي</button>
+    <div class="history-section" id="historySection">
+      <h4>🗂️ جولاتك السابقة</h4>
+      <div class="history-table" id="historyTable"></div>
+    </div>
+  </div>
+
+  <!-- ===================== شاشة البحث التلقائي ===================== -->
+  <div class="card" id="screen-matching" style="display:none;">
+    <div id="matchSearching" class="match-search">
+      <div class="match-spinner"></div>
+      <h3 style="font-family:'Baloo Bhaijaan 2';margin:0 0 6px;">جاري البحث عن لاعب…</h3>
+      <p class="hint">قد يستغرق هذا بضع ثوانٍ</p>
+      <button class="btn grey" id="btnCancelMatch">إلغاء البحث</button>
+    </div>
+    <div id="matchFound" class="match-found" style="display:none;">
+      <h3 style="font-family:'Baloo Bhaijaan 2';margin:0 0 4px;">🎉 تم العثور على لاعب!</h3>
+      <div class="match-vs">
+        <div class="av" id="matchMeAvatar">؟</div>
+        <span style="font-family:'Baloo Bhaijaan 2';color:#b7ac95;">VS</span>
+        <div class="av" id="matchOppAvatar">؟</div>
+      </div>
+      <p style="font-weight:700;margin:0 0 10px;" id="matchOppName">—</p>
+      <div class="match-timer" id="matchTimer">⏱ 20 ثانية للموافقة</div>
+      <div class="row-actions">
+        <button class="btn green" id="btnAcceptMatch">✅ موافق، ابدأ اللعب</button>
+        <button class="btn grey" id="btnDeclineMatch">❌ رفض</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== نافذة تعارض الجولات ===================== -->
+  <div class="modal-bg" id="switchRoomModal">
+    <div class="modal">
+      <div class="trophy">🔔</div>
+      <h2>لديك جولة مفتوحة</h2>
+      <p>لديك جولة نشطة حاليًا. هل تريد العودة إليها أم إنهاؤها والانتقال إلى الجولة الجديدة؟</p>
+      <div class="btns">
+        <button class="btn blue" id="btnGoToMyRoom">↩️ العودة لجولتي</button>
+        <button class="btn grey" id="btnEndAndSwitch">🚪 إنهاء والمتابعة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== نافذة جولة منتهية/محذوفة ===================== -->
+  <div class="modal-bg" id="roomEndedModal">
+    <div class="modal">
+      <div class="trophy">🏁</div>
+      <h2>انتهت هذه الجولة</h2>
+      <p>لم تعد هذه الجولة متاحة، فقد انتهت.</p>
+      <div class="btns">
+        <button class="btn grey" id="btnRoomEndedHome">🏠 الرئيسية</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== شاشة اللعب ===================== -->
+  <div id="screen-game">
+
+    <div class="game-topbar">
+      <button class="tb-btn" id="btnLeave" title="مغادرة الجولة"> 🈴</button>
+      <div class="tb-link-wrap">
+        <input class="tb-link-input" id="tbLinkInput" readonly value="" placeholder="رابط الدعوة…">
+        <button class="tb-copy-btn" id="btnTbCopy">📋 نسخ</button>
+      </div>
+      <div class="tb-actions">
+        <button class="tb-btn" id="btnSpectators" title="المشاهدون">
+          👀<span class="spectator-count" id="spectatorCount">0</span>
+        </button>
+        <button class="tb-btn" id="btnHelp" title="مساعدة">❓</button>
+        <button class="tb-btn" id="btnSound" title="تشغيل/كتم الصوت">🔊</button>
+      </div>
+    </div>
+
+    <div class="spectator-toast" id="spectatorToast"></div>
+
+    <div class="arena">
+
+      <!-- لوحة اللاعب الأول (يسار) -->
+      <div class="side-panel" id="panelP1">
+        <div class="edit-badge-side" id="editBadgeP1" style="display:none;">✏️</div>
+        <div class="log-badge-side" id="logBadgeP1" title="أحداث اللاعب">📜</div>
+        <div class="player-row">
+          <div class="avatar-big" id="avatarP1">?<span class="live" id="liveP1" style="display:none;"></span><span class="level-badge avatar-level-badge tier-bronze" id="levelBadgeP1">1</span></div>
+          <div class="info-col">
+            <div class="p-name"><span id="nameP1">—</span><span class="level-badge inline-level-badge tier-bronze" id="nameLevelP1">Lv.1</span></div>
+            <span class="title-badge" id="nameTitleP1" style="display:none;"></span>
+            <div class="role-tag" id="roleTagP1">لاعب 1</div>
+            <div class="color-score-row" id="scoreRowP1"></div>
+            <div class="cm-turn-hint" id="hintP1"></div>
+          </div>
+          <div class="side-dice-zone">
+            <div class="cube-wrap"><div class="cube" id="cubeP1">
+              <div class="face f-front cm-face" data-n="1"></div><div class="face f-back cm-face" data-n="6"></div>
+              <div class="face f-right cm-face" data-n="2"></div><div class="face f-left cm-face" data-n="5"></div>
+              <div class="face f-top cm-face" data-n="3"></div><div class="face f-bottom cm-face" data-n="4"></div>
+            </div></div>
+            <div class="roll-btn-wrap">
+              <button class="roll-btn" id="btnRollP1">ارمِ النرد</button>
+              <div class="roll-spinner" id="rollSpinnerP1"><div class="roll-spinner-icon"></div></div>
+            </div>
+            <div class="opp-dice-label" id="oppLabelP1" style="display:none;">آخر لون</div>
+          </div>
+        </div>
+        <div class="side-reactions">
+          <button data-e="👍" title="إعجاب">👍</button>
+          <button data-e="🔥" title="نار">🔥</button>
+          <button data-e="😂" title="ضحك">😂</button>
+          <button data-e="😮" title="مفاجأة">😮</button>
+          <button data-e="💪" title="قوة">💪</button>
+          <button data-e="🎯" title="هدف">🎯</button>
+          <button data-e="👻" title="تحيز">👻</button>
+          <button data-e="🤬" title="انزعاج">🤬</button>
+          <button data-e="🥹" title="حزن">🥹</button>
+          <button data-e="😢" title="اسف">😢</button>
+          <button data-e="😈" title="شرير">😈</button>
+        </div>
+        <div class="side-log" id="logBoxP1"></div>
+      </div>
+
+      <!-- الوسط: لوحة العرائس -->
+      <div class="board-col">
+        <div class="cm-dice-area">
+          <div class="cm-dice-status" id="cmDiceStatus">بانتظار البدء…</div>
+          <button class="cm-hint-btn" id="btnHint" title="مساعدة: اكشف منطقة اللون المطلوب">💡 <span id="hintCount">2</span></button>
+        </div>
+        <div class="cm-board-wrap">
+          <div class="turn-bubble" id="turnBubble"></div>
+          <div class="cm-board" id="cmBoard"></div>
+        </div>
+        <div class="turn-banner" id="turnBanner">بانتظار البدء…</div>
+      </div>
+
+      <!-- لوحة اللاعب الثاني (يمين) -->
+      <div class="side-panel" id="panelP2">
+        <div class="edit-badge-side" id="editBadgeP2" style="display:none;">✏️</div>
+        <div class="log-badge-side" id="logBadgeP2" title="أحداث اللاعب">📜</div>
+        <div class="player-row">
+          <div class="avatar-big" id="avatarP2">?<span class="live" id="liveP2" style="display:none;"></span><span class="level-badge avatar-level-badge tier-bronze" id="levelBadgeP2">1</span></div>
+          <div class="info-col">
+            <div class="p-name"><span id="nameP2">—</span><span class="level-badge inline-level-badge tier-bronze" id="nameLevelP2">Lv.1</span></div>
+            <span class="title-badge" id="nameTitleP2" style="display:none;"></span>
+            <div class="role-tag" id="roleTagP2">لاعب 2</div>
+            <div class="color-score-row" id="scoreRowP2"></div>
+            <div class="cm-turn-hint" id="hintP2"></div>
+          </div>
+          <div class="side-dice-zone">
+            <div class="cube-wrap"><div class="cube" id="cubeP2">
+              <div class="face f-front cm-face" data-n="1"></div><div class="face f-back cm-face" data-n="6"></div>
+              <div class="face f-right cm-face" data-n="2"></div><div class="face f-left cm-face" data-n="5"></div>
+              <div class="face f-top cm-face" data-n="3"></div><div class="face f-bottom cm-face" data-n="4"></div>
+            </div></div>
+            <div class="roll-btn-wrap">
+              <button class="roll-btn" id="btnRollP2">ارمِ النرد</button>
+              <div class="roll-spinner" id="rollSpinnerP2"><div class="roll-spinner-icon"></div></div>
+            </div>
+            <div class="opp-dice-label" id="oppLabelP2" style="display:none;">آخر لون</div>
+          </div>
+        </div>
+        <div class="side-reactions">
+          <button data-e="👍" title="إعجاب">👍</button>
+          <button data-e="🔥" title="نار">🔥</button>
+          <button data-e="😂" title="ضحك">😂</button>
+          <button data-e="😮" title="مفاجأة">😮</button>
+          <button data-e="💪" title="قوة">💪</button>
+          <button data-e="🎯" title="هدف">🎯</button>
+          <button data-e="👻" title="تحيز">👻</button>
+          <button data-e="🤬" title="انزعاج">🤬</button>
+          <button data-e="🥹" title="حزن">🥹</button>
+          <button data-e="😢" title="اسف">😢</button>
+          <button data-e="😈" title="شرير">😈</button>
+        </div>
+        <div class="side-log" id="logBoxP2"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="footer-note">توأمة الألوان © تطوير أ. ابراهيم</div>
+</div>
+
+<!-- شريط الدردشة السفلي -->
+<div class="composer-bottom" id="composerBottom">
+  <div class="inner">
+    <input id="chatInput" maxlength="200" placeholder="اكتب رسالة سريعة للطرف الآخر…">
+    <button id="btnSendChat">إرسال ➤</button>
+    <button id="btnChatHistory" class="btn-chat-history" title="سجل الدردشة">📜</button>
+  </div>
+</div>
+
+<!-- نافذة تعديل الملف الشخصي -->
+<div class="modal-bg" id="editModal">
+  <div class="modal wide">
+    <h2 style="text-align:center;">✏️ تعديل الاسم والصورة</h2>
+    <div class="avatar-picker">
+      <div class="avatar-preview" id="editAvatarPreview">؟</div>
+      <div style="display:flex;gap:8px;">
+        <label class="upload-btn">📷 تغيير الصورة
+          <input type="file" accept="image/*" id="editPhotoInput" style="display:none;">
+        </label>
+        <button class="upload-btn" id="btnRemovePhoto">🗑 إزالة الصورة</button>
+      </div>
+    </div>
+    <div class="field" style="text-align:right;"><label>اسم المستخدم</label><input type="text" id="editName" maxlength="16"></div>
+    <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#3a4750;text-align:right;">اللون الرمزي (عند عدم وجود صورة)</label>
+    <div class="palette" id="editPalette"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#F5F0E3;border-radius:10px;padding:10px 14px;margin:6px 0 16px;font-size:13.5px;font-weight:700;color:#3a4750;">
+      <span>🔊 تفعيل الأصوات</span><input type="checkbox" id="editSound" checked style="width:20px;height:20px;">
+    </div>
+    <div class="error-msg" id="editError"></div>
+    <div class="btns">
+      <button class="btn" id="btnSaveEdit">💾 حفظ</button>
+      <button class="btn grey" id="btnCloseEdit">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة الفوز -->
+<div class="modal-bg" id="winModal">
+  <div class="modal">
+    <div class="trophy">🏆</div>
+    <h2 id="winTitle">مبروك!</h2>
+    <p id="winText">جمعت أكبر عدد من العرائس المتطابقة</p>
+    <div class="btns">
+      <button class="btn blue" id="btnRematch">🔁 إعادة بنفس الغرفة</button>
+      <button class="btn grey" id="btnPlayAgain">🏠 الرئيسية</button>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة سلايد أحداث اللاعب -->
+<div class="events-sheet-bg" id="eventsSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3 id="eventsSheetTitle">📜 أحداث اللاعب</h3>
+    <div class="events-sheet-body" id="eventsSheetBody"></div>
+    <button class="btn grey" id="btnCloseEventsSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة سجل الدردشة -->
+<div class="events-sheet-bg" id="chatSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3 id="chatSheetTitle">💬 سجل الدردشة</h3>
+    <div class="events-sheet-body" id="chatSheetBody"></div>
+    <button class="btn grey" id="btnCloseChatSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة قائمة المشاهدين -->
+<div class="events-sheet-bg" id="spectatorsSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3>👀 المشاهدون الآن</h3>
+    <div class="events-sheet-body" id="spectatorsSheetBody"></div>
+    <button class="btn grey" id="btnCloseSpectatorsSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة المساعدة -->
+<div class="events-sheet-bg" id="helpSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3>❓ كيف تلعب</h3>
+    <div class="events-sheet-body" id="helpSheetBody"></div>
+    <button class="btn grey" id="btnCloseHelpSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- نافذة "إنجازاتي" -->
+<div class="events-sheet-bg" id="achievementsSheetBg">
+  <div class="events-sheet">
+    <div class="events-sheet-handle"></div>
+    <h3>🏅 إنجازاتي</h3>
+    <div class="events-sheet-body ach-sheet-body" id="achievementsSheetBody"></div>
+    <button class="btn grey" id="btnCloseAchievementsSheet">إغلاق</button>
+  </div>
+</div>
+
+<!-- إشعار احتفالي عند فتح شارة جديدة -->
+<div class="achievement-toast" id="achievementToast">
+  <span class="ach-toast-icon" id="achToastIcon">🏅</span>
+  <div class="ach-toast-text">
+    <b>إنجاز جديد!</b>
+    <span id="achToastTitle">—</span>
+  </div>
+  <span class="ach-toast-xp" id="achToastXp">+0 XP</span>
+</div>
+
+  <script>
+/* ===== شريط الواجهة الرئيسية — يظهر في Home ويختفي في Game ===== */
+(function(){
+  const header = document.getElementById('gameMainHeader');
+  if(!header) return;
+  function isVisible(el){
+    if(!el) return false;
+    const cs = getComputedStyle(el);
+    return cs.display !== 'none' && cs.visibility !== 'hidden' && parseFloat(cs.opacity) > 0;
+  }
+  function updateHeader(){
+    const game = document.getElementById('screen-game');
+    const matching = document.getElementById('screen-matching');
+    const inGame = isVisible(game) || isVisible(matching);
+    if(inGame){
+      header.classList.add('hidden');
+      document.body.classList.remove('header-padded');
+    } else {
+      header.classList.remove('hidden');
+      document.body.classList.add('header-padded');
+    }
+  }
+  const observer = new MutationObserver(updateHeader);
+  ['screen-home','screen-game','screen-onboarding','screen-matching'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) observer.observe(el, {attributes:true, attributeFilter:['style','class']});
+  });
+  window.addEventListener('load', updateHeader);
+  setInterval(updateHeader, 300);
+  updateHeader();
+})();
+
+/* ===== الرجوع إلى المشغل ===== */
+function backToHub(){
+  if(window.parent !== window){
+    window.parent.postMessage({source:'gameBridge', type:'closeGame'}, '*');
+  } else {
+    window.location.href = 'index.html';
+  }
+}
+</script>
+
+  <script>
+(function(){
+  const composer = document.getElementById('composerBottom');
+  if(!composer) return;
+  const toggleBtn = document.createElement('button');
+  toggleBtn.id = 'chatToggleBtn';
+  toggleBtn.className = 'chat-toggle-btn';
+  toggleBtn.textContent = '💬';
+  document.body.appendChild(toggleBtn);
+  toggleBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    composer.classList.toggle('open');
+  });
+  document.addEventListener('click', (e)=>{
+    if(composer.classList.contains('open') && !composer.contains(e.target) && e.target!==toggleBtn){
+      composer.classList.remove('open');
+    }
+  });
+  composer.addEventListener('click', (e)=> e.stopPropagation());
+})();
+</script>
+
+<canvas id="confetti"></canvas>
+
+<script src="color-match-app.js"></script>
+
+<!-- ===== جسر إبلاغ الصفحة الأم بحالة الجولة ===== -->
+<script>
+(function(){
+  function isVisible(el){
+    if(!el) return false;
+    var cs = getComputedStyle(el);
+    if(cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0) return false;
+    var r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+  var target = document.getElementById('screen-game');
+  if(!target) return;
+  var last = null;
+  function report(){
+    var v = isVisible(target);
+    if(v !== last){
+      last = v;
+      try{ window.parent.postMessage({source:'gameBridge', type:'roundState', active: v}, '*'); }catch(e){}
+    }
+  }
+  var mo = new MutationObserver(report);
+  mo.observe(document.body, {attributes:true, attributeFilter:['style','class'], subtree:true, childList:true});
+  window.addEventListener('load', report);
+  document.addEventListener('DOMContentLoaded', report);
+  report();
+  setInterval(report, 400);
+})();
+</script>
+
+  <script>
+/* ===== منع التحديد والنسخ في كل مكان مع استثناء حقول الإدخال ===== */
+(function(){
+  const style = document.createElement('style');
+  style.textContent = `
+    * {
+      -webkit-user-select: none !important;
+      -moz-user-select: none !important;
+      -ms-user-select: none !important;
+      user-select: none !important;
+      -webkit-touch-callout: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+    input, textarea, [contenteditable="true"] {
+      -webkit-user-select: text !important;
+      -moz-user-select: text !important;
+      -ms-user-select: text !important;
+      user-select: text !important;
+      -webkit-touch-callout: default !important;
+    }
+  `;
+  document.head.appendChild(style);
+  document.addEventListener('contextmenu', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+  document.addEventListener('selectstart', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+  document.addEventListener('copy', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+  document.addEventListener('cut', function(e){
+    if(e.target.closest('input, textarea, [contenteditable="true"]')) return;
+    e.preventDefault();
+  }, {capture:true});
+})();
+</script>
+
+</body>
+</html>
