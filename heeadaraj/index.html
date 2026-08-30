@@ -276,6 +276,7 @@
   .card-maze{background:linear-gradient(145deg, #26C6DA, #00ACC1);}
   .card-xo{background:linear-gradient(145deg, #42A5F5, #1E88E5);}
   .card-ludo{background:linear-gradient(145deg, #FFCA28, #FFB300);}
+  .card-colormatch{background:linear-gradient(145deg, #AB47BC, #8E24AA);}
   .game-card:hover{transform:translateY(-5px) scale(1.05);}
   .game-card:hover::before{transform:translate(7px, 7px);}
   .game-card:active{transform:translateY(2px) scale(.96);}
@@ -296,6 +297,7 @@
   .card-maze .card-icon-wrap{animation-delay:.6s;}
   .card-xo .card-icon-wrap{animation-delay:1.2s;}
   .card-ludo .card-icon-wrap{animation-delay:1.8s;}
+  .card-colormatch .card-icon-wrap{animation-delay:2.4s;}
   @keyframes iconBounce{
     0%,100%{transform:rotate(-3deg) translateY(0);}
     50%{transform:rotate(3deg) translateY(-5px);}
@@ -564,13 +566,22 @@
     <div class="card-name">إكس أو</div>
   </div>
   
-  <div class="game-card card-maze" onclick="openGame('maze', 'المتاهة', '🌀')">
+  <div class="game-card card-colormatch" onclick="openGame('colormatch', 'توأمة الألوان', '🎨')">
+    <div class="card-badge">جديد!</div>
+    <div class="spot" style="top:16px;right:20px;"></div>
+    <div class="spot" style="bottom:24px;left:24px;width:7px;height:7px;"></div>
+    <div class="spot" style="top:46%;right:12px;width:6px;height:6px;"></div>
+    <div class="card-icon-wrap"><div class="card-icon">🎨</div></div>
+    <div class="card-name">المطابقة </div>
+  </div>
+
+  <div class="game-card card-maze" onclick="openGame('maze', 'المتاهة', '🥏')">
     <div class="card-badge">قريبا!</div>
     <div class="spot" style="top:22px;left:20px;"></div>
     <div class="spot" style="bottom:18px;right:24px;width:9px;height:9px;"></div>
     <div class="spot" style="top:52%;left:10px;width:5px;height:5px;"></div>
-    <div class="card-icon-wrap"><div class="card-icon">🌀</div></div>
-    <div class="card-name">المتاهة</div>
+    <div class="card-icon-wrap"><div class="card-icon">🥏</div></div>
+    <div class="card-name">البوك</div>
   </div>
    
   <div class="game-card card-ludo" onclick="openGame('ludo', 'لودو', '🎲')">
@@ -883,7 +894,8 @@ const gameUrls = {
   snl: 'heeadarj.html',
   maze: '',
   xo: 'xando/index.html',
-  ludo: 'ludo.html'
+  ludo: 'ludo.html',
+  colormatch: 'color-match/color-match.html'
 };
 
 function openGame(gameId, title, icon){
