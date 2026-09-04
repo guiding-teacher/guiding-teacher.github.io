@@ -2,14 +2,16 @@ const LUDO_BOARD_SVG = "<svg viewBox=\"0 0 612 612\" xmlns=\"http://www.w3.org/2
 
 const LUDO_RING = [[6, 12], [6, 11], [6, 10], [6, 9], [6, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8], [0, 7], [0, 6], [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6], [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0], [7, 0], [8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 6], [9, 6], [10, 6], [11, 6], [12, 6], [13, 6], [14, 6], [14, 7], [14, 8], [13, 8], [12, 8], [11, 8], [10, 8], [9, 8], [8, 8], [8, 9], [8, 10], [8, 11], [8, 12], [8, 13], [8, 14], [7, 14], [6, 14], [6, 13]];
 const LUDO_HOMES = {"TOP": [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7], [6, 7]], "LEFT": [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6]], "BOTTOM": [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7], [8, 7]], "RIGHT": [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9], [7, 8]]};
-const LUDO_ENTRIES = {"RED": {"entry_index": 20, "home_column": "LEFT"}, "BLUE": {"entry_index": 8, "home_column": "TOP"}, "GREEN": {"entry_index": 32, "home_column": "BOTTOM"}, "ORANGE": {"entry_index": 44, "home_column": "RIGHT"}};
-// الحلقة الفعلية للرسم (LUDO_RING) تبقى 56 خلية دون أي تغيير، لكن 8 خلايا منها مُستبعدة من
-// "المسير" القابل للعدّ حتى تتخطاها العروسة بصريًا (تقفز فوقها) بدل التوقف عليها أو احتسابها
-// كخطوة: 4 زوايا حيث ينعطف المسار حول المربع الأوسط، بالإضافة إلى خلية واحدة لكل لون ملاصقة
-// تمامًا لباب الدخول إلى شريطه اللوني الخاص — فتدخل العروسة شريطها مباشرة من الخلية التي
-// تسبقها، بدل المرور بهذه الخلية البيضاء الوسيطة أولًا. entry_index أعلاه مُعدَّلة لتعكس
-// الموضع المنطقي الجديد بعد الاستبعاد (كانت 23،9،37،51 قبل أي استبعاد).
-const LUDO_SKIPPED_CORNERS = new Set([4, 18, 32, 46, 11, 25, 39, 53]);
+const LUDO_ENTRIES = {"RED": {"entry_index": 21, "home_column": "LEFT"}, "BLUE": {"entry_index": 8, "home_column": "TOP"}, "GREEN": {"entry_index": 34, "home_column": "BOTTOM"}, "ORANGE": {"entry_index": 47, "home_column": "RIGHT"}};
+// الحلقة الفعلية للرسم (LUDO_RING) تبقى 56 خلية دون أي تغيير. خانة الدخول/الخروج الحقيقية لكل
+// لون هي خليته الملوّنة الآمنة (الفعلية: 9 أزرق، 23 أحمر، 37 أخضر، 51 برتقالي) — وليست الخلية
+// البيضاء المجاورة التي كانت تُستخدم خطأً سابقًا. كذلك 4 زوايا (4، 18، 32، 46) حيث ينعطف المسار
+// حول المربع الأوسط مُستبعدة من "المسير" القابل للعدّ للجميع (تظهر العروسة وكأنها قفزت فوقها).
+// entry_index أعلاه هي القيمة المنطقية بعد هذا الاستبعاد. مسير كل لون أصبح 51 خطوة (وليس 52):
+// خطوته الأخيرة (51) تصل مباشرة للخلية الملاصقة لباب شريطه اللوني، متخطّيةً بذلك خلية بيضاء
+// وسيطة إضافية خاصة به فقط (9+1، 23+1، 37+1، 51+1 فعليًا) لا تُحتسب له وحده عند الوصول للمنزل،
+// بينما تبقى محتسبة تمامًا وعادية لبقية الألوان أثناء دورانها الطبيعي حول اللوحة.
+const LUDO_SKIPPED_CORNERS = new Set([4, 18, 32, 46]);
 const LUDO_LOGICAL_RING = LUDO_RING.map((_, i) => i).filter(i => !LUDO_SKIPPED_CORNERS.has(i));
 const LUDO_STAR_CELLS = {"RED": [2, 6], "BLUE": [6, 12], "GREEN": [8, 2], "ORANGE": [12, 8]};
 const LUDO_STAR_ARM_COLOR = {"RED": "BLUE", "BLUE": "ORANGE", "GREEN": "RED", "ORANGE": "GREEN"};
@@ -728,19 +730,19 @@ function yardSlot(color, idx){
 }
 function tokenCellRC(color, step){
   if(step <= 0) return null;
-  if(step <= 48){
-    const entryIdx = LUDO_ENTRIES[color].entry_index; // موضع منطقي (0..47) بعد الاستبعاد
-    const logical = (entryIdx - step + 1 + 480) % 48;
+  if(step <= 51){
+    const entryIdx = LUDO_ENTRIES[color].entry_index; // موضع منطقي (0..51) للخلية الملوّنة الحقيقية
+    const logical = (entryIdx - step + 1 + 520) % 52;
     return LUDO_RING[LUDO_LOGICAL_RING[logical]];
   }
   const homeArm = LUDO_ENTRIES[color].home_column;
   const cells = LUDO_HOMES[homeArm];
-  const idx = Math.min(step - 49, cells.length - 1);
+  const idx = Math.min(step - 52, cells.length - 1);
   return cells[idx];
 }
 function tokenXY(color, step, tokenIndex, finishSlot){
   if(step <= 0) return lCellXY(yardSlot(color, tokenIndex));
-  if(step >= 54 && finishSlot != null){
+  if(step >= 57 && finishSlot != null){
     const [r,c] = tokenCellRC(color, step);
     const offs = [[-0.18,-0.18],[-0.18,0.18],[0.18,-0.18],[0.18,0.18]];
     const o = offs[finishSlot % 4];
@@ -883,8 +885,8 @@ function renderTokens(room, skip){
     let finishedSoFar = 0;
     tokens.forEach((step, i)=>{
       if(skip && skip.role===role && skip.idx===i) return; // قيد التحريك حاليًا محليًا — لا تلمسه، الدالة المتحركة تتولاه
-      const el = placeTokenEl(role, i, color, step, avatarData, step>=54 ? finishedSoFar : 0);
-      if(step>=54){
+      const el = placeTokenEl(role, i, color, step, avatarData, step>=57 ? finishedSoFar : 0);
+      if(step>=57){
         finishedSoFar++;
         el.classList.add('finished');
         el.onclick = null;
@@ -928,8 +930,8 @@ async function playRemoteLudoMove(payload){
 }
 function tokensSummaryText(tokens){
   const t = tokens || [0,0,0,0];
-  const home = t.filter(s=>s>0 && s<54).length;
-  const done = t.filter(s=>s>=54).length;
+  const home = t.filter(s=>s>0 && s<57).length;
+  const done = t.filter(s=>s>=57).length;
   return `🏠${4-home-done} 🎯${home} 🏁${done}`;
 }
 
