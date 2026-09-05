@@ -580,9 +580,10 @@ let knownSpectatorKeys = new Set();
 let spectatorPresenceReady = false;
 let lastTurnKey = null;
 let turnTimer = null, turnCountdownInterval = null;
-const TURN_TIME_LIMIT = 15;
-const WATCHDOG_GRACE = 6;
-let watchdogTimer = null, watchdogRevKey = null;
+const TURN_TIME_LIMIT = 12;
+const WATCHDOG_GRACE = 4;
+const WATCHDOG_RETRY_MS = 3000; // إعادة محاولة تمرير الدور تلقائيًا كل 3 ثوانٍ إن فشلت المحاولة الأولى (مثلاً بسبب انقطاع شبكة مؤقت) بدل ترك اللعبة متجمدة بصمت حتى يعود اللاعب لفتح الصفحة يدويًا
+let watchdogTimer = null, watchdogRetryInterval = null, watchdogRevKey = null;
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 function buildRoomLink(code){ const url=new URL(location.href); url.search=''; url.hash=''; url.searchParams.set('r',code); return url.toString(); }
 
@@ -836,20 +837,34 @@ function armTurnTimer(room){
     else autoPick(session.role);
   }, TURN_TIME_LIMIT*1000);
 }
-function clearWatchdogTimer(){ clearTimeout(watchdogTimer); watchdogTimer = null; watchdogRevKey = null; }
+function clearWatchdogTimer(){
+  clearTimeout(watchdogTimer); watchdogTimer = null;
+  clearInterval(watchdogRetryInterval); watchdogRetryInterval = null;
+  watchdogRevKey = null;
+}
 function armWatchdogTimer(room){
   const key = room.code + '|' + room.rev + '|' + room.turn + '|' + room.phase;
   if(watchdogRevKey === key) return;
   clearWatchdogTimer();
   watchdogRevKey = key;
   const turnRole = room.turn, expectedRev = room.rev, phase = room.phase;
-  watchdogTimer = setTimeout(async ()=>{
-    watchdogTimer = null;
+  // يحاول تمرير الدور بالنيابة عن الطرف المتوقف. إن فشلت المحاولة لأي سبب
+  // (مثلاً الرسالة لم تصل بسبب انقطاع شبكة لحظي) كانت اللعبة تبقى متجمدة
+  // بصمت حتى يعيد أحد الطرفين فتح الصفحة يدويًا، لذا نعيد المحاولة دوريًا
+  // بدل الاكتفاء بمحاولة واحدة فقط.
+  const tryForceMove = async ()=>{
     const { data: fresh } = await sb.from('cm_rooms').select('*').eq('code', session.code).single();
     if(fresh && fresh.status==='playing' && fresh.turn===turnRole && fresh.rev===expectedRev){
       if(phase==='roll') await rollDice(turnRole, true);
       else await autoPick(turnRole);
+    } else {
+      clearWatchdogTimer();
     }
+  };
+  watchdogTimer = setTimeout(()=>{
+    watchdogTimer = null;
+    tryForceMove();
+    watchdogRetryInterval = setInterval(tryForceMove, WATCHDOG_RETRY_MS);
   }, (TURN_TIME_LIMIT + WATCHDOG_GRACE) * 1000);
 }
 function syncTurnControls(room, isSpectatorArg){
@@ -1362,8 +1377,8 @@ function subscribeToRoom(code){
   if(window._cmRoomPoll) clearInterval(window._cmRoomPoll);
   window._cmRoomPoll = setInterval(async ()=>{
     if(!session.code) return;
-    if(animating && animatingSince && (Date.now() - animatingSince > 5000)){
-      console.warn('cm: animating تجمّد لأكثر من 5 ثوانٍ — إعادة ضبط قسرية');
+    if(animating && animatingSince && (Date.now() - animatingSince > 4000)){
+      console.warn('cm: animating تجمّد لأكثر من 4 ثوانٍ — إعادة ضبط قسرية');
       animating = false; animatingSince = null;
     }
     try{
@@ -1373,7 +1388,7 @@ function subscribeToRoom(code){
       }
     }catch(e){}
     pollMissedMessages();
-  }, 3000);
+  }, 1500);
 }
 async function refreshRoomNow(){
   if(!session.code) return;
