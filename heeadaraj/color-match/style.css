@@ -750,7 +750,9 @@ body.is-spectator .spectator-badge{display:flex;}
     display:grid;
     grid-template-areas:
       "avatar pos  dice"
-      "name   role btn";
+      "name   role btn"
+      "hint   hint  hint"
+      "scores scores scores";
       column-gap:25px;
     row-gap:0px;
    }
@@ -765,6 +767,21 @@ body.is-spectator .spectator-badge{display:flex;}
   .roll-btn-wrap{grid-area:btn;justify-self:center;}
   .roll-btn{padding:5px 12px;font-size:11px;}
   .opp-dice-label{grid-area:btn;justify-self:center;}
+  /* عدّاد الدور (ارمِ النرد/اختر عروسة) — يُعرَّف هنا مباشرةً في style.css
+     المشترك بدل الاكتفاء بتعريفه في وسم <style> الخاص بصفحة اللعبة، لأن
+     هذا الملف يُحمَّل من صفحات أخرى في المجموعة وقد يُحمَّل بعد وسم الصفحة
+     فيُلغي بلا قصد صفَّ "hint" ويُخفي التوقيت في عرض الهاتف بالكامل. */
+  .cm-turn-hint{
+    grid-area:hint;font-size:11px;font-weight:800;margin-top:2px;min-height:0;
+    color:var(--coral-dark);
+  }
+  .color-score-row{
+    grid-area:scores;flex-wrap:nowrap;overflow-x:auto;justify-content:center;
+    gap:4px;margin-top:2px;-webkit-overflow-scrolling:touch;
+  }
+  .color-score-row::-webkit-scrollbar{display:none;}
+  .color-chip{flex:0 0 auto;font-size:9.5px;padding:2px 6px 2px 3px;}
+  .color-chip .dot{width:9px;height:9px;}
   .cube{transform:rotateX(-18deg) rotateY(24deg) scale(.56);}
   .face{width:30px;height:30px;border-radius:6px;padding:3px;}
   .f-front{transform:translateZ(15px);}
