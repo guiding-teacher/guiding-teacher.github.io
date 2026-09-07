@@ -713,6 +713,7 @@ function clearSession(){ localStorage.removeItem('ludo_session'); }
 /* ===================== 0ب) حالة الجولة العامة (كانت ساقطة سهوًا بين جزأين مُستخلصين من app.js الأصلي) ===================== */
 const session = { code:null, role:null };
 let currentRoom = null, realtimeChannel = null, presenceChannel = null, animating = false;
+let rtSubscribed = false; // هل الاتصال اللحظي متصل فعليًا الآن؟ (لتفادي استطلاع مكرّر يُبطئ اللعبة)
 let actx; // سياق الصوت (AudioContext) المستخدم داخل دالة beep
 
 /* ===================== لوحة لودو — الهندسة والرسم ===================== */
@@ -1632,11 +1633,14 @@ function subscribeToRoom(code){
       }
     })
     .on('postgres_changes', { event:'INSERT', schema:'public', table:'ludo_messages', filter:`room_code=eq.${code}` }, (payload)=> handleIncomingMessage(payload.new))
-    .subscribe((status)=>{ setRtStatus(status==='SUBSCRIBED'); });
+    .subscribe((status)=>{ rtSubscribed = (status==='SUBSCRIBED'); setRtStatus(rtSubscribed); });
 
   if(window._roomPoll) clearInterval(window._roomPoll);
   window._roomPoll = setInterval(async ()=>{
     if(!session.code) return;
+    // الاتصال اللحظي يعمل فعليًا — التحديثات وصلت أصلًا عبر postgres_changes، فلا داعٍ لاستطلاع
+    // إضافي يضاعف الطلبات والبيانات المنقولة بلا فائدة (كان يعمل دومًا بلا شرط سابقًا)
+    if(rtSubscribed) return;
     try{
       const { data:room } = await sb.from('ludo_rooms').select('*').eq('code', session.code).single();
       if(room && !animating && !ludoRemoteAnimating.p1 && !ludoRemoteAnimating.p2 && (!currentRoom || currentRoom.rev !== room.rev || currentRoom.status !== room.status)){
