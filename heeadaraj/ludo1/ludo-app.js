@@ -185,6 +185,7 @@ function playRemoteDiceShuffle(role){
   if(role === session.role) return; // تجاهل حدثي أنا نفسي (عندي أصلًا الرسوم المتحركة المحلية)
   const cube = document.getElementById('cube'+String(role).toUpperCase());
   if(!cube) return;
+  diceWhoosh();
   clearInterval(remoteShuffleTimers[role]);
   clearTimeout(remoteShuffleSafety[role]);
   remoteShuffleTimers[role] = setInterval(()=>{
@@ -205,6 +206,7 @@ function playRemoteDiceResult(role, value){
   clearTimeout(remoteShuffleSafety[role]);
   remoteShuffleTimers[role] = null;
   showDiceValue(role, value, false);
+  flashDiceNumber(role, value);
 }
 function broadcastDiceRoll(role){
   presenceChannel?.send({ type:'broadcast', event:'dice_roll', payload:{role} });
@@ -229,6 +231,34 @@ function beep(freq=440, dur=0.12, type='sine', vol=0.18){
     g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
     o.stop(actx.currentTime + dur);
   }catch(e){}
+}
+/* ====== صوت "فرّ" النرد — تردد ينزلق صعودًا خلال جزء من الثانية، يُشغَّل لأي رمية لأي لاعب ====== */
+function diceWhoosh(){
+  if(!soundOn) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = actx.createOscillator(); const g = actx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(170, actx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(680, actx.currentTime + 0.16);
+    g.gain.setValueAtTime(0.0001, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.22, actx.currentTime + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.22);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + 0.24);
+  }catch(e){}
+}
+/* ====== وميض كبير برقم النرد فوق بطاقة أي لاعب رمى (أنا أو خصمي)، بلون هويته إن وُجد ====== */
+function flashDiceNumber(role, value){
+  const panel = document.getElementById('panel'+String(role).toUpperCase());
+  if(!panel) return;
+  const old = panel.querySelector('.dice-flash-num');
+  if(old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'dice-flash-num';
+  el.textContent = value;
+  panel.appendChild(el);
+  setTimeout(()=>{ el.classList.add('fade'); setTimeout(()=> el.remove(), 300); }, 550);
 }
 function burstReaction(anchorEl, emoji){
   const stage = document.querySelector('.stage');
@@ -299,9 +329,32 @@ function showChatStrip(role, text, isIncoming){
   if(activeStrips[role]){ clearTimeout(activeStrips[role].timer); activeStrips[role].el.remove(); }
   const el = document.createElement('div');
   el.className = 'chat-strip';
-  el.textContent = text.length>42 ? text.slice(0,42)+'…' : text;
+  const full = String(text);
+  const truncated = full.length>42 ? full.slice(0,42)+'…' : full;
+  el.textContent = truncated;
+  el.title = 'اضغط لعرض الرسالة كاملة';
+  const STRIP_LIFETIME = 4500;
+  const dismiss = ()=>{
+    el.classList.add('fading');
+    setTimeout(()=>{ el.remove(); if(activeStrips[role] && activeStrips[role].el===el) activeStrips[role]=null; }, 400);
+  };
+  el.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(el.classList.contains('expanded')){
+      // ضغطة ثانية: تُخفي الفقاعة فورًا بدل انتظار المؤقّت
+      clearTimeout(activeStrips[role]?.timer);
+      dismiss();
+    } else {
+      // ضغطة أولى: تعرض النص كاملًا وتمدّد وقت بقائها قليلًا
+      el.classList.add('expanded');
+      el.textContent = full;
+      clearTimeout(activeStrips[role]?.timer);
+      const timer = setTimeout(dismiss, STRIP_LIFETIME);
+      activeStrips[role] = { el, timer };
+    }
+  });
   panel.appendChild(el);
-  const timer = setTimeout(()=>{ el.classList.add('fading'); setTimeout(()=>el.remove(),400); activeStrips[role]=null; }, 4500);
+  const timer = setTimeout(dismiss, STRIP_LIFETIME);
   activeStrips[role] = { el, timer };
   if(isIncoming){ beep(900,.08,'sine',.15); setTimeout(()=>beep(1200,.08,'sine',.12),90); }
 }
@@ -940,7 +993,7 @@ async function animateTokenMovement(role, color, tokenIndex, fromStep, toStep, a
     cur += dir;
     placeTokenEl(role, tokenIndex, color, cur, avatarData);
     beep(360,.04,'sine',0.05);
-    await sleep(110);
+    await sleep(75);
   }
 }
 function broadcastLudoMove(role, color, tokenIndex, fromStep, toStep){
@@ -1131,6 +1184,7 @@ async function rollDice(forRole, isAuto=false){
     if(b) b.disabled = true;
   }
   broadcastDiceRoll(actingRole);
+  diceWhoosh();
 
   const { data, error } = await sb.rpc(isTeamRoom ? 'ludo_roll_dice_team' : 'ludo_roll_dice', {
     p_code: session.code, p_role: actingRole, p_expected_rev: expectedRev, p_is_auto: !!isAuto
@@ -1154,13 +1208,14 @@ async function rollDice(forRole, isAuto=false){
   if(isSelf) myDiceRolls++;
   if(isSelf){
     showDiceOverlay();
-    const shuffle = setInterval(()=>{ const rv=1+Math.floor(Math.random()*6); showDiceValue(actingRole, rv, true); setDiceOverlayValue(rv); }, 90);
-    await sleep(600); clearInterval(shuffle);
+    const shuffle = setInterval(()=>{ const rv=1+Math.floor(Math.random()*6); showDiceValue(actingRole, rv, true); setDiceOverlayValue(rv); }, 70);
+    await sleep(420); clearInterval(shuffle);
     showDiceValue(actingRole, value, false); setDiceOverlayValue(value); beep(520,.1,'square');
-    setTimeout(hideDiceOverlay, 500);
+    flashDiceNumber(actingRole, value);
+    setTimeout(hideDiceOverlay, 350);
   } else {
     playRemoteDiceShuffle(actingRole);
-    await sleep(600);
+    await sleep(420);
     playRemoteDiceResult(actingRole, value);
   }
   broadcastDiceResult(actingRole, value);
@@ -1437,37 +1492,10 @@ function renderTeamExtras(room, isSpectator){
   const isTeam = !!(room && room.mode === 'team');
   document.body.classList.toggle('mode-team', isTeam);
   const panelP3 = document.getElementById('panelP3'), panelP4 = document.getElementById('panelP4');
-  const colLeft = document.getElementById('colLeft'), colRight = document.getElementById('colRight');
   if(panelP3) panelP3.style.display = isTeam ? '' : 'none';
   if(panelP4) panelP4.style.display = isTeam ? '' : 'none';
 
-  // ترتيب عمودي البطاقات على الجوّال (عمود خصمي أعلى، عمودي أسفل) — نحسبه دومًا حتى في
-  // الوضع الفردي، لأن البطاقتين أصبحتا الآن داخل عمودين (colLeft/colRight) بدل أن تكونا
-  // طفلتين مباشرتين لـ.arena كما كانت، فترتيب CSS القديم القائم على .side-panel.me/.opponent
-  // وحده لم يعد كافيًا لتحريك toolbar الصفحة على الجوّال.
-  const myTeam = isTeam ? ludoTeamOf(session.role) : (session.role==='p1' ? 'A' : session.role==='p2' ? 'B' : null);
-  if(myTeam === 'A'){
-    colLeft?.classList.add('my-team'); colLeft?.classList.remove('opp-team');
-    colRight?.classList.add('opp-team'); colRight?.classList.remove('my-team');
-  } else if(myTeam === 'B'){
-    colRight?.classList.add('my-team'); colRight?.classList.remove('opp-team');
-    colLeft?.classList.add('opp-team'); colLeft?.classList.remove('my-team');
-  } else {
-    // مشاهد: كلا العمودين يُعاملان كـ"خصم" ليظهرا قبل اللوحة، كما كان يحدث أصلًا
-    colLeft?.classList.add('opp-team'); colLeft?.classList.remove('my-team');
-    colRight?.classList.add('opp-team'); colRight?.classList.remove('my-team');
-  }
-
-  if(!isTeam){
-    colLeft?.removeAttribute('data-team-label'); colRight?.removeAttribute('data-team-label');
-    return;
-  }
-
-  colLeft?.setAttribute('data-team-label', 'الفريق أ');
-  colRight?.setAttribute('data-team-label', 'الفريق ب');
-
-  // نعيد ضبط تسمية "أنت/زميلك/الخصم" أيضًا لبطاقتي p1/p2 الأصليتين، فالتصنيف البسيط الافتراضي
-  // في renderRoom لا يعرف مفهوم "الزميل" (لا يوجد إلا في وضع الفريق)
+  if(!isTeam) return;
   const rtP1 = document.getElementById('roleTagP1'), rtP2 = document.getElementById('roleTagP2');
   if(rtP1) rtP1.textContent = playerRoleLabel(room, 'p1', isSpectator);
   if(rtP2) rtP2.textContent = playerRoleLabel(room, 'p2', isSpectator);
@@ -2370,6 +2398,7 @@ async function sendChat(){
   const input = document.getElementById('chatInput');
   const content = input.value.trim(); if(!content) return;
   input.value=''; await sendChatMessage(content);
+  document.getElementById('composerBottom')?.classList.remove('open'); // أخفِ شريط الدردشة بعد الإرسال
 }
 
 function extractLinkCode(){ return new URLSearchParams(location.search).get('r'); }
