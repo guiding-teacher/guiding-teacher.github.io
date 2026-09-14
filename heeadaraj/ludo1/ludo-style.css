@@ -422,19 +422,52 @@ height: 75%;
 .side-log div:last-child{border-bottom:none;}
 .side-log .empty{color:#a49c8c;font-style:italic;}
 
-/* شريط الدردشة العابر */
+/* شريط الدردشة العابر — الآن مستطيل ملتصق بنهاية (أسفل) بطاقة اللاعب نفسها بدل فقاعة عائمة أعلاها */
 .chat-strip{
-  position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#20343d;color:#fff;margin-top: 20px;
-  padding:5px 10px;border-radius:8px;font-size:20px;max-width:180px;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;box-shadow:0 6px 14px rgba(0,0,0,.3);animation:stripPop .25s ease-out;z-index:6;
+  position:absolute; left:6px; right:6px; bottom:6px;
+  background:#20343d; color:#fff;
+  padding:5px 9px; border-radius:8px; font-size:11.5px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  box-shadow:0 4px 12px rgba(0,0,0,.3); animation:stripPop .22s ease-out; z-index:6;
+  text-align:center; cursor:pointer; max-width:none;
 }
-.chat-strip::after{
-  content:"";position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
-  border:5px solid transparent;border-top-color:#20343d;
+.chat-strip.expanded{
+  white-space:normal; overflow:visible; text-overflow:clip;
+  max-height:120px; overflow-y:auto; text-align:right;
 }
-@keyframes stripPop{from{opacity:0;transform:translateX(-50%) translateY(6px) scale(.9);}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}}
-.chat-strip.fading{animation:stripFade .4s ease-in forwards;}
-@keyframes stripFade{to{opacity:0;transform:translateX(-50%) translateY(-6px) scale(.9);}}
+@keyframes stripPop{from{opacity:0;transform:translateY(6px) scale(.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+.chat-strip.fading{animation:stripFade .35s ease-in forwards;}
+@keyframes stripFade{to{opacity:0;transform:translateY(4px) scale(.95);}}
+
+/* ====== وميض كبير برقم النرد فوق بطاقة صاحب الرمية — تأثير بصري بارز لأي رمية لأي لاعب ====== */
+.dice-flash-num{
+  position:absolute; top:45%; left:50%; transform:translate(-50%,-50%) scale(.3);
+  font-family:'Baloo Bhaijaan 2'; font-weight:800; font-size:52px; color:#fff; line-height:1;
+  text-shadow:0 0 10px rgba(255,255,255,.95), 0 0 22px gold, 0 3px 6px rgba(0,0,0,.45);
+  z-index:20; pointer-events:none;
+  animation:diceFlashPop .45s cubic-bezier(.2,1.4,.4,1) forwards;
+}
+.dice-flash-num::before{
+  content:""; position:absolute; inset:-16px; border-radius:50%;
+  background:radial-gradient(circle, rgba(255,215,0,.6), rgba(255,215,0,0) 70%);
+  z-index:-1; animation:diceFlashGlow .5s ease-out forwards;
+}
+@keyframes diceFlashPop{
+  0%{ transform:translate(-50%,-50%) scale(.3); opacity:0; }
+  40%{ transform:translate(-50%,-50%) scale(1.3); opacity:1; }
+  65%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+  100%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+@keyframes diceFlashGlow{
+  0%{ transform:scale(.3); opacity:0; }
+  45%{ transform:scale(1.3); opacity:1; }
+  100%{ transform:scale(1.6); opacity:0; }
+}
+.dice-flash-num.fade{ animation:diceFlashOut .3s ease-in forwards; }
+@keyframes diceFlashOut{ to{ opacity:0; transform:translate(-50%,-50%) scale(.8); } }
+/* أصغر داخل بطاقات وضع الفريق الأصغر حجمًا */
+body.mode-team .dice-flash-num{ font-size:30px; }
+body.mode-team .dice-flash-num::before{ inset:-9px; }
 
 /* عمود اللوحة — مربع 1:1 يملأ المساحة */
 .board-col{
@@ -706,7 +739,7 @@ body.is-spectator .spectator-badge{display:flex;}
 }
   
   .board-wrap{
-   width:90%;
+   width:98%;
     margin-bottom: 3px;
     margin-top: 3px;
   }
@@ -791,7 +824,7 @@ body.is-spectator .spectator-badge{display:flex;}
   height: 25px;
 }
   
-  .chat-strip{font-size:13px;padding:5px 10px;max-width:150px;}
+  .chat-strip{font-size:11px;padding:4px 8px;}
   .dro-value{width:70px;height:70px;font-size:36px;border-radius:16px;}
   .turn-bubble{font-size:12.5px;padding:7px 14px;top:6px;}
   .board-wrap{padding:8px;border-radius:14px;}
@@ -1034,77 +1067,114 @@ body.is-spectator .spectator-badge{display:flex;}
    وبطاقة الزميل المصغّرة، مفعّل فقط عبر body.mode-team أو الكلاسات الجديدة أدناه.
    ====================================================================== */
 
-.team-col{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  min-height:0;
+/* ======================================================================
+   ===================== وضع الفريق (2 ضد 2) — إضافي بالكامل =====================
+   لا يعدّل أي قاعدة موجودة أعلاه (تبقى نافذة المفعول فقط عند غياب body.mode-team).
+   تُموضع بطاقات اللاعبين الأربع فوق منازلها بالضبط على اللوحة عبر CSS Grid:
+   الفريق A = p1(أحمر، أعلى اليسار) + p3(برتقالي، أسفل اليمين) — متقابلان قطريًا
+   الفريق B = p2(أزرق، أعلى اليمين) + p4(أخضر، أسفل اليسار) — متقابلان قطريًا
+   ====================================================================== */
+
+/* ألوان هوية كل لاعب — نفس ألوان عرائسه بالضبط (COLOR_HEX في ludo-app.js) */
+body.mode-team #panelP1{ border-color:#E5393E; }
+body.mode-team #panelP2{ border-color:#2F7DE1; }
+body.mode-team #panelP3{ border-color:#F2A81D; }
+body.mode-team #panelP4{ border-color:#3FA34D; }
+body.mode-team #panelP1 .avatar-big{ box-shadow:0 0 0 2px #E5393E, 0 2px 6px rgba(0,0,0,.2); }
+body.mode-team #panelP2 .avatar-big{ box-shadow:0 0 0 2px #2F7DE1, 0 2px 6px rgba(0,0,0,.2); }
+body.mode-team #panelP3 .avatar-big{ box-shadow:0 0 0 2px #F2A81D, 0 2px 6px rgba(0,0,0,.2); }
+body.mode-team #panelP4 .avatar-big{ box-shadow:0 0 0 2px #3FA34D, 0 2px 6px rgba(0,0,0,.2); }
+
+/* ===================== سطح المكتب: شبكة أرباع — كل بطاقة فوق منزلها بالضبط ===================== */
+body.mode-team .arena{
+  grid-template-columns: minmax(130px,17%) minmax(0,1fr) minmax(130px,17%);
+  grid-template-rows: minmax(0,1fr) minmax(0,1fr);
+  grid-template-areas:
+    "p2 board p1"
+    "p3 board p4";
+  align-items:stretch;
+  gap:8px;
+  overflow:hidden; /* يمنع أي تمدد غير متوقع لأي بطاقة من الظهور فوق اللوحة في أي متصفح */
+}
+body.mode-team #panelP1{ grid-area:p1; min-width:0; min-height:0; }
+body.mode-team #panelP2{ grid-area:p2; min-width:0; min-height:0; }
+body.mode-team #panelP3{ grid-area:p3; min-width:0; min-height:0; }
+body.mode-team #panelP4{ grid-area:p4; min-width:0; min-height:0; }
+body.mode-team .board-col{ grid-area:board; min-width:0; min-height:0; z-index:1; }
+
+/* أسهم صغيرة نابضة عند الحافة الداخلية لكل بطاقة (سطح المكتب) تُشير نحو اللوحة/منزل صاحبها،
+   بلون هويته نفسه — محصورة داخل حدود البطاقة (overflow:hidden على .side-panel) لتبقى سليمة
+   في كل المتصفحات دون أن "تخرج" فعليًا وتُفسد تخطيط الصفحة */
+body.mode-team .side-panel::after{
+  content:"◀";
+  position:absolute;
+  top:50%;
+  font-size:15px;
+  line-height:1;
+  z-index:3;
+  pointer-events:none;
+  animation:teamArrowPulse 1.3s ease-in-out infinite;
+}
+body.mode-team #panelP1::after{ content:"▶"; left:auto; right:4px; top:50%; transform:translateY(-50%); color:#E5393E; }
+body.mode-team #panelP4::after{ content:"▶"; left:auto; right:4px; top:50%; transform:translateY(-50%); color:#3FA34D; }
+body.mode-team #panelP2::after{ content:"◀"; left:4px; right:auto; top:50%; transform:translateY(-50%); color:#2F7DE1; }
+body.mode-team #panelP3::after{ content:"◀"; left:4px; right:auto; top:50%; transform:translateY(-50%); color:#F2A81D; }
+@keyframes teamArrowPulse{
+  0%,100%{ opacity:.45; }
+  50%{ opacity:1; }
+}
+
+/* بطاقات أصغر قليلًا من الوضع الفردي (نصف الشاشة عموديًا لكل بطاقة تقريبًا) */
+body.mode-team .side-panel{
   height:100%;
+  margin-top:0;
+  padding:7px 7px;
 }
+body.mode-team .side-panel .avatar-big{
+  width:44px;height:44px;font-size:16px;margin-top:2px;
+}
+body.mode-team .side-panel .side-log{
+  max-height:34px;
+  font-size:9.5px;
+}
+body.mode-team .side-panel .p-name{font-size:11px;max-width:95px;}
+body.mode-team .side-panel .p-pos{font-size:9px;}
+body.mode-team .side-panel .role-tag{font-size:9px;padding:1px 6px;}
+body.mode-team .side-panel .roll-btn{padding:5px 10px;font-size:11px;}
+body.mode-team .side-panel .cube-wrap{width:36px;height:36px;}
+body.mode-team .side-panel .side-reactions button{padding:2px 0;font-size:9px;}
 
-/* في وضع الفريق فقط: كل بطاقة تأخذ نصف الارتفاع تقريبًا بدل 75% لتتسع الاثنتان معًا،
-   بمحتوى أصغر قليلًا من الوضع الفردي ليتناسب مع المساحة الأضيق */
-body.mode-team .team-col .side-panel{
-  height:44%;
-  padding:8px 9px;
-}
-body.mode-team .team-col .side-panel .avatar-big{
-  width:54px;height:54px;font-size:19px;margin-top:4px;
-}
-body.mode-team .team-col .side-panel .side-log{
-  max-height:48px;
-  font-size:11px;
-}
-body.mode-team .team-col .side-panel .p-name{font-size:12px;max-width:105px;}
-body.mode-team .team-col .side-panel .p-pos{font-size:10px;}
-body.mode-team .team-col .side-panel .role-tag{font-size:10px;padding:2px 7px;}
-body.mode-team .team-col .side-panel .roll-btn{padding:6px 12px;font-size:12px;}
-body.mode-team .team-col .side-panel .cube-wrap{width:44px;height:44px;}
-body.mode-team .team-col .side-panel .side-reactions button{padding:3px 0;font-size:10px;}
-
-.side-panel.team-mate{ margin-top:0; }
-
-/* فاصل بصري خفيف بين شريكي الفريق داخل نفس العمود */
-body.mode-team .team-col .side-panel:first-child{
-  border-bottom:2px dashed rgba(0,0,0,.06);
-}
-
-/* وسم بسيط أعلى كل عمود فريق يوضح اسم الفريق (أ/ب) في وضع الفريق فقط */
-body.mode-team .team-col::before{
-  content:attr(data-team-label);
-  display:block;
-  text-align:center;
-  font-family:'Baloo Bhaijaan 2';
-  font-size:12px;
-  font-weight:800;
-  color:#8a7440;
-  background:#FFFDE7;
-  border:2px solid #3E2723;
-  border-radius:10px;
-  padding:2px 8px;
-  margin:0 auto 2px;
-  width:fit-content;
-}
-
-/* على الجوّال: كل عمود فريق يحتل بالضبط نفس مكان/ترتيب/حجم البطاقة المفردة الأصلية
-   (علوية = الفريق الخصم، سفلية = فريقي) — فقط يُقسَّم محتواها داخليًا إلى نصفين
-   جنبًا إلى جنب بدل شخص واحد، مع تصغير كل عنصر داخلي ليتّسع بعرض النصف بدل الكامل. */
+/* ===================== الجوّال: نفس فكرة الأرباع — صف علوي (منازل أعلى اللوحة)،
+   اللوحة، ثم صف سفلي (منازل أسفل اللوحة) — بدل تجميع الأعمدة بالفرق ===================== */
 @media (max-width:900px){
-  .team-col{
-    flex-direction:row;
-    align-items:stretch;
-    height:auto;
+  body.mode-team .arena{
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows: minmax(0,auto) minmax(0,auto) minmax(0,auto);
+    grid-template-areas:
+      "p2 p1"
+      "board board"
+      "p3 p4";
     gap:5px;
+    overflow:hidden;
   }
-  .team-col.opp-team{ order:1; }
-  .board-col{ order:2; }
-  .team-col.my-team{ order:3; }
-  body.mode-team .team-col::before{ display:none; } /* لا مساحة كافية لعنوان الفريق على الجوّال */
+  body.mode-team .board-col{ order:initial; } /* يُلغى ترتيب flex القديم؛ التموضع الآن عبر grid-area */
 
-  body.mode-team .team-col > .side-panel{
-    flex:1 1 50%;
-    min-width:0;
-    height:145px;
+  /* على الجوّال الاتجاه رأسي: البطاقات العلوية تُشير للأسفل نحو اللوحة، والسفلية للأعلى
+     (نستهدف نفس مُعرِّفات البطاقات بنفس درجة التخصيص المستخدمة في تعريف سطح المكتب، لضمان
+     أن هذا الجزء يطغى فعليًا عليه ضمن الاستعلام الإعلامي، بدل الاعتماد على ترتيب الملف فقط) */
+  body.mode-team #panelP1::after,
+  body.mode-team #panelP2::after{
+    content:"▼"; top:auto; bottom:2px; left:50%; right:auto;
+    transform:translateX(-50%); font-size:11px;
+  }
+  body.mode-team #panelP3::after,
+  body.mode-team #panelP4::after{
+    content:"▲"; top:2px; bottom:auto; left:50%; right:auto;
+    transform:translateX(-50%); font-size:11px;
+  }
+
+  body.mode-team .side-panel{
+    height:auto;
     padding:5px 5px;
     border-radius:11px;
     gap:0;
@@ -1112,86 +1182,56 @@ body.mode-team .team-col::before{
 
   /* صف 1: الصورة يسارًا والاسم يمينًا — صف 2: النرد وزر الرمي تحتهما معًا —
      صف 3: باقي أكواد البطاقة (المربع/الوصف) بشكل مصغّر */
-  body.mode-team .team-col .player-row{
+  body.mode-team .player-row{
     display:grid !important;
-    grid-template-columns: 1fr 26px;
+    grid-template-columns: 1fr 22px;
     grid-template-areas:
       "name avatar"
       "dice dice"
       "pos  role";
-    column-gap:4px;
-    row-gap:2px;
+    column-gap:3px;
+    row-gap:1px;
     width:100%;
     align-items:center;
   }
-  body.mode-team .team-col .info-col{ display:contents; }
+  body.mode-team .info-col{ display:contents; }
 
-  body.mode-team .team-col .avatar-big{
+  body.mode-team .avatar-big{
     grid-area:avatar; justify-self:end;
-    width:20px;height:20px;font-size:9px;margin-top:0;border-width:1.5px;flex-shrink:0;
+    width:22px;height:22px;font-size:8.5px;margin-top:0;border-width:1.5px;flex-shrink:0;
   }
-  body.mode-team .team-col .p-name{
+  body.mode-team .p-name{
     grid-area:name; justify-self:stretch;
     display:flex; align-items:center; justify-content:flex-start; gap:2px;
-    font-size:7px; width:100%;
+    font-size:7.5px; width:100%;
   }
-  body.mode-team .team-col .inline-level-badge{ font-size:6px; padding:0 3px; }
-  body.mode-team .team-col .title-badge{ display:none !important; } /* لا مساحة كافية بعرض النصف */
+  body.mode-team .inline-level-badge{ font-size:5.5px; padding:0 3px; }
+  body.mode-team .title-badge{ display:none !important; } /* لا مساحة كافية بعرض النصف */
 
-  body.mode-team .team-col .side-dice-zone{
+  body.mode-team .side-dice-zone{
     grid-area:dice; justify-self:stretch;
     display:flex !important;
     flex-direction:row;
     align-items:center;
     justify-content:center;
-    gap:10px;
+    gap:3px;
     width:100%;
     margin-top:0;
   }
-  body.mode-team .team-col .cube-wrap{ width:19px;height:19px; }
-  body.mode-team .team-col .cube{ transform:rotateX(-18deg) rotateY(24deg) scale(.34); }
-  body.mode-team .team-col .roll-btn-wrap{ display:flex; }
-  body.mode-team .team-col .roll-btn{ padding:2px 7px; font-size:7.5px; border-radius:7px; }
-  body.mode-team .team-col .opp-dice-label{ font-size:6.5px; }
+  body.mode-team .cube-wrap{ width:16px;height:16px; }
+  body.mode-team .cube{ transform:rotateX(-18deg) rotateY(24deg) scale(.3); }
+  body.mode-team .roll-btn-wrap{ display:flex; }
+  body.mode-team .roll-btn{ padding:2px 6px; font-size:6.5px; border-radius:6px; }
+  body.mode-team .opp-dice-label{ font-size:6px; }
 
-  body.mode-team .team-col .p-pos{ grid-area:pos; justify-self:start; font-size:7px; }
-  body.mode-team .team-col .role-tag{ grid-area:role; justify-self:end; font-size:6px; padding:1px 4px; }
+  body.mode-team .p-pos{ grid-area:pos; justify-self:start; font-size:6px; }
+  body.mode-team .role-tag{ grid-area:role; justify-self:end; font-size:5.5px; padding:1px 3px; }
 
-  body.mode-team .team-col .side-reactions{ display:none !important; }
-  body.mode-team .team-col .side-log{ display:none !important; }
-  body.mode-team .team-col .edit-badge-side,
-  body.mode-team .team-col .log-badge-side{ width:13px;height:13px;font-size:6.5px; }
-  
-  
-  #roleTagP4  {
-    font-size: 8px;
-  }
-  #roleTagP3  {
-    font-size: 8px;
-  }
-  #roleTagP2  {
-    font-size: 8px;
-  }
-  #roleTagP1  {
-    font-size: 8px;
-  }
-  
-  #avatarP2{
-    width: 45px;
-    height: 45px;
-  }
-  #avatarP3{
-    width: 45px;
-    height: 45px;
-  }
-  #avatarP4{
-    width: 45px;
-    height: 45px;
-  }
-  #avatarP1{
-    width: 45px;
-    height: 45px;
-  }
+  body.mode-team .side-reactions{ display:none !important; }
+  body.mode-team .side-log{ display:none !important; }
+  body.mode-team .edit-badge-side,
+  body.mode-team .log-badge-side{ width:12px;height:12px;font-size:6px; }
+  body.mode-team .chat-strip{ font-size:6.5px; padding:2px 4px; left:2px; right:2px; bottom:2px; border-radius:5px; }
 }
 
 /* ===================== نافذة الفوز — صف الفريق (المُنهي أولًا + زميله) ===================== */
