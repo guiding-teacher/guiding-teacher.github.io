@@ -791,7 +791,7 @@ function activeRoles(room){ return (room && room.mode==='team') ? ALL_ROLES : ['
 function playerRoleLabel(room, role, isSpectator){
   if(session.role === role) return 'أنت';
   if(isSpectator) return 'لاعب ' + ({p1:1,p2:2,p3:3,p4:4}[role]);
-  if(room && room.mode==='team' && ludoTeamOf(role) === ludoTeamOf(session.role)) return 'زميلك بالفريق';
+  if(room && room.mode==='team' && ludoTeamOf(role) === ludoTeamOf(session.role)) return 'زميلك ';
   return 'الخصم';
 }
 
@@ -993,7 +993,7 @@ async function animateTokenMovement(role, color, tokenIndex, fromStep, toStep, a
     cur += dir;
     placeTokenEl(role, tokenIndex, color, cur, avatarData);
     beep(360,.04,'sine',0.05);
-    await sleep(75);
+    await sleep(110);
   }
 }
 function broadcastLudoMove(role, color, tokenIndex, fromStep, toStep){
@@ -1208,14 +1208,14 @@ async function rollDice(forRole, isAuto=false){
   if(isSelf) myDiceRolls++;
   if(isSelf){
     showDiceOverlay();
-    const shuffle = setInterval(()=>{ const rv=1+Math.floor(Math.random()*6); showDiceValue(actingRole, rv, true); setDiceOverlayValue(rv); }, 70);
-    await sleep(420); clearInterval(shuffle);
+    const shuffle = setInterval(()=>{ const rv=1+Math.floor(Math.random()*6); showDiceValue(actingRole, rv, true); setDiceOverlayValue(rv); }, 90);
+    await sleep(600); clearInterval(shuffle);
     showDiceValue(actingRole, value, false); setDiceOverlayValue(value); beep(520,.1,'square');
     flashDiceNumber(actingRole, value);
-    setTimeout(hideDiceOverlay, 350);
+    setTimeout(hideDiceOverlay, 500);
   } else {
     playRemoteDiceShuffle(actingRole);
-    await sleep(420);
+    await sleep(600);
     playRemoteDiceResult(actingRole, value);
   }
   broadcastDiceResult(actingRole, value);
@@ -1885,7 +1885,7 @@ function scheduleDeferredRender(room){
   pendingRenderTimer = setTimeout(()=>{
     pendingRenderTimer = null;
     if(pendingRoomToRender){ const r=pendingRoomToRender; pendingRoomToRender=null; renderRoom(r); }
-  }, 350);
+  }, 280);
 }
 
 function mergeRoomPayload(incoming, prev){
@@ -1897,6 +1897,17 @@ function mergeRoomPayload(incoming, prev){
   return merged;
 }
 
+/* ====== هل يحتوي هذا التحديث فعليًا على حركة عروسة (تغيّر بأحد مصفوفات tokens)؟ نستخدمها لتفادي
+   تأجيل عرض تحديثات لا علاقة لها بحركة رمز إطلاقًا (رمي نرد، تمرير دور، تجاوز صلاحية...)، فتلك
+   كانت تنتظر 350ms بلا داعٍ في كل مرة، وهو ما يُشعر بأن انتقال الأدوار بطيء ====== */
+function roomTokensChanged(prev, next){
+  if(!prev) return true;
+  return ALL_ROLES.some(r=>{
+    const a = prev[r+'_tokens'], b = next[r+'_tokens'];
+    return JSON.stringify(a) !== JSON.stringify(b);
+  });
+}
+
 /* ====== اشتراك محسّن مع polling fallback ====== */
 
 function subscribeToRoom(code){
@@ -1906,14 +1917,17 @@ function subscribeToRoom(code){
       const room = mergeRoomPayload(payload.new, currentRoom);
       const isNewMove = currentRoom && room.rev !== currentRoom.rev;
       const anyRemoteAnimating = ALL_ROLES.some(r=> ludoRemoteAnimating[r]!=null);
+      const tokensDidChange = isNewMove && roomTokensChanged(currentRoom, room);
       if(animating || anyRemoteAnimating){
         // حركة جارية بالفعل (رمّينا نحن، أو حركة الطرف الآخر قيد التشغيل بالفعل) — لا نتدخّل الآن
         currentRoom = room;
-      } else if(isNewMove && room.status==='playing'){
-        // إصدار جديد ولم تبدأ أي حركة له بعد — قد يكون بثّ move_plan في طريقه، نمهله فرصة قصيرة أولًا
+      } else if(tokensDidChange && room.status==='playing'){
+        // إصدار جديد فيه حركة عروسة فعلية ولم تبدأ رسومها المتحركة بعد — قد يكون بثّ move_plan
+        // في طريقه، نمهله فرصة قصيرة أولًا فقط في هذه الحالة تحديدًا (وليس كل تحديث)
         currentRoom = room;
         scheduleDeferredRender(room);
       } else {
+        // تحديث بلا حركة عروسة (رمي نرد، تمرير دور، غياب/مغادرة...) — لا داعي لأي انتظار إطلاقًا
         cancelPendingRender();
         renderRoom(room);
       }
