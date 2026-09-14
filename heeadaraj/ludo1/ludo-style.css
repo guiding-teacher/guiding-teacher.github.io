@@ -337,7 +337,7 @@ height: 75%;
 .cube{
   width:100%;height:100%;position:relative;transform-style:preserve-3d;
   transform:rotateX(-18deg) rotateY(24deg) scale(.9);
-  transition:transform .7s cubic-bezier(.2,.9,.3,1.1);
+  transition:transform .45s cubic-bezier(.2,.9,.3,1.1);
 }
 .cube.rolling{transition:transform .12s linear;}
 .face{
@@ -1052,7 +1052,7 @@ body.is-spectator .spectator-badge{display:flex;}
   grid-column:1/-1; grid-row:1/-1; width:100%; height:100%;
   position:relative; pointer-events:none;
 }
-.ludo-token{ transition:transform .11s linear; pointer-events:none; }
+.ludo-token{ transition:transform .08s linear; pointer-events:none; }
 .ludo-token.selectable{
   pointer-events:auto; cursor:pointer;
   filter:drop-shadow(0 0 3px #fff) drop-shadow(0 0 6px #ffd700);
@@ -1109,7 +1109,7 @@ body.mode-team .side-panel::after{
   content:"◀";
   position:absolute;
   top:50%;
-  font-size:15px;
+  font-size:32px;
   line-height:1;
   z-index:3;
   pointer-events:none;
@@ -1162,16 +1162,36 @@ body.mode-team .side-panel .side-reactions button{padding:2px 0;font-size:9px;}
   /* على الجوّال الاتجاه رأسي: البطاقات العلوية تُشير للأسفل نحو اللوحة، والسفلية للأعلى
      (نستهدف نفس مُعرِّفات البطاقات بنفس درجة التخصيص المستخدمة في تعريف سطح المكتب، لضمان
      أن هذا الجزء يطغى فعليًا عليه ضمن الاستعلام الإعلامي، بدل الاعتماد على ترتيب الملف فقط) */
+  body.mode-team .side-panel{ overflow:visible; }
+
+  /* البطاقتان العلويتان: السهم أسفل الإطار يشير نحو اللوحة */
   body.mode-team #panelP1::after,
   body.mode-team #panelP2::after{
-    content:"▼"; top:auto; bottom:2px; left:50%; right:auto;
-    transform:translateX(-50%); font-size:11px;
+    content:"▼";
+    top:auto;
+    bottom:-17px;
+    left:50%;
+    right:auto;
+    transform:translateX(-50%);
+    font-size:20px;
+    z-index:5;
+    pointer-events:none;
   }
+
+  /* البطاقتان السفليتان: السهم أعلى الإطار يشير نحو اللوحة */
   body.mode-team #panelP3::after,
   body.mode-team #panelP4::after{
-    content:"▲"; top:2px; bottom:auto; left:50%; right:auto;
-    transform:translateX(-50%); font-size:11px;
+    content:"▲";
+    top:-17px;
+    bottom:auto;
+    left:50%;
+    right:auto;
+    transform:translateX(-50%);
+    font-size:20px;
+    z-index:5;
+    pointer-events:none;
   }
+}
 
   body.mode-team .side-panel{
     height:auto;
@@ -1179,6 +1199,8 @@ body.mode-team .side-panel .side-reactions button{padding:2px 0;font-size:9px;}
     border-radius:11px;
     gap:0;
   }
+  
+ 
 
   /* صف 1: الصورة يسارًا والاسم يمينًا — صف 2: النرد وزر الرمي تحتهما معًا —
      صف 3: باقي أكواد البطاقة (المربع/الوصف) بشكل مصغّر */
