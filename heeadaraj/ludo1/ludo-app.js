@@ -185,7 +185,6 @@ function playRemoteDiceShuffle(role){
   if(role === session.role) return; // تجاهل حدثي أنا نفسي (عندي أصلًا الرسوم المتحركة المحلية)
   const cube = document.getElementById('cube'+String(role).toUpperCase());
   if(!cube) return;
-  diceWhoosh();
   clearInterval(remoteShuffleTimers[role]);
   clearTimeout(remoteShuffleSafety[role]);
   remoteShuffleTimers[role] = setInterval(()=>{
@@ -232,22 +231,7 @@ function beep(freq=440, dur=0.12, type='sine', vol=0.18){
     o.stop(actx.currentTime + dur);
   }catch(e){}
 }
-/* ====== صوت "فرّ" النرد — تردد ينزلق صعودًا خلال جزء من الثانية، يُشغَّل لأي رمية لأي لاعب ====== */
-function diceWhoosh(){
-  if(!soundOn) return;
-  try{
-    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
-    const o = actx.createOscillator(); const g = actx.createGain();
-    o.type = 'sawtooth';
-    o.frequency.setValueAtTime(170, actx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(680, actx.currentTime + 0.16);
-    g.gain.setValueAtTime(0.0001, actx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.22, actx.currentTime + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.22);
-    o.connect(g); g.connect(actx.destination);
-    o.start(); o.stop(actx.currentTime + 0.24);
-  }catch(e){}
-}
+/* ====== صوت "فرّ" النرد أُزيل بالكامل بناءً على طلب المستخدم — بقيت بقية المؤثرات الصوتية كما هي ====== */
 /* ====== وميض كبير برقم النرد فوق بطاقة أي لاعب رمى (أنا أو خصمي)، بلون هويته إن وُجد ====== */
 function flashDiceNumber(role, value){
   const panel = document.getElementById('panel'+String(role).toUpperCase());
@@ -409,88 +393,9 @@ async function loadChatHistory(code){
 
 
 
-/* ===================== 5) المطابقة التلقائية (مشتركة الجدول مع الحية والسلم) ===================== */
-
-/* ===================== 7) المطابقة التلقائية ===================== */
-let mmRow = null, mmOpponentRowId = null, mmChannel = null, mmSearchTimer = null, mmAcceptTimer = null, mmHandlers = {};
+/* ===================== 5) المطابقة التلقائية أُزيلت بالكامل بناءً على طلب المستخدم =====================
+   لا يمكن لأي أحد الدخول لأي جولة الآن إلا برابط دعوة أو رمز الجولة (تبويبا "إنشاء جولة" و"الانضمام" فقط). ====== */
 function randCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
-
-async function mmStartSearch(prof, cb){
-  mmHandlers = cb || {};
-  await mmStopInternal();
-  const { data, error } = await sb.from('matchmaking_queue').insert({
-    user_id: prof.id, username: prof.username, avatar_color: prof.avatar_color, avatar_data: prof.avatar_data, status:'waiting'
-  }).select().single();
-  if(error || !data){ mmHandlers.onCancelled?.('تعذّر الدخول لقائمة البحث'); return; }
-  mmRow = data;
-  mmChannel = sb.channel('mm-'+mmRow.id)
-    .on('postgres_changes', { event:'*', schema:'public', table:'matchmaking_queue' }, (payload)=> mmHandleEvent(payload))
-    .subscribe();
-  mmSearchTimer = setTimeout(async ()=>{ if(mmRow && mmRow.status==='waiting'){ await mmStopInternal(); mmHandlers.onTimeout?.(); } }, 25000);
-  await mmTryClaimOlder();
-}
-async function mmTryClaimOlder(){
-  if(!mmRow) return;
-  const { data: candidates } = await sb.from('matchmaking_queue').select('*').eq('status','waiting').lt('id', mmRow.id).order('id',{ascending:true}).limit(5);
-  if(!candidates || candidates.length===0) return;
-  for(const cand of candidates){
-    const roomCode = randCode();
-    // مطابقة صفّين ملكهما مختلفان تتطلب دالة آمنة على الخادم (mm_claim_match)
-    // بعد أن أصبحت RLS تمنع تعديل أي عميل لصف لا يملكه.
-    const { data: claimed, error } = await sb.rpc('mm_claim_match', { p_candidate_row_id: cand.id, p_room_code: roomCode });
-    const row = Array.isArray(claimed) ? claimed[0] : claimed;
-    if(!error && row){
-      mmRow = { ...mmRow, status:'matched', matched_with:cand.user_id, room_code:roomCode };
-      mmOpponentRowId = cand.id;
-      mmHandlers.onFound?.({ opponent:{username:cand.username, avatar_color:cand.avatar_color, avatar_data:cand.avatar_data}, isInitiator:true, roomCode });
-      mmArmAcceptWindow();
-      return;
-    }
-    // فشلت (انتُزع المرشح للتو من طرف آخر) — جرّب المرشح التالي
-  }
-}
-function mmHandleEvent(payload){
-  if(!mmRow) return;
-  const row = payload.new; if(!row) return;
-  if(row.id===mmRow.id && row.status==='matched' && mmRow.status==='waiting'){
-    mmRow = row; mmOpponentRowId = null;
-    mmFetchOpponent(row.matched_with).then(opp=>{ mmHandlers.onFound?.({opponent:opp, isInitiator:false, roomCode:row.room_code}); mmArmAcceptWindow(); });
-    return;
-  }
-  if(mmOpponentRowId && row.id===mmOpponentRowId) mmCheckBothAccepted(row);
-  if(row.user_id===mmRow.matched_with && row.id!==mmRow.id){ mmOpponentRowId=row.id; mmCheckBothAccepted(row); }
-  if((row.id===mmRow.id || row.id===mmOpponentRowId) && row.status==='cancelled'){ mmHandlers.onCancelled?.('ألغى الطرف الآخر المطابقة'); mmStopInternal(); }
-}
-async function mmFetchOpponent(userId){
-  const { data } = await sb.from('profiles').select('username, avatar_color, avatar_data').eq('id', userId).maybeSingle();
-  return data || { username:'خصم', avatar_color:'#2F7DE1', avatar_data:null };
-}
-function mmArmAcceptWindow(){
-  clearTimeout(mmAcceptTimer);
-  mmAcceptTimer = setTimeout(async ()=>{ if(mmRow && mmRow.status==='matched' && !mmRow.accepted) await mmRespond(false); }, 20000);
-}
-async function mmRespond(accept){
-  if(!mmRow) return;
-  if(!accept){
-    await sb.rpc('mm_cancel_pair', { p_my_row_id: mmRow.id, p_opponent_row_id: mmOpponentRowId || null });
-    mmHandlers.onCancelled?.('تم إلغاء المطابقة'); await mmStopInternal(); return;
-  }
-  const { data } = await sb.from('matchmaking_queue').update({accepted:true}).eq('id', mmRow.id).select().single();
-  if(data) mmRow = data;
-  if(mmOpponentRowId){ const { data: oppRow } = await sb.from('matchmaking_queue').select('*').eq('id', mmOpponentRowId).maybeSingle(); mmCheckBothAccepted(oppRow); }
-}
-async function mmCheckBothAccepted(opponentRow){
-  if(!mmRow || !opponentRow) return;
-  if(mmRow.accepted && opponentRow.accepted){
-    clearTimeout(mmAcceptTimer);
-    const opp = await mmFetchOpponent(opponentRow.user_id);
-    const isInitiator = mmRow.matched_with===opponentRow.user_id && mmRow.id<opponentRow.id;
-    mmHandlers.onBothAccepted?.({opponent:opp, isInitiator, roomCode:mmRow.room_code});
-    try{ await sb.rpc('mm_delete_pair', { p_my_row_id: mmRow.id, p_opponent_row_id: mmOpponentRowId || null }); }catch(e){}
-  }
-}
-async function mmCancelSearch(){ if(mmRow && mmRow.status==='waiting') await sb.from('matchmaking_queue').delete().eq('id', mmRow.id); await mmStopInternal(); }
-async function mmStopInternal(){ clearTimeout(mmSearchTimer); clearTimeout(mmAcceptTimer); if(mmChannel){ sb.removeChannel(mmChannel); mmChannel=null; } mmRow=null; mmOpponentRowId=null; }
 
 
 /* ===================== 6) المستوى/الخبرة/الإنجازات (add_xp نفسها بالضبط) ===================== */
@@ -820,7 +725,9 @@ function tokenCellRC(color, step){
   const idx = Math.min(step - 52, cells.length - 1);
   return cells[idx];
 }
-function tokenXY(color, step, tokenIndex, finishSlot){
+/* ====== إزاحة بسيطة (dr,dc بوحدة الخلية) عند تراكب أكثر من عروسة فوق نفس الخانة، حتى لا تختفي
+   عروسة تمامًا خلف أخرى — تُستخدم أيضًا لتمييز مواقع عرائسي عند تراكبها مع عروسة لاعب آخر ====== */
+function tokenXY(color, step, tokenIndex, finishSlot, stackOffset){
   if(step <= 0) return lCellXY(yardSlot(color, tokenIndex));
   if(step >= 57 && finishSlot != null){
     const [r,c] = tokenCellRC(color, step);
@@ -828,7 +735,9 @@ function tokenXY(color, step, tokenIndex, finishSlot){
     const o = offs[finishSlot % 4];
     return lCellXY([r+o[0], c+o[1]]);
   }
-  return lCellXY(tokenCellRC(color, step));
+  const [r,c] = tokenCellRC(color, step);
+  if(stackOffset) return lCellXY([r+stackOffset[0], c+stackOffset[1]]);
+  return lCellXY([r,c]);
 }
 function initBoardUI(){
   document.getElementById('ludoBoardHost').innerHTML = LUDO_BOARD_SVG;
@@ -947,11 +856,31 @@ function ensureTokenEl(role, idx, color, avatarData){
   }
   return el;
 }
-function placeTokenEl(role, idx, color, step, avatarData, finishSlot){
+function placeTokenEl(role, idx, color, step, avatarData, finishSlot, stackOffset){
   const el = ensureTokenEl(role, idx, color, avatarData);
-  const [x,y] = tokenXY(color, step, idx, finishSlot);
+  const [x,y] = tokenXY(color, step, idx, finishSlot, stackOffset);
   el.setAttribute('transform', `translate(${x},${y})`);
   return el;
+}
+
+/* ====== إزاحات صغيرة (بوحدة الخلية) للعرائس المتراكبة على نفس الخانة، بترتيب من المركز للخارج ====== */
+const STACK_OFFSETS = [[0,0],[-0.16,-0.16],[0.16,0.16],[-0.16,0.16],[0.16,-0.16],[0,-0.24],[0,0.24],[-0.24,0]];
+
+/* ====== شارة صغيرة تُعرض فوق أي خانة فيها أكثر من عروسة، تبيّن عددها الإجمالي ====== */
+function ensureStackBadge(key){
+  const layer = document.getElementById('ludoTokenLayer');
+  let el = document.getElementById('lstack_'+key);
+  if(!el){
+    el = document.createElementNS('http://www.w3.org/2000/svg','g');
+    el.setAttribute('id', 'lstack_'+key);
+    el.setAttribute('class', 'ludo-stack-badge');
+    el.innerHTML = `<circle r="7.5" fill="#1a1a1a" stroke="#ffd700" stroke-width="1.3"/><text text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="700" fill="#ffd700"></text>`;
+    layer.appendChild(el);
+  }
+  return el;
+}
+function removeAllStackBadges(){
+  document.querySelectorAll('#ludoTokenLayer .ludo-stack-badge').forEach(el=> el.remove());
 }
 
 /* ====== يرسم كل الرموز حسب حالة الغرفة، عدا أي رمز قيد التحريك حاليًا محليًا (يتولاه animateTokenMovement) ====== */
@@ -964,15 +893,54 @@ function renderTokens(room, skip){
     room[role+'_avatar_data']
   ]);
 
+  // ====== تجميع العرائس المتراكبة فعليًا فوق نفس الخانة الفيزيائية على اللوحة (بصرف النظر عن اللون/المسار) ======
+  const cellGroups = {};
+  roleEntries.forEach(([role,color,tokens])=>{
+    tokens.forEach((step,i)=>{
+      if(step<=0 || step>=57) return; // لا تُحتسب العرائس في البيت أو الواصلة للنهاية
+      const rc = tokenCellRC(color, step);
+      if(!rc) return;
+      const key = rc[0]+'_'+rc[1];
+      (cellGroups[key] = cellGroups[key] || []).push({role, idx:i});
+    });
+  });
+  removeAllStackBadges();
+  // ====== شارات التراكب: مرّة واحدة لكل خانة، حسب كل من فيها (لا تتأثر بترتيب رسم اللاعبين) ======
+  Object.entries(cellGroups).forEach(([key, group])=>{
+    if(group.length<2) return;
+    const [rStr,cStr] = key.split('_');
+    const r = Number(rStr), c = Number(cStr);
+    const includesMine = group.some(g=> g.role===session.role);
+    const badge = ensureStackBadge(key);
+    const [bx,by] = lCellXY([r-0.32, c+0.32]);
+    badge.setAttribute('transform', `translate(${bx},${by})`);
+    badge.querySelector('text').textContent = group.length;
+    badge.classList.toggle('stack-badge-mine', includesMine);
+  });
+
   roleEntries.forEach(([role,color,tokens,avatarData])=>{
     // ترتيب العرائس التي وصلت فعليًا (ليُصفَّف كل رمز بجانب الآخر بدل التراكب فوق بعضه في خلية الهدف نفسها)
     let finishedSoFar = 0;
     tokens.forEach((step, i)=>{
       if(skip && skip.role===role && skip.idx===i) return; // قيد التحريك حاليًا محليًا — لا تلمسه، الدالة المتحركة تتولاه
-      const el = placeTokenEl(role, i, color, step, avatarData, step>=57 ? finishedSoFar : 0);
+
+      let stackOffset = null, stackCount = 1;
+      if(step>0 && step<57){
+        const rc = tokenCellRC(color, step);
+        const key = rc[0]+'_'+rc[1];
+        const group = cellGroups[key];
+        stackCount = group.length;
+        if(stackCount>1){
+          const pos = group.findIndex(g=>g.role===role && g.idx===i);
+          stackOffset = STACK_OFFSETS[pos % STACK_OFFSETS.length];
+        }
+      }
+
+      const el = placeTokenEl(role, i, color, step, avatarData, step>=57 ? finishedSoFar : 0, stackOffset);
       if(step>=57){
         finishedSoFar++;
         el.classList.add('finished');
+        el.classList.remove('stacked-mine');
         el.onclick = null;
         return;
       }
@@ -980,6 +948,16 @@ function renderTokens(room, skip){
       const selectable = role===session.role && isMyTurnMovable && pendingMovable.includes(i);
       el.classList.toggle('selectable', selectable);
       el.onclick = selectable ? (()=> chooseToken(i)) : null;
+
+      /* ====== تمييز عروستي عندما تتراكب مع عروسة لاعب آخر فوق نفس الخانة: تُرفع لأعلى الطبقة
+         (تبقى ظاهرة دومًا فلا تختفي تحت عروسة الخصم) وتحصل على هالة نابضة مميّزة، مع الحفاظ
+         على حجمها الطبيعي كما هو — فقط الهالة/الوميض حولها تكبر وتنبض ====== */
+      const stacked = stackCount>1;
+      const mine = role===session.role;
+      el.classList.toggle('stacked-mine', stacked && mine);
+      if(stacked && mine){
+        el.parentNode.appendChild(el); // إعادة إلحاقها كآخر عنصر ترفعها بصريًا فوق البقية
+      }
     });
   });
 }
@@ -993,20 +971,59 @@ async function animateTokenMovement(role, color, tokenIndex, fromStep, toStep, a
     cur += dir;
     placeTokenEl(role, tokenIndex, color, cur, avatarData);
     beep(360,.04,'sine',0.05);
-    await sleep(110);
+    await sleep(75);
   }
 }
-function broadcastLudoMove(role, color, tokenIndex, fromStep, toStep){
-  presenceChannel?.send({ type:'broadcast', event:'ludo_move', payload:{role, color, tokenIndex, fromStep, toStep} });
+
+/* ====== مؤثر بصري فوق اللوحة نفسها (طبقة العرائس SVG) عند نقطة إحداثيات معيّنة — شرر متطاير
+   + حلقة متّسعة + نجمة خافتة، يزول تلقائيًا بلا أثر. يُستخدم لإبراز لحظة "الأكل" أو الوصول للنهاية ====== */
+function svgBurstEffect(x, y, opts){
+  const o = opts || {};
+  const color = o.color || '#ffd23f';
+  const rays = o.rays || 10;
+  const layer = document.getElementById('ludoTokenLayer');
+  if(!layer) return;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','ludo-burst');
+  g.setAttribute('transform', `translate(${x},${y})`);
+  let inner = `<circle class="burst-ring" r="7" fill="none" stroke="${color}" stroke-width="3"/>`;
+  if(o.star) inner += `<text class="burst-star" text-anchor="middle" dominant-baseline="central" font-size="26">${o.star}</text>`;
+  for(let i=0;i<rays;i++){
+    const angle = (Math.PI*2/rays)*i + Math.random()*0.3;
+    const dist = 20 + Math.random()*16;
+    const dx = (Math.cos(angle)*dist).toFixed(1);
+    const dy = (Math.sin(angle)*dist).toFixed(1);
+    inner += `<circle class="burst-spark" r="${2+Math.random()*1.6}" fill="${color}" style="--bx:${dx}px;--by:${dy}px;animation-delay:${(i%4)*0.02}s;"/>`;
+  }
+  g.innerHTML = inner;
+  layer.appendChild(g);
+  setTimeout(()=> g.remove(), 700);
+}
+/* ====== مؤثر "الأكل" — شرر أحمر تحذيري + اهتزاز خفيف للوحة، عند خانة العروسة التي أكلت غيرها ====== */
+function playCaptureEffect(color, step, tokenIndex){
+  const [x,y] = tokenXY(color, step, tokenIndex, null, null);
+  svgBurstEffect(x, y, { color:'#ff5252', rays:12, star:'💥' });
+  const boardWrap = document.querySelector('.board-wrap');
+  if(boardWrap){ boardWrap.classList.add('shake'); setTimeout(()=> boardWrap.classList.remove('shake'), 400); }
+}
+/* ====== مؤثر بصري احتفالي بسيط عند وصول عروسة واحدة لبيتها النهائي (غير احتفال الفوز الكامل بالجولة) ====== */
+function playGoalEffect(color, step, tokenIndex){
+  const [x,y] = tokenXY(color, step, tokenIndex, 0, null);
+  svgBurstEffect(x, y, { color:'#ffd700', rays:14, star:'✨' });
+}
+function broadcastLudoMove(role, color, tokenIndex, fromStep, toStep, captured, reachedGoal){
+  presenceChannel?.send({ type:'broadcast', event:'ludo_move', payload:{role, color, tokenIndex, fromStep, toStep, captured:!!captured, reachedGoal:!!reachedGoal} });
 }
 async function playRemoteLudoMove(payload){
-  const { role, color, tokenIndex, fromStep, toStep } = payload;
+  const { role, color, tokenIndex, fromStep, toStep, captured, reachedGoal } = payload;
   if(role === session.role) return; // صدى حركتي أنا نفسي
   const avatarData = currentRoom ? currentRoom[role+'_avatar_data'] : null;
   ludoRemoteAnimating[role] = tokenIndex;
   cancelPendingRender();
   try{
     await animateTokenMovement(role, color, tokenIndex, fromStep, toStep, avatarData);
+    if(captured){ playCaptureEffect(color, toStep, tokenIndex); beep(220,.2,'sawtooth'); }
+    if(reachedGoal){ playGoalEffect(color, toStep, tokenIndex); beep(700,.15,'triangle'); }
   } finally {
     ludoRemoteAnimating[role] = null;
     if(currentRoom) renderRoom(currentRoom, {skipTokens:true});
@@ -1184,7 +1201,6 @@ async function rollDice(forRole, isAuto=false){
     if(b) b.disabled = true;
   }
   broadcastDiceRoll(actingRole);
-  diceWhoosh();
 
   const { data, error } = await sb.rpc(isTeamRoom ? 'ludo_roll_dice_team' : 'ludo_roll_dice', {
     p_code: session.code, p_role: actingRole, p_expected_rev: expectedRev, p_is_auto: !!isAuto
@@ -1208,14 +1224,14 @@ async function rollDice(forRole, isAuto=false){
   if(isSelf) myDiceRolls++;
   if(isSelf){
     showDiceOverlay();
-    const shuffle = setInterval(()=>{ const rv=1+Math.floor(Math.random()*6); showDiceValue(actingRole, rv, true); setDiceOverlayValue(rv); }, 90);
-    await sleep(600); clearInterval(shuffle);
+    const shuffle = setInterval(()=>{ const rv=1+Math.floor(Math.random()*6); showDiceValue(actingRole, rv, true); setDiceOverlayValue(rv); }, 70);
+    await sleep(420); clearInterval(shuffle);
     showDiceValue(actingRole, value, false); setDiceOverlayValue(value); beep(520,.1,'square');
     flashDiceNumber(actingRole, value);
-    setTimeout(hideDiceOverlay, 500);
+    setTimeout(hideDiceOverlay, 350);
   } else {
     playRemoteDiceShuffle(actingRole);
-    await sleep(600);
+    await sleep(420);
     playRemoteDiceResult(actingRole, value);
   }
   broadcastDiceResult(actingRole, value);
@@ -1292,10 +1308,10 @@ async function chooseToken(tokenIndex){
     if(result.captured) myBonusHits++; // نُعيد استخدام هذا العدّاد لعدّ الأكلات (لا معنى مخصّصًا له في لودو غير هذا)
   }
   const myAvatarData = currentRoom[actingRole+'_avatar_data'];
-  broadcastLudoMove(actingRole, myColor, tokenIndex, result.old_step, result.new_step);
+  broadcastLudoMove(actingRole, myColor, tokenIndex, result.old_step, result.new_step, result.captured, result.reached_goal);
   await animateTokenMovement(actingRole, myColor, tokenIndex, result.old_step, result.new_step, myAvatarData);
-  if(result.captured) beep(220,.2,'sawtooth');
-  if(result.reached_goal) beep(700,.15,'triangle');
+  if(result.captured){ playCaptureEffect(myColor, result.new_step, tokenIndex); beep(220,.2,'sawtooth'); }
+  if(result.reached_goal){ playGoalEffect(myColor, result.new_step, tokenIndex); beep(700,.15,'triangle'); }
 
   animating = false;
   if(room.status==='finished') bumpGlobalCounter();
@@ -1634,7 +1650,7 @@ const HELP_LINES = [
   '⭐ شارة مستواك تظهر بجانب اسمك، وتكسب خبرة (XP) عند إكمال كل جولة أو الفوز — مشتركة مع لعبة الحية والسلم.',
   '🏅 افتح "إنجازاتي" من الشاشة الرئيسية لرؤية شارات مميزة (اللعب مع لاعبين مختلفين، سلاسل انتصارات، فوز خاطف، وغيرها) — كل شارة تمنحك خبرة إضافية دائمة.',
   'استخدم الإيموجي في بطاقتك للتفاعل مع خصمك لحظيًا.',
-  'أنشئ رابط دعوة أو استخدم البحث التلقائي لإيجاد خصم من أي مكان في العالم!',
+  'أنشئ رابط دعوة وشاركه مع صديقك ليدخل الجولة مباشرة من أي مكان في العالم!',
   'إن كانت الجولة مكتملة عند فتح رابط الدعوة، ستدخل تلقائيًا كمشاهد.',
   '👀 يظهر عدد المشاهدين بجانب هذا الزر — اضغط عليه لرؤية أسمائهم.',
   'إن كانت لديك جولة مفتوحة وفتحت رابط جولة أخرى، سنسألك إن كنت تريد العودة لجولتك أو إنهاءها والانتقال.'
@@ -1885,7 +1901,7 @@ function scheduleDeferredRender(room){
   pendingRenderTimer = setTimeout(()=>{
     pendingRenderTimer = null;
     if(pendingRoomToRender){ const r=pendingRoomToRender; pendingRoomToRender=null; renderRoom(r); }
-  }, 280);
+  }, 350);
 }
 
 function mergeRoomPayload(incoming, prev){
@@ -1897,17 +1913,6 @@ function mergeRoomPayload(incoming, prev){
   return merged;
 }
 
-/* ====== هل يحتوي هذا التحديث فعليًا على حركة عروسة (تغيّر بأحد مصفوفات tokens)؟ نستخدمها لتفادي
-   تأجيل عرض تحديثات لا علاقة لها بحركة رمز إطلاقًا (رمي نرد، تمرير دور، تجاوز صلاحية...)، فتلك
-   كانت تنتظر 350ms بلا داعٍ في كل مرة، وهو ما يُشعر بأن انتقال الأدوار بطيء ====== */
-function roomTokensChanged(prev, next){
-  if(!prev) return true;
-  return ALL_ROLES.some(r=>{
-    const a = prev[r+'_tokens'], b = next[r+'_tokens'];
-    return JSON.stringify(a) !== JSON.stringify(b);
-  });
-}
-
 /* ====== اشتراك محسّن مع polling fallback ====== */
 
 function subscribeToRoom(code){
@@ -1917,17 +1922,14 @@ function subscribeToRoom(code){
       const room = mergeRoomPayload(payload.new, currentRoom);
       const isNewMove = currentRoom && room.rev !== currentRoom.rev;
       const anyRemoteAnimating = ALL_ROLES.some(r=> ludoRemoteAnimating[r]!=null);
-      const tokensDidChange = isNewMove && roomTokensChanged(currentRoom, room);
       if(animating || anyRemoteAnimating){
         // حركة جارية بالفعل (رمّينا نحن، أو حركة الطرف الآخر قيد التشغيل بالفعل) — لا نتدخّل الآن
         currentRoom = room;
-      } else if(tokensDidChange && room.status==='playing'){
-        // إصدار جديد فيه حركة عروسة فعلية ولم تبدأ رسومها المتحركة بعد — قد يكون بثّ move_plan
-        // في طريقه، نمهله فرصة قصيرة أولًا فقط في هذه الحالة تحديدًا (وليس كل تحديث)
+      } else if(isNewMove && room.status==='playing'){
+        // إصدار جديد ولم تبدأ أي حركة له بعد — قد يكون بثّ move_plan في طريقه، نمهله فرصة قصيرة أولًا
         currentRoom = room;
         scheduleDeferredRender(room);
       } else {
-        // تحديث بلا حركة عروسة (رمي نرد، تمرير دور، غياب/مغادرة...) — لا داعي لأي انتظار إطلاقًا
         cancelPendingRender();
         renderRoom(room);
       }
@@ -2049,14 +2051,14 @@ function leaveRoom(){
 /* ===================== 9) ربط الواجهة والإقلاع ===================== */
 
 
-/* ===================== 16) الشاشات، الإقلاع، تعديل الملف الشخصي، المطابقة السريعة ===================== */
+/* ===================== 16) الشاشات، الإقلاع، تعديل الملف الشخصي ===================== */
 
 /* ===================== 9) ربط الواجهة والإقلاع ===================== */
 function setDbStatus(ok){ document.getElementById('dbDot').classList.toggle('off', !ok); }
 function setRtStatus(ok){ document.getElementById('rtSeg').style.display='flex'; document.getElementById('rtDot').classList.toggle('off', !ok); }
 
 function showScreen(name){
-  ['onboarding','home','matching','game'].forEach(s=>{
+  ['onboarding','home','game'].forEach(s=>{
     const el = document.getElementById('screen-'+s);
     if(el) el.style.display = (s===name) ? (s==='game' ? 'flex':'block') : 'none';
   });
@@ -2138,7 +2140,7 @@ function presentRoomConflict(myCode, newCode){
   };
 }
 
-let localProfile = null, pendingLinkCode = null, onboardingPhotoDataUrl = null, editPhotoDataUrl = null, selectedColor = null, matchCountdownTimer = null;
+let localProfile = null, pendingLinkCode = null, onboardingPhotoDataUrl = null, editPhotoDataUrl = null, selectedColor = null;
 
 function paintMiniUserbar(){
   document.getElementById('miniUsername').textContent = localProfile.username;
@@ -2238,7 +2240,7 @@ document.querySelectorAll('[data-tab]').forEach(t=>{
   t.addEventListener('click', ()=>{
     document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
-    ['create','join','quick','team'].forEach(k=> document.getElementById('pane-'+k).style.display = (t.dataset.tab===k)?'block':'none');
+    ['create','join','team'].forEach(k=> document.getElementById('pane-'+k).style.display = (t.dataset.tab===k)?'block':'none');
   });
 });
 
@@ -2283,50 +2285,7 @@ document.getElementById('btnTbCopy').addEventListener('click', ()=>{
   });
 });
 
-/* ====== البحث التلقائي ====== */
-document.getElementById('btnQuickMatch').addEventListener('click', ()=>{
-  showScreen('matching');
-  document.getElementById('matchSearching').style.display='block';
-  document.getElementById('matchFound').style.display='none';
-  mmStartSearch(localProfile, {
-    onFound: showMatchFound,
-    onBothAccepted: onQuickMatchAccepted,
-    onCancelled: (reason)=>{ alert(reason); resetToHome(); },
-    onTimeout: ()=>{ alert('لم يتم العثور على لاعب متاح حاليًا، حاول مرة أخرى بعد قليل'); resetToHome(); }
-  });
-});
-document.getElementById('btnCancelMatch').addEventListener('click', async ()=>{ await mmCancelSearch(); resetToHome(); });
-function showMatchFound(info){
-  document.getElementById('matchSearching').style.display='none';
-  document.getElementById('matchFound').style.display='block';
-  document.getElementById('matchOppName').textContent = info.opponent.username;
-  applyAvatarVisual(document.getElementById('matchOppAvatar'), info.opponent.avatar_color, info.opponent.avatar_data, info.opponent.username[0]);
-  applyAvatarVisual(document.getElementById('matchMeAvatar'), localProfile.avatar_color, localProfile.avatar_data, localProfile.username[0]);
-  let secondsLeft = 20;
-  const timerEl = document.getElementById('matchTimer');
-  timerEl.textContent = `⏱ ${secondsLeft} ثانية للموافقة`;
-  clearInterval(matchCountdownTimer);
-  matchCountdownTimer = setInterval(()=>{ secondsLeft--; timerEl.textContent=`⏱ ${secondsLeft} ثانية للموافقة`; if(secondsLeft<=0) clearInterval(matchCountdownTimer); }, 1000);
-  document.getElementById('btnAcceptMatch').disabled = false;
-  document.getElementById('btnAcceptMatch').textContent = '✅ موافق، ابدأ اللعب';
-}
-document.getElementById('btnAcceptMatch').addEventListener('click', ()=>{
-  document.getElementById('btnAcceptMatch').disabled = true;
-  document.getElementById('btnAcceptMatch').textContent = '⏳ بانتظار موافقة الطرف الآخر…';
-  mmRespond(true);
-});
-document.getElementById('btnDeclineMatch').addEventListener('click', async ()=>{ clearInterval(matchCountdownTimer); await mmRespond(false); });
-async function onQuickMatchAccepted(info){
-  clearInterval(matchCountdownTimer);
-  if(info.isInitiator){
-    const { code, room } = await createRoom(info.roomCode);
-    await loadChatHistory(code);
-    enterGameScreen(room);
-  } else {
-    const { room, error } = await joinRoomByCode(info.roomCode);
-    if(!error){ await loadChatHistory(info.roomCode); enterGameScreen(room); }
-  }
-}
+/* ====== البحث التلقائي أُزيل بالكامل — لا يمكن الدخول لأي جولة إلا برابط/رمز ====== */
 
 /* ====== أزرار اللعب ====== */
 document.getElementById('btnRollP1').addEventListener('click', ()=>{ if(session.role==='p1') rollDice('p1', false); });
@@ -2404,6 +2363,26 @@ async function endCurrentSessionAsLeave(code){
 }
 document.getElementById('btnSound').addEventListener('click', (e)=>{ soundOn = !soundOn; e.target.textContent = soundOn ? '🔊' : '🔇'; e.target.title = soundOn ? 'كتم الصوت' : 'تشغيل الصوت'; });
 document.getElementById('btnHelp').addEventListener('click', openHelpSheet);
+
+/* ====== فقاعة التفاعل السريع في الشريط العلوي ======
+   - تُفتح/تُغلق بالضغط على أيقونة السمايل فقط.
+   - لا تُغلق عند الضغط على إيموجي بداخلها أو عند التمرير الأفقي فيها — فقط عند الضغط خارجها. ====== */
+document.getElementById('btnTbReact').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  document.getElementById('reactionsPopover').classList.toggle('show');
+});
+document.getElementById('reactionsPopover').addEventListener('click', (e)=> e.stopPropagation());
+document.addEventListener('click', ()=>{
+  document.getElementById('reactionsPopover')?.classList.remove('show');
+});
+document.querySelectorAll('#reactionsScroll button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(!ALL_ROLES.includes(session.role)) return; // المشاهد لا يرسل تفاعلات
+    const emoji = btn.dataset.e;
+    fireReaction(session.role, emoji);
+    broadcastReaction(emoji);
+  });
+});
 
 /* ====== الدردشة ====== */
 document.getElementById('btnSendChat').addEventListener('click', sendChat);
