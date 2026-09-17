@@ -342,6 +342,71 @@ function showChatStrip(role, text, isIncoming){
   activeStrips[role] = { el, timer };
   if(isIncoming){ beep(900,.08,'sine',.15); setTimeout(()=>beep(1200,.08,'sine',.12),90); }
 }
+/* ====== تعليقات الزوار (المشاهدين) — إعداد يتحكم به صاحب ومنشئ الجولة (p1) فقط، ويظهر
+   كطبقة فوق الشريط العلوي لكل من في الجولة، بشكل مشابه لفقاعات دردشة اللاعبين ====== */
+async function toggleCommentsEnabled(){
+  if(!currentRoom || session.role!=='p1' || !session.code) return;
+  const newVal = !(currentRoom.comments_enabled !== false);
+  const { data, error } = await sb.from('ludo_rooms').update({ comments_enabled:newVal }).eq('code', session.code).select().single();
+  if(!error && data){ currentRoom = data; updateCommentsUI(data); }
+}
+function updateCommentsUI(room){
+  const btn = document.getElementById('btnToggleComments');
+  const input = document.getElementById('spectatorCommentInput');
+  const sendBtn = document.getElementById('btnSendSpectatorComment');
+  const closedNote = document.getElementById('spectatorCommentsClosedNote');
+  if(!room) return;
+  const enabled = room.comments_enabled !== false; // true افتراضيًا
+  const isSpectator = session.role === 'spectator';
+  if(btn){
+    btn.style.display = session.role==='p1' ? 'flex' : 'none';
+    btn.classList.toggle('comments-off', !enabled);
+    btn.title = enabled ? 'تعليقات الزوار مفعّلة — اضغط للإغلاق' : 'تعليقات الزوار مغلقة — اضغط للفتح';
+  }
+  if(input) input.style.display = (isSpectator && enabled) ? '' : 'none';
+  if(sendBtn) sendBtn.style.display = (isSpectator && enabled) ? '' : 'none';
+  if(closedNote) closedNote.style.display = (isSpectator && !enabled) ? '' : 'none';
+}
+async function sendSpectatorComment(text){
+  const trimmed = (text||'').trim(); if(!trimmed) return;
+  if(session.role !== 'spectator') return;
+  if(!currentRoom || currentRoom.comments_enabled === false) return;
+  const name = profile?.username || 'زائر';
+  const saved = await sendMessage(session.code, 'spectator', name, trimmed);
+  if(saved){
+    seenMessageIds.add(saved.id);
+    if(saved.id > lastMessageId) lastMessageId = saved.id;
+    chatHistory.push({role:'spectator', name, content:trimmed});
+    if(document.getElementById('chatSheetBg')?.classList.contains('show')) renderChatSheetBody();
+    showVisitorCommentBubble(name, trimmed, false);
+  }
+}
+function showVisitorCommentBubble(name, text, isIncoming){
+  const layer = document.getElementById('visitorCommentLayer');
+  if(!layer) return;
+  const el = document.createElement('div');
+  el.className = 'visitor-comment-pill';
+  const full = `👋 ${name}: ${text}`;
+  const truncated = full.length>46 ? full.slice(0,46)+'…' : full;
+  el.textContent = truncated;
+  el.title = 'اضغط لعرض التعليق كاملًا';
+  const LIFETIME = 4500;
+  let timer;
+  const dismiss = ()=>{
+    el.classList.remove('show'); el.classList.add('fading');
+    setTimeout(()=> el.remove(), 300);
+  };
+  el.addEventListener('click', ()=>{
+    clearTimeout(timer);
+    if(el.classList.contains('expanded')){ dismiss(); }
+    else{ el.classList.add('expanded'); el.textContent = full; timer = setTimeout(dismiss, LIFETIME); }
+  });
+  layer.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('show'));
+  timer = setTimeout(dismiss, LIFETIME);
+  while(layer.children.length > 3){ layer.removeChild(layer.firstChild); }
+  if(isIncoming){ beep(900,.08,'sine',.15); setTimeout(()=>beep(1200,.08,'sine',.12),90); }
+}
 function clearAllChatStrips(){
   Object.keys(activeStrips).forEach(role=>{
     if(activeStrips[role]){ clearTimeout(activeStrips[role].timer); activeStrips[role].el.remove(); activeStrips[role]=null; }
@@ -1495,6 +1560,7 @@ function renderRoom(room, opts={}){
   const sendBtnEl = document.getElementById('btnSendChat');
   if(chatInputEl) chatInputEl.style.display = isSpectator ? 'none' : '';
   if(sendBtnEl) sendBtnEl.style.display = isSpectator ? 'none' : '';
+  updateCommentsUI(room);
 
   if(room.status==='finished'){
     openWinModal(room);
@@ -1866,7 +1932,13 @@ function handleIncomingMessage(msg){
   if(msg.id!=null){ seenMessageIds.add(msg.id); if(msg.id > lastMessageId) lastMessageId = msg.id; }
   chatHistory.push({role:msg.sender_role, name:msg.sender_name, content:msg.content});
   if(document.getElementById('chatSheetBg').classList.contains('show')) renderChatSheetBody();
-  showChatStrip(msg.sender_role, msg.content, msg.sender_role!==session.role);
+  if(msg.sender_role === 'spectator'){
+    // تعليق من زائر — يظهر كطبقة فوق الشريط العلوي بدل فقاعة بطاقة لاعب (لا بطاقة تخصّه)
+    const isOwn = msg.sender_profile_id && msg.sender_profile_id === myId;
+    showVisitorCommentBubble(msg.sender_name, msg.content, !isOwn);
+  } else {
+    showChatStrip(msg.sender_role, msg.content, msg.sender_role!==session.role);
+  }
 }
 /* شبكة أمان: استطلاع دوري للرسائل الفائتة في حال ضاع حدث البث اللحظي */
 async function pollMissedMessages(){
@@ -2392,6 +2464,18 @@ async function sendChat(){
   const content = input.value.trim(); if(!content) return;
   input.value=''; await sendChatMessage(content);
   document.getElementById('composerBottom')?.classList.remove('open'); // أخفِ شريط الدردشة بعد الإرسال
+}
+
+/* ====== زر صاحب الجولة لفتح/إغلاق تعليقات الزوار + شريط إرسال تعليق الزائر ====== */
+document.getElementById('btnToggleComments')?.addEventListener('click', toggleCommentsEnabled);
+document.getElementById('btnSendSpectatorComment')?.addEventListener('click', sendSpectatorCommentFromInput);
+document.getElementById('spectatorCommentInput')?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') sendSpectatorCommentFromInput(); });
+async function sendSpectatorCommentFromInput(){
+  const input = document.getElementById('spectatorCommentInput');
+  if(!input) return;
+  const content = input.value.trim(); if(!content) return;
+  input.value=''; await sendSpectatorComment(content);
+  document.getElementById('composerBottom')?.classList.remove('open');
 }
 
 function extractLinkCode(){ return new URLSearchParams(location.search).get('r'); }
