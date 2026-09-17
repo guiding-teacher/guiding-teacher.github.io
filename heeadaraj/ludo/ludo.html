@@ -83,6 +83,9 @@ body.header-padded .stage{
 
 <div class="spectator-badge" id="spectatorBadge">👀 وضع المشاهدة</div>
 
+<!-- طبقة تعليقات الزوار — تظهر فوق الشريط العلوي لكل من في الجولة عند وصول تعليق من أحد المشاهدين -->
+<div class="visitor-comment-layer" id="visitorCommentLayer"></div>
+
 <div class="stage">
 
   <div class="site-header">
@@ -246,6 +249,9 @@ body.header-padded .stage{
         </div>
         <button class="tb-btn" id="btnSpectators" title="المشاهدون">
           👀<span class="spectator-count" id="spectatorCount">0</span>
+        </button>
+        <button class="tb-btn" id="btnToggleComments" title="تعليقات الزوار" style="display:none;">
+          💬<span class="comments-state-dot" id="commentsStateDot"></span>
         </button>
         <button class="tb-btn" id="btnHelp" title="مساعدة">❓</button>
         <button class="tb-btn" id="btnSound" title="تشغيل/كتم الصوت">🔊</button>
@@ -455,6 +461,9 @@ body.header-padded .stage{
   <div class="inner">
     <input id="chatInput" maxlength="200" placeholder="اكتب رسالة سريعة للطرف الآخر…">
     <button id="btnSendChat">إرسال ➤</button>
+    <input id="spectatorCommentInput" maxlength="120" placeholder="اكتب تعليقك كزائر…" style="display:none;">
+    <button id="btnSendSpectatorComment" style="display:none;">إرسال ➤</button>
+    <span class="spectator-comments-closed-note" id="spectatorCommentsClosedNote" style="display:none;">🔒 التعليقات مغلقة حاليًا من صاحب الجولة</span>
     <button id="btnChatHistory" class="btn-chat-history" title="سجل الدردشة">📜</button>
   </div>
 </div>
