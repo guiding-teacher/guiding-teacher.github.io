@@ -2455,3 +2455,29 @@ function afterProfileReady(){
 }
 
 boot();
+
+
+/* ======================================================================
+   إصلاح ارتفاع الشاشة الحقيقي على آيفون (Safari) — إضافي بالكامل
+   ======================================================================
+   شريط عنوان سفاري يظهر/يختفي ديناميكيًا، ووحدتا CSS القياسيتان 100vh/100dvh
+   لا تُحدَّثان بشكل موثوق في كل إصدارات آيفون عند تغيّر ذلك، فتُحسب مساحة الشاشة
+   أكبر من المساحة الظاهرة فعليًا، فتصعد بطاقة اللاعب السفلية فوق اللوحة.
+   الحل الموثوق: نحسب الارتفاع الحقيقي بجافاسكربت (عبر window.visualViewport
+   عند توفره، وإلا window.innerHeight) ونضعه في متغيّر CSS ‎--vh‎، ثم نستخدمه
+   في ludo-style.css كـ ‎height:calc(var(--vh, 1vh) * 100)‎ بدل الاعتماد فقط
+   على 100vh/100dvh. نحدّثه عند أي تغيّر ممكن لحجم الشاشة الظاهر فعليًا. */
+(function setupRealViewportHeight(){
+  function setVH(){
+    const vv = window.visualViewport;
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
+  }
+  setVH();
+  window.addEventListener('resize', setVH);
+  window.addEventListener('orientationchange', ()=> setTimeout(setVH, 150));
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', setVH);
+    window.visualViewport.addEventListener('scroll', setVH);
+  }
+})();
