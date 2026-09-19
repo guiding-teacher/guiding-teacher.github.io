@@ -451,7 +451,21 @@
   .recovery-box label{ font-size:11px; color:#aaa; display:block; margin-bottom:4px; }
   .recovery-code{
     font-family:monospace; font-size:15px; font-weight:700; color:var(--gold); letter-spacing:1px;
+    direction:ltr; user-select:all; -webkit-user-select:all;
   }
+  /* أيقونات (نسخ / نقل / تفعيل) بجانب رمز الحساب */
+  .recovery-actions{ display:flex; gap:8px; justify-content:center; margin-top:10px; }
+  .rec-ico{
+    display:flex; flex-direction:column; align-items:center; gap:2px; min-width:70px;
+    padding:8px 10px; border:none; border-radius:12px; cursor:pointer;
+    background:#34505c; color:#fff; font-family:'Cairo'; font-size:11.5px; font-weight:700;
+    box-shadow:0 3px 0 rgba(0,0,0,.35); transition:.1s;
+  }
+  .rec-ico .ico{ font-size:20px; line-height:1; }
+  .rec-ico:active{ transform:translateY(3px); box-shadow:0 0 0 rgba(0,0,0,.35); }
+  .rec-ico.transfer{ background:#2F7DE1; }
+  .rec-ico.activate{ background:#3EA06B; }
+  .steps{ text-align:right; font-size:13px; line-height:1.9; color:#5a544a; margin:0 18px 12px 0; padding:0; }
 
   /* ===== نافذة Onboarding / Recover ===== */
   .onboarding-card{
@@ -583,10 +597,9 @@
     <div class="card-icon-wrap"><div class="card-icon">🥏</div></div>
     <div class="card-name">البوك</div>
   </div>
-   --> 
-  
+   -->
   <div class="game-card card-ludo" onclick="openGame('ludo', 'لودو', '🎲')">
-    <div class="card-badge">جديد!</div>
+    <div class="card-badge">قريبا!</div>
     <div class="spot" style="top:20px;left:24px;"></div>
     <div class="spot" style="bottom:20px;right:20px;width:8px;height:8px;"></div>
     <div class="spot" style="top:38%;left:12px;width:5px;height:5px;"></div>
@@ -623,14 +636,64 @@
     <label style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#3a4750;text-align:right;">اللون الرمزي</label>
     <div class="palette" id="editPalette"></div>
     <div class="recovery-box">
-      <label>🔑 رمز استرداد حسابك (احفظه في مكان آمن)</label>
+      <label>🔑 رمز حسابك الدائم — ثابت لا يتغيّر (احفظه ولا تشاركه)</label>
       <div class="recovery-code" id="recoveryCodeDisplay">—</div>
-      <button class="btn small" id="btnCopyRecovery" style="margin-top:8px;width:auto;">📋 نسخ</button>
+      <div class="recovery-actions">
+        <button type="button" class="rec-ico" id="btnCopyRecovery" title="نسخ الرمز"><span class="ico">📋</span><span class="lbl">نسخ</span></button>
+        <button type="button" class="rec-ico transfer" id="btnTransferAccount" title="نقل الحساب لمتصفح آخر"><span class="ico">📤</span><span class="lbl">نقل</span></button>
+        <button type="button" class="rec-ico activate" id="btnActivateAccount" title="تفعيل حساب في هذا المتصفح"><span class="ico">✅</span><span class="lbl">تفعيل</span></button>
+      </div>
     </div>
     <div class="error-msg" id="editError"></div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button class="btn" id="btnSaveEdit" style="flex:1;">💾 حفظ</button>
       <button class="btn grey" id="btnCloseEdit" style="flex:1;">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== نافذة نقل الحساب ===== -->
+<div class="modal-bg" id="transferModalBg">
+  <div class="modal">
+    <h3>📤 نقل حسابك لمتصفح آخر</h3>
+    <p class="hint" style="margin-bottom:6px;">رمز حسابك دائم ويبقى معك. لنقل حسابك بكل ألعابه ومستواه:</p>
+    <ol class="steps">
+      <li>افتح الرئيسية في المتصفح أو الجهاز الجديد.</li>
+      <li>اضغط «لدي رمز استرداد» أو أيقونة ✅ تفعيل، وأدخل الرمز أدناه.</li>
+      <li>عند التفعيل يتوقف هذا المتصفح تلقائيًا ويعمل الجديد في كل الألعاب.</li>
+    </ol>
+    <div class="recovery-box"><div class="recovery-code" id="transferCodeDisplay">—</div></div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn" id="btnTransferCopy" style="flex:1;">📋 نسخ الرمز</button>
+      <button class="btn grey" id="btnTransferClose" style="flex:1;">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== نافذة تفعيل الحساب في هذا المتصفح ===== -->
+<div class="modal-bg" id="activateModalBg" style="z-index:310;">
+  <div class="modal">
+    <h3>✅ تفعيل حسابك هنا</h3>
+    <p class="hint">أدخل رمز حسابك لتفعيله في هذا المتصفح. سيتوقف أي متصفح آخر يستخدم الحساب، وسيُستبدل الحساب الحالي هنا (احفظ رمزه أولًا إن أردت العودة إليه).</p>
+    <div class="field">
+      <input type="text" id="activateCode" maxlength="14" placeholder="LDO-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;letter-spacing:2px;text-align:center;font-weight:700;direction:ltr;">
+    </div>
+    <div class="error-msg" id="activateError"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" id="btnActivateDo" style="flex:1;">✅ تفعيل</button>
+      <button class="btn grey" id="btnActivateClose" style="flex:1;">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== نافذة: الحساب صار يعمل في متصفح آخر ===== -->
+<div class="modal-bg" id="movedModalBg" style="z-index:300;">
+  <div class="modal">
+    <h3>🔒 الحساب يعمل في متصفح آخر</h3>
+    <p class="hint">تم تفعيل هذا الحساب في متصفح أو جهاز آخر، لذلك توقّف هنا. يمكنك استعادته هنا برمز الحساب، أو بدء حساب جديد.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn blue" id="btnMovedActivate">✅ تفعيل الحساب هنا برمزه</button>
+      <button class="btn grey" id="btnMovedFresh">🆕 ابدأ حسابًا جديدًا هنا</button>
     </div>
   </div>
 </div>
@@ -727,16 +790,23 @@ async function updateProfile(fields){
 }
 
 async function recoverProfileByCode(code){
-  const clean = code.trim().toUpperCase();
+  const clean = (code || '').trim().toUpperCase();
   if(!clean || clean.length < 8) return { error: 'الرمز غير صالح' };
-  const { data, error } = await sb.rpc('recover_profile_by_code', { p_code: clean });
+  if(!myAuthUid) await ensureAnonymousSession(); // لا تفعيل بلا جلسة حقيقية في هذا المتصفح
+  if(!myAuthUid) return { error: 'تعذّر إنشاء جلسة في هذا المتصفح، حاول مرة أخرى' };
+
+  // تفعيل حقيقي: الخادم يتحقق من الرمز ثم ينقل profiles.auth_uid إلى هذا المتصفح،
+  // فيتوقف المتصفح القديم في كل الألعاب ويعمل هذا (الدالة القديمة لم تكن تنقل الملكية).
+  const { data, error } = await sb.rpc('activate_profile_by_code', { p_code: clean });
+  if(error){
+    const missing = /activate_profile_by_code|PGRST202|42883/i.test((error.code || '') + ' ' + (error.message || ''));
+    return { error: missing ? 'ميزة التفعيل غير مفعّلة في قاعدة البيانات — نفّذ ملف account_transfer.sql' : 'تعذّر التفعيل، حاول مرة أخرى' };
+  }
   const row = Array.isArray(data) ? data[0] : data;
-  if(error || !row) return { error: 'لم يتم العثور على حساب بهذا الرمز.' };
+  if(!row) return { error: 'لم يتم العثور على حساب بهذا الرمز.' };
   localStorage.setItem('snl_user_id', row.id);
   myId = row.id;
-  if(myAuthUid && !row.auth_uid){
-    await sb.from('profiles').update({ auth_uid: myAuthUid }).eq('id', row.id).is('auth_uid', null);
-  }
+  accountMoved = false;
   return { data: row };
 }
 
@@ -867,15 +937,6 @@ function renderPalette(current){
   });
 }
 
-document.getElementById('btnCopyRecovery').addEventListener('click', ()=>{
-  const code = document.getElementById('recoveryCodeDisplay').textContent;
-  navigator.clipboard?.writeText(code).then(()=>{
-    const btn = document.getElementById('btnCopyRecovery');
-    btn.textContent = '✅ تم النسخ';
-    setTimeout(()=> btn.textContent = '📋 نسخ', 1500);
-  });
-});
-
 document.getElementById('btnSaveEdit').addEventListener('click', async ()=>{
   const name = document.getElementById('editName').value.trim();
   const err = document.getElementById('editError'); err.style.display='none';
@@ -890,12 +951,93 @@ document.getElementById('btnSaveEdit').addEventListener('click', async ()=>{
 document.getElementById('btnCloseEdit').addEventListener('click', closeEditModal);
 document.getElementById('editModalBg').addEventListener('click', (e)=>{ if(e.target===document.getElementById('editModalBg')) closeEditModal(); });
 
+/* ===================== نقل وتفعيل الحساب (رمز دائم لكل عضو) ===================== */
+let accountMoved = false; // true = هذا المتصفح لم يعد يملك الحساب
+
+function isAuthMismatch(p){ return !!(p && p.auth_uid && myAuthUid && p.auth_uid !== myAuthUid); }
+
+// كل عضو يجب أن يملك رمزًا دائمًا: الحسابات القديمة بلا رمز تحصل عليه من الخادم مرة واحدة
+async function ensureRecoveryCode(){
+  if(!localProfile || localProfile.recovery_code) return;
+  try{
+    const { data: code } = await sb.rpc('ensure_recovery_code', { p_profile_id: myId });
+    if(code) localProfile.recovery_code = code;
+  }catch(e){}
+}
+
+function flashCopied(btn){
+  const ico = btn.querySelector('.ico'), lbl = btn.querySelector('.lbl');
+  const oldI = ico ? ico.textContent : '', oldL = lbl ? lbl.textContent : btn.textContent;
+  if(ico) ico.textContent = '✅'; if(lbl) lbl.textContent = 'تم النسخ'; else btn.textContent = '✅ تم النسخ';
+  setTimeout(()=>{ if(ico) ico.textContent = oldI; if(lbl) lbl.textContent = oldL; else btn.textContent = oldL; }, 1500);
+}
+function copyCode(code, btn){
+  if(!code || code === '—') return;
+  navigator.clipboard?.writeText(code).then(()=> flashCopied(btn));
+}
+
+async function openTransferModal(){
+  await ensureRecoveryCode();
+  const code = (localProfile && localProfile.recovery_code) || '—';
+  document.getElementById('transferCodeDisplay').textContent = code;
+  document.getElementById('transferModalBg').classList.add('show');
+}
+function closeTransferModal(){ document.getElementById('transferModalBg').classList.remove('show'); }
+
+function openActivateModal(){
+  document.getElementById('activateCode').value = '';
+  document.getElementById('activateError').style.display = 'none';
+  document.getElementById('activateModalBg').classList.add('show');
+}
+function closeActivateModal(){ document.getElementById('activateModalBg').classList.remove('show'); }
+
+function showMovedModal(){
+  accountMoved = true;
+  closeGame();          // يوقف اللعبة المفتوحة داخل الإطار فورًا (مؤقّتاتها ولعبها التلقائي)
+  closeEditModal(); closeTransferModal();
+  document.getElementById('movedModalBg').classList.add('show');
+}
+
+// فحص دوري: هل ما زال هذا المتصفح مالك الحساب؟ (يجعل القديم يتوقف بعد التفعيل في الجديد)
+async function checkAccountStillMine(){
+  if(accountMoved || !localProfile || !myAuthUid) return;
+  try{
+    const { data } = await sb.from('profiles').select('auth_uid').eq('id', myId).maybeSingle();
+    if(data && data.auth_uid && data.auth_uid !== myAuthUid) showMovedModal();
+  }catch(e){}
+}
+setInterval(checkAccountStillMine, 10000);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') checkAccountStillMine(); });
+
+document.getElementById('btnCopyRecovery').addEventListener('click', (e)=>{
+  copyCode(document.getElementById('recoveryCodeDisplay').textContent, e.currentTarget);
+});
+document.getElementById('btnTransferAccount').addEventListener('click', openTransferModal);
+document.getElementById('btnActivateAccount').addEventListener('click', openActivateModal);
+document.getElementById('btnTransferCopy').addEventListener('click', (e)=>{
+  copyCode(document.getElementById('transferCodeDisplay').textContent, e.currentTarget);
+});
+document.getElementById('btnTransferClose').addEventListener('click', closeTransferModal);
+document.getElementById('btnActivateClose').addEventListener('click', closeActivateModal);
+document.getElementById('btnActivateDo').addEventListener('click', async ()=>{
+  const errBox = document.getElementById('activateError'); errBox.style.display = 'none';
+  const { error } = await recoverProfileByCode(document.getElementById('activateCode').value);
+  if(error){ errBox.textContent = error; errBox.style.display = 'block'; return; }
+  location.reload(); // الألعاب داخل الإطارات تقرأ المعرّف عند تحميلها، فنعيد التحميل ليعمل الجميع بالحساب المفعّل
+});
+document.getElementById('btnMovedActivate').addEventListener('click', openActivateModal);
+document.getElementById('btnMovedFresh').addEventListener('click', ()=>{
+  localStorage.removeItem('snl_user_id');
+  localStorage.removeItem('ludo_session');
+  location.reload();
+});
+
 /* ===================== فتح الألعاب ===================== */
 const gameUrls = {
   snl: 'heeadarj.html',
   maze: '',
   xo: 'xando/index.html',
-  ludo: 'ludo/ludo.html',
+  ludo: 'ludo.html',
   colormatch: 'color-match/color-match.html'
 };
 
@@ -1006,7 +1148,14 @@ async function boot(){
     return;
   }
 
+  // الحساب مفعّل في متصفح آخر → لا نكمل هنا (لا لعب يدوي ولا تلقائي)
+  if(isAuthMismatch(existing)){
+    showMovedModal();
+    return;
+  }
+
   localProfile = existing;
+  await ensureRecoveryCode();
   paintTopbar();
 }
 
