@@ -120,27 +120,24 @@ async function copyImageToClipboard(dataUrl, btn) {
 async function copyFullResponse(response, btn) {
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
     const dateText = response.timestamp?.toDate ? response.timestamp.toDate().toLocaleString('ar-EG', dateOptions) : '';
+    // بدون عناوين الأسئلة: فقط ما كتبه المرسل (نص/صورة) ثم التاريخ في الأسفل
     let html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">`;
-    if (currentSurveyData?.title) html += `<h3>${esc(currentSurveyData.title)}</h3>`;
-    let plain = currentSurveyData?.title ? `${currentSurveyData.title}\n\n` : '';
+    const plainParts = [];
     response.answers.forEach(a => {
         const raw = a.answer;
-        html += `<p><strong>${esc(a.questionText)}</strong></p>`;
-        plain += `${a.questionText}\n`;
+        if (isEmptyAnswer(raw)) return;
         if (isImageData(raw)) {
             html += `<p><img src="${raw}" alt="" style="max-width:480px;height:auto;"></p>`;
-            plain += '[صورة مرفقة]\n\n';
-        } else if (isEmptyAnswer(raw)) {
-            html += `<p><em>لم تتم الإجابة</em></p>`;
-            plain += 'لم تتم الإجابة\n\n';
+            plainParts.push('[صورة مرفقة]');
         } else {
             const txt = Array.isArray(raw) ? raw.join('، ') : String(raw);
             html += `<p>${esc(txt).replace(/\n/g, '<br>')}</p>`;
-            plain += `${txt}\n\n`;
+            plainParts.push(txt);
         }
     });
-    if (dateText) { html += `<p style="color:#666;font-size:12px;">${esc(dateText)}</p>`; plain += dateText; }
+    if (dateText) { html += `<p style="color:#666;font-size:12px;">${esc(dateText)}</p>`; plainParts.push(dateText); }
     html += '</div>';
+    const plain = plainParts.join('\n\n');
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
         await navigator.clipboard.write([new ClipboardItem({
@@ -582,7 +579,8 @@ function renderIndividualView(index) {
             btn.onclick = () => copyImageToClipboard(raw, btn);
         } else {
             btn.textContent = 'نسخ الرد';
-            const textToCopy = isEmptyAnswer(raw) ? '' : (Array.isArray(raw) ? raw.join('\n') : String(raw));
+            const bodyText = isEmptyAnswer(raw) ? '' : (Array.isArray(raw) ? raw.join('\n') : String(raw));
+            const textToCopy = formattedDate ? `${bodyText}\n\n${formattedDate}` : bodyText;
             btn.onclick = () => copyToClipboard(textToCopy, btn);
         }
         footer.appendChild(btn);
