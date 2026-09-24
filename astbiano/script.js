@@ -407,7 +407,7 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
         currentSurveyData = { id: surveyDoc.id, ...surveyDoc.data() };
 
         const responsesSnapshot = await db.collection('responses').where('surveyId', '==', surveyId).orderBy('timestamp', 'desc').get();
-        currentSurveyResponses = responsesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        currentSurveyResponses = responsesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).reverse(); // الأقدم أولاً، والجديد في النهاية
 
         $('survey-title-header').textContent = currentSurveyData.title;
         $('response-count-tab').textContent = currentSurveyResponses.length;
@@ -418,9 +418,12 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
         $('survey-share-link-dashboard').value = shareLink;
         $('copy-share-link-dashboard').onclick = () => copyToClipboard(shareLink, $('copy-share-link-dashboard'));
 
-        const savedIndexStr = localStorage.getItem(`lastViewedIndex_${surveyId}`);
-        const savedIndex = savedIndexStr ? parseInt(savedIndexStr, 10) : 0;
-        const initialIndex = (currentSurveyResponses.length > 0 && savedIndex < currentSurveyResponses.length) ? savedIndex : 0;
+        let initialIndex = 0;
+        const savedId = localStorage.getItem(`lastViewedResponse_${surveyId}`);
+        if (savedId) {
+            const found = currentSurveyResponses.findIndex(r => r.id === savedId);
+            if (found > -1) initialIndex = found;
+        }
 
         setupDashboardControls();
         renderAllResponseViews(initialIndex);
@@ -573,8 +576,10 @@ function renderSummaryView(containerId = 'summary-view', opts = {}) {
 }
 
 function renderIndividualView(index) {
-    if (currentSurveyData && currentSurveyData.id) localStorage.setItem(`lastViewedIndex_${currentSurveyData.id}`, index);
     currentIndividualResponseIndex = index;
+    if (currentSurveyData && currentSurveyData.id && currentSurveyResponses[index]) {
+        localStorage.setItem(`lastViewedResponse_${currentSurveyData.id}`, currentSurveyResponses[index].id);
+    }
     const container = $('individual-response-content');
     const response = currentSurveyResponses[index];
     container.innerHTML = '';
@@ -628,7 +633,7 @@ function renderIndividualView(index) {
     container.appendChild(bottom);
 
     const totalResponses = currentSurveyResponses.length;
-    $('individual-counter').textContent = `عرض ${totalResponses - index} من ${totalResponses}`;
+    $('individual-counter').textContent = `عرض ${index + 1} من ${totalResponses}`;
     $('prev-response-btn').disabled = (index === 0);
     $('next-response-btn').disabled = (index === totalResponses - 1);
 }
