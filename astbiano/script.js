@@ -116,6 +116,30 @@ async function copyImageToClipboard(dataUrl, btn) {
         showAlert('تعذّر نسخ الصورة تلقائياً في هذا المتصفح. اضغط بزر الفأرة الأيمن على الصورة واختر "نسخ الصورة".', 'error', 6000);
     }
 }
+// نسخ HTML (نص/صور مضمّنة) مع نص عادي احتياطي
+async function copyRich(html, plain, btn, okMsg) {
+    if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
+    await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([plain], { type: 'text/plain' })
+    })]);
+    flashBtn(btn, okMsg);
+}
+const answerDateHtml = (d) => d ? `<p style="color:#666;font-size:12px;">${esc(d)}</p>` : '';
+async function copySingleAnswer(raw, dateText, btn) {
+    if (isImageData(raw)) {
+        // صورة + التاريخ تحتها
+        const html = `<div dir="rtl"><p><img src="${raw}" alt="" style="max-width:480px;height:auto;"></p>${answerDateHtml(dateText)}</div>`;
+        try { await copyRich(html, dateText ? `[صورة مرفقة]\n\n${dateText}` : '[صورة مرفقة]', btn, 'تم نسخ الصورة مع التاريخ!'); }
+        catch (e) { console.error(e); await copyImageToClipboard(raw, btn); }
+        return;
+    }
+    const body = isEmptyAnswer(raw) ? '' : (Array.isArray(raw) ? raw.join('\n') : String(raw));
+    const plain = dateText ? `${body}\n\n${dateText}` : body;
+    const html = `<div dir="rtl"><p>${esc(body).replace(/\n/g, '<br>')}</p>${answerDateHtml(dateText)}</div>`;
+    try { await copyRich(html, plain, btn, 'تم نسخ الرد مع التاريخ!'); }
+    catch (e) { console.error(e); copyToClipboard(plain, btn); }
+}
 // نسخ الرد كاملاً (نصوص + صور مضمّنة) بصيغة HTML مع نص عادي احتياطي
 async function copyFullResponse(response, btn) {
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
@@ -574,15 +598,8 @@ function renderIndividualView(index) {
         footer.style.cssText = 'display:flex;justify-content:flex-end;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #eee;';
         const btn = document.createElement('button');
         btn.className = 'btn secondary small';
-        if (isImageData(raw)) {
-            btn.textContent = 'نسخ الصورة';
-            btn.onclick = () => copyImageToClipboard(raw, btn);
-        } else {
-            btn.textContent = 'نسخ الرد';
-            const bodyText = isEmptyAnswer(raw) ? '' : (Array.isArray(raw) ? raw.join('\n') : String(raw));
-            const textToCopy = formattedDate ? `${bodyText}\n\n${formattedDate}` : bodyText;
-            btn.onclick = () => copyToClipboard(textToCopy, btn);
-        }
+        btn.textContent = isImageData(raw) ? 'نسخ الصورة' : 'نسخ الرد';
+        btn.onclick = () => copySingleAnswer(raw, formattedDate, btn);
         footer.appendChild(btn);
         wrap.appendChild(footer);
         container.appendChild(wrap);
@@ -597,14 +614,74 @@ function renderIndividualView(index) {
     copyAllBtn.className = 'btn primary small';
     copyAllBtn.textContent = 'نسخ الرد كاملاً (مع الصور)';
     copyAllBtn.onclick = () => copyFullResponse(response, copyAllBtn);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn small';
+    delBtn.style.cssText = 'background:var(--error-color);color:#fff;';
+    delBtn.textContent = 'حذف هذا الرد';
+    delBtn.onclick = () => deleteSingleResponse(index);
+    const btnGroup = document.createElement('div');
+    btnGroup.style.cssText = 'display:flex;gap:0.5rem;flex-wrap:wrap;';
+    btnGroup.appendChild(copyAllBtn);
+    btnGroup.appendChild(delBtn);
     bottom.appendChild(dateSpan);
-    bottom.appendChild(copyAllBtn);
+    bottom.appendChild(btnGroup);
     container.appendChild(bottom);
 
     const totalResponses = currentSurveyResponses.length;
     $('individual-counter').textContent = `عرض ${totalResponses - index} من ${totalResponses}`;
     $('prev-response-btn').disabled = (index === 0);
     $('next-response-btn').disabled = (index === totalResponses - 1);
+}
+
+const updateResponseCount = () => {
+    const el = $('response-count-tab');
+    if (el) el.textContent = currentSurveyResponses.length;
+    const allBtn = $('delete-all-responses-btn');
+    if (allBtn) allBtn.disabled = currentSurveyResponses.length === 0;
+};
+
+async function deleteSingleResponse(index) {
+    const response = currentSurveyResponses[index];
+    if (!response) return;
+    if (!confirm('هل أنت متأكد من حذف هذا الرد نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    showLoader(true);
+    try {
+        await db.collection('responses').doc(response.id).delete();
+        currentSurveyResponses.splice(index, 1);
+        updateResponseCount();
+        renderAllResponseViews(Math.max(0, Math.min(index, currentSurveyResponses.length - 1)));
+        showAlert('تم حذف الرد.', 'success');
+    } catch (err) {
+        console.error(err);
+        showAlert('فشل حذف الرد: ' + err.message, 'error');
+    } finally {
+        showLoader(false);
+    }
+}
+
+async function deleteAllResponses() {
+    const total = currentSurveyResponses.length;
+    if (!total) return showAlert('لا توجد ردود لحذفها.', 'info');
+    if (!confirm(`سيتم حذف جميع الردود (${total}) نهائياً ولا يمكن التراجع. هل تريد المتابعة؟`)) return;
+    if (!confirm('تأكيد أخير: حذف كل الردود؟')) return;
+    showLoader(true);
+    try {
+        const docs = currentSurveyResponses.slice();
+        for (let i = 0; i < docs.length; i += 400) {
+            const batch = db.batch();
+            docs.slice(i, i + 400).forEach(r => batch.delete(db.collection('responses').doc(r.id)));
+            await batch.commit();
+        }
+        currentSurveyResponses = [];
+        updateResponseCount();
+        renderAllResponseViews(0);
+        showAlert(`تم حذف ${total} رد.`, 'success');
+    } catch (err) {
+        console.error(err);
+        showAlert('فشل حذف الردود: ' + err.message, 'error');
+    } finally {
+        showLoader(false);
+    }
 }
 
 function setupIndividualNav() {
@@ -1107,6 +1184,17 @@ const answerToPlain = (ans, sep) => {
     return Array.isArray(ans) ? ans.join(sep) : String(ans);
 };
 function setupExportButtons(surveyId) {
+    const actions = document.querySelector('.action-buttons');
+    if (actions && !$('delete-all-responses-btn')) {
+        const b = document.createElement('button');
+        b.id = 'delete-all-responses-btn';
+        b.className = 'btn small';
+        b.style.cssText = 'background:var(--error-color);color:#fff;';
+        b.textContent = 'حذف كل الردود';
+        actions.appendChild(b);
+    }
+    $('delete-all-responses-btn').onclick = deleteAllResponses;
+    updateResponseCount();
     $('export-csv-btn').onclick = () => exportResponsesToCSV(surveyId);
     $('export-pdf-btn').onclick = () => exportResponsesToPDF(surveyId);
 }
