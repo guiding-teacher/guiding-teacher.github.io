@@ -617,7 +617,7 @@ function renderIndividualView(index) {
     dateSpan.textContent = formattedDate;
     const copyAllBtn = document.createElement('button');
     copyAllBtn.className = 'btn primary small';
-    copyAllBtn.textContent = 'نسخ الرد كاملاً (مع الصور)';
+    copyAllBtn.textContent = 'النسخ كاملاً مع الصور';
     copyAllBtn.onclick = () => copyFullResponse(response, copyAllBtn);
     const delBtn = document.createElement('button');
     delBtn.className = 'btn small';
@@ -1195,7 +1195,7 @@ function setupExportButtons(surveyId) {
         b.id = 'delete-all-responses-btn';
         b.className = 'btn small';
         b.style.cssText = 'background:var(--error-color);color:#fff;';
-        b.textContent = 'حذف كل الردود';
+        b.textContent = 'حذف الكل ';
         actions.appendChild(b);
     }
     $('delete-all-responses-btn').onclick = deleteAllResponses;
