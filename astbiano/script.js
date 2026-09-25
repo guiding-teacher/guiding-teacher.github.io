@@ -128,10 +128,20 @@ async function copyRich(html, plain, btn, okMsg) {
 const answerDateHtml = (d) => d ? `<p style="color:#666;font-size:12px;">${esc(d)}</p>` : '';
 async function copySingleAnswer(raw, dateText, btn) {
     if (isImageData(raw)) {
-        // صورة + التاريخ تحتها
-        const html = `<div dir="rtl"><p><img src="${raw}" alt="" style="max-width:480px;height:auto;"></p>${answerDateHtml(dateText)}</div>`;
-        try { await copyRich(html, dateText ? `[صورة مرفقة]\n\n${dateText}` : '[صورة مرفقة]', btn, 'تم نسخ الصورة مع التاريخ!'); }
-        catch (e) { console.error(e); await copyImageToClipboard(raw, btn); }
+        // نضع الصورة كملف صورة حقيقي (image/png) وليس كرابط Data URI داخل HTML؛
+        // أغلب المواقع والمنتديات تحذف صور الـ Data URI عند النشر، لذا الملف الحقيقي هو ما يبقى ظاهراً بعد اللصق والنشر.
+        const plain = dateText ? `${dateText}` : '';
+        try {
+            if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
+            await navigator.clipboard.write([new ClipboardItem({
+                'image/png': dataUrlToPngBlob(raw),
+                'text/plain': new Blob([plain], { type: 'text/plain' })
+            })]);
+            flashBtn(btn, 'تم نسخ الصورة مع التاريخ!');
+        } catch (e) {
+            console.error(e);
+            await copyImageToClipboard(raw, btn);
+        }
         return;
     }
     const body = isEmptyAnswer(raw) ? '' : (Array.isArray(raw) ? raw.join('\n') : String(raw));
@@ -144,35 +154,39 @@ async function copySingleAnswer(raw, dateText, btn) {
 async function copyFullResponse(response, btn) {
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
     const dateText = response.timestamp?.toDate ? response.timestamp.toDate().toLocaleString('ar-EG', dateOptions) : '';
-    // بدون عناوين الأسئلة: فقط ما كتبه المرسل (نص/صورة) ثم التاريخ في الأسفل
-    let html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">`;
-    const plainParts = [];
+
+    // نجمع النصوص في عنصر واحد، وكل صورة كملف صورة حقيقي (image/png) في عنصر مستقل بحافظة النسخ؛
+    // هذا يجعل نتيجة اللصق مطابقة لنسخ عدة ملفات، فتبقى الصور ظاهرة بعد النشر في المواقع والمنتديات
+    // (التي تحذف عادةً صور الـ Data URI المضمّنة داخل HTML).
+    const textParts = [];
+    const imageBlobs = [];
     response.answers.forEach(a => {
         const raw = a.answer;
         if (isEmptyAnswer(raw)) return;
-        if (isImageData(raw)) {
-            html += `<p><img src="${raw}" alt="" style="max-width:480px;height:auto;"></p>`;
-            plainParts.push('[صورة مرفقة]');
-        } else {
-            const txt = Array.isArray(raw) ? raw.join('، ') : String(raw);
-            html += `<p>${esc(txt).replace(/\n/g, '<br>')}</p>`;
-            plainParts.push(txt);
-        }
+        if (isImageData(raw)) imageBlobs.push(dataUrlToPngBlob(raw));
+        else textParts.push(Array.isArray(raw) ? raw.join('، ') : String(raw));
     });
-    if (dateText) { html += `<p style="color:#666;font-size:12px;">${esc(dateText)}</p>`; plainParts.push(dateText); }
-    html += '</div>';
-    const plain = plainParts.join('\n\n');
+    if (dateText) textParts.push(dateText);
+    const plain = textParts.join('\n\n');
+    const html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">${textParts.map(t => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
+
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
-        await navigator.clipboard.write([new ClipboardItem({
-            'text/html': new Blob([html], { type: 'text/html' }),
-            'text/plain': new Blob([plain], { type: 'text/plain' })
-        })]);
-        flashBtn(btn, 'تم نسخ الرد مع الصور!');
+        const items = [];
+        if (textParts.length) {
+            items.push(new ClipboardItem({
+                'text/html': new Blob([html], { type: 'text/html' }),
+                'text/plain': new Blob([plain], { type: 'text/plain' })
+            }));
+        }
+        imageBlobs.forEach(blobPromise => items.push(new ClipboardItem({ 'image/png': blobPromise })));
+        if (!items.length) throw new Error('empty');
+        await navigator.clipboard.write(items);
+        flashBtn(btn, imageBlobs.length ? 'تم نسخ الرد مع الصور!' : 'تم نسخ الرد!');
     } catch (e) {
         console.error(e);
         copyToClipboard(plain, btn);
-        showAlert('متصفحك لا يدعم نسخ الصور ضمن النص؛ تم نسخ النص فقط.', 'info', 5000);
+        if (imageBlobs.length) showAlert('متصفحك لا يدعم نسخ عدة عناصر معاً؛ تم نسخ النص فقط. استخدم زر "نسخ الصورة" لكل صورة على حدة.', 'info', 6000);
     }
 }
 
@@ -617,7 +631,7 @@ function renderIndividualView(index) {
     dateSpan.textContent = formattedDate;
     const copyAllBtn = document.createElement('button');
     copyAllBtn.className = 'btn primary small';
-    copyAllBtn.textContent = 'النسخ كاملاً مع الصور';
+    copyAllBtn.textContent = 'نسخ الرد كاملاً (مع الصور)';
     copyAllBtn.onclick = () => copyFullResponse(response, copyAllBtn);
     const delBtn = document.createElement('button');
     delBtn.className = 'btn small';
@@ -1195,7 +1209,7 @@ function setupExportButtons(surveyId) {
         b.id = 'delete-all-responses-btn';
         b.className = 'btn small';
         b.style.cssText = 'background:var(--error-color);color:#fff;';
-        b.textContent = 'حذف الكل ';
+        b.textContent = 'حذف كل الردود';
         actions.appendChild(b);
     }
     $('delete-all-responses-btn').onclick = deleteAllResponses;
