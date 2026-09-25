@@ -172,21 +172,18 @@ async function copyFullResponse(response, btn) {
 
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
-        const items = [];
-        if (textParts.length) {
-            items.push(new ClipboardItem({
-                'text/html': new Blob([html], { type: 'text/html' }),
-                'text/plain': new Blob([plain], { type: 'text/plain' })
-            }));
-        }
-        imageBlobs.forEach(blobPromise => items.push(new ClipboardItem({ 'image/png': blobPromise })));
-        if (!items.length) throw new Error('empty');
-        await navigator.clipboard.write(items);
-        flashBtn(btn, imageBlobs.length ? 'تم نسخ الرد مع الصور!' : 'تم نسخ الرد!');
+        // ملاحظة: أغلب المتصفحات (خصوصاً Chrome) تسمح بعنصر واحد فقط في كل عملية نسخ،
+        // لذا لا يمكن نسخ أكثر من صورة واحدة دفعة واحدة مع النص. نضع أول صورة مع النص،
+        // وننبّه لنسخ بقية الصور بشكل منفرد إن وُجدت.
+        const rep = { 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([plain], { type: 'text/plain' }) };
+        if (imageBlobs.length) rep['image/png'] = imageBlobs[0];
+        await navigator.clipboard.write([new ClipboardItem(rep)]);
+        flashBtn(btn, imageBlobs.length ? 'تم نسخ الرد مع الصورة!' : 'تم نسخ الرد!');
+        if (imageBlobs.length > 1) showAlert(`تم نسخ أول صورة مع النص. توجد ${imageBlobs.length - 1} صورة إضافية، انسخها بشكل منفرد بزر "نسخ الصورة".`, 'info', 6000);
     } catch (e) {
         console.error(e);
         copyToClipboard(plain, btn);
-        if (imageBlobs.length) showAlert('متصفحك لا يدعم نسخ عدة عناصر معاً؛ تم نسخ النص فقط. استخدم زر "نسخ الصورة" لكل صورة على حدة.', 'info', 6000);
+        if (imageBlobs.length) showAlert('متصفحك لا يدعم نسخ الصورة مع النص معاً؛ تم نسخ النص فقط. استخدم زر "نسخ الصورة" لكل صورة على حدة.', 'info', 6000);
     }
 }
 
@@ -809,9 +806,18 @@ function initAdminPage() {
                 optionsContainer.style.display = 'none';
             }
         };
-        typeSelect.onchange = handleTypeChange;
+        typeSelect.onchange = () => { handleTypeChange(); enforceSingleImageQuestion(); };
         handleTypeChange();
     };
+    // يُسمح بسؤال واحد فقط من نوع "رفع صورة" في كل استفتاء
+    function enforceSingleImageQuestion() {
+        const cards = Array.from(document.querySelectorAll('.admin-question-card'));
+        const imageCards = cards.filter(c => c.querySelector('.q-type').value === 'image');
+        if (imageCards.length > 1) {
+            imageCards.slice(1).forEach(c => { c.querySelector('.q-type').value = 'text'; c.querySelector('.q-type').dispatchEvent(new Event('change')); });
+            showAlert('يُسمح بسؤال واحد فقط من نوع "رفع صورة" في كل استفتاء. تم تغيير الأسئلة الإضافية إلى نص قصير.', 'info', 6000);
+        }
+    }
     $('add-question-btn').onclick = () => addQuestion();
 
     // ---------- تحميل استفتاء موجود ----------
@@ -850,6 +856,7 @@ function initAdminPage() {
             }
             refreshThemePreview();
             (data.questions || []).forEach(q => addQuestion(q));
+            enforceSingleImageQuestion();
         }).catch(err => showAlert('تعذّر تحميل الاستفتاء: ' + err.message, 'error'))
             .finally(() => showLoader(false));
     } else {
@@ -1087,12 +1094,19 @@ async function initSurveyPage() {
             });
             if (!allValid) return showAlert('الرجاء تعبئة الحقول الإجبارية.', 'error');
 
+            const submitBtn = form.querySelector('.submit-btn');
+            if (submitBtn.disabled) return; // منع الإرسال المتكرر بالضغط السريع المتتالي
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'جاري الإرسال...';
             showLoader(true);
             try {
                 await db.collection('responses').add({ surveyId: currentSurveyData.id, answers, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
             } catch (err) {
                 console.error(err);
                 showLoader(false);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
                 return showAlert(/too large|exceeds|size/i.test(err.message || '') ? 'حجم الصور كبير جداً، جرّب صوراً أصغر.' : 'فشل إرسال الإجابة، حاول مرة أخرى.', 'error', 6000);
             }
             incrementDailyCount(surveyId);
@@ -1103,6 +1117,8 @@ async function initSurveyPage() {
                 form.querySelectorAll('.img-preview').forEach(p => { p.style.display = 'none'; });
                 form.querySelectorAll('.img-remove').forEach(b => { b.style.display = 'none'; });
                 updateProgressBar();
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
                 if (dailyLimit && getDailyCount(surveyId) >= dailyLimit) {
                     showStatus(`تم إرسال إجابتك بنجاح! ${limitMessage()}`, false);
                 } else {
