@@ -106,6 +106,42 @@ const dataUrlToPngBlob = (dataUrl) => new Promise((resolve, reject) => {
     img.onerror = reject;
     img.src = dataUrl;
 });
+// يدمج التاريخ (ونصاً اختيارياً) داخل الصورة نفسها كبكسلات مرسومة، بدل نصّ منفصل في الحافظة.
+// هذا يضمن ظهور المحتوى كاملاً بعد اللصق والنشر، لأن بعض المواقع تحذف تمثيل النص أو الصورة
+// عندما يُنسخ الاثنان معاً كعنصرين منفصلين في نفس عملية النسخ.
+async function composeImageWithCaption(dataUrl, captionLines) {
+    const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = dataUrl;
+    });
+    const maxW = 900;
+    const scale = Math.min(1, maxW / img.naturalWidth);
+    const w = Math.max(1, Math.round(img.naturalWidth * scale));
+    const h = Math.max(1, Math.round(img.naturalHeight * scale));
+    const lines = (captionLines || []).filter(Boolean);
+    const padding = 16;
+    const lineHeight = 26;
+    const captionH = lines.length ? (lines.length * lineHeight + padding * 2) : 0;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h + captionH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, w, h);
+    if (lines.length) {
+        ctx.fillStyle = '#333333';
+        ctx.font = '16px Arial, Tahoma, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.direction = 'rtl';
+        lines.forEach((line, i) => ctx.fillText(line, w - padding, h + padding + i * lineHeight, w - padding * 2));
+    }
+    return new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('compose failed')), 'image/png'));
+}
+
 async function copyImageToClipboard(dataUrl, btn) {
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
@@ -128,15 +164,12 @@ async function copyRich(html, plain, btn, okMsg) {
 const answerDateHtml = (d) => d ? `<p style="color:#666;font-size:12px;">${esc(d)}</p>` : '';
 async function copySingleAnswer(raw, dateText, btn) {
     if (isImageData(raw)) {
-        // نضع الصورة كملف صورة حقيقي (image/png) وليس كرابط Data URI داخل HTML؛
-        // أغلب المواقع والمنتديات تحذف صور الـ Data URI عند النشر، لذا الملف الحقيقي هو ما يبقى ظاهراً بعد اللصق والنشر.
-        const plain = dateText ? `${dateText}` : '';
+        // ندمج التاريخ داخل الصورة نفسها (كنص مرسوم) ثم ننسخ ملف صورة واحداً فقط؛
+        // هذا يضمن ظهور التاريخ دائماً بعد اللصق، بخلاف نسخ نص وصورة كعنصرين منفصلين قد يُهمَل أحدهما.
         try {
             if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
-            await navigator.clipboard.write([new ClipboardItem({
-                'image/png': dataUrlToPngBlob(raw),
-                'text/plain': new Blob([plain], { type: 'text/plain' })
-            })]);
+            const composed = await composeImageWithCaption(raw, [dateText]);
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': composed })]);
             flashBtn(btn, 'تم نسخ الصورة مع التاريخ!');
         } catch (e) {
             console.error(e);
@@ -159,31 +192,44 @@ async function copyFullResponse(response, btn) {
     // هذا يجعل نتيجة اللصق مطابقة لنسخ عدة ملفات، فتبقى الصور ظاهرة بعد النشر في المواقع والمنتديات
     // (التي تحذف عادةً صور الـ Data URI المضمّنة داخل HTML).
     const textParts = [];
-    const imageBlobs = [];
+    const imageAnswers = [];
     response.answers.forEach(a => {
         const raw = a.answer;
         if (isEmptyAnswer(raw)) return;
-        if (isImageData(raw)) imageBlobs.push(dataUrlToPngBlob(raw));
+        if (isImageData(raw)) imageAnswers.push(raw);
         else textParts.push(Array.isArray(raw) ? raw.join('، ') : String(raw));
     });
-    if (dateText) textParts.push(dateText);
-    const plain = textParts.join('\n\n');
-    const html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">${textParts.map(t => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
+    const fullTextParts = dateText ? [...textParts, dateText] : textParts;
+    const plain = fullTextParts.join('\n\n');
 
+    if (imageAnswers.length) {
+        // ندمج كل النصوص + التاريخ داخل الصورة الأولى كتعليق مرسوم، وننسخ صورة واحدة فقط؛
+        // هذا يتفادى مشكلة تجاهل المواقع للصورة عند نسخها مع نص كعنصرين منفصلين.
+        try {
+            if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
+            const composed = await composeImageWithCaption(imageAnswers[0], fullTextParts);
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': composed })]);
+            flashBtn(btn, 'تم نسخ الرد مع الصورة!');
+            if (imageAnswers.length > 1) showAlert(`تم دمج النص مع أول صورة. توجد ${imageAnswers.length - 1} صورة إضافية، انسخها بشكل منفرد بزر "نسخ الصورة".`, 'info', 6000);
+        } catch (e) {
+            console.error(e);
+            copyToClipboard(plain, btn);
+            showAlert('تعذّر نسخ الصورة مع النص في هذا المتصفح؛ تم نسخ النص فقط. استخدم زر "نسخ الصورة" لنسخها منفردة.', 'info', 6000);
+        }
+        return;
+    }
+
+    const html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">${fullTextParts.map(t => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
-        // ملاحظة: أغلب المتصفحات (خصوصاً Chrome) تسمح بعنصر واحد فقط في كل عملية نسخ،
-        // لذا لا يمكن نسخ أكثر من صورة واحدة دفعة واحدة مع النص. نضع أول صورة مع النص،
-        // وننبّه لنسخ بقية الصور بشكل منفرد إن وُجدت.
-        const rep = { 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([plain], { type: 'text/plain' }) };
-        if (imageBlobs.length) rep['image/png'] = imageBlobs[0];
-        await navigator.clipboard.write([new ClipboardItem(rep)]);
-        flashBtn(btn, imageBlobs.length ? 'تم نسخ الرد مع الصورة!' : 'تم نسخ الرد!');
-        if (imageBlobs.length > 1) showAlert(`تم نسخ أول صورة مع النص. توجد ${imageBlobs.length - 1} صورة إضافية، انسخها بشكل منفرد بزر "نسخ الصورة".`, 'info', 6000);
+        await navigator.clipboard.write([new ClipboardItem({
+            'text/html': new Blob([html], { type: 'text/html' }),
+            'text/plain': new Blob([plain], { type: 'text/plain' })
+        })]);
+        flashBtn(btn, 'تم نسخ الرد!');
     } catch (e) {
         console.error(e);
         copyToClipboard(plain, btn);
-        if (imageBlobs.length) showAlert('متصفحك لا يدعم نسخ الصورة مع النص معاً؛ تم نسخ النص فقط. استخدم زر "نسخ الصورة" لكل صورة على حدة.', 'info', 6000);
     }
 }
 
@@ -806,18 +852,9 @@ function initAdminPage() {
                 optionsContainer.style.display = 'none';
             }
         };
-        typeSelect.onchange = () => { handleTypeChange(); enforceSingleImageQuestion(); };
+        typeSelect.onchange = handleTypeChange;
         handleTypeChange();
     };
-    // يُسمح بسؤال واحد فقط من نوع "رفع صورة" في كل استفتاء
-    function enforceSingleImageQuestion() {
-        const cards = Array.from(document.querySelectorAll('.admin-question-card'));
-        const imageCards = cards.filter(c => c.querySelector('.q-type').value === 'image');
-        if (imageCards.length > 1) {
-            imageCards.slice(1).forEach(c => { c.querySelector('.q-type').value = 'text'; c.querySelector('.q-type').dispatchEvent(new Event('change')); });
-            showAlert('يُسمح بسؤال واحد فقط من نوع "رفع صورة" في كل استفتاء. تم تغيير الأسئلة الإضافية إلى نص قصير.', 'info', 6000);
-        }
-    }
     $('add-question-btn').onclick = () => addQuestion();
 
     // ---------- تحميل استفتاء موجود ----------
@@ -856,7 +893,6 @@ function initAdminPage() {
             }
             refreshThemePreview();
             (data.questions || []).forEach(q => addQuestion(q));
-            enforceSingleImageQuestion();
         }).catch(err => showAlert('تعذّر تحميل الاستفتاء: ' + err.message, 'error'))
             .finally(() => showLoader(false));
     } else {
