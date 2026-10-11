@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>طريق الجنة — موقع صديق</title>
+<style>
+    :root { --gold:#d4af37; --gold-light:#e8c766; --bg:#06120a; }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(circle at 50% 0%, #0f3b22 0%, var(--bg) 70%);
+        font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; color: #fff; padding: 20px;
+    }
+    .card {
+        width: 100%; max-width: 380px; text-align: center; padding: 28px 22px;
+        background: rgba(6,18,10,0.92); border: 1px solid rgba(212,175,55,0.45);
+        border-radius: 22px; box-shadow: 0 14px 40px rgba(0,0,0,0.6);
+    }
+    .logo { font-size: 54px; line-height: 1; }
+    h1 { margin: 12px 0 6px; font-size: 1.25em; color: var(--gold-light); }
+    p { margin: 6px 0 18px; color: #cfd8d2; font-size: 0.95em; line-height: 1.7; }
+    .btn {
+        display: block; width: 100%; padding: 14px; margin-top: 10px; border-radius: 14px;
+        text-decoration: none; font-weight: 700; font-size: 1em; cursor: pointer;
+        border: 1px solid rgba(212,175,55,0.45); color: var(--gold-light); background: rgba(212,175,55,0.10);
+    }
+    .btn.primary {
+        background: linear-gradient(145deg, #f7dc7a, #d4af37 60%, #a8770a);
+        color: #0a2e1a; border-color: #fff3c4;
+    }
+    .note { margin-top: 16px; font-size: 0.8em; color: #9fb0a6; }
+    [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="card">
+    <div class="logo">🕌</div>
+    <h1>صديقك شاركك موقعه</h1>
+    <p>افتح الرابط في تطبيق «طريق الجنة» لترى صورته ومكانه على الخريطة وتربط معه.</p>
+
+    <a id="openBtn" class="btn primary" href="#" hidden>فتح في طريق الجنة</a>
+
+    <div id="note" class="note"></div>
+</main>
+
+<script>
+(function () {
+    // ⚙️ عدّل هذين السطرين فقط:
+    var PACKAGE = 'com.tareeqaljannah.app';   // معرّف التطبيق (package) — كما في MainActivity.java
+
+    var SCHEME = 'tareeqaljannah';
+    var u = new URLSearchParams(location.search).get('u') || '';
+    var valid = /^[0-9A-Za-z-]{8,64}$/.test(u);
+    var isAndroid = /android/i.test(navigator.userAgent);
+
+    var openBtn = document.getElementById('openBtn');
+    var note    = document.getElementById('note');
+
+    if (!valid) {
+        note.textContent = 'هذا الرابط غير صالح. اطلب من صديقك إعادة مشاركته.';
+        return;
+    }
+
+    if (!isAndroid) {
+        note.textContent = 'افتح هذا الرابط من هاتف أندرويد عليه تطبيق طريق الجنة.';
+        return;
+    }
+
+    // رابط يفتح التطبيق مباشرة (Android Intent). إن لم يكن التطبيق مثبتاً ينتقل المتصفح لرابط التثبيت إن وُجد.
+    var intentUrl = 'intent://share?u=' + encodeURIComponent(u) +
+        '#Intent;scheme=' + SCHEME + ';package=' + PACKAGE +
+        ';end';
+
+    openBtn.href = intentUrl;
+    openBtn.hidden = false;
+    note.textContent = 'إن لم يفتح التطبيق تلقائياً، اضغط «فتح في طريق الجنة».';
+
+    // محاولة فتح تلقائي (قد يمنعها كروم لعدم وجود ضغطة من المستخدم — الزر دائماً يعمل)
+    setTimeout(function () { try { location.href = intentUrl; } catch (e) {} }, 350);
+})();
+</script>
+</body>
+</html>
