@@ -2,8 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الاستفتاء -  قرار للاستفتاء</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>إدارة الاستفتاء - قرار للاستفتاء</title>
+    <meta name="theme-color" content="#4A55A2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -11,8 +15,9 @@
 <body class="admin-body">
     <header class="dashboard-header">
         <div class="header-content">
-            <a href="dashboard.html" style="color:white; text-decoration: none;"><h1>قــرار للاستفتاء</h1></a>
-            <p id="header-description">إنشاء / تعديل الفورم</p>
+            <a href="dashboard.html"><h1>قــرار للاستفتاء</h1></a>
+            <p id="header-description">إنشاء / تعديل الاستفتاء</p>
+            <button id="dark-mode-btn" class="btn secondary small dark-toggle" type="button">🌙 الوضع الليلي</button>
         </div>
     </header>
 
@@ -22,27 +27,27 @@
 
         <div id="admin-mode-content" class="dashboard-container">
             <!-- Basic Info Card -->
-            <div class="card">
-                <h2 id="admin-page-heading">إنشاء فورم جديد</h2>
+            <div class="card fade-in">
+                <h2 id="admin-page-heading">إنشاء استفتاء جديد</h2>
                 <div class="form-group">
-                    <label for="survey-title">عنوان الفورم:</label>
+                    <label for="survey-title">عنوان الاستفتاء:</label>
                     <input type="text" id="survey-title" placeholder="مثال: ما هو رأيك في منصة المعلم المرشد ؟" required>
                 </div>
                 <div class="form-group">
-                    <label for="survey-description">وصف الفورم (يظهر في لوحة التحكم):</label>
-                    <textarea id="survey-description" placeholder="وصف موجز عن هدف الفورم"></textarea>
+                    <label for="survey-description">وصف الاستفتاء (يظهر في لوحة التحكم):</label>
+                    <textarea id="survey-description" placeholder="وصف موجز عن هدف الاستبيان"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="survey-admin-pin">الرمز السري (PIN) للمشرف (مطلوب):</label>
-                    <input type="password" id="survey-admin-pin" placeholder="4 أرقام/أحرف على الأقل" required minlength="4">
-                    <small>ستحتاج هذا الرمز للوصول لنتائج الفورم. احفظه جيداً.</small>
+                    <input type="password" id="survey-admin-pin" autocomplete="new-password" placeholder="4 أرقام/أحرف على الأقل" required minlength="4">
+                    <small>ستحتاج هذا الرمز للوصول لنتائج الاستفتاء. احفظه جيداً.</small>
                 </div>
             </div>
 
             <!-- Cover & Logo Card -->
-            <div class="card">
+            <div class="card fade-in">
                 <h3>الغلاف والشعار</h3>
-                <p>كلاهما اختياري؛ ما لم تقم برفعه لن يظهر في صفحة الفورم. يظهر الشعار دائرياً في المنتصف أسفل الغلاف.</p>
+                <p>كلاهما اختياري؛ ما لم تقم برفعه لن يظهر في صفحة الاستفتاء. يظهر الشعار دائرياً في المنتصف أسفل الغلاف.</p>
                 <div class="media-preview">
                     <div class="mp-cover">
                         <span id="mp-cover-placeholder">لا يوجد غلاف</span>
@@ -71,8 +76,15 @@
                 </div>
             </div>
 
+            <!-- Templates Card -->
+            <div class="card fade-in">
+                <h3>قوالب جاهزة احترافية</h3>
+                <p>اضغط على قالب لإضافة أسئلته الجاهزة إلى الاستفتاء، ثم عدّلها كما تشاء.</p>
+                <div class="preset-row" id="templates-row"></div>
+            </div>
+
             <!-- Questions Card -->
-            <div class="card">
+            <div class="card fade-in">
                 <h3>الأسئلة</h3>
                 <div id="questions-container"></div>
                 <button id="add-question-btn" class="btn secondary">
@@ -83,16 +95,26 @@
 
             <!-- Theme Card -->
             <div class="card">
-                <h3>المظهر والتنسيق</h3>
+                <h3>🎨 المظهر وقوالب التصميم</h3>
+                <p>اختر قالباً جاهزاً ثم عدّل الألوان والتفاصيل. المعاينة تتحدّث مباشرة وتظهر لجميع المجيبين بعد النشر.</p>
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="theme-enabled">
-                    <label for="theme-enabled" style="margin-bottom:0;">تفعيل التنسيق المخصص (يظهر لجميع المجيبين)</label>
+                    <label for="theme-enabled">تفعيل التصميم المخصص</label>
                 </div>
                 <div id="theme-panel" class="theme-panel disabled">
+                    <h4 class="theme-sub">قوالب سريعة (ألوان + خط + إطار)</h4>
                     <div class="preset-row" id="preset-row"></div>
+
+                    <h4 class="theme-sub">شكل البطاقات (12 قالباً)</h4>
+                    <div class="dsg-grid" id="design-grid"></div>
+
+                    <h4 class="theme-sub">نمط الخلفية (8 أنماط)</h4>
+                    <div class="ptn-grid" id="pattern-grid"></div>
+
+                    <h4 class="theme-sub">الألوان والخطوط</h4>
                     <div class="theme-grid">
-                        <div class="form-group"><label for="theme-page-bg">لون خلفية الصفحة</label><input type="color" id="theme-page-bg"></div>
-                        <div class="form-group"><label for="theme-card-bg">لون خلفية البطاقات</label><input type="color" id="theme-card-bg"></div>
+                        <div class="form-group"><label for="theme-page-bg">خلفية الصفحة</label><input type="color" id="theme-page-bg"></div>
+                        <div class="form-group"><label for="theme-card-bg">خلفية البطاقات</label><input type="color" id="theme-card-bg"></div>
                         <div class="form-group"><label for="theme-text">لون النصوص</label><input type="color" id="theme-text"></div>
                         <div class="form-group"><label for="theme-title">لون العناوين</label><input type="color" id="theme-title"></div>
                         <div class="form-group"><label for="theme-accent">اللون الأساسي (الأزرار والترويسة)</label><input type="color" id="theme-accent"></div>
@@ -107,19 +129,30 @@
                             </select>
                         </div>
                     </div>
-                    <label style="font-weight:600;color:var(--text-muted);">معاينة مباشرة:</label>
+
+                    <h4 class="theme-sub">تفاصيل إضافية</h4>
+                    <div class="choice-grid">
+                        <div class="form-group"><label>الزوايا</label><div class="preset-row" id="radius-row"></div></div>
+                        <div class="form-group"><label>الظل</label><div class="preset-row" id="shadow-row"></div></div>
+                        <div class="form-group"><label>الحركة</label><div class="preset-row" id="anim-row"></div></div>
+                    </div>
+
+                    <h4 class="theme-sub">معاينة مباشرة</h4>
                     <div id="theme-preview" class="theme-preview">
                         <div class="tp-card">
                             <h4>عنوان تجريبي للاستفتاء</h4>
                             <p>هذا نص تجريبي يوضح شكل النصوص والخط المختار كما سيراه المجيبون.</p>
+                            <div class="checkbox-group"><input type="radio" name="tp-demo" id="tp-o1" checked><label for="tp-o1">خيار محدّد</label></div>
+                            <div class="checkbox-group"><input type="radio" name="tp-demo" id="tp-o2"><label for="tp-o2">خيار آخر</label></div>
                             <button type="button" class="btn primary small">زر تجريبي</button>
                         </div>
                     </div>
+                    <div id="theme-contrast-note" class="contrast-note" role="status"></div>
                 </div>
             </div>
 
             <!-- Advanced Settings Card -->
-            <div class="card">
+            <div class="card fade-in">
                 <h3>الإعدادات المتقدمة</h3>
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="accepting-responses" checked>
@@ -131,8 +164,22 @@
                 </div>
                 <div class="form-group">
                     <label for="daily-limit">الحد الأقصى للردود اليومية لكل مستخدم (اختياري):</label>
-                    <input type="number" id="daily-limit" min="1" step="1" placeholder="فارغ = بدون حد" disabled style="width:100%;padding:0.8rem 1rem;border:1px solid var(--border-color);border-radius:8px;font-family:inherit;font-size:1rem;">
+                    <input type="number" id="daily-limit" min="1" step="1" inputmode="numeric" placeholder="فارغ = بدون حد" disabled>
                     <small>يعمل فقط مع خيار "الإجابة أكثر من مرة". يُحتسب لكل متصفح/جهاز ويتجدد كل يوم عند منتصف الليل.</small>
+                </div>
+                <div class="form-group">
+                    <label for="max-responses">الحد الأقصى الإجمالي للردود (اختياري):</label>
+                    <input type="number" id="max-responses" min="1" step="1" inputmode="numeric" placeholder="فارغ = بدون حد">
+                    <small>عند بلوغ هذا العدد يُغلق الاستفتاء تلقائياً أمام ردود جديدة.</small>
+                </div>
+                <div class="form-group">
+                    <label for="survey-participant-pin">رمز دخول للمجيبين (اختياري):</label>
+                    <input type="password" id="survey-participant-pin" autocomplete="new-password" placeholder="اتركه فارغاً لاستفتاء مفتوح للجميع" minlength="4">
+                    <small>من يملك الرابط فقط لا يكفي؛ يجب إدخال هذا الرمز لفتح صفحة الاستفتاء.</small>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="confirm-before-submit">
+                    <label for="confirm-before-submit">طلب تأكيد من المجيب قبل إرسال الإجابات النهائية</label>
                 </div>
                 <div class="form-group checkbox-group">
                     <input type="checkbox" id="allow-results-view">
@@ -142,15 +189,23 @@
                     <input type="checkbox" id="show-progress">
                     <label for="show-progress">إظهار شريط التقدم للمجيب</label>
                 </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="show-public-count">
+                    <label for="show-public-count">إظهار عدد المشاركين للمجيبين</label>
+                </div>
                 <div class="form-group">
                     <label for="start-date">تاريخ ووقت بدء الاستفتاء (اختياري):</label>
-                    <input type="date" id="start-date">
-                    <input type="time" id="start-time">
+                    <div class="field-row">
+                        <input type="date" id="start-date" aria-label="تاريخ البدء">
+                        <input type="time" id="start-time" aria-label="وقت البدء">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="end-date">تاريخ ووقت انتهاء الاستفتاء (اختياري):</label>
-                    <input type="date" id="end-date">
-                    <input type="time" id="end-time">
+                    <div class="field-row">
+                        <input type="date" id="end-date" aria-label="تاريخ الانتهاء">
+                        <input type="time" id="end-time" aria-label="وقت الانتهاء">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="thank-you-message">رسالة الشكر بعد الإجابة:</label>
@@ -160,10 +215,14 @@
 
             <div class="action-buttons-container">
                 <a href="dashboard.html" class="btn secondary">إلغاء</a>
-                <button id="publish-btn" class="btn primary">نشر / تحديث الاستفتاء</button>
+                <button id="publish-btn" class="btn primary btn-glow">نشر / تحديث الاستفتاء</button>
             </div>
         </div>
     </main>
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year"></span> منصة قرار للاستفتاء. جميع الحقوق محفوظة.</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
