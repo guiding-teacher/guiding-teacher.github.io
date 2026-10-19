@@ -2,8 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title id="page-title">استفتاء</title>
+    <meta name="theme-color" content="#4A55A2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -14,7 +18,7 @@
         <div id="loading-spinner" class="loader"></div>
         <div id="alert-container" aria-live="polite"></div>
 
-        <!-- الغلاف + الشعار الدائري + العنوان (يُملأ من script.js، وتُخفى الصور إن لم تُرفع) -->
+        <!-- الغلاف + الشعار الدائري + العنوان -->
         <section id="survey-hero" class="survey-hero" style="display: none;">
             <div id="survey-cover-wrap" class="hero-cover" style="display: none;">
                 <img id="survey-cover-display" src="" alt="غلاف الاستفتاء">
@@ -30,13 +34,25 @@
             <div id="progress-bar-fill" class="progress-bar-fill"></div>
         </div>
 
+        <!-- بوابة رمز الدخول للمجيبين -->
+        <div id="pin-gate-container" class="card" style="display: none; text-align: center;">
+            <h2>🔐 استفتاء محمي برمز دخول</h2>
+            <p style="margin:1rem 0 1.25rem;">أدخل رمز الدخول الذي حصلت عليه من منشئ الاستفتاء للمتابعة.</p>
+            <div class="form-group" style="text-align:right;">
+                <label for="participant-pin-input">رمز الدخول:</label>
+                <input type="password" id="participant-pin-input" placeholder="••••" autocomplete="off" inputmode="text">
+            </div>
+            <button id="pin-gate-btn" class="btn primary" style="width:100%;">دخول</button>
+        </div>
+
         <form id="survey-form-responder" class="survey-form-container" style="display: none;">
             <div id="daily-limit-note" class="daily-note" style="display: none;"></div>
+            <div id="countdown-note" class="daily-note" style="display: none;"></div>
             <div id="responder-form-content"></div>
-            <button type="submit" class="btn primary submit-btn">إرسال الإجابات</button>
+            <button type="submit" class="btn primary submit-btn btn-glow">إرسال الإجابات</button>
         </form>
 
-        <div id="thank-you-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
+        <div id="thank-you-container" class="card" style="display: none; text-align: center;">
             <h2 id="thank-you-text"></h2>
             <div class="share-container" style="display: none;">
                 <p>يمكنك مشاركة هذا الاستفتاء مع الآخرين:</p>
@@ -45,10 +61,10 @@
                     <button id="copy-share-link-after" class="btn secondary small">نسخ</button>
                 </div>
             </div>
-            <a href="#" id="view-results-link" class="btn secondary" style="display: none; margin-top: 1rem;">عرض النتائج</a>
+            <a href="#" id="view-results-link" class="btn secondary" style="display: none; margin-top: 1.25rem;">عرض النتائج</a>
         </div>
 
-        <div id="already-submitted-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
+        <div id="already-submitted-container" class="card" style="display: none; text-align: center;">
              <h2>لقد قمت بالإجابة على هذا الاستفتاء مسبقًا.</h2>
              <div class="share-container">
                 <p>يمكنك مشاركة هذا الاستفتاء مع الآخرين:</p>
@@ -59,7 +75,7 @@
             </div>
         </div>
 
-        <div id="status-container" class="card" style="display: none; text-align: center; max-width: 600px; margin: 2rem auto;">
+        <div id="status-container" class="card" style="display: none; text-align: center;">
              <h2 id="status-text"></h2>
         </div>
     </main>
