@@ -2,31 +2,36 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>   قرار للاستفتاء </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>قرار للاستفتاء</title>
 
-<meta name="description" content="  قرار للاستفتاء" هي اداة إلكترونية تابعة لمنصة المعلم المرشد متكاملة تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور">
+<meta name="description" content="قرار للاستفتاء هي اداة إلكترونية تابعة لمنصة المعلم المرشد متكاملة تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور">
 
 <!-- Open Graph (لوسائل التواصل مثل فيسبوك وواتساب) -->
-<meta property="og:title" content="  قرار للاستفتاء">
-<meta property="og:description" content="    قرار للاستفتاء" هي اداة إلكترونية متكاملة تابعة لمنصة المعلم المرشد تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور">
-<meta property="og:image" content="https://guiding-teacher.web.app/images/reter1.jpg"> <!-- غيّر هذا للرابط الصحيح لصورتك -->
+<meta property="og:title" content="قرار للاستفتاء">
+<meta property="og:description" content="قرار للاستفتاء هي اداة إلكترونية متكاملة تابعة لمنصة المعلم المرشد تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور">
+<meta property="og:image" content="https://guiding-teacher.web.app/images/reter1.jpg">
 <meta property="og:url" content="https://guiding-teacher.web.app/images/reter1.jpg">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_IQ">
-    
+
+    <meta name="theme-color" content="#4A55A2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Amiri-Regular-normal/1.0/Amiri-Regular-normal.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Amiri-Regular-normal/1.0/Amiri-Regular-normal.js" defer></script>
 </head>
 <body>
     <header class="dashboard-header">
         <div class="header-content">
-            <h1>  قــرار للاستفتاء    </h1>
-            <p>     اداة إلكترونية تابعة لمنصة المعلم المرشد متكاملة تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور </p>
+            <h1>قــرار للاستفتاء</h1>
+            <p>اداة إلكترونية تابعة لمنصة المعلم المرشد متكاملة تمكّنك من إنشاء وإدارة الاستفتاءات بسهولة، وجمع آراء المشاركين من أي مكان، وتحليل النتائج بشكل فوري ودقيق، مما يساعد على دعم القرارات المبنية على رأي الجمهور</p>
+            <button id="dark-mode-btn" class="btn secondary small dark-toggle" type="button">🌙 الوضع الليلي</button>
         </div>
     </header>
 
@@ -35,7 +40,7 @@
         <div id="alert-container" aria-live="polite"></div>
 
         <div id="dashboard-home" class="dashboard-container">
-            <div class="card">
+            <div class="card fade-in">
                 <h2>الوصول إلى الاستفتاء</h2>
                 <p>أدخل معرّف الاستفتاء والرمز السري للوصول إليه وإضافته إلى قائمتك.</p>
                 <form id="survey-lookup-form" class="lookup-form">
@@ -44,7 +49,17 @@
                     <button type="submit" class="btn primary">بحث و إضافة</button>
                 </form>
             </div>
-            <div class="card">
+
+            <div class="card fade-in">
+                <h2>🔔 إشعارات الردود المجانية</h2>
+                <p>تنبيه فوري داخل متصفح كروم (أو أي متصفح حديث) عند وصول ردود جديدة أثناء فتح لوحة التحكم — مجاناً 100% وبدون بطاقة ائتمان وبدون خادم. تنبيه بصري + صوت قصير + عدّاد في عنوان التبويب.</p>
+                <div class="notify-row">
+                    <button id="enable-notify-btn" class="btn secondary" type="button">تفعيل الإشعارات</button>
+                    <span id="notify-status" role="status"></span>
+                </div>
+            </div>
+
+            <div class="card fade-in">
                 <h2>استفتاءاتي</h2>
                 <p>الاستفتاءات التي قمت بالوصول إليها مؤخرًا.</p>
                 <div id="my-surveys-list" class="surveys-grid"></div>
@@ -57,7 +72,7 @@
 
         <div id="survey-management-view" class="dashboard-container" style="display: none;">
             <div class="management-header">
-                <button id="back-to-dashboard-btn" class="btn secondary">&larr; العودة</button>
+                <button id="back-to-dashboard-btn" class="btn secondary" type="button">&rarr; العودة</button>
                 <h2 id="survey-title-header"></h2>
                 <div class="response-toggle-container">
                     <span>قبول الردود</span>
@@ -69,16 +84,17 @@
                 <div class="action-buttons">
                     <button id="export-csv-btn" class="btn secondary small">تصدير CSV</button>
                     <button id="export-pdf-btn" class="btn secondary small">تصدير PDF</button>
+                    <button id="print-results-btn" class="btn secondary small">🖨️ طباعة</button>
                 </div>
             </div>
-            
+
             <div class="main-controls-bar">
                 <nav class="tabs">
                     <button class="tab-btn active" data-tab="responses">الردود (<span id="response-count-tab">0</span>)</button>
                     <button class="tab-btn" data-tab="settings">الإعدادات</button>
                 </nav>
                 <div class="main-actions">
-                    <a href="#" id="view-survey-link" class="btn secondary small" target="_blank">عرض</a>
+                    <a href="#" id="view-survey-link" class="btn secondary small" target="_blank" rel="noopener">عرض</a>
                     <a href="#" id="edit-survey-link" class="btn primary small">تعديل</a>
                 </div>
             </div>
@@ -92,9 +108,9 @@
                     <div id="summary-view" class="sub-tab-pane"></div>
                     <div id="individual-view" class="sub-tab-pane active">
                         <div class="individual-controls">
-                            <button id="prev-response-btn" class="btn">&lt;</button>
+                            <button id="prev-response-btn" class="btn" type="button" aria-label="الرد السابق">&rsaquo;</button>
                             <span id="individual-counter">عرض 0 من 0</span>
-                            <button id="next-response-btn" class="btn">&gt;</button>
+                            <button id="next-response-btn" class="btn" type="button" aria-label="الرد التالي">&lsaquo;</button>
                         </div>
                         <div id="individual-response-content" class="card"></div>
                     </div>
@@ -108,11 +124,20 @@
                             <input type="text" id="survey-share-link-dashboard" readonly>
                             <button id="copy-share-link-dashboard" class="btn secondary small">نسخ</button>
                         </div>
+                        <div class="qr-box">
+                            <p><strong>رمز QR للمشاركة السريعة:</strong></p>
+                            <img id="survey-qr-img" alt="رمز QR" width="200" height="200">
+                            <p>امسحه بالكاميرا للوصول للاستفتاء مباشرة.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year"></span> منصة قرار للاستفتاء. جميع الحقوق محفوظة.</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
