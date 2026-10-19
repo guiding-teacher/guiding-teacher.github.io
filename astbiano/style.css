@@ -676,3 +676,8 @@ body.mailbox-theme { background: var(--mailbox-bg); }
     .dsg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ptn-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+/* سطر واحد مقسّم نصفين: المتبقي | عدد المشاركين */
+.notes-row { display: flex; gap: .75rem; }
+.notes-row .daily-note { flex: 1 1 0; min-width: 0; display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+/* إخفاء الصف إذا كان الملاحظتان مخفيتين */
+.notes-row:not(:has(.daily-note[style*="display: block"])) { display: none; }
