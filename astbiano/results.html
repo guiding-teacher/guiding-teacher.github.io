@@ -2,8 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>نتائج الاستفتاء</title>
+    <meta name="theme-color" content="#4A55A2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -17,10 +21,14 @@
     <main class="dashboard-main">
         <div id="loading-spinner" class="loader"></div>
         <div id="alert-container" aria-live="polite"></div>
-        <div id="public-results-content">
+        <div id="public-results-content" class="dashboard-container">
             <!-- Public results will be rendered here -->
         </div>
     </main>
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year"></span> منصة قرار للاستفتاء. جميع الحقوق محفوظة.</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
