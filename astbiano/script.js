@@ -1,3 +1,7 @@
+// =====================================================================
+// قرار للاستفتاء — النسخة الاحترافية المطوّرة
+// =====================================================================
+
 // Universal Firebase Config
 const firebaseConfig = {
     apiKey: "AIzaSyA4idIicapTuRwacbuzFeoAEJE6iUpQG9Y",
@@ -23,7 +27,8 @@ const db = firebase.firestore();
 let currentSurveyData = null;
 let currentSurveyResponses = [];
 let currentIndividualResponseIndex = 0;
-let pendingImages = {}; // صور المجيب قبل الإرسال: { questionId: dataURL }
+let pendingImages = {};
+let responsesUnsub = null;          // إلغاء الاشتراك المباشر في الردود
 
 // =====================================================================
 // HELPER FUNCTIONS
@@ -38,6 +43,7 @@ const showAlert = (message, type, duration = 4000) => {
     if (!container) return;
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert ${type}`;
+    alertDiv.setAttribute('role', type === 'error' ? 'alert' : 'status');
     alertDiv.textContent = message;
     container.prepend(alertDiv);
     setTimeout(() => alertDiv.remove(), duration);
@@ -94,7 +100,6 @@ const copyToClipboard = (text, btn) => {
         fallbackCopy(text, done);
     }
 };
-// الحافظة تقبل صور PNG فقط، لذلك نحوّل أي صورة إلى PNG قبل النسخ
 const dataUrlToPngBlob = (dataUrl) => new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -106,42 +111,6 @@ const dataUrlToPngBlob = (dataUrl) => new Promise((resolve, reject) => {
     img.onerror = reject;
     img.src = dataUrl;
 });
-// يدمج التاريخ (ونصاً اختيارياً) داخل الصورة نفسها كبكسلات مرسومة، بدل نصّ منفصل في الحافظة.
-// هذا يضمن ظهور المحتوى كاملاً بعد اللصق والنشر، لأن بعض المواقع تحذف تمثيل النص أو الصورة
-// عندما يُنسخ الاثنان معاً كعنصرين منفصلين في نفس عملية النسخ.
-async function composeImageWithCaption(dataUrl, captionLines) {
-    const img = await new Promise((resolve, reject) => {
-        const im = new Image();
-        im.onload = () => resolve(im);
-        im.onerror = reject;
-        im.src = dataUrl;
-    });
-    const maxW = 900;
-    const scale = Math.min(1, maxW / img.naturalWidth);
-    const w = Math.max(1, Math.round(img.naturalWidth * scale));
-    const h = Math.max(1, Math.round(img.naturalHeight * scale));
-    const lines = (captionLines || []).filter(Boolean);
-    const padding = 16;
-    const lineHeight = 26;
-    const captionH = lines.length ? (lines.length * lineHeight + padding * 2) : 0;
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h + captionH;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, w, h);
-    if (lines.length) {
-        ctx.fillStyle = '#333333';
-        ctx.font = '16px Arial, Tahoma, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'top';
-        ctx.direction = 'rtl';
-        lines.forEach((line, i) => ctx.fillText(line, w - padding, h + padding + i * lineHeight, w - padding * 2));
-    }
-    return new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('compose failed')), 'image/png'));
-}
-
 async function copyImageToClipboard(dataUrl, btn) {
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
@@ -152,7 +121,6 @@ async function copyImageToClipboard(dataUrl, btn) {
         showAlert('تعذّر نسخ الصورة تلقائياً في هذا المتصفح. اضغط بزر الفأرة الأيمن على الصورة واختر "نسخ الصورة".', 'error', 6000);
     }
 }
-// نسخ HTML (نص/صور مضمّنة) مع نص عادي احتياطي
 async function copyRich(html, plain, btn, okMsg) {
     if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
     await navigator.clipboard.write([new ClipboardItem({
@@ -164,17 +132,9 @@ async function copyRich(html, plain, btn, okMsg) {
 const answerDateHtml = (d) => d ? `<p style="color:#666;font-size:12px;">${esc(d)}</p>` : '';
 async function copySingleAnswer(raw, dateText, btn) {
     if (isImageData(raw)) {
-        // ندمج التاريخ داخل الصورة نفسها (كنص مرسوم) ثم ننسخ ملف صورة واحداً فقط؛
-        // هذا يضمن ظهور التاريخ دائماً بعد اللصق، بخلاف نسخ نص وصورة كعنصرين منفصلين قد يُهمَل أحدهما.
-        try {
-            if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
-            const composed = await composeImageWithCaption(raw, [dateText]);
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': composed })]);
-            flashBtn(btn, 'تم نسخ الصورة مع التاريخ!');
-        } catch (e) {
-            console.error(e);
-            await copyImageToClipboard(raw, btn);
-        }
+        const html = `<div dir="rtl"><p><img src="${raw}" alt="" style="max-width:480px;height:auto;"></p>${answerDateHtml(dateText)}</div>`;
+        try { await copyRich(html, dateText ? `[صورة مرفقة]\n\n${dateText}` : '[صورة مرفقة]', btn, 'تم نسخ الصورة مع التاريخ!'); }
+        catch (e) { console.error(e); await copyImageToClipboard(raw, btn); }
         return;
     }
     const body = isEmptyAnswer(raw) ? '' : (Array.isArray(raw) ? raw.join('\n') : String(raw));
@@ -183,58 +143,125 @@ async function copySingleAnswer(raw, dateText, btn) {
     try { await copyRich(html, plain, btn, 'تم نسخ الرد مع التاريخ!'); }
     catch (e) { console.error(e); copyToClipboard(plain, btn); }
 }
-// نسخ الرد كاملاً (نصوص + صور مضمّنة) بصيغة HTML مع نص عادي احتياطي
 async function copyFullResponse(response, btn) {
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
     const dateText = response.timestamp?.toDate ? response.timestamp.toDate().toLocaleString('ar-EG', dateOptions) : '';
-
-    // نجمع النصوص في عنصر واحد، وكل صورة كملف صورة حقيقي (image/png) في عنصر مستقل بحافظة النسخ؛
-    // هذا يجعل نتيجة اللصق مطابقة لنسخ عدة ملفات، فتبقى الصور ظاهرة بعد النشر في المواقع والمنتديات
-    // (التي تحذف عادةً صور الـ Data URI المضمّنة داخل HTML).
-    const textParts = [];
-    const imageAnswers = [];
+    let html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">`;
+    const plainParts = [];
     response.answers.forEach(a => {
         const raw = a.answer;
         if (isEmptyAnswer(raw)) return;
-        if (isImageData(raw)) imageAnswers.push(raw);
-        else textParts.push(Array.isArray(raw) ? raw.join('، ') : String(raw));
-    });
-    const fullTextParts = dateText ? [...textParts, dateText] : textParts;
-    const plain = fullTextParts.join('\n\n');
-
-    if (imageAnswers.length) {
-        // ندمج كل النصوص + التاريخ داخل الصورة الأولى كتعليق مرسوم، وننسخ صورة واحدة فقط؛
-        // هذا يتفادى مشكلة تجاهل المواقع للصورة عند نسخها مع نص كعنصرين منفصلين.
-        try {
-            if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
-            const composed = await composeImageWithCaption(imageAnswers[0], fullTextParts);
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': composed })]);
-            flashBtn(btn, 'تم نسخ الرد مع الصورة!');
-            if (imageAnswers.length > 1) showAlert(`تم دمج النص مع أول صورة. توجد ${imageAnswers.length - 1} صورة إضافية، انسخها بشكل منفرد بزر "نسخ الصورة".`, 'info', 6000);
-        } catch (e) {
-            console.error(e);
-            copyToClipboard(plain, btn);
-            showAlert('تعذّر نسخ الصورة مع النص في هذا المتصفح؛ تم نسخ النص فقط. استخدم زر "نسخ الصورة" لنسخها منفردة.', 'info', 6000);
+        if (isImageData(raw)) {
+            html += `<p><img src="${raw}" alt="" style="max-width:480px;height:auto;"></p>`;
+            plainParts.push('[صورة مرفقة]');
+        } else {
+            const txt = Array.isArray(raw) ? raw.join('، ') : String(raw);
+            html += `<p>${esc(txt).replace(/\n/g, '<br>')}</p>`;
+            plainParts.push(txt);
         }
-        return;
-    }
-
-    const html = `<div dir="rtl" style="font-family:Arial,Tahoma,sans-serif;">${fullTextParts.map(t => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('')}</div>`;
+    });
+    if (dateText) { html += `<p style="color:#666;font-size:12px;">${esc(dateText)}</p>`; plainParts.push(dateText); }
+    html += '</div>';
+    const plain = plainParts.join('\n\n');
     try {
         if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
         await navigator.clipboard.write([new ClipboardItem({
             'text/html': new Blob([html], { type: 'text/html' }),
             'text/plain': new Blob([plain], { type: 'text/plain' })
         })]);
-        flashBtn(btn, 'تم نسخ الرد!');
+        flashBtn(btn, 'تم نسخ الرد مع الصور!');
     } catch (e) {
         console.error(e);
         copyToClipboard(plain, btn);
+        showAlert('متصفحك لا يدعم نسخ الصور ضمن النص؛ تم نسخ النص فقط.', 'info', 5000);
     }
 }
 
 // =====================================================================
-// IMAGE HANDLING (ضغط الصور وتحويلها إلى Data URL لتخزينها مع البيانات)
+// إشعارات الردود المجانية 100% (Notification API + صوت + عدّاد التبويب)
+// لا تحتاج FCM / VAPID / خادم / بطاقة ائتمان — تعمل أثناء فتح لوحة التحكم
+// =====================================================================
+let notifyEnabled = localStorage.getItem('notifyEnabled') !== 'off';
+let lastSeenCount = -1;
+const baseTitle = document.title;
+
+function beep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.08;
+        o.start(); o.stop(ctx.currentTime + 0.22);
+    } catch (e) { /* صامت */ }
+}
+async function ensureNotifyPermission() {
+    if (!('Notification' in window)) { showAlert('متصفحك لا يدعم الإشعارات.', 'error'); return false; }
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission === 'denied') { showAlert('الإشعارات محظورة من إعدادات المتصفح — فعّلها من أيقونة القفل بجوار العنوان.', 'error', 6000); return false; }
+    return (await Notification.requestPermission()) === 'granted';
+}
+function notifyNewResponses(n) {
+    if (!notifyEnabled || n <= 0) return;
+    const msg = n === 1 ? 'رد جديد على استفتاءك' : `${n} ردود جديدة على استفتاءك`;
+    document.title = `[${n}] ${msg}`;
+    if (document.hidden) {
+        beep();
+        try { new Notification('🔔 قرار للاستفتاء', { body: msg, tag: 'new-response' }); } catch (e) { /* بعض المتصفحات تتطلب Service Worker */ }
+        setTimeout(() => { document.title = baseTitle; }, 5000);
+    } else {
+        setTimeout(() => { document.title = baseTitle; }, 2500);
+    }
+}
+function initNotifyControls() {
+    const btn = $('enable-notify-btn');
+    if (!btn) return;
+    const status = $('notify-status');
+    const update = () => {
+        if (!('Notification' in window)) { status.textContent = 'متصفحك لا يدعم الإشعارات'; btn.disabled = true; return; }
+        const p = Notification.permission;
+        status.textContent = p === 'granted' ? (notifyEnabled ? '✓ مفعّلة' : '✓ مفعّلة — أُوقفت يدوياً') : p === 'denied' ? 'محظورة من إعدادات المتصفح' : 'غير مفعّلة بعد';
+        btn.textContent = notifyEnabled && p === 'granted' ? 'إيقاف الإشعارات' : 'تفعيل الإشعارات';
+    };
+    btn.onclick = async () => {
+        if (notifyEnabled) {
+            notifyEnabled = false;
+            localStorage.setItem('notifyEnabled', 'off');
+            showAlert('تم إيقاف الإشعارات.', 'info');
+        } else {
+            const ok = await ensureNotifyPermission();
+            notifyEnabled = ok;
+            localStorage.setItem('notifyEnabled', ok ? 'on' : 'off');
+            if (ok) showAlert('تم تفعيل الإشعارات — ستصلك تنبيهات فورية أثناء فتح لوحة التحكم.', 'success', 5000);
+        }
+        update();
+    };
+    update();
+}
+
+// =====================================================================
+// الوضع الليلي
+// =====================================================================
+function initDarkMode() {
+    const apply = () => {
+        const saved = localStorage.getItem('darkMode');
+        const prefers = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'on' || (saved === null && prefers)) document.body.classList.add('dark');
+    };
+    apply();
+    document.querySelectorAll('#dark-mode-btn').forEach(btn => {
+        if (!btn) return;
+        const sync = () => { btn.textContent = document.body.classList.contains('dark') ? '☀️ الوضع النهاري' : '🌙 الوضع الليلي'; };
+        sync();
+        btn.onclick = () => {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark') ? 'on' : 'off');
+            sync();
+        };
+    });
+}
+
+// =====================================================================
+// IMAGE HANDLING
 // =====================================================================
 const IMAGE_PRESETS = {
     cover: { mime: 'image/jpeg', maxChars: 380000, steps: [[1600, 0.8], [1400, 0.7], [1200, 0.6], [1000, 0.5], [800, 0.45]] },
@@ -272,7 +299,7 @@ async function compressImageFile(file, preset, maxCharsOverride) {
 }
 
 // =====================================================================
-// DAILY LIMIT (الحد اليومي لكل مستخدم/جهاز)
+// DAILY LIMIT
 // =====================================================================
 const todayKey = () => {
     const d = new Date();
@@ -288,18 +315,55 @@ const incrementDailyCount = (id) => {
 };
 
 // =====================================================================
-// THEME (المظهر والتنسيق)
+// THEME
 // =====================================================================
 const FONT_OPTIONS = ['Cairo', 'Tajawal', 'Almarai', 'Amiri', 'Noto Naskh Arabic', 'Changa', 'El Messiri', 'IBM Plex Sans Arabic', 'Reem Kufi'];
 const FONT_SIZES = { small: '14px', medium: '16px', large: '18px', xlarge: '20px' };
-const DEFAULT_THEME = { pageBg: '#F0F2F5', cardBg: '#FFFFFF', textColor: '#333333', titleColor: '#4A55A2', accent: '#4A55A2', fontFamily: 'Cairo', fontSize: 'medium' };
+const DEFAULT_THEME = {
+    pageBg: '#F0F2F5', cardBg: '#FFFFFF', textColor: '#333333', titleColor: '#4A55A2', accent: '#4A55A2',
+    fontFamily: 'Cairo', fontSize: 'medium',
+    design: 'classic', pattern: 'none', radius: 'medium', shadow: 'auto', anim: 'fade'
+};
+
+// قوالب الأطر والأشكال (12) — تعريفها البصري في style.css (.design-*)
+const DESIGNS = [
+    { id: 'classic', name: 'كلاسيكي' }, { id: 'glass', name: 'زجاجي' }, { id: 'neumorphism', name: 'نيومورفيزم' },
+    { id: 'gradient', name: 'حدّ متدرّج' }, { id: 'neon', name: 'نيون' }, { id: 'minimal', name: 'بسيط' },
+    { id: 'paper', name: 'ورقي' }, { id: 'elevated', name: 'عائم' }, { id: 'double', name: 'حدّ مزدوج' },
+    { id: 'accent-bar', name: 'شريط جانبي' }, { id: 'top-bar', name: 'شريط علوي' }, { id: 'tinted', name: 'ملوّن ناعم' }
+];
+const PATTERNS = [
+    { id: 'none', name: 'بدون' }, { id: 'dots', name: 'نقاط' }, { id: 'lines', name: 'خطوط' }, { id: 'grid', name: 'شبكة' },
+    { id: 'waves', name: 'موجات' }, { id: 'circles', name: 'دوائر' }, { id: 'geometric', name: 'هندسي' }, { id: 'hexagons', name: 'سداسي' }
+];
+const RADIUS_OPTIONS = [
+    { id: 'none', name: 'حادة' }, { id: 'small', name: 'صغيرة' }, { id: 'medium', name: 'متوسطة' }, { id: 'large', name: 'كبيرة' }, { id: 'pill', name: 'كبسولة' }
+];
+const SHADOW_OPTIONS = [
+    { id: 'auto', name: 'حسب القالب' }, { id: 'none', name: 'بدون' }, { id: 'soft', name: 'ناعم' }, { id: 'medium', name: 'متوسط' },
+    { id: 'sharp', name: 'حاد' }, { id: 'float', name: 'عائم' }, { id: 'glow', name: 'توهّج' }
+];
+const ANIM_OPTIONS = [
+    { id: 'none', name: 'بدون' }, { id: 'fade', name: 'تلاشي' }, { id: 'slide', name: 'انزلاق' }, { id: 'bounce', name: 'ارتداد' }, { id: 'glow', name: 'توهّج عند التعبئة' }
+];
+const optName = (list, id, fallback) => (list.find(x => x.id === id) || { name: fallback }).name;
+
 const THEME_PRESETS = {
     'افتراضي': { ...DEFAULT_THEME },
-    'داكن': { pageBg: '#12141C', cardBg: '#1E2230', textColor: '#E7E9F0', titleColor: '#9FB4FF', accent: '#5B7CFA', fontFamily: 'Tajawal', fontSize: 'medium' },
-    'دافئ': { pageBg: '#FBF3E6', cardBg: '#FFFFFF', textColor: '#4A3B2A', titleColor: '#A5522D', accent: '#B8623A', fontFamily: 'Amiri', fontSize: 'large' },
-    'طبيعي': { pageBg: '#EEF5EF', cardBg: '#FFFFFF', textColor: '#26382C', titleColor: '#2F6B45', accent: '#3C8A5A', fontFamily: 'Almarai', fontSize: 'medium' },
-    'أنيق': { pageBg: '#F7F5FB', cardBg: '#FFFFFF', textColor: '#2C2740', titleColor: '#5B3CC4', accent: '#6C4AE0', fontFamily: 'El Messiri', fontSize: 'medium' }
+    'مؤسسي رسمي': { pageBg: '#EEF1F6', cardBg: '#FFFFFF', textColor: '#1F2937', titleColor: '#0B3C74', accent: '#0B3C74', fontFamily: 'Almarai', fontSize: 'medium', design: 'top-bar', pattern: 'none', radius: 'small', shadow: 'soft', anim: 'slide' },
+    'داكن احترافي': { pageBg: '#12141C', cardBg: '#1E2230', textColor: '#E7E9F0', titleColor: '#9FB4FF', accent: '#5B7CFA', fontFamily: 'Tajawal', fontSize: 'medium', design: 'elevated', pattern: 'grid', radius: 'medium', shadow: 'float', anim: 'fade' },
+    'زجاجي أنيق': { pageBg: '#A1C4FD', cardBg: '#FFFFFF', textColor: '#1A237E', titleColor: '#283593', accent: '#3949AB', fontFamily: 'Cairo', fontSize: 'medium', design: 'glass', pattern: 'circles', radius: 'large', shadow: 'auto', anim: 'fade' },
+    'نيون عصري': { pageBg: '#0F0F1E', cardBg: '#16213E', textColor: '#E0E0FF', titleColor: '#4FACFE', accent: '#4FACFE', fontFamily: 'Changa', fontSize: 'medium', design: 'neon', pattern: 'hexagons', radius: 'medium', shadow: 'auto', anim: 'glow' },
+    'دافئ كلاسيكي': { pageBg: '#FBF3E6', cardBg: '#FFFFFF', textColor: '#4A3B2A', titleColor: '#A5522D', accent: '#B8623A', fontFamily: 'Amiri', fontSize: 'large', design: 'paper', pattern: 'none', radius: 'small', shadow: 'auto', anim: 'fade' },
+    'طبيعي هادئ': { pageBg: '#EEF5EF', cardBg: '#FFFFFF', textColor: '#26382C', titleColor: '#2F6B45', accent: '#3C8A5A', fontFamily: 'Almarai', fontSize: 'medium', design: 'accent-bar', pattern: 'waves', radius: 'medium', shadow: 'medium', anim: 'slide' },
+    'بنفسجي أنيق': { pageBg: '#F7F5FB', cardBg: '#FFFFFF', textColor: '#2C2740', titleColor: '#5B3CC4', accent: '#6C4AE0', fontFamily: 'El Messiri', fontSize: 'medium', design: 'gradient', pattern: 'dots', radius: 'large', shadow: 'auto', anim: 'bounce' },
+    'وردي ناعم': { pageBg: '#FFF4F6', cardBg: '#FFFFFF', textColor: '#4B2A33', titleColor: '#B03060', accent: '#C2456F', fontFamily: 'El Messiri', fontSize: 'medium', design: 'tinted', pattern: 'dots', radius: 'large', shadow: 'auto', anim: 'fade' },
+    'نيومورفيزم': { pageBg: '#E6E9EF', cardBg: '#E6E9EF', textColor: '#4A5568', titleColor: '#2D3748', accent: '#4A55A2', fontFamily: 'Tajawal', fontSize: 'medium', design: 'neumorphism', pattern: 'none', radius: 'large', shadow: 'auto', anim: 'fade' },
+    'بسيط احترافي': { pageBg: '#FAFAFA', cardBg: '#FFFFFF', textColor: '#333333', titleColor: '#111111', accent: '#111111', fontFamily: 'IBM Plex Sans Arabic', fontSize: 'medium', design: 'minimal', pattern: 'none', radius: 'none', shadow: 'auto', anim: 'fade' }
 };
+const LIKERT_OPTS = ['غير موافق بشدة', 'غير موافق', 'محايد', 'موافق', 'موافق بشدة'];
+const EMOJI_OPTS = ['😠', '🙁', '😐', '🙂', '😀'];
+const NPS_OPTS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
 const hexToRgb = (hex) => {
     let h = String(hex || '').replace('#', '');
     if (h.length === 3) h = h.split('').map(c => c + c).join('');
@@ -314,18 +378,34 @@ const luminance = (hex) => {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 const readableOn = (hex) => luminance(hex) > 0.45 ? '#1f2937' : '#ffffff';
+const contrastRatio = (a, b) => { const L1 = luminance(a), L2 = luminance(b); return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05); };
+
+// يوحّد الثيم: يملأ الحقول الناقصة ويتجاوز القيم غير المعروفة (متوافق مع ثيمات قديمة)
+function normalizeTheme(theme) {
+    const t = { ...DEFAULT_THEME, ...(theme || {}) };
+    ['pageBg', 'cardBg', 'textColor', 'titleColor', 'accent'].forEach(k => { t[k] = rgbToHex(hexToRgb(t[k])); });
+    if (t.anim === 'pulse') t.anim = 'glow';
+    const pick = (list, v, def) => list.some(x => x.id === v) ? v : def;
+    t.design = pick(DESIGNS, t.design, 'classic');
+    t.pattern = pick(PATTERNS, t.pattern, 'none');
+    t.radius = pick(RADIUS_OPTIONS, t.radius, 'medium');
+    t.shadow = pick(SHADOW_OPTIONS, t.shadow, 'auto');
+    t.anim = pick(ANIM_OPTIONS, t.anim, 'fade');
+    return t;
+}
 
 const loadGoogleFont = (name) => {
     if (!name || document.querySelector(`link[data-font="${name}"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.dataset.font = name;
-    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g, '+')}:wght@400;700&display=swap`;
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name).replace(/%20/g, '+')}:wght@400;600;700&display=swap`;
     document.head.appendChild(link);
 };
-function applyTheme(theme, target = document.documentElement) {
-    const t = { ...DEFAULT_THEME, ...(theme || {}) };
-    loadGoogleFont(t.fontFamily);
+
+// متغيرات الألوان فقط (تُستخدم أيضاً لمصغّرات القوالب في المشرف)
+function applyThemeVars(theme, target) {
+    const t = normalizeTheme(theme);
     const s = target.style;
     const darkCard = luminance(t.cardBg) < 0.3;
     s.setProperty('--bg-color', t.pageBg);
@@ -341,9 +421,28 @@ function applyTheme(theme, target = document.documentElement) {
     s.setProperty('--border-color', mixHex(t.cardBg, t.textColor, 0.16));
     s.setProperty('--input-bg', darkCard ? shade(t.cardBg, 0.08) : mixHex(t.cardBg, '#ffffff', 0.6));
     s.setProperty('--font-family', `"${t.fontFamily}"`);
+    return t;
+}
+
+// فئات القالب/النمط/الزوايا/الظل/الحركة على العنصر (body أو المعاينة)
+function setThemeClasses(el, theme) {
+    const t = normalizeTheme(theme);
+    [...el.classList].forEach(c => { if (/^(design|pattern|radius|shadow|anim)-/.test(c)) el.classList.remove(c); });
+    el.classList.add('themed', `design-${t.design}`, `radius-${t.radius}`, `shadow-${t.shadow}`, `anim-${t.anim}`);
+    if (t.pattern !== 'none') el.classList.add(`pattern-${t.pattern}`);
+}
+
+function applyTheme(theme, target = document.documentElement) {
+    const t = applyThemeVars(theme, target);
+    loadGoogleFont(t.fontFamily);
     const px = FONT_SIZES[t.fontSize] || FONT_SIZES.medium;
-    if (target === document.documentElement) s.setProperty('--base-font-size', px);
-    else s.fontSize = px;
+    if (target === document.documentElement) {
+        target.style.setProperty('--base-font-size', px);
+        setThemeClasses(document.body, t);
+    } else {
+        target.style.fontSize = px;
+        setThemeClasses(target, t);
+    }
 }
 
 // --- LOCAL STORAGE FOR DASHBOARD ---
@@ -396,9 +495,10 @@ function renderMySurveysList() {
     });
 }
 
-// تُستدعى مرة واحدة فقط (كانت تُستدعى عدة مرات وتكرر المستمعات)
 function initDashboardPage() {
     renderMySurveysList();
+    initNotifyControls();
+    initDarkMode();
 
     $('survey-lookup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -422,10 +522,32 @@ function initDashboardPage() {
     });
 
     $('back-to-dashboard-btn').addEventListener('click', () => {
+        if (responsesUnsub) { responsesUnsub(); responsesUnsub = null; }
+        document.title = baseTitle;
         $('survey-management-view').style.display = 'none';
         $('dashboard-home').style.display = '';
         renderMySurveysList();
     });
+}
+
+async function duplicateSurvey(surveyId) {
+    if (!confirm('سيتم إنشاء نسخة جديدة من هذا الاستفتاء (بدون الردود). هل تريد المتابعة؟')) return;
+    const newPin = prompt('أدخل رمزاً سرياً للنسخة الجديدة (4 خانات على الأقل):', '');
+    if (newPin === null) return;
+    if (newPin.length < 4) return showAlert('الرمز السري يجب ألا يقل عن 4 خانات.', 'error');
+    showLoader(true);
+    try {
+        const snap = await db.collection('surveys').doc(surveyId).get();
+        if (!snap.exists) throw new Error('الاستفتاء غير موجود.');
+        const data = snap.data();
+        const copy = { ...data, title: `نسخة من ${data.title}`, adminPinHash: await hashPassword(newPin),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        const ref = await db.collection('surveys').add(copy);
+        saveManagedSurvey(ref.id, newPin, copy.title);
+        showAlert('تم تكرار الاستفتاء — تجده في قائمة «استفتاءاتي».', 'success', 5000);
+    } catch (err) {
+        showAlert('فشل التكرار: ' + err.message, 'error');
+    } finally { showLoader(false); }
 }
 
 async function deleteSurvey(surveyId) {
@@ -433,7 +555,6 @@ async function deleteSurvey(surveyId) {
     try {
         const responsesQuery = await db.collection('responses').where('surveyId', '==', surveyId).get();
         if (!responsesQuery.empty) {
-            // الدُفعة الواحدة محدودة بـ 500 عملية، لذا نقسمها
             const docs = responsesQuery.docs;
             for (let i = 0; i < docs.length; i += 400) {
                 const batch = db.batch();
@@ -457,34 +578,70 @@ async function loadSurveyForManagement(surveyId, surveyPin) {
     $('dashboard-home').style.display = 'none';
     $('survey-management-view').style.display = '';
     showLoader(true);
+    if (responsesUnsub) { responsesUnsub(); responsesUnsub = null; }
 
     try {
         const surveyDoc = await db.collection('surveys').doc(surveyId).get();
         if (!surveyDoc.exists) throw new Error("لم يتم العثور على الاستفتاء.");
         currentSurveyData = { id: surveyDoc.id, ...surveyDoc.data() };
-
-        const responsesSnapshot = await db.collection('responses').where('surveyId', '==', surveyId).orderBy('timestamp', 'desc').get();
-        currentSurveyResponses = responsesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).reverse(); // الأقدم أولاً، والجديد في النهاية
+        currentSurveyResponses = [];
 
         $('survey-title-header').textContent = currentSurveyData.title;
-        $('response-count-tab').textContent = currentSurveyResponses.length;
+        $('response-count-tab').textContent = '0';
         $('edit-survey-link').href = `admin.html?id=${surveyId}`;
         $('view-survey-link').href = `survey.html?id=${surveyId}`;
 
         const shareLink = buildSurveyLink(surveyId);
         $('survey-share-link-dashboard').value = shareLink;
         $('copy-share-link-dashboard').onclick = () => copyToClipboard(shareLink, $('copy-share-link-dashboard'));
-
-        let initialIndex = 0;
-        const savedId = localStorage.getItem(`lastViewedResponse_${surveyId}`);
-        if (savedId) {
-            const found = currentSurveyResponses.findIndex(r => r.id === savedId);
-            if (found > -1) initialIndex = found;
+        const qrImg = $('survey-qr-img');
+        if (qrImg) qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(shareLink);
+        const printBtn = $('print-results-btn');
+        if (printBtn) printBtn.onclick = () => window.print();
+        const actionsBar = document.querySelector('.main-actions');
+        let dupBtn = $('duplicate-survey-btn');
+        if (actionsBar && !dupBtn) {
+            dupBtn = document.createElement('button');
+            dupBtn.id = 'duplicate-survey-btn';
+            dupBtn.type = 'button';
+            dupBtn.className = 'btn secondary small';
+            dupBtn.textContent = '📋 تكرار';
+            actionsBar.appendChild(dupBtn);
         }
+        if (dupBtn) dupBtn.onclick = () => duplicateSurvey(surveyId);
+
+        const savedId = localStorage.getItem(`lastViewedResponse_${surveyId}`);
+        const calcInitialIndex = () => {
+            if (!savedId) return 0;
+            const found = currentSurveyResponses.findIndex(r => r.id === savedId);
+            return found > -1 ? found : 0;
+        };
 
         setupDashboardControls();
-        renderAllResponseViews(initialIndex);
         setupExportButtons(surveyId);
+
+        // الاشتراك المباشر: تحديث فوري + إشعارات مجانية عند وصول ردود جديدة
+        lastSeenCount = -1;
+        responsesUnsub = db.collection('responses')
+            .where('surveyId', '==', surveyId)
+            .orderBy('timestamp', 'desc')
+            .onSnapshot(snapshot => {
+                const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).reverse();
+                if (lastSeenCount >= 0 && list.length > lastSeenCount) {
+                    notifyNewResponses(list.length - lastSeenCount);
+                }
+                const isFirst = lastSeenCount === -1;
+                lastSeenCount = list.length;
+                const keepIndex = Math.min(currentIndividualResponseIndex, Math.max(0, list.length - 1));
+                currentSurveyResponses = list;
+                $('response-count-tab').textContent = list.length;
+                updateResponseCount();
+                if (isFirst) renderAllResponseViews(calcInitialIndex());
+                else renderAllResponseViews(keepIndex);
+            }, err => {
+                console.error('Live listener error:', err);
+                showAlert('تعذّر التحديث الفوري للردود (تحقق من فهارس Firestore).', 'error');
+            });
     } catch (error) {
         console.error(error);
         showAlert(error.message, 'error');
@@ -537,23 +694,25 @@ function renderSettingsSummary() {
         <p><strong>حالة الاستفتاء:</strong> ${settings.acceptingResponses ? '<span style="color:var(--success-color);">يستقبل الردود</span>' : '<span style="color:var(--error-color);">مغلق</span>'}</p>
         <p><strong>الإجابات المتعددة:</strong> ${settings.allowMultipleSubmissions ? 'مسموح بها' : 'غير مسموح بها'}</p>
         <p><strong>الحد اليومي لكل مستخدم:</strong> ${settings.dailyLimit ? settings.dailyLimit + ' ردود/يوم' : 'بدون حد'}</p>
+        <p><strong>الحد الإجمالي للردود:</strong> ${settings.maxResponses ? settings.maxResponses + ' رد' : 'بدون حد'}</p>
+        <p><strong>رمز دخول للمجيبين:</strong> ${settings.participantPinHash ? 'مفعّل' : 'غير مفعّل'}</p>
+        <p><strong>التأكيد قبل الإرسال:</strong> ${settings.confirmBeforeSubmit ? 'مطلوب' : 'غير مطلوب'}</p>
         <p><strong>عرض النتائج للعامة:</strong> ${settings.allowResultsView ? 'مسموح' : 'غير مسموح'}</p>
         <p><strong>شريط التقدم:</strong> ${settings.showProgress ? 'مُفعّل' : 'غير مُفعّل'}</p>
+        <p><strong>عدد المشاركين للعامة:</strong> ${settings.showPublicCount ? 'يظهر' : 'مخفي'}</p>
         <p><strong>الغلاف / الشعار:</strong> ${currentSurveyData.coverUrl ? 'غلاف ✓' : 'بدون غلاف'} / ${currentSurveyData.logoUrl ? 'شعار ✓' : 'بدون شعار'}</p>
-        <p><strong>التنسيق المخصص:</strong> ${settings.theme ? `مُفعّل (الخط: ${esc(settings.theme.fontFamily)})` : 'الافتراضي'}</p>
+        <p><strong>التنسيق المخصص:</strong> ${settings.theme ? `مُفعّل (${esc(optName(DESIGNS, settings.theme.design, 'كلاسيكي'))} · ${esc(settings.theme.fontFamily)})` : 'الافتراضي'}</p>
         <p><strong>تاريخ البدء:</strong> ${settings.startDate ? new Date(settings.startDate + 'T' + (settings.startTime || '00:00')).toLocaleString('ar-EG', dateOptions) : 'فوري'}</p>
         <p><strong>تاريخ الانتهاء:</strong> ${settings.endDate ? new Date(settings.endDate + 'T' + (settings.endTime || '23:59')).toLocaleString('ar-EG', dateOptions) : 'لا يوجد'}</p>
     `;
 }
 
-// ملاحظة: لا نستبدل innerHTML للعناصر التي تحتوي أزرار التنقل (كان هذا سبب الخطأ
-// "Cannot set properties of null (setting 'innerHTML')" عند فتح استفتاء بعد آخر بلا ردود)
 function renderAllResponseViews(initialIndividualIndex = 0) {
     renderSettingsSummary();
 
     const controls = document.querySelector('.individual-controls');
     if (currentSurveyResponses.length === 0) {
-        const msg = '<div class="card" style="text-align:center;"><p>لا توجد ردود لعرضها حتى الآن.</p></div>';
+        const msg = '<div class="card" style="text-align:center;"><p>لا توجد ردود لعرضها حتى الآن.</p><p style="font-size:.9rem;">افتح هذه الصفحة وأرسل ردوداً تجريبية — ستظهر هنا فوراً مع إشعار.</p></div>';
         $('summary-view').innerHTML = msg;
         $('individual-response-content').innerHTML = msg;
         if (controls) controls.style.display = 'none';
@@ -585,6 +744,7 @@ function renderSummaryView(containerId = 'summary-view', opts = {}) {
     const hideImages = !!opts.hideImages;
     const container = $(containerId);
     container.innerHTML = '';
+    const CHOICE_TYPES = ['radio', 'checkbox', 'dropdown', 'rating', 'nps', 'likert', 'emoji'];
     currentSurveyData.questions.forEach(q => {
         const card = document.createElement('div');
         card.className = 'card';
@@ -613,18 +773,31 @@ function renderSummaryView(containerId = 'summary-view', opts = {}) {
         }
 
         const statsDiv = document.createElement('div');
-        if (['radio', 'checkbox', 'dropdown', 'rating'].includes(q.type)) {
+        if (CHOICE_TYPES.includes(q.type)) {
             const counts = {};
             responsesForQ.forEach(answer => {
                 (Array.isArray(answer) ? answer : [answer]).forEach(opt => { counts[opt] = (counts[opt] || 0) + 1; });
             });
             const denominator = q.type === 'checkbox' ? responsesForQ.length : Object.values(counts).reduce((a, b) => a + b, 0);
-            const opts2 = (q.options && q.options.length) ? q.options : (q.type === 'rating' ? ['5', '4', '3', '2', '1'] : []);
+            let opts2;
+            if (q.type === 'rating') opts2 = ['5', '4', '3', '2', '1'];
+            else if (q.type === 'nps') opts2 = [...NPS_OPTS].reverse();
+            else if (q.type === 'likert') opts2 = LIKERT_OPTS;
+            else if (q.type === 'emoji') opts2 = EMOJI_OPTS;
+            else opts2 = (q.options && q.options.length) ? q.options : [];
             opts2.forEach(opt => {
                 const count = counts[opt] || 0;
                 const percentage = denominator > 0 ? ((count / denominator) * 100).toFixed(1) : 0;
                 statsDiv.innerHTML += `<div class="progress-bar-container"><div class="progress-bar-info"><span>${esc(opt)}${q.type === 'rating' ? ' نجوم' : ''}</span><span>${count} (${percentage}%)</span></div><div class="progress-bar-track"><div class="progress-bar" style="width:${percentage}%;"></div></div></div>`;
             });
+            if (q.type === 'nps' && responsesForQ.length) {
+                const nums = responsesForQ.map(a => parseInt(Array.isArray(a) ? a[0] : a, 10)).filter(n => !isNaN(n));
+                if (nums.length) {
+                    const pro = nums.filter(n => n >= 9).length, pass = nums.filter(n => n >= 7 && n <= 8).length, det = nums.filter(n <= 6).length;
+                    const nps = ((pro - det) / nums.length * 100).toFixed(0);
+                    statsDiv.innerHTML += `<p class="question-stats"><strong>مؤشر NPS:</strong> ${nps} (مروّجون ${pro} · محايدون ${pass} · منتقدون ${det})</p>`;
+                }
+            }
         }
         statsDiv.innerHTML += `<p class="question-stats">إجمالي الردود على هذا السؤال: <strong>${responsesForQ.length}</strong> من أصل ${currentSurveyResponses.length} إجابة كلية.</p>`;
         card.appendChild(statsDiv);
@@ -657,7 +830,7 @@ function renderIndividualView(index) {
         wrap.appendChild(buildAnswerNode(raw));
 
         const footer = document.createElement('div');
-        footer.style.cssText = 'display:flex;justify-content:flex-end;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid #eee;';
+        footer.style.cssText = 'display:flex;justify-content:flex-end;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);';
         const btn = document.createElement('button');
         btn.className = 'btn secondary small';
         btn.textContent = isImageData(raw) ? 'نسخ الصورة' : 'نسخ الرد';
@@ -674,11 +847,10 @@ function renderIndividualView(index) {
     dateSpan.textContent = formattedDate;
     const copyAllBtn = document.createElement('button');
     copyAllBtn.className = 'btn primary small';
-    copyAllBtn.textContent = 'نسخ الرد كاملاً (مع الصور)';
+    copyAllBtn.textContent = 'النسخ كاملاً مع الصور';
     copyAllBtn.onclick = () => copyFullResponse(response, copyAllBtn);
     const delBtn = document.createElement('button');
-    delBtn.className = 'btn small';
-    delBtn.style.cssText = 'background:var(--error-color);color:#fff;';
+    delBtn.className = 'btn danger small';
     delBtn.textContent = 'حذف هذا الرد';
     delBtn.onclick = () => deleteSingleResponse(index);
     const btnGroup = document.createElement('div');
@@ -709,9 +881,6 @@ async function deleteSingleResponse(index) {
     showLoader(true);
     try {
         await db.collection('responses').doc(response.id).delete();
-        currentSurveyResponses.splice(index, 1);
-        updateResponseCount();
-        renderAllResponseViews(Math.max(0, Math.min(index, currentSurveyResponses.length - 1)));
         showAlert('تم حذف الرد.', 'success');
     } catch (err) {
         console.error(err);
@@ -734,9 +903,6 @@ async function deleteAllResponses() {
             docs.slice(i, i + 400).forEach(r => batch.delete(db.collection('responses').doc(r.id)));
             await batch.commit();
         }
-        currentSurveyResponses = [];
-        updateResponseCount();
-        renderAllResponseViews(0);
         showAlert(`تم حذف ${total} رد.`, 'success');
     } catch (err) {
         console.error(err);
@@ -754,12 +920,71 @@ function setupIndividualNav() {
 // =====================================================================
 // ADMIN/CREATE PAGE LOGIC
 // =====================================================================
+const SURVEY_TEMPLATES = [
+    {
+        name: '📋 رأي عام',
+        questions: [
+            { text: 'ما مدى رضاك عن الفكرة بشكل عام؟', type: 'rating', required: true },
+            { text: 'هل توصي بها للآخرين؟', type: 'radio', required: true, options: ['نعم بالتأكيد', 'ربما', 'لا'] },
+            { text: 'ما سبب اختيارك؟', type: 'textarea', required: false },
+            { text: 'اقتراحاتك للتطوير', type: 'textarea', required: false }
+        ]
+    },
+    {
+        name: '🛎️ تقييم خدمة',
+        questions: [
+            { text: 'مدى سرعة الاستجابة لطلبك', type: 'likert', required: true },
+            { text: 'جودة الخدمة المقدمة', type: 'likert', required: true },
+            { text: 'احتمالية أن توصي بخدمتنا (0-10)', type: 'nps', required: true },
+            { text: 'ملاحظات إضافية', type: 'textarea', required: false }
+        ]
+    },
+    {
+        name: '🎤 تقييم فعالية / دورة',
+        questions: [
+            { text: 'محتوى الفعالية', type: 'rating', required: true },
+            { text: 'أسلوب العرض والتقديم', type: 'rating', required: true },
+            { text: 'هل كانت الفعالية مفيدة؟', type: 'radio', required: true, options: ['مفيدة جداً', 'مفيدة', 'متوسطة', 'غير مفيدة'] },
+            { text: 'شاركنا انطباعك', type: 'textarea', required: false }
+        ]
+    },
+    {
+        name: '📮 صندوق اقتراحات',
+        questions: [
+            { text: 'اكتب اقتراحك أو ملاحظتك هنا', type: 'textarea', required: true }
+        ]
+    },
+    {
+        name: '👨‍🏫 تقييم معلم / مدرسة',
+        questions: [
+            { text: 'وضوح الشرح', type: 'emoji', required: true },
+            { text: 'التفاعل مع الطلاب', type: 'likert', required: true },
+            { text: 'الالتزام بالوقت', type: 'likert', required: true },
+            { text: 'ملاحظات', type: 'textarea', required: false }
+        ]
+    }
+];
+
 function initAdminPage() {
     const surveyId = getSurveyIdFromUrl();
     let questionCounter = 0;
     let coverData = null;
     let logoData = null;
     let legacyBg = '#F0F2F5';
+    initDarkMode();
+
+    // ---------- القوالب الجاهزة ----------
+    SURVEY_TEMPLATES.forEach(tpl => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn secondary small';
+        b.textContent = tpl.name;
+        b.onclick = () => {
+            tpl.questions.forEach(q => addQuestion(q));
+            showAlert(`تمت إضافة قالب "${tpl.name}" — عدّل الأسئلة كما تشاء ثم انشر.`, 'success', 3500);
+        };
+        $('templates-row').appendChild(b);
+    });
 
     // ---------- الغلاف والشعار ----------
     const updateMediaPreview = () => {
@@ -794,24 +1019,73 @@ function initAdminPage() {
     $('remove-cover-btn').onclick = () => { coverData = null; updateMediaPreview(); };
     $('remove-logo-btn').onclick = () => { logoData = null; updateMediaPreview(); };
 
-    // ---------- المظهر ----------
+    // ---------- المظهر والقوالب ----------
     const themeFields = { pageBg: 'theme-page-bg', cardBg: 'theme-card-bg', textColor: 'theme-text', titleColor: 'theme-title', accent: 'theme-accent', fontFamily: 'theme-font', fontSize: 'theme-size' };
     $('theme-font').innerHTML = FONT_OPTIONS.map(f => `<option value="${f}">${f}</option>`).join('');
-    const readTheme = () => Object.fromEntries(Object.entries(themeFields).map(([k, id]) => [k, $(id).value]));
-    const writeTheme = (t) => { const m = { ...DEFAULT_THEME, ...(t || {}) }; Object.entries(themeFields).forEach(([k, id]) => { $(id).value = m[k]; }); };
-    const refreshThemePreview = () => {
-        $('theme-panel').classList.toggle('disabled', !$('theme-enabled').checked);
-        applyTheme(readTheme(), $('theme-preview'));
+    const choice = { design: 'classic', pattern: 'none', radius: 'medium', shadow: 'auto', anim: 'fade' };
+
+    $('design-grid').innerHTML = DESIGNS.map(d => `<button type="button" class="dsg-card" data-choice="design" data-val="${d.id}"><div class="dsg-thumb" data-design="${d.id}"><div class="dsg-mini"><i></i><i></i><i></i></div></div><span class="dsg-name">${d.name}</span></button>`).join('');
+    $('pattern-grid').innerHTML = PATTERNS.map(p => `<button type="button" class="ptn-card" data-choice="pattern" data-val="${p.id}"><div class="ptn-thumb" data-pattern="${p.id}"></div><span class="dsg-name">${p.name}</span></button>`).join('');
+    const fillRow = (rowId, key, list) => { $(rowId).innerHTML = list.map(o => `<button type="button" class="btn secondary small" data-choice="${key}" data-val="${o.id}">${o.name}</button>`).join(''); };
+    fillRow('radius-row', 'radius', RADIUS_OPTIONS);
+    fillRow('shadow-row', 'shadow', SHADOW_OPTIONS);
+    fillRow('anim-row', 'anim', ANIM_OPTIONS);
+
+    const readTheme = () => ({ ...Object.fromEntries(Object.entries(themeFields).map(([k, id]) => [k, $(id).value])), ...choice });
+    const syncChoiceUI = () => {
+        document.querySelectorAll('#theme-panel [data-choice]').forEach(el => {
+            const on = choice[el.dataset.choice] === el.dataset.val;
+            el.classList.toggle('active', on);
+            if (el.classList.contains('btn')) el.classList.toggle('primary', on);
+            el.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
     };
-    Object.values(themeFields).forEach(id => { $(id).addEventListener('input', refreshThemePreview); $(id).addEventListener('change', refreshThemePreview); });
-    $('theme-enabled').addEventListener('change', refreshThemePreview);
+    const writeTheme = (t) => {
+        const m = normalizeTheme(t);
+        Object.entries(themeFields).forEach(([k, id]) => { $(id).value = m[k]; });
+        Object.keys(choice).forEach(k => { choice[k] = m[k]; });
+        syncChoiceUI();
+    };
+    const refreshThemePreview = (replay = false) => {
+        const on = $('theme-enabled').checked;
+        $('theme-panel').classList.toggle('disabled', !on);
+        const t = readTheme();
+        const prev = $('theme-preview');
+        applyTheme(t, prev);
+        // مصغّرات القوالب والأنماط تعكس ألوانك الحالية
+        document.querySelectorAll('.dsg-thumb').forEach(el => { applyThemeVars(t, el); setThemeClasses(el, { ...t, design: el.dataset.design, pattern: 'none', anim: 'none' }); });
+        document.querySelectorAll('.ptn-thumb').forEach(el => { applyThemeVars(t, el); setThemeClasses(el, { ...t, design: 'classic', pattern: el.dataset.pattern, anim: 'none' }); });
+        const note = $('theme-contrast-note');
+        if (note) {
+            const worst = Math.min(contrastRatio(t.textColor, t.cardBg), contrastRatio(t.titleColor, t.cardBg));
+            note.style.display = on ? 'block' : 'none';
+            note.classList.toggle('ok', worst >= 4.5);
+            note.textContent = worst >= 4.5
+                ? `✓ تباين النصوص مع البطاقات جيد (${worst.toFixed(1)}:1).`
+                : `⚠ تباين النصوص مع خلفية البطاقة منخفض (${worst.toFixed(1)}:1) وقد يصعب القراءة. يُنصح بـ 4.5:1 على الأقل.`;
+        }
+        if (replay) { // إعادة تشغيل الحركة في المعاينة
+            const card = prev.querySelector('.tp-card');
+            if (card) { card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
+        }
+    };
+    $('theme-panel').addEventListener('click', (e) => {
+        const el = e.target.closest('[data-choice]');
+        if (!el) return;
+        choice[el.dataset.choice] = el.dataset.val;
+        syncChoiceUI();
+        refreshThemePreview(el.dataset.choice === 'anim');
+    });
     Object.entries(THEME_PRESETS).forEach(([name, preset]) => {
         const b = document.createElement('button');
-        b.type = 'button'; b.className = 'btn secondary small'; b.textContent = name;
-        b.onclick = () => { writeTheme(preset); refreshThemePreview(); };
+        b.type = 'button'; b.className = 'btn secondary small';
+        b.innerHTML = `<span class="swatch" style="background:${esc(preset.accent)}"></span>${esc(name)}`;
+        b.onclick = () => { writeTheme(preset); refreshThemePreview(true); showAlert(`تم تطبيق قالب "${name}"`, 'success', 2000); };
         $('preset-row').appendChild(b);
     });
     writeTheme(DEFAULT_THEME);
+    Object.values(themeFields).forEach(id => { $(id).addEventListener('input', () => refreshThemePreview()); $(id).addEventListener('change', () => refreshThemePreview()); });
+    $('theme-enabled').addEventListener('change', () => refreshThemePreview());
     refreshThemePreview();
 
     // ---------- الحد اليومي ----------
@@ -823,19 +1097,46 @@ function initAdminPage() {
     $('allow-multiple-submissions').addEventListener('change', syncLimit);
 
     // ---------- الأسئلة ----------
+    const newQid = () => `q_${Math.random().toString(36).slice(2, 11)}`;
+    const questionChoices = (card) => {
+        const t = card.querySelector('.q-type').value;
+        if (['radio', 'checkbox', 'dropdown'].includes(t)) return Array.from(card.querySelectorAll('.option-item input')).map(i => i.value.trim()).filter(Boolean);
+        if (t === 'rating') return ['1', '2', '3', '4', '5'];
+        if (t === 'nps') return NPS_OPTS;
+        if (t === 'likert') return LIKERT_OPTS;
+        if (t === 'emoji') return EMOJI_OPTS;
+        return [];
+    };
+    // يحدّث قوائم "أظهر هذا السؤال إذا..." (تعتمد على معرّف السؤال لا ترتيبه، فلا تنكسر عند الحذف)
+    const refreshConditionalUI = () => {
+        const cards = Array.from(document.querySelectorAll('.admin-question-card'));
+        cards.forEach((card, i) => {
+            const sel = card.querySelector('.q-cond-qid');
+            if (!sel) return;
+            const wanted = card.dataset.condQ || '';
+            sel.innerHTML = '<option value="">— بدون شرط —</option>' + cards.slice(0, i).map((c, j) =>
+                `<option value="${esc(c.dataset.qid)}">${j + 1}. ${esc(c.querySelector('.q-text').value.trim() || 'سؤال بلا نص')}</option>`).join('');
+            sel.value = wanted;
+            card.dataset.condQ = sel.value;
+            const target = cards.find(c => c.dataset.qid === sel.value);
+            card.querySelector('datalist').innerHTML = target ? questionChoices(target).map(o => `<option value="${esc(o)}">`).join('') : '';
+            card.querySelector('.q-cond-val').disabled = !sel.value;
+        });
+    };
     const addQuestion = (data = {}) => {
         const qId = `q_${++questionCounter}`;
         const qCard = document.createElement('div');
         qCard.className = 'admin-question-card';
-        if (data.id) qCard.dataset.qid = data.id; // نحافظ على المعرّف حتى لا تضيع ارتباطات الردود القديمة عند التعديل
-        qCard.innerHTML = `<div class="admin-question-header"><h4>السؤال ${questionCounter}</h4><button type="button" class="btn small" onclick="this.closest('.admin-question-card').remove()">حذف</button></div><div class="form-group"><input type="text" class="q-text" value="${esc(data.text || '')}" placeholder="نص السؤال" required></div><div class="form-group"><select class="q-type"><option value="text">نص قصير</option><option value="textarea">نص طويل</option><option value="radio">اختيار واحد</option><option value="checkbox">اختيار متعدد</option><option value="dropdown">قائمة منسدلة</option><option value="date">تاريخ</option><option value="time">وقت</option><option value="rating">تقييم نجوم</option><option value="image">رفع صورة</option></select></div><div class="q-options-container" style="display:none;"></div><div class="form-group checkbox-group"><input type="checkbox" class="q-required" id="q-req-${qId}" ${data.required ? 'checked' : ''}><label for="q-req-${qId}">سؤال إجباري</label></div>`;
+        qCard.dataset.qid = data.id || newQid();
+        if (data.condition) qCard.dataset.condQ = data.condition.questionId || '';
+        qCard.innerHTML = `<div class="admin-question-header"><h4>السؤال ${questionCounter}</h4><button type="button" class="btn danger small q-remove">حذف السؤال</button></div><div class="form-group"><input type="text" class="q-text" value="${esc(data.text || '')}" placeholder="نص السؤال" required></div><div class="form-group"><select class="q-type"><option value="text">نص قصير</option><option value="textarea">نص طويل</option><option value="radio">اختيار واحد</option><option value="checkbox">اختيار متعدد</option><option value="dropdown">قائمة منسدلة</option><option value="date">تاريخ</option><option value="time">وقت</option><option value="rating">تقييم نجوم</option><option value="emoji">تقييم بالوجوه التعبيرية</option><option value="nps">مقياس NPS (0-10)</option><option value="likert">مقياس ليكرت (5 درجات)</option><option value="image">رفع صورة</option></select></div><div class="q-options-container" style="display:none;"></div><div class="form-group checkbox-group"><input type="checkbox" class="q-required" id="q-req-${qId}" ${data.required ? 'checked' : ''}><label for="q-req-${qId}">سؤال إجباري</label></div><div class="q-cond"><label for="q-cond-v-${qId}">↳ منطق شرطي (اختياري): أظهر هذا السؤال فقط إذا كانت إجابة سؤال سابق تساوي:</label><div class="cond-row"><select class="q-cond-qid" aria-label="السؤال السابق"><option value="">— بدون شرط —</option></select><input type="text" class="q-cond-val" id="q-cond-v-${qId}" list="dl-${qId}" placeholder="القيمة المطلوبة" value="${esc(data.condition ? data.condition.value : '')}"><datalist id="dl-${qId}"></datalist></div></div>`;
         $('questions-container').appendChild(qCard);
         const typeSelect = qCard.querySelector('.q-type');
         typeSelect.value = data.type || 'text';
         const addOptionToList = (list, text = '') => {
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option-item';
-            optionDiv.innerHTML = `<input type="text" value="${esc(text)}" placeholder="نص الخيار"><button type="button" class="btn small" onclick="this.parentElement.remove()">X</button>`;
+            optionDiv.innerHTML = `<input type="text" value="${esc(text)}" placeholder="نص الخيار"><button type="button" class="btn danger small icon" aria-label="حذف الخيار" onclick="this.parentElement.remove()">&#10005;</button>`;
             list.appendChild(optionDiv);
         };
         const handleTypeChange = () => {
@@ -844,18 +1145,30 @@ function initAdminPage() {
                 optionsContainer.style.display = 'block';
                 if (!optionsContainer.innerHTML) {
                     optionsContainer.innerHTML = '<h6>الخيارات:</h6><div class="options-list"></div><button type="button" class="btn secondary small add-option-btn">إضافة خيار</button>';
-                    optionsContainer.querySelector('.add-option-btn').onclick = () => addOptionToList(optionsContainer.querySelector('.options-list'));
+                    optionsContainer.querySelector('.add-option-btn').onclick = () => { addOptionToList(optionsContainer.querySelector('.options-list')); refreshConditionalUI(); };
                 }
                 const optionsList = optionsContainer.querySelector('.options-list');
                 if (!optionsList.children.length) (data.options && data.options.length ? data.options : ['']).forEach(opt => addOptionToList(optionsList, opt));
             } else {
                 optionsContainer.style.display = 'none';
             }
+            refreshConditionalUI();
         };
         typeSelect.onchange = handleTypeChange;
         handleTypeChange();
     };
+    window._addQuestion = addQuestion; // للقوالب
     $('add-question-btn').onclick = () => addQuestion();
+    const qBox = $('questions-container');
+    qBox.addEventListener('click', (e) => {
+        const rm = e.target.closest('.q-remove');
+        if (rm) { rm.closest('.admin-question-card').remove(); refreshConditionalUI(); }
+    });
+    qBox.addEventListener('input', (e) => { if (e.target.matches('.q-text, .option-item input')) refreshConditionalUI(); });
+    qBox.addEventListener('change', (e) => {
+        if (e.target.matches('.q-cond-qid')) e.target.closest('.admin-question-card').dataset.condQ = e.target.value;
+        if (e.target.matches('.q-cond-qid, .q-type')) refreshConditionalUI();
+    });
 
     // ---------- تحميل استفتاء موجود ----------
     if (surveyId) {
@@ -871,16 +1184,19 @@ function initAdminPage() {
             $('survey-admin-pin').required = false;
             $('accepting-responses').checked = settings.acceptingResponses !== false;
             $('allow-multiple-submissions').checked = settings.allowMultipleSubmissions || false;
-            $('daily-limit').value = settings.dailyLimit || '';
-            syncLimit();
-            if (settings.dailyLimit) $('daily-limit').value = settings.dailyLimit;
+            $('max-responses').value = settings.maxResponses || '';
+            $('survey-participant-pin').placeholder = settings.participantPinHash ? 'اتركه فارغاً للإبقاء على الرمز القديم' : 'اتركه فارغاً لاستفتاء مفتوح للجميع';
+            $('confirm-before-submit').checked = settings.confirmBeforeSubmit || false;
             $('allow-results-view').checked = settings.allowResultsView || false;
             $('show-progress').checked = settings.showProgress || false;
+            $('show-public-count').checked = settings.showPublicCount || false;
             $('start-date').value = settings.startDate || '';
             $('start-time').value = settings.startTime || '';
             $('end-date').value = settings.endDate || '';
             $('end-time').value = settings.endTime || '';
             $('thank-you-message').value = settings.thankYouMessage || '';
+            $('daily-limit').value = settings.dailyLimit || '';
+            syncLimit();
             legacyBg = settings.backgroundColor || legacyBg;
             coverData = data.coverUrl || null;
             logoData = data.logoUrl || null;
@@ -893,6 +1209,7 @@ function initAdminPage() {
             }
             refreshThemePreview();
             (data.questions || []).forEach(q => addQuestion(q));
+            refreshConditionalUI();
         }).catch(err => showAlert('تعذّر تحميل الاستفتاء: ' + err.message, 'error'))
             .finally(() => showLoader(false));
     } else {
@@ -915,7 +1232,7 @@ function initAdminPage() {
         const questions = [];
         for (const card of cards) {
             const q = {
-                id: card.dataset.qid || `q_${Math.random().toString(36).substr(2, 9)}`,
+                id: card.dataset.qid,
                 text: card.querySelector('.q-text').value.trim(),
                 type: card.querySelector('.q-type').value,
                 required: card.querySelector('.q-required').checked,
@@ -926,6 +1243,12 @@ function initAdminPage() {
                 if (q.options.length < 2) { showAlert(`السؤال "${q.text}" يحتاج خيارين على الأقل.`, 'error'); return showLoader(false); }
             } else {
                 q.options = [];
+            }
+            const condQid = card.dataset.condQ;
+            const condVal = card.querySelector('.q-cond-val').value.trim();
+            if (condQid) {
+                if (!condVal) { showAlert(`حدّد قيمة الشرط للسؤال "${q.text}" أو اختر «بدون شرط».`, 'error'); return showLoader(false); }
+                if (questions.some(x => x.id === condQid)) q.condition = { questionId: condQid, value: condVal };
             }
             questions.push(q);
         }
@@ -942,8 +1265,11 @@ function initAdminPage() {
                 acceptingResponses: $('accepting-responses').checked,
                 allowMultipleSubmissions: multi,
                 dailyLimit: (multi && dailyRaw > 0) ? dailyRaw : null,
+                maxResponses: parseInt($('max-responses').value, 10) > 0 ? parseInt($('max-responses').value, 10) : null,
+                confirmBeforeSubmit: $('confirm-before-submit').checked,
                 allowResultsView: $('allow-results-view').checked,
                 showProgress: $('show-progress').checked,
+                showPublicCount: $('show-public-count').checked,
                 startDate: $('start-date').value || null,
                 startTime: $('start-time').value || null,
                 endDate: $('end-date').value || null,
@@ -956,6 +1282,8 @@ function initAdminPage() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         if (pin) surveyData.adminPinHash = await hashPassword(pin);
+        const pPin = $('survey-participant-pin').value;
+        if (pPin && pPin.length >= 4) surveyData.settings.participantPinHash = await hashPassword(pPin);
         try {
             let finalId = surveyId;
             if (surveyId) {
@@ -980,8 +1308,7 @@ function initAdminPage() {
 // =====================================================================
 async function initSurveyPage() {
     const surveyId = getSurveyIdFromUrl();
-    const PANELS = ['survey-hero', 'progress-container', 'survey-form-responder', 'thank-you-container', 'already-submitted-container', 'status-container'];
-    // نُظهر لوحات محددة فقط دون حذف أي عنصر من الصفحة
+    const PANELS = ['survey-hero', 'progress-container', 'survey-form-responder', 'thank-you-container', 'already-submitted-container', 'status-container', 'pin-gate-container'];
     const showPanels = (...ids) => PANELS.forEach(id => {
         const el = $(id);
         if (el) el.style.display = ids.includes(id) ? (id === 'survey-form-responder' ? 'flex' : 'block') : 'none';
@@ -1031,6 +1358,33 @@ async function initSurveyPage() {
         setImg('survey-logo-display', null, currentSurveyData.logoUrl);
         heroReady = true;
 
+        // ----- عدد الردود الحالي (للحد الإجمالي + عدّاد المشاركين) -----
+        let currentCount = 0;
+        try {
+            currentCount = (await db.collection('responses').where('surveyId', '==', surveyId).get()).size;
+        } catch (e) { /* تجاهل */ }
+
+        // ----- بوابة رمز الدخول للمجيبين -----
+        if (settings.participantPinHash) {
+            const unlockKey = `unlocked_${surveyId}`;
+            if (sessionStorage.getItem(unlockKey) !== '1') {
+                showPanels('survey-hero', 'pin-gate-container');
+                const tryUnlock = async () => {
+                    const v = $('participant-pin-input').value;
+                    if (!v) return showAlert('أدخل رمز الدخول.', 'error');
+                    if ((await hashPassword(v)) === settings.participantPinHash) {
+                        sessionStorage.setItem(unlockKey, '1');
+                        location.reload();
+                    } else {
+                        showAlert('رمز الدخول غير صحيح.', 'error');
+                    }
+                };
+                $('pin-gate-btn').onclick = tryUnlock;
+                $('participant-pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+                return;
+            }
+        }
+
         // ----- شروط الوصول -----
         const shareLink = window.location.href;
         if (settings.allowMultipleSubmissions === false && localStorage.getItem(`submitted_${surveyId}`)) {
@@ -1042,15 +1396,35 @@ async function initSurveyPage() {
 
         const now = new Date();
         if (settings.acceptingResponses === false) throw new Error('هذا الاستفتاء مغلق حاليًا ولا يستقبل ردودًا جديدة.');
+        if (settings.maxResponses > 0 && currentCount >= settings.maxResponses) throw new Error(`اكتمل العدد المطلوب من الردود (${settings.maxResponses}). شكراً لاهتمامك!`);
         const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
         if (settings.startDate) {
             const start = new Date(settings.startDate + 'T' + (settings.startTime || '00:00'));
             if (now < start) throw new Error(`هذا الاستفتاء لم يبدأ بعد. سيبدأ في: ${start.toLocaleString('ar-EG', dateOptions)}`);
         }
+        let endDate = null;
         if (settings.endDate) {
-            const end = new Date(settings.endDate + 'T' + (settings.endTime || '23:59'));
-            if (now > end) throw new Error(`هذا الاستفتاء قد انتهى في: ${end.toLocaleString('ar-EG', dateOptions)}`);
+            endDate = new Date(settings.endDate + 'T' + (settings.endTime || '23:59'));
+            if (now > endDate) throw new Error(`هذا الاستفتاء قد انتهى في: ${endDate.toLocaleString('ar-EG', dateOptions)}`);
         }
+
+        // ----- عدّاد المشاركين + العدّاد التنازلي -----
+        const noteEl = $('countdown-note');
+        const updateNotes = () => {
+            const parts = [];
+            if (settings.showPublicCount) parts.push(`عدد المشاركين حتى الآن: ${currentCount}`);
+            if (settings.maxResponses > 0) parts.push(`الحد الأقصى: ${settings.maxResponses} رد`);
+            if (endDate) {
+                const diff = endDate - new Date();
+                if (diff > 0) {
+                    const d = Math.floor(diff / 86400000), h = Math.floor(diff / 3600000) % 24, m = Math.floor(diff / 60000) % 60;
+                    parts.push(`⏳ متبقٍ: ${d > 0 ? d + ' يوم و' : ''}${h} ساعة و${m} دقيقة`);
+                }
+            }
+            if (parts.length) { noteEl.textContent = parts.join(' · '); noteEl.style.display = 'block'; }
+        };
+        updateNotes();
+        if (endDate) setInterval(updateNotes, 60000);
 
         const dailyLimit = (settings.allowMultipleSubmissions && settings.dailyLimit > 0) ? settings.dailyLimit : 0;
         const limitMessage = () => `وصلت إلى الحد الأقصى للردود اليوم (${dailyLimit}). يمكنك المشاركة مجدداً غداً.`;
@@ -1071,11 +1445,27 @@ async function initSurveyPage() {
         const perImageChars = Math.floor(800000 / Math.max(1, imageQs.length));
         pendingImages = {};
 
-        $('responder-form-content').innerHTML = questions.map(q => `<div class="question-card-responder"><label for="q-${esc(q.id)}" class="question-text">${esc(q.text)} ${q.required ? '<span style="color:red;">*</span>' : ''}</label>${renderQuestionInputForResponder(q)}</div>`).join('');
+        $('responder-form-content').innerHTML = questions.map((q, idx) => {
+            const cond = q.condition ? ` data-cond-qid="${esc(q.condition.questionId)}" data-cond-val="${esc(q.condition.value)}"` : '';
+            return `<div class="question-card-responder" data-qid="${esc(q.id)}"${cond} style="--i:${idx}"><label for="q-${esc(q.id)}" class="question-text">${esc(q.text)} ${q.required ? '<span class="req-mark" aria-hidden="true">*</span>' : ''}</label>${renderQuestionInputForResponder(q)}</div>`;
+        }).join('');
         const form = $('survey-form-responder');
         updateDailyNote();
 
-        // رفع الصور
+        // الأسئلة الشرطية: تُخفى وتُعطَّل حقولها (حتى لا يمنع required الإرسال) ما لم يتحقق الشرط
+        const refreshConditionals = () => {
+            form.querySelectorAll('.question-card-responder[data-cond-qid]').forEach(card => {
+                const vals = new FormData(form).getAll(`q-${card.dataset.condQid}`).map(v => String(v).trim());
+                const hide = !vals.includes(card.dataset.condVal.trim());
+                card.classList.toggle('conditional-hidden', hide);
+                card.querySelectorAll('input, select, textarea, button').forEach(el => { el.disabled = hide; });
+            });
+            updateProgressBar();
+        };
+        form.addEventListener('change', refreshConditionals);
+        form.addEventListener('input', refreshConditionals);
+        refreshConditionals();
+
         form.addEventListener('change', async (e) => {
             const inp = e.target;
             if (!inp.matches || !inp.matches('input[type="file"][data-qid]')) return;
@@ -1123,40 +1513,39 @@ async function initSurveyPage() {
 
             const formData = new FormData(form);
             let allValid = true;
+            const hiddenIds = new Set(Array.from(form.querySelectorAll('.question-card-responder.conditional-hidden')).map(c => c.dataset.qid));
             const answers = questions.map(q => {
+                if (hiddenIds.has(q.id)) return { questionId: q.id, questionText: q.text, answer: '' };
                 const answer = getAnswerValue(q, formData);
                 if (q.required && isEmptyAnswer(answer)) allValid = false;
                 return { questionId: q.id, questionText: q.text, answer };
             });
             if (!allValid) return showAlert('الرجاء تعبئة الحقول الإجبارية.', 'error');
+            if (settings.confirmBeforeSubmit && !confirm('هل أنت متأكد من إرسال إجاباتك؟ لا يمكن التعديل بعد الإرسال.')) return;
 
-            const submitBtn = form.querySelector('.submit-btn');
-            if (submitBtn.disabled) return; // منع الإرسال المتكرر بالضغط السريع المتتالي
-            const originalBtnText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'جاري الإرسال...';
             showLoader(true);
             try {
                 await db.collection('responses').add({ surveyId: currentSurveyData.id, answers, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
             } catch (err) {
                 console.error(err);
                 showLoader(false);
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalBtnText;
                 return showAlert(/too large|exceeds|size/i.test(err.message || '') ? 'حجم الصور كبير جداً، جرّب صوراً أصغر.' : 'فشل إرسال الإجابة، حاول مرة أخرى.', 'error', 6000);
             }
             incrementDailyCount(surveyId);
+            currentCount++;
 
             if (settings.allowMultipleSubmissions) {
                 form.reset();
+                refreshConditionals();
                 pendingImages = {};
                 form.querySelectorAll('.img-preview').forEach(p => { p.style.display = 'none'; });
                 form.querySelectorAll('.img-remove').forEach(b => { b.style.display = 'none'; });
                 updateProgressBar();
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalBtnText;
+                updateNotes();
                 if (dailyLimit && getDailyCount(surveyId) >= dailyLimit) {
                     showStatus(`تم إرسال إجابتك بنجاح! ${limitMessage()}`, false);
+                } else if (settings.maxResponses > 0 && currentCount >= settings.maxResponses) {
+                    showStatus('تم إرسال إجابتك بنجاح! واكتمل العدد المطلوب من الردود — شكراً للجميع.', false);
                 } else {
                     updateDailyNote();
                     showAlert('تم إرسال إجابتك بنجاح!', 'success');
@@ -1203,6 +1592,9 @@ function renderQuestionInputForResponder(q) {
         case 'checkbox': return options.map((o, i) => `<div class="checkbox-group"><input type="checkbox" id="${name}-o-${i}" name="${name}" value="${esc(o)}"><label for="${name}-o-${i}">${esc(o)}</label></div>`).join('');
         case 'dropdown': return `<select id="${name}" name="${name}" ${req}><option value="">-- اختر --</option>${options.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
         case 'rating': return `<div class="rating-stars">${[5, 4, 3, 2, 1].map(v => `<input type="radio" id="${name}-r-${v}" name="${name}" value="${v}" ${req}><label for="${name}-r-${v}" title="${v} نجوم">★</label>`).join('')}</div>`;
+        case 'emoji': return `<div class="emoji-stars">${EMOJI_OPTS.map((o, i) => `<input type="radio" id="${name}-e-${i}" name="${name}" value="${o}" ${req}><label for="${name}-e-${i}" title="${i + 1} من 5">${o}</label>`).join('')}</div>`;
+        case 'nps': return `<div class="nps-scale">${NPS_OPTS.map(v => `<input type="radio" id="${name}-n-${v}" name="${name}" value="${v}" ${req}><label for="${name}-n-${v}">${v}</label>`).join('')}</div>`;
+        case 'likert': return `<div class="likert-row">${LIKERT_OPTS.map((o, i) => `<div class="checkbox-group"><input type="radio" id="${name}-l-${i}" name="${name}" value="${esc(o)}" ${req}><label for="${name}-l-${i}">${esc(o)}</label></div>`).join('')}</div>`;
         case 'image': return `<div class="img-upload" data-qid="${esc(q.id)}"><label for="${name}" class="btn secondary">📷 اختر صورة</label><input type="file" id="${name}" data-qid="${esc(q.id)}" accept="image/*"><img class="img-preview" alt="معاينة الصورة"><button type="button" class="btn secondary small img-remove">إزالة الصورة</button></div>`;
         default: return '<p>نوع غير مدعوم.</p>';
     }
@@ -1212,7 +1604,8 @@ function updateProgressBar() {
     const form = $('survey-form-responder');
     const fill = $('progress-bar-fill');
     if (!form || !fill || !currentSurveyData) return;
-    const requiredQuestions = (currentSurveyData.questions || []).filter(q => q.required);
+    const hiddenIds = new Set(Array.from(form.querySelectorAll('.question-card-responder.conditional-hidden')).map(c => c.dataset.qid));
+    const requiredQuestions = (currentSurveyData.questions || []).filter(q => q.required && !hiddenIds.has(q.id));
     if (requiredQuestions.length === 0) { fill.style.width = '100%'; return; }
     const formData = new FormData(form);
     const filled = requiredQuestions.filter(q => !isEmptyAnswer(getAnswerValue(q, formData))).length;
@@ -1246,8 +1639,7 @@ async function initResultsPage() {
 }
 
 // =====================================================================
-// EXPORT FUNCTIONS (for Dashboard)
-// الصور لا تُضمَّن في CSV/PDF (حجمها أكبر من حدّ الخلية)، وتُستبدل بعلامة [صورة]
+// EXPORT FUNCTIONS
 // =====================================================================
 const answerToPlain = (ans, sep) => {
     if (isImageData(ans)) return '[صورة]';
@@ -1259,9 +1651,8 @@ function setupExportButtons(surveyId) {
     if (actions && !$('delete-all-responses-btn')) {
         const b = document.createElement('button');
         b.id = 'delete-all-responses-btn';
-        b.className = 'btn small';
-        b.style.cssText = 'background:var(--error-color);color:#fff;';
-        b.textContent = 'حذف كل الردود';
+        b.className = 'btn danger small';
+        b.textContent = 'حذف الكل ';
         actions.appendChild(b);
     }
     $('delete-all-responses-btn').onclick = deleteAllResponses;
@@ -1273,7 +1664,7 @@ function exportResponsesToCSV(surveyId) {
     if (!currentSurveyData || currentSurveyResponses.length === 0) return showAlert('لا توجد بيانات للتصدير.', 'info');
     showAlert('جاري تجهيز ملف CSV...', 'info');
     const headers = ['ResponseID', 'Timestamp', ...currentSurveyData.questions.map(q => `"${q.text.replace(/"/g, '""')}"`)];
-    let csvContent = '\uFEFF' + headers.join(',') + '\r\n';
+    let csvContent = '﻿' + headers.join(',') + '\r\n';
     currentSurveyResponses.forEach(response => {
         const dateOptions = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', calendar: 'gregory', numberingSystem: 'latn' };
         const rowData = [response.id, `"${response.timestamp?.toDate ? response.timestamp.toDate().toLocaleString('en-CA', dateOptions) : 'N/A'}"`, ...currentSurveyData.questions.map(q => {
@@ -1315,8 +1706,7 @@ function exportResponsesToPDF(surveyId) {
 }
 
 // =====================================================================
-// PAGE ROUTER — يعتمد على عناصر الصفحة (وليس اسم الملف)
-// حتى لا يتعارض مثلاً master_dashboard.html مع dashboard.html
+// PAGE ROUTER
 // =====================================================================
 document.addEventListener('DOMContentLoaded', () => {
     const yearSpan = $('current-year');
@@ -1326,4 +1716,5 @@ document.addEventListener('DOMContentLoaded', () => {
     else if ($('survey-form-responder')) initSurveyPage();
     else if ($('admin-mode-content')) initAdminPage();
     else if ($('public-results-content')) initResultsPage();
+    else initDarkMode();
 });
